@@ -1,0 +1,15 @@
+[Unit]
+Description=Hexagonrpcd ADSP SensorPD - Qualcomm Sensor Virtual FS
+After=remoteproc0.service
+Before=iio-sensor-proxy.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/mkdir -p /vendor/etc/sensors
+ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp-secure -s -R /usr/lib/firmware
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

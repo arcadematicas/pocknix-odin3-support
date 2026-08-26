@@ -10,15 +10,25 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
   `VkDeviceLost`.
 - ✅ **Mando + táctil** funcionando (InputPlumber).
 - ✅ **WiFi** (NetworkManager) + **cuenta de Steam** + **juegos**.
+- ✅ **Audio** — sound card `SM8750-AYN` funciona (ADSP habilitado).
+- ✅ **Batería** — `pmic_glink` reporta capacidad correctamente.
+- ✅ **QAM** — botón Select abre el menú Quick Access.
 - ⚠️ **Escritorio (Plasma Mobile)**: arranca, pero **KScreen no enumera el
   panel** (Ajustes no muestra el monitor ni la rotación) — *open issue*.
+- ⚠️ **Rotación Plasma Mobile**: fix manual aplicado (`chattr +i` sobre
+  `kwinoutputconfig.json`). Pendiente fix upstream de KScreen.
+- ⚠️ **Sensores IIO**: `hexagonrpcd` compilado e instalado, pero los
+  dispositivos IIO aún no aparecen — falta ajustar el `sns_reg_config`.
 
 ## Qué contiene
 | Ruta | Qué es |
 |---|---|
-| `kernel/cq8725s-ayn-odin3.dts` | DTS del dispositivo Odin 3 (SM8750) |
+| `kernel/cq8725s-ayn-odin3.dts` | DTS del dispositivo Odin 3 (SM8750) — ADSP habilitado, rutas firmware corregidas |
 | `kernel/0001-adreno-a8xx-force-gx-collapse-before-cx.patch` | **Fix del GPU** (VkDeviceLost / GMU GX-GDSC) |
-| `config/session-fixes.md` | Ajustes de userspace (openal, lsof, InputPlumber, WiFi, NM) |
+| `config/session-fixes.md` | Documentación completa de todos los fixes (12 fixes documentados) |
+| `config/odin3-post-boot-setup.sh` | Script de setup post-boot (suspensión, WiFi, rotación, sensores) |
+| `config/ayn_mcu.yaml` | InputPlumber fix: Select → QuickAccess (QAM) |
+| `config/hexagonrpcd/` | hexagonrpcd cross-compile + service file para sensores IIO |
 | `KSCREEN-ISSUE.md` | Issue abierto: KScreen no ve el panel en escritorio |
 
 ## Lo más valioso para upstream
