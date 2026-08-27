@@ -5,7 +5,7 @@ Before=iio-sensor-proxy.service
 
 [Service]
 Type=oneshot
-ExecStartPre=/bin/mkdir -p /vendor/etc/sensors
+ExecStartPre=/bin/mkdir -p /vendor/etc/sensors /usr/lib/firmware/sensors/config /usr/lib/firmware/sensors/registry
 ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp-secure -s -R /usr/lib/firmware
 RemainAfterExit=yes
 Restart=on-failure

@@ -94,14 +94,18 @@ echo "  ⚠️  Después: echo pocknix | su -c 'chattr +i /home/deck/.config/kwi
 # --- 6. SENSOR CONFIG ---
 echo ""
 echo "[6/6] Sensor config para hexagonrpcd..."
-run "mkdir -p /vendor/etc/sensors /etc/sensors/config"
-run 'printf "{\"accel\":{\"sensor_id\":1},\"gyro\":{\"sensor_id\":2}}\n" > /vendor/etc/sensors/sns_reg_config'
-run 'cp /vendor/etc/sensors/sns_reg_config /etc/sensors/sns_reg_config'
-run 'printf "accel.json\ngyro.json\n" > /etc/sensors/config/json.lst'
-run "chmod -R 644 /vendor/etc/sensors/ /etc/sensors/"
+# Los archivos REALES de sensores vienen integrados en la imagen
+# (extraídos del firmware Android Odin3_20251206, partición vendor):
+#   /usr/lib/firmware/sensors/config/*.json  (140 archivos, incl. pakala_* SM8750)
+#   /usr/lib/firmware/sensors/sns_reg.conf
+#   /usr/lib/firmware/sensors/registry/      (output del daemon)
+#   /vendor/etc/sensors/                     (paths Android, espejo)
+run "mkdir -p /vendor/etc/sensors /usr/lib/firmware/sensors/config /usr/lib/firmware/sensors/registry"
+run "chmod -R 644 /vendor/etc/sensors/ /usr/lib/firmware/sensors/"
+run "chmod 755 /usr/lib/firmware/sensors/registry"
 run "systemctl daemon-reload 2>/dev/null"
 run "systemctl restart hexagonrpcd-adsp-sensorspd 2>/dev/null || true"
-echo "  ✅ Sensor config instalado"
+echo "  ✅ Sensor config instalado (configs reales de Android integrados)"
 
 # --- STATUS ---
 echo ""
