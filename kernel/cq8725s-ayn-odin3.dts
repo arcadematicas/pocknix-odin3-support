@@ -233,17 +233,17 @@
 };
 
 &remoteproc_adsp {
-	firmware-name = "qcom/sm8750/adsp.mbn",
-			"qcom/sm8750/adsp_dtb.mbn";
+	firmware-name = "qcom/sm8750/ayn/odin3/adsp.mbn",
+			"qcom/sm8750/ayn/odin3/adsp_dtb.mbn";
 
 	status = "okay";
 };
 
 &remoteproc_cdsp {
-	firmware-name = "qcom/sm8750/cdsp.mbn",
-			"qcom/sm8750/cdsp_dtb.mbn";
+	firmware-name = "qcom/sm8750/ayn/odin3/cdsp.mbn",
+			"qcom/sm8750/ayn/odin3/cdsp_dtb.mbn";
 
-	status = "disabled";
+	status = "okay";
 };
 
 &spk_amp_l {

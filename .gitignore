@@ -1,2 +1,5 @@
 .git/
 *.dtb
+
+# local backups (firmware/abl copies) that must never be committed
+backups/
