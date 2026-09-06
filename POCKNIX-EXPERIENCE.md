@@ -2,7 +2,7 @@
 
 Estado de la experiencia Pocknix completa en la Odin 3 (SM8750), para el soporte.
 
-Fecha: 03/09/2026
+Fecha: 06/09/2026
 Kernel: 7.2.0 (funciona en Odin 3)
 
 ## Resumen
@@ -125,11 +125,14 @@ instalar paquetes hay que forzar `extra/<paquete>`.
 - Error menor en journal: crash de una librería (no crítico).
 - Mensaje de kernel: "Handover signaled, but it already happened" (remoteproc, no crítico).
 
-## Avances recientes (05/09/2026)
+## Avances recientes (06/09/2026)
 
 - **Batería (Parche v4):** Verificado el parche v4 en el kernel (`qcom_battmgr_estimate_percent`). Lectura real de la batería funcionando correctamente (ej. 16%, ~840mA, 3.68V).
-- **OLED Care / Pixel Refresher:** Creado el binario nativo `/usr/local/bin/oled-refresher` (C + SDL2). Ajustado el backend para que detecte el modo juego (Steam/gamescope) y lance el refresco como usuario `deck` mediante X11 (`DISPLAY=:0`, `SDL_VIDEODRIVER=x11`), solucionando los problemas de geometría en Wayland.
+- **OLED Care / Pixel Refresher:** Creado el binario nativo `/usr/local/bin/oled-refresher` (C + SDL2). Ajustado el backend para que detecte el modo juego (Steam/gamescope) y lance el refresco como usuario `deck` mediante X11 (`DISPLAY=:0`, `SDL_VIDEODRIVER=x11`), solucionando los problemas de geometría en Wayland. **AUTOMATIZADO (06/09):** servicio systemd `oled-refresher.service` + timer `oled-refresher.timer` (cada 4h, `OnBootSec=2h`, `Persistent=true`). El script `/usr/local/bin/oled-refresher-auto` solo lanza el refresher si Steam está activo (modo juego) y no hay otro refresher corriendo.
 - **Botón de Encendido (Pantalla Off/On):** Implementado un daemon dedicado (`power-button-daemon.py`) que escucha `/dev/input/event0` (`KEY_POWER`) y alterna `bl_power` (`4` apagado, `0` encendido) en el sysfs del panel (`/sys/class/backlight/ae94000.dsi.0/`). Powerdevil configurado a `DoNothing`. Funciona perfectamente en Plasma y modo juego.
 - **Volumen en Modo Juego:** Implementado un daemon (`volume-button-daemon.py`) para capturar las teclas de volumen físicas y enrutarlas a PipeWire mediante `wpctl` cuando Steam está activo.
+- **Power profiles (pocknix-fan-mode):** Implementado `pocknix-fan-mode` (quiet|moderate|performance) — escribe en `/var/lib/pocknix/fan-mode`, `pocknix-fancontrol` lo relee cada tick (~3s). Curvas = ROCKNIX ("performance" = su "aggressive"). Persiste entre reinicios.
+- **FEX fix (FEX_EARLY_LOG_DISABLE=1):** Aplicado para reducir los crashes de `steamwebhelper` (bug conocido de CEF + FEX). Variable en `/etc/environment.d/fex-fix.conf` + inyectada en `pocknix-steam` (env de gamescope). Fix upstream parcial de FEX 2603, recomendado por Bazzite/ArmadaOS.
+- **Decky v3.2.8 estable:** Bundle del OS cambiado a v3.2.8 + homebrew re-sembrado + `branch: 0` en `loader.json`. El sync ya no lo revierte.
 - **Estado pendiente:** Inestabilidad del `steamwebhelper` tras la actualización de Steam (19:54), pendiente de reiniciar Steam / actualizar Decky Loader.
 

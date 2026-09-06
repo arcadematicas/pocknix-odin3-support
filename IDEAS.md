@@ -20,9 +20,9 @@ Odin 3). Derivado de Armada Control (armada-os). GPL-2.0.
 | Idea | Qué hace | Estado |
 |---|---|---|
 | **Rear paddles M1/M2 vía sysfs** | Descubre los paddles traseros del Odin 3 desde las capacidades del gamepad AYN `rsinput` (sin tocar GPIO). Usa python-evdev, observa sin "grabar", reconecta tras resume. Coexiste con Steam/ES/emuladores. | 🟡 Investigar — nosotros usamos InputPlumber; el descubrimiento por sysfs es portable |
-| **Power profiles (eco/balanced/performance)** | CPU governor + `qcom-fan` (Silent/Auto/Aggressive/Manual/Off). Editable por perfil. | 🟢 Aplicable directamente — el Odin 3 tiene `qcom-fan` |
-| **Fan curve editor** | Edita curvas de ventilador en `/userdata/system/configs/qcom-fan-curves.conf` (portado de Armada PR #260 por Xtreme976). | 🟢 Aplicable — mismo daemon `qcom-fan` |
-| **OLED care / pixel refresher** | En paneles OLED detectados, ejecuta el refrescador de píxeles tras timeout de inactividad en Steam GamepadUI. Claves `display.oledcare*`. | 🟢 Muy útil — el Odin 3 tiene panel AMOLED |
+| **Power profiles (eco/balanced/performance)** | CPU governor + `qcom-fan` (Silent/Auto/Aggressive/Manual/Off). Editable por perfil. | ✅ **IMPLEMENTADO** — `pocknix-fan-mode` (quiet|moderate|performance), persiste en `/var/lib/pocknix/fan-mode` |
+| **Fan curve editor** | Edita curvas de ventilador en `/userdata/system/configs/qcom-fan-curves.conf` (portado de Armada PR #260 por Xtreme976). | ✅ **IMPLEMENTADO** — `pocknix-fancontrol` con curvas ROCKNIX (quiet/moderate/performance) |
+| **OLED care / pixel refresher** | En paneles OLED detectados, ejecuta el refrescador de píxeles tras timeout de inactividad en Steam GamepadUI. Claves `display.oledcare*`. | ✅ **IMPLEMENTADO** — binario nativo `/usr/local/bin/oled-refresher` + timer systemd cada 4h (solo en modo juego) |
 | **Sleep mode (s2idle/deep)** | Selecciona modo de suspensión cuando el kernel anuncia más de una opción en `/sys/power/mem_sleep`. | 🟡 Nosotros lo deshabilitamos; útil para el futuro |
 | **MangoHud toggle** | `mangohudctl toggle no_display` para mostrar/ocultar overlay sin cambiar el preset del QAM. | 🟢 Ya usamos MangoHud en gamescope |
 | **LSFG (Lossless Scaling)** | Integra LSFG-VK para Steam (requiere DLL comercial). | 🔴 Requiere DLL de pago — en espera |
