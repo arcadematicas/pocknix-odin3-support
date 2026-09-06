@@ -1,0 +1,13 @@
+[Unit]
+Description=Pocknix Fake Suspend for SM8750
+Before=systemd-suspend.service
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/pocknix-fake-suspend.sh suspend
+ExecStop=/usr/local/bin/pocknix-fake-suspend.sh resume
+
+[Install]
+WantedBy=systemd-suspend.target
