@@ -1,0 +1,12 @@
+[Unit]
+Description=Power button display toggle (AYN Odin 3)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/power-button-daemon.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

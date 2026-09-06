@@ -1,0 +1,14 @@
+[Unit]
+Description=Volume button daemon for game mode (AYN Odin 3)
+After=multi-user.target
+
+[Service]
+Type=simple
+Environment=XDG_RUNTIME_DIR=/run/user/1001
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1001/bus
+ExecStart=/usr/bin/python3 /usr/local/bin/volume-button-daemon.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

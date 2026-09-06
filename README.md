@@ -26,12 +26,17 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | Ruta | Qué es |
 |---|---|
 | `kernel/cq8725s-ayn-odin3.dts` | DTS del dispositivo Odin 3 (SM8750) — ADSP/CDSP habilitados, rutas firmware corregidas a `ayn/odin3` |
+| `kernel/cq8725s-ayn-common.dtsi` | DTS común AYN CQ8725S (compartido entre Odin 3 y otros dispositivos AYN) |
 | `kernel/0001-adreno-a8xx-force-gx-collapse-before-cx.patch` | **Fix del GPU** (VkDeviceLost / GMU GX-GDSC). Complementario al `0050` de ROCKNIX |
 | `kernel/0002-input-rsinput-uart-gamepad.patch` | **Fix del gamepad UART** (driver `rsinput`), necesario para el mando del Odin 3 en modo consola (backport a 7.2) |
+| `kernel/sm8750-patches/` | **64 patches SM8750** (0026-1300): SoC ID, panel, touchscreen, LEDs, GPU, WiFi/BT, audio, haptics, rsinput, fan, etc. |
 | `config/session-fixes.md` | Documentación completa de todos los fixes (12 fixes documentados) |
 | `config/odin3-post-boot-setup.sh` | Script de setup post-boot (suspensión, WiFi, rotación, sensores) |
 | `config/ayn_mcu.yaml` | InputPlumber fix: Select → QuickAccess (QAM) |
 | `config/hexagonrpcd/` | hexagonrpcd cross-compile + service file para sensores IIO |
+| `config/daemons/` | **Daemons**: `power-button-daemon.py` (botón encendido → pantalla on/off) + `volume-button-daemon.py` (volumen → PipeWire en modo juego) + sus servicios systemd |
+| `config/oled-care/` | **OLED care**: `oled-refresher-auto` (script que lanza el refresher solo en modo juego) + servicio + timer systemd (cada 4h) |
+| `config/decky-plugin/` | Backend del plugin Decky: `oled_care.py` (pixel refresher, detección de modo juego) |
 | `KSCREEN-ISSUE.md` | Issue abierto: KScreen no ve el panel en escritorio |
 
 ## Lo más valioso para upstream
@@ -45,6 +50,12 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 3. **Driver gamepad `rsinput`** (backport a 7.2) — sin él no se detecta el mando
    del Odin 3 en modo consola.
 4. **Ajustes de sesión** — el recetario para que gamescope/Steam funcionen.
+5. **Daemons de botones** — power button (pantalla on/off) + volume (PipeWire)
+   para modo juego.
+6. **OLED care** — pixel refresher nativo (C + SDL2) + automatización systemd
+   (solo en modo juego, cada 4h).
+7. **FEX fix** — `FEX_EARLY_LOG_DISABLE=1` para reducir crashes de
+   `steamwebhelper` (bug CEF + FEX, fix parcial upstream 2603).
 
 ## Notas
 - Basado en kernel 7.2.0 (sm8750), rebasado sobre el árbol de ROCKNIX.

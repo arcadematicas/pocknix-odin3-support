@@ -1,0 +1,7 @@
+[Unit]
+Description=OLED pixel refresher (AYN Odin 3, game mode only)
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/oled-refresher-auto

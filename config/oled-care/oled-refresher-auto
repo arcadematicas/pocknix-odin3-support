@@ -1,0 +1,21 @@
+#!/bin/bash
+# oled-refresher-auto — lanza el pixel refresher SOLO en modo juego (Steam activo).
+# Evita lanzarlo en escritorio (Wayland, sin DISPLAY X11) y si ya hay uno corriendo.
+
+REFRESHER=/usr/local/bin/oled-refresher
+DURATION=3
+PASSES=3
+CELL_PX=3
+
+# 1. ¿Steam activo? (modo juego)
+if ! pgrep -x steam >/dev/null 2>&1; then
+  exit 0
+fi
+
+# 2. ¿Ya hay un refresher corriendo?
+if pgrep -x oled-refresher >/dev/null 2>&1; then
+  exit 0
+fi
+
+# 3. Lanzar como deck contra el Xwayland de gamescope (:0)
+sudo -u deck env DISPLAY=:0 SDL_VIDEODRIVER=x11 "$REFRESHER" "$((DURATION*PASSES))" "$CELL_PX" >/dev/null 2>&1
