@@ -54,10 +54,22 @@ instalar paquetes hay que forzar `extra/<paquete>`.
 ## Steam
 
 - **YA FUNCIONA** (adaptado a la Odin 3)
-- Script `pocknix-steam` modificado: usa `-deckard` (no `-gamepadui`), bloquea
-  auto-actualización (`-nobootstrapupdate -skipinitialbootstrap -norepairfiles`)
-- **No se instaló el paquete `pocknix-steam` oficial** (usa `-gamepadui` para RP6,
-  rompería la adaptación de la Odin 3)
+- Script `pocknix-steam` modificado (copia de trabajo en
+  `config/steamos-manager/pocknix-steam.lanzador-actualizado`):
+  **usa `-gamepadui -steamos3 -steampal -steamdeck`** (NO `-deckard`).
+  - Histórico: se usaba `-deckard` porque `-gamepadui` daba problemas, pero
+    con la config actual (agosto-sept 2026) `-gamepadui -steamos3 -steampal`
+    es lo que hace que el QAM muestre el selector de perfil de rendimiento.
+    Se cambió el 08/09/2026 y se validó que el selector funciona.
+  - Backup del lanzador con `-deckard`: `/usr/bin/pocknix-steam.bak-deckard`
+- **SteamOS Manager (nuevo)**: shim D-Bus `com.steampowered.SteamOSManager1`
+  en bus de sesión (`/usr/local/bin/pocknix-steamos-manager` + unit de usuario
+  + activación D-Bus + sudoers NOPASSWD para `pocknix-power-profile`).
+  Expone `Manager2`, `PerformanceProfile1` (low-power/balanced/performance),
+  `GpuPerformanceLevel1` y `SessionManagement1` → el QAM de Steam controla el
+  perfil de rendimiento real de Pocknix. Código en `config/steamos-manager/`.
+- **No se instaló el paquete `pocknix-steam` oficial** (para RP6; la Odin 3
+  usa su versión adaptada en `config/steamos-manager/pocknix-steam.*`)
 
 ## Lo que funciona
 
@@ -100,9 +112,10 @@ instalar paquetes hay que forzar `extra/<paquete>`.
 - **Estado:** Decky funciona, no necesita paquete.
 
 ### pocknix-steam (NO instalado como paquete)
-- **Razón:** El paquete oficial usa `-gamepadui` (RP6). La Odin 3 necesita
-  `-deckard`. Instalarlo rompería la adaptación.
-- **Estado:** Steam funciona con el script adaptado.
+- **Razón:** El paquete oficial es para RP6. La Odin 3 usa su versión adaptada
+  (en `config/steamos-manager/pocknix-steam.lanzador-actualizado`), que desde
+  el 08/09/2026 lanza con `-gamepadui -steamos3 -steampal -steamdeck`.
+- **Estado:** Steam funciona con el script adaptado + shim SteamOS Manager.
 
 ### pocknix-emulation-full (NO instalado)
 - **Razón:** Arrastraría muchos emuladores (ES-DE, RPCS3, Cemu, Vita3K, etc.)

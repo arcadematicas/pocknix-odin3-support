@@ -1,0 +1,427 @@
+#!/usr/bin/env python3
+"""Shim D-Bus "steamos-manager" para Pocknix (AYN Odin 3, Arch Linux ARM).
+
+Expone la API ``com.steampowered.SteamOSManager1`` en el BUS DE SESIÓN para
+que la UI de Steam (gamepadui / Quick Access Menu) muestre y aplique el
+selector de perfil de rendimiento, igual que en una Steam Deck.
+
+Base: el shim de ArmadaOS, pero SIN su cliente de power daemon (ese daemon
+no existe en Pocknix). Aquí los perfiles se leen y aplican mediante el
+helper local:
+
+    /usr/local/bin/pocknix-power-profile
+      - sin argumentos          -> imprime el perfil guardado (bajo|medio|alto)
+      - <bajo|medio|alto>       -> lo aplica en caliente y lo persiste
+                                   (requiere root; se lanza con "sudo -n",
+                                   regla sudoers NOPASSWD gestionada aparte)
+
+Dependencias: solo stdlib + PyGObject (Gio/GLib). Sin dbus-python.
+"""
+
+import signal
+import subprocess
+import sys
+import warnings
+
+import gi
+
+gi.require_version("Gio", "2.0")
+from gi.repository import GLib, Gio  # noqa: E402
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# ---------------------------------------------------------------------------
+# Constantes de interfaz D-Bus
+# ---------------------------------------------------------------------------
+BUS_NAME = "com.steampowered.SteamOSManager1"
+OBJECT_PATH = "/com/steampowered/SteamOSManager1"
+
+IFACE_MANAGER = "com.steampowered.SteamOSManager1.Manager2"
+IFACE_PROFILE = "com.steampowered.SteamOSManager1.PerformanceProfile1"
+IFACE_GPU = "com.steampowered.SteamOSManager1.GpuPerformanceLevel1"
+IFACE_SESSION = "com.steampowered.SteamOSManager1.SessionManagement1"
+IFACE_OBJECT_MANAGER = "org.freedesktop.DBus.ObjectManager"
+
+# Identidad del dispositivo expuesta como DeviceModel (ss).
+DEVICE_ID = "ayn-odin-3"
+DEVICE_NAME = "AYN Odin 3"
+
+# GpuPerformanceLevel1 (exposicion, sin control real de reloj manual): Steam
+# espera esta interfaz para dibujar el bloque de rendimiento completo del QAM
+# (todos los shims que funcionan —ArmadaOS, SteamOS-Ubuntu— la exponen).
+GPU_LEVELS = ("auto", "manual")
+GPU_DEFAULT_LEVEL = "auto"
+GPU_MANUAL_CLOCK_MIN = 200  # MHz (referencia, igual que SteamOS-Ubuntu)
+GPU_MANUAL_CLOCK_MAX = 800  # MHz
+
+# Perfiles que ve Steam en el QAM. NO son arbitrarios: Steam solo muestra el
+# selector si reconoce los nombres canonicos del platform-profile de SteamOS
+# ("low-power", "balanced", "performance" — los nombres del panel nativo del
+# QAM documentados en ValveSoftware/steam-for-linux#12163 para Legion Go; el
+# resto de distros ARM usa "power" pero puede que Steam no lo reconozca).
+AVAILABLE_PROFILES = ("low-power", "balanced", "performance")
+DEFAULT_PROFILE = "balanced"  # default si no hay archivo o falla la lectura
+SUGGESTED_DEFAULT_PROFILE = "balanced"
+
+# Mapeo de los nombres que ve Steam a los perfiles internos de Pocknix.
+STEAM_TO_POCKNIX = {
+    "low-power": "bajo",
+    "balanced": "medio",
+    "performance": "alto",
+}
+POCKNIX_PROFILES = tuple(STEAM_TO_POCKNIX.values())  # ("bajo", "medio", "alto")
+POCKNIX_TO_STEAM = {v: k for k, v in STEAM_TO_POCKNIX.items()}
+
+# Helper de perfiles de Pocknix (única vía de acceso; nunca tocar
+# /var/lib/pocknix directamente).
+POWER_HELPER = "/usr/local/bin/pocknix-power-profile"
+HELPER_READ_TIMEOUT = 10  # segundos, para la lectura del perfil
+HELPER_SET_TIMEOUT = 15  # segundos, para "sudo -n <helper> <perfil>"
+
+LOG_PREFIX = "pocknix-steamos-manager:"
+
+# ---------------------------------------------------------------------------
+# XML de las interfaces. Solo se declara lo que de verdad se implementa:
+# si Steam pide algo no declarado, D-Bus responde error por sí solo.
+# ---------------------------------------------------------------------------
+ROOT_XML = f"""
+<node>
+  <interface name="{IFACE_OBJECT_MANAGER}">
+    <method name="GetManagedObjects">
+      <arg type="a{{oa{{sa{{sv}}}}}}" name="objects" direction="out"/>
+    </method>
+    <signal name="InterfacesAdded">
+      <arg type="o" name="object"/>
+      <arg type="a{{sa{{sv}}}}" name="interfaces"/>
+    </signal>
+    <signal name="InterfacesRemoved">
+      <arg type="o" name="object"/>
+      <arg type="as" name="interfaces"/>
+    </signal>
+  </interface>
+</node>
+"""
+
+NODE_XML = f"""
+<node>
+  <interface name="{IFACE_MANAGER}">
+    <method name="ReloadConfig"/>
+    <property name="DeviceModel" type="(ss)" access="read"/>
+  </interface>
+  <interface name="{IFACE_PROFILE}">
+    <property name="AvailablePerformanceProfiles" type="as" access="read"/>
+    <property name="PerformanceProfile" type="s" access="readwrite"/>
+    <property name="SuggestedDefaultPerformanceProfile" type="s" access="read"/>
+  </interface>
+  <interface name="{IFACE_GPU}">
+    <property name="AvailableGpuPerformanceLevels" type="as" access="read"/>
+    <property name="GpuPerformanceLevel" type="s" access="readwrite"/>
+    <property name="ManualGpuClock" type="u" access="readwrite"/>
+    <property name="ManualGpuClockMin" type="u" access="read"/>
+    <property name="ManualGpuClockMax" type="u" access="read"/>
+  </interface>
+  <interface name="{IFACE_SESSION}">
+    <method name="SwitchToDesktopMode"/>
+    <method name="SwitchToGameMode"/>
+    <method name="SwitchToLoginMode">
+      <arg type="s" name="type" direction="in"/>
+    </method>
+    <method name="SwitchToDesktopSession">
+      <arg type="s" name="session" direction="in"/>
+    </method>
+    <method name="ValidDesktopSessions">
+      <arg type="as" name="sessions" direction="out"/>
+    </method>
+    <method name="CleanTemporarySessions"/>
+    <property name="DefaultDesktopSession" type="s" access="readwrite"/>
+    <property name="DefaultLoginMode" type="s" access="readwrite"/>
+  </interface>
+</node>
+"""
+
+
+def log(message):
+    """Log a stderr con prefijo fijo (lo captura journald)."""
+    print(f"{LOG_PREFIX} {message}", file=sys.stderr)
+
+
+def _read_profile_raw():
+    """Ejecuta el helper sin argumentos y devuelve el perfil GUARDADO de
+    Pocknix (bajo|medio|alto), como string saneado.
+
+    Lanza RuntimeError si el proceso falla o si el stdout no es un perfil
+    Pocknix válido. La conversion al nombre Steam la hace current_profile().
+    """
+    proc = subprocess.run(
+        [POWER_HELPER],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        timeout=HELPER_READ_TIMEOUT,
+        check=False,
+    )
+    profile = proc.stdout.strip()
+    if proc.returncode != 0 or profile not in POCKNIX_PROFILES:
+        raise RuntimeError(
+            f"helper rc={proc.returncode} salida={profile!r}"
+        )
+    return profile
+
+
+def current_profile():
+    """Perfil vigente en nombre STEAM (power|balanced|performance).
+
+    Lee el perfil real de Pocknix via helper y lo traduce. Ante cualquier
+    error devuelve DEFAULT_PROFILE (nunca crashea el Get).
+    """
+    try:
+        return POCKNIX_TO_STEAM[_read_profile_raw()]
+    except Exception as exc:  # noqa: BLE001 - el get nunca debe crashear
+        log(f"no se pudo leer el perfil ({exc}); usando {DEFAULT_PROFILE!r}")
+        return DEFAULT_PROFILE
+
+
+def apply_profile(steam_profile):
+    """Aplica un perfil (nombre STEAM) con ``sudo -n`` + helper.
+
+    Traduce el nombre Steam al perfil Pocknix real antes de llamar al helper.
+    Lanza excepción si falla. El helper persiste el perfil y ajusta los caps
+    de CPU/GPU en caliente. La regla sudoers NOPASSWD se añade aparte.
+    """
+    pocknix_profile = STEAM_TO_POCKNIX[steam_profile]  # KeyError si no es válido
+    proc = subprocess.run(
+        ["sudo", "-n", POWER_HELPER, pocknix_profile],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=HELPER_SET_TIMEOUT,
+        check=False,
+    )
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "").strip()
+        raise RuntimeError(
+            f"aplicar {profile!r} falló (rc={proc.returncode}): {detail}"
+        )
+
+
+class PocknixSteamOSManager:
+    """Objeto D-Bus en /com/steampowered/SteamOSManager1 (bus de sesión)."""
+
+    def __init__(self):
+        self.connection = None
+        self.root_node = None
+        self.node = None
+        # SessionManagement1: Pocknix no cambia de sesión por D-Bus (su
+        # supervisor de sesión vive en ~/.bash_profile de deck), pero Steam
+        # exige la interfaz COMPLETA o degrada toda la integración
+        # ("version predates session management interface"). Devolvemos
+        # valores por defecto; el switch real no aplica aquí.
+        self.default_login_mode = "game"
+        self.default_desktop_session = "plasma.desktop"  # no se usa en Pocknix
+        self.valid_desktop_sessions = ("plasma.desktop",)
+
+    # -- ObjectManager ------------------------------------------------------
+    def managed_objects(self):
+        """Recorre interfaces/propiedades declaradas y las devuelve pobladas.
+
+        Las propiedades que fallen al leer se saltan (sin tumbar el conjunto).
+        """
+        objects = {}
+        for iface in self.node.interfaces:
+            props = {}
+            for prop in iface.properties:
+                try:
+                    value = self.get_property(iface.name, prop.name)
+                except Exception as exc:  # noqa: BLE001
+                    log(f"omitida {iface.name}.{prop.name}: {exc}")
+                    continue
+                if value is not None:
+                    props[prop.name] = value
+            objects.setdefault(OBJECT_PATH, {})[iface.name] = props
+        return objects
+
+    # -- Señal PropertiesChanged (crítica: Steam refresca la UI con ella) ----
+    def emit_properties(self, iface, changed):
+        self.connection.emit_signal(
+            None,
+            OBJECT_PATH,
+            "org.freedesktop.DBus.Properties",
+            "PropertiesChanged",
+            GLib.Variant("(sa{sv}as)", (iface, changed, [])),
+        )
+
+    # -- Propiedades ---------------------------------------------------------
+    def get_property(self, iface, prop):
+        if iface == IFACE_MANAGER and prop == "DeviceModel":
+            return GLib.Variant("(ss)", (DEVICE_ID, DEVICE_NAME))
+        if iface == IFACE_SESSION:
+            if prop == "DefaultDesktopSession":
+                return GLib.Variant("s", self.default_desktop_session)
+            if prop == "DefaultLoginMode":
+                return GLib.Variant("s", self.default_login_mode)
+        if iface == IFACE_PROFILE:
+            if prop == "AvailablePerformanceProfiles":
+                return GLib.Variant("as", list(AVAILABLE_PROFILES))
+            if prop == "PerformanceProfile":
+                return GLib.Variant("s", current_profile())
+            if prop == "SuggestedDefaultPerformanceProfile":
+                return GLib.Variant("s", SUGGESTED_DEFAULT_PROFILE)
+        if iface == IFACE_GPU:
+            if prop == "AvailableGpuPerformanceLevels":
+                return GLib.Variant("as", list(GPU_LEVELS))
+            if prop == "GpuPerformanceLevel":
+                return GLib.Variant("s", GPU_DEFAULT_LEVEL)
+            if prop == "ManualGpuClock":
+                return GLib.Variant("u", 0)
+            if prop == "ManualGpuClockMin":
+                return GLib.Variant("u", GPU_MANUAL_CLOCK_MIN)
+            if prop == "ManualGpuClockMax":
+                return GLib.Variant("u", GPU_MANUAL_CLOCK_MAX)
+        return None
+
+    def set_property(self, iface, prop, value):
+        if iface == IFACE_PROFILE and prop == "PerformanceProfile":
+            profile = value.get_string()
+            if profile not in AVAILABLE_PROFILES:
+                raise ValueError(f"perfil no válido: {profile!r}")
+            apply_profile(profile)
+            # Readback: emitir siempre el valor realmente vigente, no el
+            # pedido (el helper podría haberlo normalizado o fallado).
+            applied = current_profile()
+            self.emit_properties(iface, {prop: GLib.Variant("s", applied)})
+            return
+        if iface == IFACE_SESSION and prop == "DefaultLoginMode":
+            mode = value.get_string()
+            if mode not in ("game", "desktop"):
+                raise ValueError(mode)
+            self.default_login_mode = mode
+            self.emit_properties(iface, {prop: value})
+            return
+        if iface == IFACE_SESSION and prop == "DefaultDesktopSession":
+            session = value.get_string()
+            if session not in self.valid_desktop_sessions:
+                raise ValueError(session)
+            self.default_desktop_session = session
+            self.emit_properties(iface, {prop: value})
+            return
+        if iface == IFACE_GPU and prop == "GpuPerformanceLevel":
+            level = value.get_string()
+            if level not in GPU_LEVELS:
+                raise ValueError(f"nivel GPU no válido: {level!r}")
+            # Exposicion: Steam marca el nivel; el reloj manual real de Adreno
+            # (devfreq userspace) se dejara para una fase posterior. Por ahora
+            # aceptamos el valor y lo reflejamos.
+            self.emit_properties(iface, {prop: GLib.Variant("s", level)})
+            return
+        if iface == IFACE_GPU and prop == "ManualGpuClock":
+            clock = value.get_uint32()
+            # Sin efecto real (solo exposicion), pero reflejamos el valor.
+            self.emit_properties(iface, {prop: GLib.Variant("u", clock)})
+            return
+        raise KeyError(prop)
+
+    # -- Handlers D-Bus ------------------------------------------------------
+    def handle_root_method_call(self, _conn, _sender, _path, iface,
+                                method, _params, invocation):
+        if iface == IFACE_OBJECT_MANAGER and method == "GetManagedObjects":
+            invocation.return_value(
+                GLib.Variant("(a{oa{sa{sv}}})", (self.managed_objects(),))
+            )
+            return
+        invocation.return_dbus_error(f"{BUS_NAME}.Error.UnknownMethod", method)
+
+    def handle_method_call(self, _conn, _sender, _path, iface, method,
+                           _params, invocation):
+        if iface == IFACE_MANAGER and method == "ReloadConfig":
+            # Sin efecto: no hay daemon que recargar; los perfiles se leen
+            # bajo demanda desde el helper.
+            invocation.return_value(None)
+            return
+        if iface == IFACE_SESSION:
+            # Pocknix gestiona el cambio de sesión en ~/.bash_profile de deck
+            # (no por D-Bus). Steam sondea estos métodos en SteamOS; aquí se
+            # devuelven respuestas limpias sin cambiar de sesión. Si algún día
+            # Pocknix quiere switch por D-Bus, se conecta aquí.
+            if method == "ValidDesktopSessions":
+                invocation.return_value(
+                    GLib.Variant("(as)", (list(self.valid_desktop_sessions),))
+                )
+                return
+            if method == "CleanTemporarySessions":
+                # Steam lo sondea en SteamOS; Pocknix no crea sesiones temporales.
+                invocation.return_value(None)
+                return
+            if method in ("SwitchToDesktopMode", "SwitchToGameMode",
+                          "SwitchToLoginMode", "SwitchToDesktopSession"):
+                # No-op: Pocknix no alterna sesiones por esta vía. Devolver
+                # éxito para que Steam no marque la API como rota.
+                invocation.return_value(None)
+                return
+        invocation.return_dbus_error(f"{BUS_NAME}.Error.UnknownMethod", method)
+
+    def handle_get_property(self, _conn, _sender, _path, iface, prop):
+        try:
+            return self.get_property(iface, prop)
+        except Exception:  # noqa: BLE001 - nunca crashear en un Get
+            return None
+
+    def handle_set_property(self, _conn, _sender, _path, iface, prop, value):
+        try:
+            self.set_property(iface, prop, value)
+            return True
+        except Exception as exc:  # noqa: BLE001
+            log(f"set {iface}.{prop} falló: {exc}")
+            return False
+
+    # -- Registro -------------------------------------------------------------
+    def register(self, connection):
+        self.connection = connection
+        self.root_node = Gio.DBusNodeInfo.new_for_xml(ROOT_XML)
+        self.node = Gio.DBusNodeInfo.new_for_xml(NODE_XML)
+        connection.register_object(
+            "/",
+            self.root_node.interfaces[0],
+            self.handle_root_method_call,
+            None,
+            None,
+        )
+        for iface in self.node.interfaces:
+            connection.register_object(
+                OBJECT_PATH,
+                iface,
+                self.handle_method_call,
+                self.handle_get_property,
+                self.handle_set_property,
+            )
+
+
+def main():
+    loop = GLib.MainLoop()
+    manager = PocknixSteamOSManager()
+
+    def bus_acquired(connection, _name):
+        manager.register(connection)
+
+    def name_lost(_connection, _name):
+        log("nombre perdido o no adquirible; saliendo")
+        loop.quit()
+
+    # Bus de SESIÓN (el daemon corre como usuario deck); nunca system.
+    owner_id = Gio.bus_own_name(
+        Gio.BusType.SESSION,
+        BUS_NAME,
+        Gio.BusNameOwnerFlags.NONE,
+        bus_acquired,
+        None,
+        name_lost,
+    )
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(sig, lambda _signum, _frame: loop.quit())
+    try:
+        loop.run()
+    finally:
+        Gio.bus_unown_name(owner_id)
+
+
+if __name__ == "__main__":
+    main()

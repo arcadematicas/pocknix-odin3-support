@@ -1,0 +1,14 @@
+[Unit]
+Description=Pocknix SteamOS Manager compatibility service (API com.steampowered.SteamOSManager1 en bus de sesion)
+# El servicio debe estar en el bus cuando Steam arranca (Steam detecta la API al inicio).
+After=default.target
+
+[Service]
+Type=dbus
+BusName=com.steampowered.SteamOSManager1
+ExecStart=/usr/local/bin/pocknix-steamos-manager
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

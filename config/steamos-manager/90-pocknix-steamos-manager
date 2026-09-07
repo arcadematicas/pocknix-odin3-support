@@ -1,0 +1,4 @@
+# Pocknix SteamOS Manager: permite al usuario 'deck' (shim D-Bus del bus de
+# sesion, que corre como deck) cambiar el perfil de rendimiento sin password.
+# Solo se permite ese helper concreto, nada mas.
+deck ALL=(root) NOPASSWD: /usr/local/bin/pocknix-power-profile
