@@ -1,0 +1,11 @@
+[Unit]
+Description=pocknix power profile (restore saved pseudo-TDP CPU/GPU frequency caps at boot)
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-power-profile restore
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

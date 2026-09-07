@@ -1,0 +1,12 @@
+[Unit]
+Description=OLED care daemon (pixel refresher on idle)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/oled-care-daemon.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

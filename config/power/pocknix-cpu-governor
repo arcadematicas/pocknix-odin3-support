@@ -1,0 +1,72 @@
+#!/bin/sh
+# pocknix-cpu-governor — get/set the cpufreq scaling governor, persisted in
+# /var/lib/pocknix/cpu-governor and applied to EVERY CPU policy. Setting applies live
+# (the sched_ext / cpufreq layer swaps governors on the fly); the boot oneshot
+# pocknix-cpu-governor.service re-applies the saved value, since the kernel default
+# would otherwise win on every reboot.
+#
+#   pocknix-cpu-governor                 # print the current (saved) governor
+#   pocknix-cpu-governor powersave       # set a governor and apply it live to cpu0-7
+#   pocknix-cpu-governor restore         # re-apply the saved value (used at boot)
+#
+# Governors: powersave | schedutil | performance | ondemand
+MODE_FILE=/var/lib/pocknix/cpu-governor
+DEFAULT=schedutil
+GOVS="powersave schedutil performance ondemand"
+
+saved() {
+  m="$(cat "${MODE_FILE}" 2>/dev/null)"
+  case " ${GOVS} " in
+    *" ${m} "*) ;;
+    *) m="${DEFAULT}" ;;
+  esac
+  printf '%s\n' "${m}"
+}
+
+is_available() {
+  # Any policy advertising the governor is enough — all policies share the cpufreq driver.
+  for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_available_governors; do
+    [ -r "${f}" ] && grep -qw "${1}" "${f}" 2>/dev/null && return 0
+  done
+  return 1
+}
+
+apply() {
+  gov="${1}"
+  if ! is_available "${gov}"; then
+    echo "pocknix-cpu-governor: '${gov}' is not available on this kernel" >&2
+    return 1
+  fi
+  for g in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_governor; do
+    [ -w "${g}" ] || continue
+    if ! echo "${gov}" > "${g}" 2>/dev/null; then
+      echo "pocknix-cpu-governor: cannot write ${g}" >&2
+      return 1
+    fi
+  done
+  return 0
+}
+
+case "${1:-}" in
+  "")
+    saved
+    ;;
+  restore)
+    # Nothing saved yet -> leave the kernel/Pocknix boot default alone.
+    [ -f "${MODE_FILE}" ] || exit 0
+    apply "$(saved)" || exit 1
+    ;;
+  powersave|schedutil|performance|ondemand)
+    mkdir -p "$(dirname "${MODE_FILE}")" 2>/dev/null
+    if ! printf '%s\n' "${1}" > "${MODE_FILE}" 2>/dev/null; then
+      echo "pocknix-cpu-governor: cannot write ${MODE_FILE} (run as root)" >&2
+      exit 1
+    fi
+    apply "${1}" || exit 1
+    echo "cpu governor: ${1}"
+    ;;
+  *)
+    echo "usage: pocknix-cpu-governor [powersave|schedutil|performance|ondemand|restore]" >&2
+    exit 2
+    ;;
+esac

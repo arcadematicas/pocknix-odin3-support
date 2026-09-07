@@ -1,0 +1,12 @@
+[Unit]
+Description=Steam UI watchdog (reinicia steamwebhelper si la UI se congela)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/steamui-watchdog.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

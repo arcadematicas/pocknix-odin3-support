@@ -1,0 +1,12 @@
+[Unit]
+Description=pocknix per-game cpu-governor / power-profile (aplica y restaura segun el juego activo)
+After=multi-user.target pocknix-power-profile.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/pocknix-pergame-power.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -30,6 +30,7 @@ _SESSION_KEYS = (
     "XDG_RUNTIME_DIR",
     "DBUS_SESSION_BUS_ADDRESS",
     "XDG_SESSION_TYPE",
+    "XAUTHORITY",
 )
 _SESSION_PATTERNS = ("steam", "plasma-keyboard", "plasmashell")
 
@@ -98,11 +99,15 @@ def run_refresher(duration: int | None = None, passes: int | None = None) -> dic
         # Game mode: the visible compositor is gamescope and Steam runs on its
         # Xwayland (:0). Root has no X authorization, so run as the deck user
         # against the X11 display (verified working).
+        env = _session_env()
         cmd = [
             "sudo", "-u", "deck",
-            "env", "DISPLAY=:0", "SDL_VIDEODRIVER=x11",
-            str(REFRESHER_BIN), str(total), str(CELL_PX),
+            "env",
         ]
+        if "XAUTHORITY" in env:
+            cmd.append(f"XAUTHORITY={env['XAUTHORITY']}")
+        cmd.extend(["DISPLAY=:0", "SDL_VIDEODRIVER=x11", str(REFRESHER_BIN), str(total), str(CELL_PX)])
+        
         subprocess.Popen(
             cmd,
             stdout=subprocess.DEVNULL,

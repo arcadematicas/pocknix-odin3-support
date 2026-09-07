@@ -1,0 +1,69 @@
+#!/bin/sh
+# pocknix-fancontrol — fan curve, run as root. Nothing else takes PWM control of the fan, so
+# without this it never spins and the device cooks. /var/lib/pocknix/fan-mode is re-read every
+# tick, so switching curves is a bare file write with no service restart. Curves and the quiet
+# default are ROCKNIX's (their system.cfg ships cooling.profile=quiet).
+set -u
+
+MODE_FILE=/var/lib/pocknix/fan-mode
+GAME_MODE_FILE=/run/pocknix/game-mode
+
+FAN_PWM="$(ls /sys/class/hwmon/hwmon*/pwm1 2>/dev/null | head -1)"
+[ -n "${FAN_PWM}" ] || { echo "pocknix-fancontrol: no hwmon pwm1 fan found, exiting"; exit 0; }
+FAN_EN="${FAN_PWM}_enable"
+
+# gpu* not gpuss*: sm8550 names its zones gpuss-N-thermal, sm8250 gpu-top-thermal.
+SENSORS=""
+for z in /sys/devices/virtual/thermal/thermal_zone*/; do
+  case "$(cat "${z}type" 2>/dev/null)" in
+    cpu*|gpu*) SENSORS="${SENSORS} ${z}temp" ;;
+  esac
+done
+[ -n "${SENSORS}" ] || { echo "pocknix-fancontrol: no cpu/gpu thermal zones, exiting"; exit 0; }
+
+# PWM 0-255 against millidegC, highest first; only the thresholds differ per mode.
+# "off" (ROCKNIX UI + CLI, also accepted per-game) is implemented as thresholds no
+# temperature can cross, so the scan below never matches and PWM stays at 0 (the SPEED
+# variable's initial value): the fan is pinned off no matter how hot the SoC gets.
+SPEEDS="255 204 153 119 102 77 51 0"
+
+# Per-game override, "<pid> <fan> <lavd>" from pocknix-proton-wrapper; "-" = not overridden.
+# The pid IS the game session, so a dead pid means no override and exits need no cleanup step.
+effective_mode() {
+  if [ -f "${GAME_MODE_FILE}" ] && read -r pid fan _ < "${GAME_MODE_FILE}"; then
+    if [ -n "${pid}" ] && [ "${fan}" != "-" ] && [ -d "/proc/${pid}" ]; then
+      printf '%s\n' "${fan}"
+      return
+    fi
+  fi
+  cat "${MODE_FILE}" 2>/dev/null
+}
+
+curve_temps() {
+  case "$(effective_mode)" in
+    performance) echo "80000 75000 70000 65000 60000 55000 50000 0" ;;
+    moderate)    echo "85000 80000 75000 70000 65000 60000 55000 0" ;;
+    off)         echo "1000000 1000000 1000000 1000000 1000000 1000000 1000000 1000000" ;;  # unreachable -> SPEED stays 0
+    *)           echo "95000 85000 80000 75000 70000 65000 60000 0" ;;  # quiet (default)
+  esac
+}
+
+# pwm1_enable: 1 = manual control, 0 = back to the hardware's automatic mode.
+[ -e "${FAN_EN}" ] && echo 1 > "${FAN_EN}" 2>/dev/null
+trap '[ -e "${FAN_EN}" ] && echo 0 > "${FAN_EN}" 2>/dev/null; exit 0' INT TERM
+
+LAST=""
+while :; do
+  TEMPS="$(curve_temps)"
+  TEMP="$(awk '{s+=$1;n++} END{printf "%d", (n? s/n : 0)}' ${SENSORS} 2>/dev/null)"
+  i=1; SPEED=0
+  for th in ${TEMPS}; do
+    if [ "${TEMP}" -gt "${th}" ]; then SPEED="$(echo ${SPEEDS} | cut -d' ' -f${i})"; break; fi
+    i=$((i+1))
+  done
+  if [ "${SPEED}" != "${LAST}" ]; then
+    echo "${SPEED}" > "${FAN_PWM}" 2>/dev/null
+    LAST="${SPEED}"
+  fi
+  sleep 3
+done

@@ -38,10 +38,16 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | `config/ayn_mcu.yaml` | InputPlumber fix: Select → QuickAccess (QAM) |
 | `config/hexagonrpcd/` | hexagonrpcd cross-compile + service file para sensores IIO |
 | `config/daemons/` | **Daemons**: `power-button-daemon.py` (botón encendido → pantalla on/off) + `volume-button-daemon.py` (volumen → PipeWire en modo juego) + sus servicios systemd |
-| `config/oled-care/` | **OLED care**: `oled-refresher-auto` (script que lanza el refresher solo en modo juego) + servicio + timer systemd (cada 4h) |
+| `config/oled-care/` | **OLED care**: `oled-care-daemon` (pixel refresher automático tras N min de inactividad) + `oled-refresher-auto` + refresher C |
 | `config/decky-plugin/` | Backend del plugin Decky: `oled_care.py` (pixel refresher, detección de modo juego) |
 | `config/fake-suspend/` | **Fake Suspend**: script + servicio + override systemd para evitar suspensión real (cuelgue SM8750). Apaga pantalla + CPU powersave. |
 | `config/splash/` | **Bootanimation Odin 3**: splash de arranque dibujando en `/dev/fb0` (servicio + reproductor + conversor de frames). Sin Plymouth (no dibuja en el panel DSI). |
+| `config/power/` | **Gestión de potencia**: fan mode `off`, selector de governor CPU, power profiles (pseudo-TDP bajo/medio/alto) y aplicación **por juego** con restauración automática. Todo integrado en PocknixControl. |
+| `config/steamui-watchdog/` | **Watchdog de la UI de Steam**: reinicia steamwebhelper si la UI se congela (bug FEX/CEF). Healthcheck al puerto de debug cada 30s. |
+| `config/fex/` | Variables FEX de estabilidad (`FEX_JIT_BlockLinking=0`, `FEX_GDBServer=0`, `FEX_EARLY_LOG_DISABLE=1`) |
+| `config/mangohud/` | **MangoHud parcheado SM8750**: fuente + config compacta (barra horizontal) + toggle por paddle M2 (F13) |
+| `config/inputplumber/` | Capability map AYN modificado: paddle M2 → tecla F13 (toggle MangoHud) |
+| `config/pocknix-control-plugin/` | Plugin PocknixControl actualizado (backend + frontend): fan off, governor, power profiles (global y per-game) |
 | `config/odin3-display.service.clean` | `odin3-display.service` **limpiado**: sin los `echo 1 > calibrate/reset` (peligrosos) |
 | `BATTERY-ISSUE.md` | Issue de batería: fuel gauge corre en el firmware ADSP (percent viene del firmware), descalibrado `Debug_Board`, solución = ciclo de carga en Android |
 | `KSCREEN-ISSUE.md` | Issue abierto: KScreen no ve el panel en escritorio |
@@ -74,6 +80,26 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
     y el percent llega directo del firmware (sin perfil cargado:
     `MODEL_NAME=Debug_Board`). Útil para no perder tiempo "parcheando en el
     kernel" algo que solo se arregla recalibrando en Android.
+11. **MangoHud SM8750 parcheado** — el MangoHud genérico no lee el GPU del SM8750
+    mainline (busca rutas kgsl que no existen). Los parches de ROCKNIX apuntan a
+    `gpuss0_thermal` y `/sys/class/devfreq/3d00000.gpu`. Compilación cruzada
+    aarch64 desde x86 (rootfs + qemu). Ojo: mangoapp es autocontenido → hay que
+    reemplazar su binario, no solo las libs.
+12. **Watchdog de UI para FEX/CEF** — steamwebhelper expone un puerto de debug
+    (`127.0.0.1:8080`); si deja de responder, la UI está congelada → reiniciarlo.
+    Healthcheck sencillo que complementa el fix parcial de FEX.
+13. **Pseudo-TDP en SM8750** — el SM8750 mainline **no expone nodo de TDP**; la
+    vía práctica es limitar frecuencias máx de CPU (`scaling_max_freq`) y GPU
+    (`devfreq max_freq`). Perfiles bajo/medio/alto con restauración del snapshot
+    original.
+14. **Patrón per-game con restauración por PID** — el wrapper de proton escribe
+    `/run/pocknix/game-mode` con `pid fan lavd governor profile`; los daemons
+    aplican el tweak mientras el PID vive y restauran el global al morir. Campos
+    **añadidos al final** para no romper a los lectores existentes
+    (`read -r pid fan _`). Reutilizable para cualquier tweak por juego.
+15. **Plugin Decky en la imagen** — PocknixControl vive en
+    `/usr/share/decky-plugins/` y Decky lo copia a `homebrew/` al arrancar:
+    los cambios al plugin hay que hacerlos en la **fuente** o se pierden.
 
 ## Notas
 - Basado en kernel 7.2.0 (sm8750), rebasado sobre el árbol de ROCKNIX.

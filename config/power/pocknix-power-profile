@@ -1,0 +1,140 @@
+#!/bin/sh
+# pocknix-power-profile — pseudo-TDP power profiles (bajo|medio|alto) for the Odin 3
+# (Snapdragon 8 Elite / SM8750). Mainline exposes no TDP/APC sysfs node for this SoC, so a
+# profile is enforced as MAX-FREQUENCY CAPS: each CPU policy's scaling_max_freq plus the
+# Adreno devfreq max_freq. Setting applies live; pocknix-power-profile.service re-applies
+# the saved profile at boot (boot order after local-fs).
+#
+#   bajo:  every CPU cluster capped near 1.8 GHz, GPU capped at 525 MHz
+#   medio: prime cluster (cpu6-7) capped near 2.85 GHz, perf cluster (cpu0-5) left at full,
+#          GPU capped at 832 MHz
+#   alto:  no limits — restore cpuinfo_max_freq on every CPU and 1100000000 on the GPU
+#
+# The caps are picked from the kernel's scaling_available_frequencies so every write lands
+# on a real OPP. The values in place BEFORE the first non-alto set are captured in
+# /var/lib/pocknix/power-profile-orig and are what "alto" restores (cpuinfo_max_freq is
+# static, so the capture is belt-and-braces).
+#
+#   pocknix-power-profile             # print the current (saved) profile
+#   pocknix-power-profile bajo        # set a profile and apply it live
+#   pocknix-power-profile restore     # re-apply the saved profile (used at boot)
+
+PROFILE_FILE=/var/lib/pocknix/power-profile
+ORIG_FILE=/var/lib/pocknix/power-profile-orig
+DEFAULT=alto
+GPU_DEV=/sys/class/devfreq/3d00000.gpu
+GPU_FULL=1100000000
+PROFILES="bajo medio alto"
+
+saved() {
+  p="$(cat "${PROFILE_FILE}" 2>/dev/null)"
+  case " ${PROFILES} " in
+    *" ${p} "*) ;;
+    *) p="${DEFAULT}" ;;
+  esac
+  printf '%s\n' "${p}"
+}
+
+# Max cap in kHz for a CPU index under a limiting profile; "alto" never calls this.
+cap_for() {  # $1=profile  $2=cpu index
+  case "${1}" in
+    bajo)
+      if [ "${2}" -lt 6 ]; then echo 1785600; else echo 1689600; fi
+      ;;
+    medio)
+      if [ "${2}" -lt 6 ]; then echo 3532800; else echo 2841600; fi
+      ;;
+  esac
+}
+
+# CPU index from any /sys/devices/system/cpu/cpuN/... path (N can be multi-digit).
+cpu_idx() {
+  p="${1#/sys/devices/system/cpu/cpu}"
+  p="${p%%/*}"
+  printf '%s\n' "${p}"
+}
+
+save_originals() {
+  # First time only: snapshot the un-capped hardware maxima (cpuinfo_max_freq per CPU and
+  # the GPU devfreq max_freq) so "alto" can always hand the machine back to its original
+  # state even if this script is re-run after an update.
+  [ -f "${ORIG_FILE}" ] && return 0
+  : > "${ORIG_FILE}" 2>/dev/null || return 0
+  for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/cpuinfo_max_freq; do
+    [ -r "${f}" ] || continue
+    echo "cpu$(cpu_idx "${f}")=$(cat "${f}" 2>/dev/null)" >> "${ORIG_FILE}"
+  done
+  # GPU "original" is the top of available_frequencies, NOT the live max_freq: the live
+  # value may already carry a cap from an earlier profile, which would make "alto" restore
+  # the cap instead of handing the GPU back un-limited.
+  if [ -r "${GPU_DEV}/available_frequencies" ]; then
+    gpu_orig=""
+    for _tok in $(cat "${GPU_DEV}/available_frequencies" 2>/dev/null); do
+      gpu_orig="${_tok}"          # available_frequencies is ascending; last = max
+    done
+    gpu_orig="${gpu_orig:-${GPU_FULL}}"
+    echo "gpu=${gpu_orig}" >> "${ORIG_FILE}"
+  elif [ -r "${GPU_DEV}/max_freq" ]; then
+    echo "gpu=$(cat "${GPU_DEV}/max_freq" 2>/dev/null)" >> "${ORIG_FILE}"
+  fi
+}
+
+apply_profile() {
+  p="${1}"
+
+  # GPU cap. For alto fall back to the captured original, then to the full 1.1 GHz.
+  if [ -e "${GPU_DEV}/max_freq" ]; then
+    case "${p}" in
+      bajo)  gpu=525000000 ;;
+      medio) gpu=832000000 ;;
+      alto)
+        gpu="$(grep '^gpu=' "${ORIG_FILE}" 2>/dev/null | cut -d= -f2)"
+        gpu="${gpu:-${GPU_FULL}}"
+        ;;
+    esac
+    echo "${gpu}" > "${GPU_DEV}/max_freq" 2>/dev/null
+  fi
+
+  # Per-CPU scaling_max_freq. alto restores cpuinfo_max_freq (from the capture when
+  # present, straight off sysfs otherwise since it never changes).
+  for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_max_freq; do
+    [ -w "${f}" ] || continue
+    n="$(cpu_idx "${f}")"
+    if [ "${p}" = alto ]; then
+      cap="$(grep "^cpu${n}=" "${ORIG_FILE}" 2>/dev/null | cut -d= -f2)"
+      if [ -z "${cap}" ]; then
+        cap="$(cat "/sys/devices/system/cpu/cpu${n}/cpufreq/cpuinfo_max_freq" 2>/dev/null)"
+      fi
+    else
+      cap="$(cap_for "${p}" "${n}")"
+    fi
+    [ -n "${cap}" ] && echo "${cap}" > "${f}" 2>/dev/null
+  done
+}
+
+case "${1:-}" in
+  "")
+    saved
+    ;;
+  restore)
+    # Nothing saved yet -> leave the boot defaults alone.
+    [ -f "${PROFILE_FILE}" ] || exit 0
+    apply_profile "$(saved)" || exit 1
+    ;;
+  bajo|medio|alto)
+    if [ "${1}" != alto ]; then
+      save_originals
+    fi
+    mkdir -p "$(dirname "${PROFILE_FILE}")" 2>/dev/null
+    if ! printf '%s\n' "${1}" > "${PROFILE_FILE}" 2>/dev/null; then
+      echo "pocknix-power-profile: cannot write ${PROFILE_FILE} (run as root)" >&2
+      exit 1
+    fi
+    apply_profile "${1}" || exit 1
+    echo "power profile: ${1}"
+    ;;
+  *)
+    echo "usage: pocknix-power-profile [bajo|medio|alto|restore]" >&2
+    exit 2
+    ;;
+esac

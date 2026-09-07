@@ -1,0 +1,11 @@
+[Unit]
+Description=pocknix CPU governor (restore saved cpufreq scaling governor at boot)
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-cpu-governor restore
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
