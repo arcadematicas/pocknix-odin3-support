@@ -12,7 +12,10 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
   Odin 3 vía driver `rsinput`).
 - ✅ **WiFi** (NetworkManager) + **cuenta de Steam** + **juegos**.
 - ✅ **Audio** — sound card `SM8750-AYN` funciona (ADSP habilitado).
-- ✅ **Batería** — `pmic_glink` reporta capacidad correctamente.
+- ✅ **Batería** — `pmic_glink` reporta capacidad correctamente (aunque el fuel
+  gauge del ADSP puede venir descalibrado de fábrica; ver `BATTERY-ISSUE.md`).
+- ✅ **Bootanimation Odin 3** — splash de arranque con la animación oficial del
+  Odin 3 dibujada en `/dev/fb0` (sin Plymouth, ver `config/splash/`).
 - ✅ **ADSP + CDSP** corriendo (`adsp`/`cdsp` remoteproc `running`).
 - ✅ **QAM** — botón Select abre el menú Quick Access.
 - ⚠️ **Escritorio (Plasma Mobile)**: arranca, pero **KScreen no enumera el
@@ -37,6 +40,10 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | `config/daemons/` | **Daemons**: `power-button-daemon.py` (botón encendido → pantalla on/off) + `volume-button-daemon.py` (volumen → PipeWire en modo juego) + sus servicios systemd |
 | `config/oled-care/` | **OLED care**: `oled-refresher-auto` (script que lanza el refresher solo en modo juego) + servicio + timer systemd (cada 4h) |
 | `config/decky-plugin/` | Backend del plugin Decky: `oled_care.py` (pixel refresher, detección de modo juego) |
+| `config/fake-suspend/` | **Fake Suspend**: script + servicio + override systemd para evitar suspensión real (cuelgue SM8750). Apaga pantalla + CPU powersave. |
+| `config/splash/` | **Bootanimation Odin 3**: splash de arranque dibujando en `/dev/fb0` (servicio + reproductor + conversor de frames). Sin Plymouth (no dibuja en el panel DSI). |
+| `config/odin3-display.service.clean` | `odin3-display.service` **limpiado**: sin los `echo 1 > calibrate/reset` (peligrosos) |
+| `BATTERY-ISSUE.md` | Issue de batería: fuel gauge corre en el firmware ADSP (percent viene del firmware), descalibrado `Debug_Board`, solución = ciclo de carga en Android |
 | `KSCREEN-ISSUE.md` | Issue abierto: KScreen no ve el panel en escritorio |
 
 ## Lo más valioso para upstream
@@ -56,6 +63,17 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
    (solo en modo juego, cada 4h).
 7. **FEX fix** — `FEX_EARLY_LOG_DISABLE=1` para reducir crashes de
    `steamwebhelper` (bug CEF + FEX, fix parcial upstream 2603).
+8. **Fake Suspend** — evita el cuelgue del SM8750 en suspensión real. Intercepta
+   `systemd-suspend.service` y ejecuta un "fake suspend" (pantalla off + CPU
+   powersave) seguro y despertable al instante.
+9. **Bootanimation en fb0** — el patrón para splash de arranque en handhelds con
+   panel DSI sin EDID: **dibujar en `/dev/fb0`** desde un servicio systemd (como
+   `rocknix-splash`), no Plymouth. Incluye la extracción del bootanimation
+   desde los `super_*.img` fragmentados de la ROM Android.
+10. **Batería** — diagnóstico: el fuel gauge del Odin 3 corre en el firmware ADSP
+    y el percent llega directo del firmware (sin perfil cargado:
+    `MODEL_NAME=Debug_Board`). Útil para no perder tiempo "parcheando en el
+    kernel" algo que solo se arregla recalibrando en Android.
 
 ## Notas
 - Basado en kernel 7.2.0 (sm8750), rebasado sobre el árbol de ROCKNIX.

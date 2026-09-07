@@ -1,0 +1,10 @@
+[Unit]
+Description=Odin 3 boot splash (fb0)
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/odin3-splash-play.sh
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Force ODIN 3 display on, rotation, sensors, battery
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c "echo on > /sys/class/drm/card0-DSI-1/status; echo 3072 > /sys/class/backlight/ae94000.dsi.0/brightness; echo 3 > /sys/class/drm/card0-DSI-1/rotation 2>/dev/null; for mod in bmi260_i2c bmi260_spi bmi270 bma400 bmi088 bmi160; do modprobe  2>/dev/null; done; for mod in qpnp_smb5 qpnp_vm_bms smb1351 smb5_charger; do modprobe  2>/dev/null; done"
+
+[Install]
+WantedBy=multi-user.target
