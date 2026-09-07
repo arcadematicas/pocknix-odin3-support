@@ -19,6 +19,43 @@ CPU_GOVERNORS = ("powersave", "schedutil", "performance", "ondemand")
 POWER_PROFILES = ("bajo", "medio", "alto")
 # Fichero pid-tagged que releen pocknix-fancontrol / pocknix-lavd / pergame-power cada ~3s.
 GAME_MODE_FILE = Path("/run/pocknix/game-mode")
+# Claves de entorno que identifican el appid de Steam en /proc/<pid>/environ; mismo orden de
+# prioridad que appid() en pocknix-proton-wrapper.
+_APPID_ENV_KEYS = ("STEAM_COMPAT_APP_ID", "SteamAppId", "SteamGameId")
+
+
+def _appid_of_pid(pid):
+    # Appid Steam (str) anunciado en el entorno del proceso pid, o None si no lleva ninguna de
+    # las claves _APPID_ENV_KEYS o el valor no es solo digitos.
+    try:
+        raw_env = (Path("/proc") / str(pid) / "environ").read_bytes()
+    except OSError:
+        return None
+    for key in _APPID_ENV_KEYS:
+        needle = key.encode() + b"="
+        for entry in raw_env.split(b"\0"):
+            if entry.startswith(needle):
+                value = entry[len(needle):].decode("utf-8", "replace").strip()
+                if value.isdigit():
+                    return value
+    return None
+
+
+def _pids_for_appid(appid):
+    # Pids vivos (int, ascendente) cuyo entorno anuncia ese appid; un juego puede tener varios
+    # procesos SteamAppId-tagged (wrapper + juego), cualquiera sirve de ancla para el override.
+    pids = []
+    try:
+        procs = list(Path("/proc").iterdir())
+    except OSError:
+        return pids
+    for proc in procs:
+        if not proc.name.isdigit():
+            continue
+        # Si el proceso muere entre el listado y la lectura, _appid_of_pid devuelve None.
+        if _appid_of_pid(proc.name) == appid:
+            pids.append(int(proc.name))
+    return sorted(pids)
 
 
 def mesa_versions():
@@ -124,52 +161,55 @@ def sanitize_tweaks(data):
 
 def refresh_running_game_modes(data):
     # Re-aplica los tweaks per-juego EN VIVO al juego en curso. pocknix-proton-wrapper solo
-    # escribe /run/pocknix/game-mode al lanzar el juego (conserva su pid via execv); los
-    # daemons (fancontrol, lavd, pergame-power) releen ese fichero cada ~3s, asi que
-    # re-escribiendolo aqui un cambio de ajuste con el juego abierto surte efecto sin relanzar.
+    # escribe /run/pocknix/game-mode al lanzar juegos que pasan por su compat-tool (conserva su
+    # pid via execv); los demas (atajos que lanzan un script propio) jamas crean el fichero, asi
+    # que este refresco detecta ademas el proceso del juego por su appid en /proc y escribe el
+    # fichero con ESE pid, para que los daemons (fancontrol, lavd, pergame-power), que releen
+    # cada ~3s, apliquen los ajustes del juego abierto sin relanzarlo.
+    games = data.get("games")
+    if not isinstance(games, dict):
+        return
+    candidates = [gid for gid, game in games.items()
+                  if isinstance(game, dict) and game.get("enabled") is True]
+
+    # Ruta rapida (preferida): el fichero existe, su pid (el wrapper) esta vivo y su appid es un
+    # juego habilitado que sigue corriendo => ese pid existente es la referencia autoritativa.
+    appid = None
+    pid = None
     try:
         line = GAME_MODE_FILE.read_text(encoding="utf-8").strip()
     except OSError:
-        # Sin fichero no hay juego corriendo: el ajuste se aplicara al proximo lanzamiento.
-        return
-    fields = line.split()
-    if not fields or not fields[0].isdigit():
-        return
-    pid = fields[0]
-    # Sin proceso vivo no hay override que refrescar.
-    if not (Path("/proc") / pid).exists():
-        return
+        line = None
+    if line:
+        fields = line.split()
+        if fields and fields[0].isdigit():
+            file_pid = int(fields[0])
+            if (Path("/proc") / str(file_pid)).exists():
+                file_appid = _appid_of_pid(file_pid)
+                if file_appid in candidates and _pids_for_appid(file_appid):
+                    appid, pid = file_appid, file_pid
 
-    # Identifica el juego en curso por el entorno del proceso (mismo orden de claves y
-    # validacion que appid() en pocknix-proton-wrapper).
-    appid = None
-    try:
-        raw_env = (Path("/proc") / pid / "environ").read_bytes()
-    except OSError:
-        return
-    for key in ("STEAM_COMPAT_APP_ID", "SteamAppId", "SteamGameId"):
-        needle = key.encode() + b"="
-        for entry in raw_env.split(b"\0"):
-            if entry.startswith(needle):
-                value = entry[len(needle):].decode("utf-8", "replace").strip()
-                if value.isdigit():
-                    appid = value
-                    break
-        if appid is not None:
-            break
-    if appid is None:
-        return
+    # Fallback: sin fichero (o con pid muerto/ajeno) se busca el juego habilitado con proceso
+    # vivo escaneando /proc; si hay varios, gana el appid con el pid minimo (sesion mas antigua).
+    if pid is None:
+        best = None
+        for gid in candidates:
+            pids = _pids_for_appid(gid)
+            if pids and (best is None or pids[0] < best[0]):
+                best = (pids[0], gid)
+        if best is None:
+            # Ningun juego habilitado esta corriendo: sin juego del que aplicar, nada que crear.
+            return
+        pid, appid = best
 
     # Misma logica de merged settings que el wrapper: base = global (solo strings) y, si el
     # juego existe con "enabled": true, sus valores (solo strings) ganan al hacer update.
     merged = {}
     if isinstance(data.get("global"), dict):
         merged.update({k: v for k, v in data["global"].items() if isinstance(v, str)})
-    games = data.get("games")
-    if isinstance(games, dict):
-        game = games.get(str(appid))
-        if isinstance(game, dict) and game.get("enabled") is True:
-            merged.update({k: v for k, v in game.items() if isinstance(v, str)})
+    game = games.get(appid)
+    if isinstance(game, dict) and game.get("enabled") is True:
+        merged.update({k: v for k, v in game.items() if isinstance(v, str)})
 
     # Valor vacio o fuera de la lista de modos conocidos => "-" (sin override para el campo).
     def _pick(value, allowed):
@@ -181,12 +221,22 @@ def refresh_running_game_modes(data):
     profile = _pick(merged.get("powerProfile"), POWER_PROFILES)
 
     if fan == "-" and lavd == "-" and governor == "-" and profile == "-":
-        # Sin ningun override equivale a "modo global": borrar el fichero y los daemons
-        # revierten a su logica global (mismo efecto que no haber escrito nunca un override).
+        # Sin ningun override equivale a "modo global": se borra el fichero para que los daemons
+        # reviertan a su logica global, pero SOLO si el fichero actual pertenece al juego elegido
+        # (mismo appid) o su pid ya murio; un override de OTRO juego vivo no se toca.
         try:
-            GAME_MODE_FILE.unlink(missing_ok=True)
+            cur = GAME_MODE_FILE.read_text(encoding="utf-8").strip()
         except OSError:
-            pass
+            return
+        cur_fields = cur.split()
+        if cur_fields and cur_fields[0].isdigit():
+            cur_pid = int(cur_fields[0])
+            cur_alive = (Path("/proc") / str(cur_pid)).exists()
+            if not cur_alive or _appid_of_pid(cur_pid) == appid:
+                try:
+                    GAME_MODE_FILE.unlink(missing_ok=True)
+                except OSError:
+                    pass
         return
     # Mismo pid y mismo formato de UNA linea (5 campos, un espacio entre ellos) que el wrapper.
     atomically_write(GAME_MODE_FILE, f"{pid} {fan} {lavd} {governor} {profile}\n", 0o644)
