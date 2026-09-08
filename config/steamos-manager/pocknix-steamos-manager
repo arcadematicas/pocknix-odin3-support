@@ -18,11 +18,11 @@ helper local:
 Dependencias: solo stdlib + PyGObject (Gio/GLib). Sin dbus-python.
 """
 
+import os
 import signal
 import subprocess
 import sys
 import warnings
-
 import gi
 
 gi.require_version("Gio", "2.0")
@@ -338,10 +338,11 @@ class PocknixSteamOSManager:
             invocation.return_value(None)
             return
         if iface == IFACE_SESSION:
-            # Pocknix gestiona el cambio de sesión en ~/.bash_profile de deck
-            # (no por D-Bus). Steam sondea estos métodos en SteamOS; aquí se
-            # devuelven respuestas limpias sin cambiar de sesión. Si algún día
-            # Pocknix quiere switch por D-Bus, se conecta aquí.
+            # Pocknix cambia de sesión vía el supervisor ~/.bash_profile de deck:
+            # steamos-session-select escribe la elección en el state file y
+            # SIGTERM al compositor; el bucle supervisor relanza en la nueva
+            # sesión (gamescope o plasma). Steam llama a estos métodos por
+            # D-Bus cuando usas "Cambiar a escritorio" / "Volver a modo juego".
             if method == "ValidDesktopSessions":
                 invocation.return_value(
                     GLib.Variant("(as)", (list(self.valid_desktop_sessions),))
@@ -351,13 +352,47 @@ class PocknixSteamOSManager:
                 # Steam lo sondea en SteamOS; Pocknix no crea sesiones temporales.
                 invocation.return_value(None)
                 return
-            if method in ("SwitchToDesktopMode", "SwitchToGameMode",
-                          "SwitchToLoginMode", "SwitchToDesktopSession"):
-                # No-op: Pocknix no alterna sesiones por esta vía. Devolver
-                # éxito para que Steam no marque la API como rota.
+            if method == "SwitchToDesktopMode":
+                # El usuario pide el escritorio desde Steam.
+                self._switch_session("plasma", invocation)
+                return
+            if method == "SwitchToGameMode":
+                # El usuario vuelve al modo juego desde el escritorio.
+                self._switch_session("gamescope", invocation)
+                return
+            if method == "SwitchToDesktopSession":
+                # Mismo efecto que SwitchToDesktopMode (Pocknix tiene un único
+                # escritorio: Plasma/KDE).
+                self._switch_session("plasma", invocation)
+                return
+            if method == "SwitchToLoginMode":
+                # Sin login manager: ignorar (devolver éxito sin hacer nada).
                 invocation.return_value(None)
                 return
         invocation.return_dbus_error(f"{BUS_NAME}.Error.UnknownMethod", method)
+
+    def _switch_session(self, target, invocation):
+        """Ejecuta steamos-session-select para cambiar a gamescope|plasma."""
+        env = dict(os.environ)
+        env.setdefault("HOME", "/home/deck")
+        env.setdefault("XDG_STATE_HOME", "/home/deck/.local/state")
+        env.setdefault("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+        try:
+            proc = subprocess.run(
+                ["steamos-session-select", target],
+                capture_output=True, text=True, timeout=10,
+                env=env, check=False,
+            )
+            if proc.returncode != 0:
+                log(f"switch a {target} falló (rc={proc.returncode}): {proc.stderr.strip()}")
+                invocation.return_dbus_error(
+                    f"{BUS_NAME}.Error.SwitchFailed", proc.stderr.strip())
+                return
+            log(f"switch a {target} solicitado")
+            invocation.return_value(None)
+        except Exception as exc:  # noqa: BLE001
+            log(f"error ejecutando steamos-session-select {target}: {exc}")
+            invocation.return_dbus_error(f"{BUS_NAME}.Error.SwitchFailed", str(exc))
 
     def handle_get_property(self, _conn, _sender, _path, iface, prop):
         try:
