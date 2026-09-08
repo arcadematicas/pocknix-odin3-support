@@ -1,0 +1,150 @@
+#!/bin/bash
+# pocknix-steam — launch the native ARM64 Steam client in Big Picture under gamescope.
+set -e
+
+export HOME="${HOME:-/root}"
+STEAM="${HOME}/.local/share/Steam"
+CLIENT_DIR="${STEAM}/steamrtarm64"
+CLIENT="${CLIENT_DIR}/steam"
+
+# Order matters: the client's own dir FIRST (its bundled libvpx.so.6 shadows the system one),
+# then the aarch64 shim dir.
+LDLP="${CLIENT_DIR}:${STEAM}/lib/aarch64-linux-gnu"
+
+# Seeded at BUILD time, so an absent tree is unrecoverable here, not something to fall back from.
+if [ ! -x "${CLIENT}" ]; then
+  echo "[pocknix-steam] native Steam client missing at ${CLIENT} — the build-time bake didn't seed it." >&2
+  exit 1
+fi
+
+# Steam resolves its legacy module paths (bin/vgui2_s.dll ...) RELATIVE TO getcwd, and gamescope
+# passes our cwd to the client: launching from $HOME gives "Could not load module 'bin/vgui2_s.dll'".
+cd "${CLIENT_DIR}" 2>/dev/null || { echo "missing ${CLIENT_DIR}" >&2; exit 1; }
+
+# Marker Decky's CEF remote-debugging connection looks for.
+touch "${STEAM}/.cef-enable-remote-debugging" 2>/dev/null || true
+
+# Re-pin EVERY launch: the ARM64 Big-Picture client only works on steamdeck_publicbeta, and
+# anything that flips the channel leaves Steam reading "installed version 0", stuck on
+# "Installing update" with steamwebhelper crash-looping until this reasserts it.
+mkdir -p "${STEAM}/package"
+echo steamdeck_publicbeta > "${STEAM}/package/beta"
+
+# Must precede Steam, which enumerates controllers once at startup; desktop mode leaves the pad
+# on xb360, and only `deck` gives Steam Input the Steam-native pad (Guide, QAM, L4/L5).
+if command -v pocknix-gamepad-target >/dev/null 2>&1; then
+  pocknix-gamepad-target deck || true
+fi
+
+# Must run BEFORE gamescope: Steam reads compatibilitytools.d only at startup.
+/usr/bin/pocknix-proton-prep
+
+# A session switch SIGTERMs gamescope but the Steam client re-parents and survives holding its
+# single-instance lock, so the next launch exits "Steam is already running" and gamescope
+# hot-loops. Safe only because this runs at session START, when no legitimate Steam is alive.
+uid="$(id -u)"
+if pgrep -u "${uid}" -x steam >/dev/null 2>&1 || pgrep -u "${uid}" -f steamwebhelper >/dev/null 2>&1; then
+  echo "[pocknix-steam] clearing a stale Steam from a previous session..."
+  env LD_LIBRARY_PATH="${LDLP}" "${CLIENT}" -shutdown >/dev/null 2>&1 || true
+  for _ in $(seq 1 8); do pgrep -u "${uid}" -x steam >/dev/null 2>&1 || break; sleep 1; done
+  pkill -u "${uid}" -KILL -x steam        2>/dev/null || true
+  pkill -u "${uid}" -KILL -f steamwebhelper 2>/dev/null || true
+fi
+
+# Do NOT seed a global default compat tool here: a CompatToolMapping "0" entry makes Steam refuse
+# to install Valve compat tools with "Invalid platform" (steam-for-linux issue 6874).
+
+# Must stay HERE, before Steam starts: Steam rewrites shortcuts.vdf on exit, so a sync against a
+# live client is clobbered.
+if command -v pocknix-steam-sync >/dev/null 2>&1; then
+  pocknix-steam-sync || echo "[pocknix-steam] Steam-library sync failed (non-fatal)"
+fi
+
+# /etc override is sourced last so it wins.
+for _dc in /usr/lib/pocknix/device.conf /etc/pocknix/device.conf; do
+  [ -r "${_dc}" ] && . "${_dc}"
+done
+W="${POCKNIX_PANEL_W:-1080}"; H="${POCKNIX_PANEL_H:-1920}"
+REFRESH="${POCKNIX_PANEL_REFRESH:-60}"; ORIENT="${POCKNIX_PANEL_ORIENT:-left}"
+PANEL_MM="${POCKNIX_PANEL_MM:-177x100}"
+# device.conf carries the panel's NATIVE portrait geometry; composite rotation wants
+# -W/-H in LOGICAL landscape, so transpose for 90/270.
+case "${ORIENT}" in
+  left|right) GS_W="${H}"; GS_H="${W}" ;;
+  *)          GS_W="${W}"; GS_H="${H}" ;;
+esac
+
+# Do NOT add a core pin here: scx_lavd places the bursty threads itself and needs the littles free
+# for batch work; a hard taskset fights it.
+
+# Log to a file, never the tty: tty1 is what shows between compositors on a session switch and
+# must stay blank. Do NOT exec gamescope either, since the session switch pkills it by name.
+GS_LOG="${HOME}/pocknix-steam.log"
+# gamepadui sizes its UI from the output's physical mm; the ~96 DPI default reads as a desktop
+# monitor and renders the UI tiny. -noshaders keeps fossilize from stealing CPU during play.
+#
+# SteamOS-style session: gamescope runs STANDALONE with --steam (-e) + ready socket (-R) +
+# stats pipe (-T), and Steam is launched as a SIBLING with DISPLAY/GAMESCOPE_WAYLAND_DISPLAY
+# read from the ready socket. Embedded `gamescope -e -- steam` leaves Steam's DisplayManager on
+# "default" (not "wayland: modeset") and the QAM overlay never composes over games.
+# (Model: SteamOS-Ubuntu gamescope-session / ChimeraOS gamescope-session-plus.)
+GS_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pocknix-gamescope.sock"
+GS_STATS="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pocknix-gamescope.stats"
+rm -f "${GS_SOCKET}" "${GS_STATS}" 2>/dev/null || true
+mkfifo "${GS_SOCKET}" "${GS_STATS}" 2>/dev/null || true
+
+env -u WAYLAND_DISPLAY FEX_EARLY_LOG_DISABLE=1 \
+  GAMESCOPE_FAKE_OUTPUT_MM="${PANEL_MM}" \
+  gamescope -W "${GS_W}" -H "${GS_H}" -r "${REFRESH}" \
+    --xwayland-count 2 --backend drm \
+    --force-orientation "${ORIENT}" --force-composition-rotation \
+    --force-windows-fullscreen --scaler fit --filter linear \
+    --steam -R "${GS_SOCKET}" -T "${GS_STATS}" \
+  >"${GS_LOG}" 2>&1 &
+GS_PID=$!
+
+# Wait for gamescope to be ready and grab the display names from the ready socket.
+if ! read -r -t 20 GS_DISPLAY GS_WL_DISPLAY <>"${GS_SOCKET}"; then
+  echo "[pocknix-steam] gamescope ready socket timed out (pid=${GS_PID})" >&2
+  kill -9 "${GS_PID}" 2>/dev/null || true
+  exit 1
+fi
+export DISPLAY="${GS_DISPLAY}"
+export GAMESCOPE_WAYLAND_DISPLAY="${GS_WL_DISPLAY}"
+# CEF/Qt must NOT see a normal Wayland session display; they stay on Xwayland.
+unset WAYLAND_DISPLAY XDG_SESSION_TYPE || true
+
+# Steam Deck session gates — these tell the client it is a SteamOS console.
+export SteamDeck=1
+export _STEAM_SETENV_MANAGER=1
+export STEAM_USE_MANGOAPP=1
+export STEAM_MULTIPLE_XWAYLANDS=1
+export ENABLE_GAMESCOPE_WSI=1
+export STEAM_GAMESCOPE_DYNAMIC_FPSLIMITER=1
+export STEAM_MANGOAPP_PRESETS_SUPPORTED=1
+
+# MangoHUD as a SIBLING with respawn (ChimeraOS/SteamOS-Ubuntu model). We use OUR config
+# (~/.config/MangoHud/MangoHud.conf) so the F13 back-paddle toggle daemon keeps working.
+# MANGOHUD_CONFIG=read_cfg makes mangoapp re-read the file on SIGHUP (the toggle daemon
+# sends SIGHUP after flipping no_display).
+pkill -x mangoapp 2>/dev/null || true
+(
+  export MANGOHUD_CONFIG=read_cfg
+  export MANGOHUD_CONFIGFILE="${HOME}/.config/MangoHud/MangoHud.conf"
+  # Give gamescope a moment to fully settle before mangoapp grabs the display.
+  sleep 2
+  while true; do
+    mangoapp || true
+    sleep 2
+  done
+) &
+MANGO_PID=$!
+
+# Steam as a SIBLING of gamescope (not embedded). Keep the same client flags as before.
+env LD_LIBRARY_PATH="${LDLP}" "${CLIENT}" \
+  -gamepadui -steamos3 -steampal -steamdeck -noshaders \
+  >>"${GS_LOG}" 2>&1
+
+# Steam exited: tear down the mangoapp sibling too.
+kill "${MANGO_PID}" 2>/dev/null || true
+pkill -x mangoapp 2>/dev/null || true

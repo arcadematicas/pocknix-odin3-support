@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""MangoHud toggle daemon.
+"""MangoHud toggle daemon (v2 — resiliente a reinicios de InputPlumber).
 
 Escucha la tecla F13 (KEY_F13=183) emitida por el teclado virtual de
 InputPlumber (el paddle trasero M2 del Odin 3 se re-mapeo a F13 en
 ayn_mcu.yaml) y alterna `no_display` en la config de MangoHud.
 
-mangoapp relee ~/.config/MangoHud/MangoHud.conf periodicamente, asi que al
+mangoapp relee ~/.config/MangoHud/MangoHud.conf al recibir SIGHUP, asi que al
 alternar el archivo el HUD se oculta/muestra en ~1s.
+
+v2: en vez de buscar el teclado UNA vez al arrancar y salir si no esta (o si
+InputPlumber lo recrea), re-busca periodicamente y reabre el fd. Asi sobrevive
+a reinicios de InputPlumber, cambios de sesion y al modelo gamescope --steam.
 """
 import os
 import struct
@@ -18,6 +22,7 @@ import subprocess
 
 KEY_F13 = 183
 CONF = "/home/deck/.config/MangoHud/MangoHud.conf"
+RESCAN_INTERVAL = 5  # segundos entre re-busquedas del teclado
 
 
 def log(msg):
@@ -68,33 +73,58 @@ def toggle():
         log(f"Error alternando config: {e}")
 
 
+def listen_loop(fd):
+    """Lee eventos del fd; devuelve False si el fd murio (InputPlumber recreo el teclado)."""
+    while True:
+        try:
+            data = os.read(fd, 24)
+            if len(data) == 24:
+                _sec, _usec, type_, code, value = struct.unpack("llHHi", data)
+                if type_ == 1 and code == KEY_F13 and value == 1:
+                    toggle()
+        except BlockingIOError:
+            time.sleep(0.02)
+        except OSError:
+            log("Error leyendo (probable reinicio de InputPlumber), re-buscando...")
+            return False
+
+
 def main():
-    log("Daemon iniciado")
-    dev = find_ip_keyboard()
-    if not dev:
-        log("No encontre el teclado virtual de InputPlumber (saldre, systemd reintenta)")
-        return
-    log(f"Escuchando {dev} por F13")
-    try:
-        fd = os.open(dev, os.O_RDONLY | os.O_NONBLOCK)
-    except OSError as e:
-        log(f"No pude abrir {dev}: {e}")
-        return
-    try:
-        while True:
-            try:
-                data = os.read(fd, 24)
-                if len(data) == 24:
-                    _sec, _usec, type_, code, value = struct.unpack("llHHi", data)
-                    if type_ == 1 and code == KEY_F13 and value == 1:
-                        toggle()
-            except BlockingIOError:
-                time.sleep(0.02)
-            except OSError:
-                log("Error leyendo (probable reinicio de InputPlumber), salgo")
-                break
-    finally:
-        os.close(fd)
+    log("Daemon v2 iniciado (re-busca teclado cada %ds)" % RESCAN_INTERVAL)
+    last_rescan = 0
+    fd = None
+    while True:
+        # Re-busca el teclado periodicamente (y siempre que el fd muera).
+        now = time.monotonic()
+        if fd is None or (now - last_rescan) > RESCAN_INTERVAL:
+            dev = find_ip_keyboard()
+            if dev:
+                if fd is not None:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
+                try:
+                    fd = os.open(dev, os.O_RDONLY | os.O_NONBLOCK)
+                    log(f"Escuchando {dev} por F13")
+                except OSError as e:
+                    log(f"No pude abrir {dev}: {e}")
+                    fd = None
+            else:
+                if fd is not None:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
+                    fd = None
+                log("No encuentro el teclado de InputPlumber, reintentando...")
+            last_rescan = now
+
+        if fd is not None:
+            if not listen_loop(fd):
+                fd = None  # fd muerto: re-busca en la siguiente iteracion
+        else:
+            time.sleep(1)
 
 
 if __name__ == "__main__":
