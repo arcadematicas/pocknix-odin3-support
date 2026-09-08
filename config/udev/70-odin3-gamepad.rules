@@ -1,0 +1,32 @@
+# 70-odin3-gamepad.rules — Acceso de lectura a TODOS los mandos del Odin 3
+# para WProton y cualquier runner (Proton/umu) que los necesite.
+#
+# POR QUE: la regla de WProton (70-wproton-mandos.rules) solo cubre mandos con
+# idVendor USB (Sony/Nintendo/Microsoft/Valve). El gamepad UART interno del
+# Odin 3 (driver rsinput, "AYN Odin3 Gamepad") NO tiene idVendor -> ninguna
+# regla le aplica -> /dev/input/eventN queda sin permiso de lectura para el
+# usuario deck -> WProton cae al fallback y el mando real no se lee
+# ("sin acceso a /dev/input/event6 (Permission denied)").
+#
+# SOLUCION: dar acceso al grupo input a cualquier dispositivo de entrada que
+# declare botones de mando (BTN_GAMEPAD en capabilities), sin depender de
+# idVendor. Tambien cubre hidraw de mandos (para GE-Proton 11-4+).
+#
+# Nota: el usuario deck debe estar en el grupo input (usermod -aG input deck).
+
+# Gamepads por /dev/input/event*: cualquier mando con BTN_GAMEPAD (0x130).
+# ATTRS{capabilities/abs} y KEY se evaluan en el device padre; usamos
+# ENV{ID_INPUT_JOYSTICK} que systemd/udev ya setea para joysticks.
+KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_JOYSTICK}=="1", \
+  MODE="0660", GROUP="input", TAG+="uaccess"
+
+# Fallback: si ID_INPUT_JOYSTICK no esta disponible, casar por capabilities
+# (BTN_GAMEPAD = bit 0x130 en la mascara de KEY). La mascara completa de un
+# gamepad tipico contiene "7cdb000000000000" (grupo de botones de mando).
+KERNEL=="event*", SUBSYSTEM=="input", ATTRS{capabilities/keys}=="*7cdb000000000000*", \
+  MODE="0660", GROUP="input", TAG+="uaccess"
+
+# Hidraw de mandos (GE-Proton 11-4+ lee DualSense/DualShock por hidraw).
+# Cubre cualquier hidraw que sea joystick/gamepad, no solo por idVendor.
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ENV{ID_INPUT_JOYSTICK}=="1", \
+  MODE="0660", GROUP="input", TAG+="uaccess"
