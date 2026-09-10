@@ -1,53 +1,53 @@
-# 🆘 Petición de ayuda: Odin 3 no carga la batería en Linux (Pocknix)
+# 🆘 HELP REQUEST: Odin 3 battery won't charge on Linux (Pocknix)
 
-**Hola comunidad AYN / Armada** 👋
+**Hi AYN / Armada community** 👋
 
-Tengo una **AYN Odin 3** (Snapdragon 8 Elite / SM8750) con **Pocknix** (Arch Linux ARM, estilo SteamOS) instalado. El sistema funciona genial (Steam, juegos, GPU, mandos...), pero hay **UN problema que no consigo resolver**: **la batería no carga en Linux**.
+I have an **AYN Odin 3** (Snapdragon 8 Elite / SM8750) running **Pocknix** (Arch Linux ARM, SteamOS-style). The system works great (Steam, games, GPU, controllers...), but there's **ONE issue I can't solve**: **the battery won't charge on Linux**.
 
-## El problema
+## The problem
 
-- **Pocknix (Linux)**: la batería **NO carga**. Se descarga aunque el cargador esté enchufado.
-- **ROCKNIX (otro Linux)**: en el **mismo hardware**, la batería **SÍ carga perfectamente** (verificado en vivo).
-- **Android**: también carga bien (el sistema original).
+- **Pocknix (Linux)**: battery **does NOT charge**. It drains even with the charger plugged in.
+- **ROCKNIX (another Linux)**: on the **same hardware**, battery **charges perfectly** (verified live).
+- **Android**: also charges fine (the stock OS).
 
-Es decir: el hardware carga, pero **solo Pocknix no consigue que cargue**.
+So the hardware charges — it's just **Pocknix that can't get it to charge**.
 
-## Síntomas técnicos (medidos en vivo)
+## Technical symptoms (measured live)
 
-| | ROCKNIX (carga ✅) | Pocknix (no carga ❌) |
+| | ROCKNIX (charges ✅) | Pocknix (no charge ❌) |
 |---|---|---|
-| Estado batería | `Charging` (+198mA) | `Discharging` (-500mA) |
-| Negociación PD | **9V / 3A** | Se queda en **5V** |
-| `qcom-battmgr-usb online` | 1 | **0 siempre** |
-| `ucsi` ve el cargador | Sí | Sí (1.25A entrando) |
-| ¿La batería sube? | Sí | **No** (la energía no llega a la batería) |
+| Battery status | `Charging` (+198mA) | `Discharging` (-500mA) |
+| PD negotiation | **9V / 3A** | Stuck at **5V** |
+| `qcom-battmgr-usb online` | 1 | **0 always** |
+| `ucsi` sees the charger | Yes | Yes (1.25A coming in) |
+| Does the battery gain charge? | Yes | **No** (energy never reaches the battery) |
 
-**Lo curioso**: en Pocknix el sistema SÍ ve el cargador (el UCSI reporta 1.25A entrando), pero el firmware del ADSP **nunca dirige esa energía a la batería**. La negociación PD no se completa (se queda en 5V en vez de subir a 9V).
+**The weird part**: on Pocknix the system DOES see the charger (UCSI reports 1.25A coming in), but the ADSP firmware **never routes that energy to the battery**. PD negotiation never completes (stuck at 5V instead of going to 9V).
 
-## Lo que ya he probado (todo descartado)
+## What I've already tested (all ruled out)
 
-- ✅ Config del kernel comparada con ROCKNIX (casi idéntica)
-- ✅ Kernel 7.2.0 y 7.2.4 (el más reciente) — ambos sin carga
-- ✅ Kernel compilado SIN nuestros parches (idéntico a ROCKNIX) — sin carga
-- ✅ Firmware ADSP de ROCKNIX (adsp.mbn) probado en Pocknix — no arregla
-- ✅ battmgr.jsn idéntico byte a byte
-- ✅ Compilador GCC 15.2 (el exacto de ROCKNIX) — sin carga
-- ✅ Módulo battmgr stock y parcheado — sin carga
-- ✅ ABL/bootloader (el mismo en todas las distros)
-- ✅ Sin scripts de userspace de carga en ROCKNIX (todo es kernel/firmware)
+- ✅ Kernel config compared with ROCKNIX (nearly identical)
+- ✅ Kernel 7.2.0 and 7.2.4 (latest) — both no charge
+- ✅ Kernel built WITHOUT our patches (identical to ROCKNIX) — no charge
+- ✅ ROCKNIX's ADSP firmware (adsp.mbn) tested on Pocknix — no fix
+- ✅ battmgr.jsn byte-identical
+- ✅ GCC 15.2 compiler (ROCKNIX's exact toolchain) — no charge
+- ✅ Stock and patched battmgr module — no charge
+- ✅ ABL/bootloader (same across all distros)
+- ✅ No userspace charging scripts in ROCKNIX (all kernel/firmware)
 
-## Mi hipótesis restante
+## My remaining hypothesis
 
-La diferencia está en **cómo el entorno de arranque inicializa el `pmic-glink`** (el canal de comunicación entre el kernel y el firmware del ADSP que gestiona la carga). ROCKNIX y Pocknix arrancan el mismo kernel de forma distinta (initramfs / orden de carga de módulos), y eso podría hacer que el firmware nunca reciba/responda el mensaje correcto.
+The difference is in **how the boot environment initializes `pmic-glink`** (the communication channel between the kernel and the ADSP firmware that manages charging). ROCKNIX and Pocknix boot the same kernel differently (initramfs / module load order), which might cause the firmware to never receive/respond to the right message.
 
-## ¿Alguien puede ayudar?
+## Can anyone help?
 
-Si alguien tiene experiencia con:
-1. **UCSI que no completa la negociación PD** (`ucsi voltage_max=0`) en dispositivos Qualcomm
-2. **qcom_battmgr** que no recibe el `charging_source=USB` del firmware
-3. **Orden de carga de módulos** del pmic-glink vs ucsi en el arranque
-4. O simplemente tiene una **Odin 3 con Linux** y le pasa lo mismo (o no)
+If anyone has experience with:
+1. **UCSI never completing PD negotiation** (`ucsi voltage_max=0`) on Qualcomm devices
+2. **qcom_battmgr** not receiving `charging_source=USB` from the firmware
+3. **Module load order** of pmic-glink vs ucsi at boot
+4. Or simply has an **Odin 3 with Linux** and the same issue (or not)
 
-...agradecería muchísimo cualquier pista. 🙏
+...I'd really appreciate any insight. 🙏
 
-📄 **Detalle completo de la investigación**: https://github.com/arcadematicas/pocknix-odin3-support/blob/master/BATTERY-ISSUE.md
+📄 **Full investigation details**: https://github.com/arcadematicas/pocknix-odin3-support/blob/master/BATTERY-ISSUE.md
