@@ -74,3 +74,50 @@ el firmware expone el percent vía `pmic_glink` y habría que mirar el
 - Código: `qcom_battmgr.c` (percent firmware ~L1420, charge_count ~L1444).
 - Ficheros en la Odin: `/lib/firmware/qcom/sm8750/ayn/odin3/{adsp.mbn,battmgr.jsn}`,
   `persist` (sda5), `/sys/class/power_supply/{battery,qcom-battmgr-usb,...}`.
+
+---
+
+## ACTUALIZACIÓN 10/09/2026 — INVESTIGACIÓN EXHAUSTIVA COMPLETADA (problema NO resuelto)
+
+### Resumen ejecutivo
+**Pocknix NO carga la batería en Linux. ROCKNIX (7.1.3 y 7.2.0) SÍ carga en el MISMO hardware (verificado en vivo).** Tras semanas de investigación comparativa, el problema sigue sin resolver. Todo lo que se podía comparar desde fuera es idéntico o fue probado sin éxito.
+
+### Lo que se probó y se DESCARTÓ (todo verificado empíricamente)
+
+| Hipótesis | Prueba | Resultado |
+|---|---|---|
+| Config del kernel | Diff completo ROCKNIX vs Pocknix (95 diffs, casi todos flags de compilador) | ❌ No es la causa |
+| Parches 0078/0079/0080 (nuestros) | Kernel compilado SIN ellos (63 parches, idéntico a ROCKNIX) | ❌ Sigue sin cargar |
+| Firmware ADSP | adsp.mbn de ROCKNIX 7.2.0 (md5 f82212a2, 21.9MB) probado en Pocknix | ❌ No arregla |
+| battmgr.jsn | Comparado byte a byte con ROCKNIX 7.2.0 | ✅ IDÉNTICO |
+| Compilador | Kernel recompilado con GCC 15.2.0 (el de ROCKNIX) | ❌ Sigue sin cargar |
+| Módulo battmgr | El .ko de ROCKNIX no carga (struct module size mismatch); el stock recompilado tampoco carga | ❌ No es el módulo |
+| Versión del kernel | 7.2.0 y 7.2.4 (el más reciente) probados | ❌ Ambos sin carga |
+| Cmdline | Comparado — solo difieren root/console, nada de typec/usb | ❌ No es la causa |
+| DTS/DTB | Mismos parches (0046/0047 Odin3), misma estructura | ❌ No es la causa |
+| Scripts userspace | ROCKNIX no tiene scripts de carga (todo es kernel/firmware) | ❌ No existe tal cosa |
+| ABL (bootloader) | El mismo en todas las distros (1.8 de ROCKNIX) | ❌ No es la causa |
+
+### Síntomas clave medidos en vivo
+
+**ROCKNIX (carga ✅):**
+- `battmgr-usb online=1`, `status=Charging`, corriente positiva (+198mA)
+- Negocia PD **9V/3A** (`voltage_max=9000000`, `current_max=3000000`)
+- Al conectar el cargador: ucsi online=1 a los ~16s, battmgr online=1 a los ~18s (el battmgr aprende del UCSI con delay)
+
+**Pocknix (no carga ❌):**
+- `battmgr-usb online=0` SIEMPRE, `status=Discharging`, corriente negativa (-500mA)
+- Se queda en **5V** (`voltage_max=5000000`, `current_max=4500000` — el default del hardware)
+- `ucsi-source-psy online=1` y `current=1.25A` (ve el cargador) PERO la batería NO sube (la energía no llega a la batería)
+- `ucsi voltage_max=0` (la negociación PD NO se completa)
+
+### Mecanismo de carga (entendido)
+El firmware ADSP envía `BATTMGR_BAT_STATUS` con `charging_source`. Si `source=USB` → `battmgr.usb.online=1` (línea 1326 de qcom_battmgr.c). En Pocknix el firmware **nunca reporta USB como fuente** — aunque el UCSI ve el cargador. La energía entra al sistema (1.25A) pero el firmware no la dirige a la batería.
+
+### Conclusión / hipótesis restante
+La diferencia está en **cómo el entorno de arranque inicializa el pmic-glink** (el canal de comunicación kernel↔firmware ADSP). ROCKNIX y Pocknix arrancan el mismo kernel de forma distinta (initramfs/orden de módulos). Sin acceso a debug hardware (JTAG/serial), no podemos ver qué ocurre en ese momento.
+
+### Para retomar
+1. Comparar el initramfs de ROCKNIX vs Pocknix (cómo cargan los módulos del pmic-glink)
+2. Probar el orden de carga de módulos (battmgr antes/después del ucsi)
+3. Debug serial/JTAG del arranque para ver la negociación PD

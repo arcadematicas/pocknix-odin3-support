@@ -1,6 +1,8 @@
+diff --git a/drivers/power/supply/qcom_battmgr.c b/drivers/power/supply/qcom_battmgr.c
+index 490137a..1cadeaa 100644
 --- a/drivers/power/supply/qcom_battmgr.c
 +++ b/drivers/power/supply/qcom_battmgr.c
-@@ -451,6 +451,72 @@
+@@ -451,6 +451,85 @@ static const u8 sm8350_bat_prop_map[] = {
  	[POWER_SUPPLY_PROP_CHARGE_CONTROL_END_THRESHOLD] = BATT_CHG_CTRL_END_THR,
  };
  
@@ -37,12 +39,25 @@
 +	if (power_supply_get_battery_info(battmgr->bat_psy, &bat_info))
 +		return 100;
 +
-+	/* Preferir OCV (circuito abierto, estable); si el firmware aun no lo ha
-+	 * reportado, usar el voltaje instantaneo. */
-+	if (battmgr->status.voltage_ocv)
++	/* El firmware Debug_Board congela voltage_ocv tras el arranque (solo lo
++	 * reporta una vez), asi que estimamos el OCV real a partir del voltaje
++	 * instantaneo compensando la caida por resistencia interna (~160 mOhm
++	 * tipico de esta bateria). V_ocv = V_now + |I| * R (I negativo = descarga). */
++	if (battmgr->status.voltage_now) {
++		int i = battmgr->status.current_now; /* uA, negativo en descarga */
++		unsigned int r = 160000; /* uOhm (160 mOhm) */
++		unsigned int drop;
++
++		if (i < 0) {
++			/* Caida de voltaje = |I| * R, en uV */
++			drop = (unsigned int)(-i) * r / 1000000;
++			v = battmgr->status.voltage_now + drop;
++		} else {
++			v = battmgr->status.voltage_now;
++		}
++	} else {
 +		v = battmgr->status.voltage_ocv;
-+	else
-+		v = battmgr->status.voltage_now;
++	}
 +
 +	vmin = bat_info->voltage_min_design_uv;
 +	vmax = bat_info->voltage_max_design_uv;
@@ -73,14 +88,14 @@
  static int qcom_battmgr_bat_sm8350_update(struct qcom_battmgr *battmgr,
  					  enum power_supply_property psp)
  {
-@@ -463,7 +529,18 @@
+@@ -463,7 +542,18 @@ static int qcom_battmgr_bat_sm8350_update(struct qcom_battmgr *battmgr,
  	prop = sm8350_bat_prop_map[psp];
  
  	mutex_lock(&battmgr->lock);
 +	if (!battmgr->info.valid) {
 +		/* Fetch the battery model once. Some firmware (Debug_Board) has no
 +		 * real gauge and reports design capacity; we detect it via the
-+		 * model name to compute a voltage (OCV)-based estimate. */
++		 * model name to compute a coulomb/voltage-based estimate. */
 +		ret = qcom_battmgr_request_property(battmgr, BATTMGR_BAT_PROPERTY_GET,
 +						   BATT_MODEL_NAME, 0);
 +		if (ret < 0)
@@ -92,7 +107,7 @@
  	mutex_unlock(&battmgr->lock);
  
  	return ret;
-@@ -1325,7 +1402,8 @@
+@@ -1325,7 +1415,8 @@ static void qcom_battmgr_sc8280xp_callback(struct qcom_battmgr *battmgr,
  		battmgr->ac.online = source == BATTMGR_CHARGING_SOURCE_AC;
  		battmgr->usb.online = source == BATTMGR_CHARGING_SOURCE_USB;
  		battmgr->wireless.online = source == BATTMGR_CHARGING_SOURCE_WIRELESS;
@@ -102,7 +117,7 @@
  			/*
  			 * 100 * battmgr->status.capacity can overflow a 32bit
  			 * unsigned integer. FW readings are in m{W/A}h, which
-@@ -1339,11 +1417,10 @@
+@@ -1339,11 +1430,11 @@ static void qcom_battmgr_sc8280xp_callback(struct qcom_battmgr *battmgr,
  				(100 * le32_to_cpu(resp->status.capacity)) /
  				(battmgr->info.last_full_capacity / 1000);
  		} else {
@@ -113,12 +128,13 @@
 -			battmgr->status.percent = (unsigned int)-1;
 +			/* Fallback: firmware has no battery gauge (Debug_Board reports
 +			 * design capacity as both capacity and last_full_capacity).
-+			 * Use a voltage (OCV)-based estimate from the DTS ranges. */
++			 * Use the coulomb counter (real) vs design capacity from the
++			 * DTS, falling back to a voltage-based estimate. */
 +			battmgr->status.percent = qcom_battmgr_estimate_percent(battmgr);
  		}
  		break;
  	case BATTMGR_BAT_DISCHARGE_TIME:
-@@ -1417,7 +1494,10 @@
+@@ -1417,7 +1508,10 @@ static void qcom_battmgr_sm8350_callback(struct qcom_battmgr *battmgr,
  			battmgr->info.charge_type = le32_to_cpu(resp->intval.value);
  			break;
  		case BATT_CAPACITY:

@@ -1,0 +1,80 @@
+From: Fransis <fransis@pocknix>
+Subject: [PATCH] power: supply: qcom_battmgr: poll battery capacity periodically
+
+The Odin 3 (SM8750) battery fuel gauge runs in the ADSP firmware
+(pmic_glink -> qcom_battmgr). The kernel does NOT poll: the percentage
+only updates when something reads /sys/class/power_supply/battery/capacity
+(which triggers a BATTMGR_BAT_PROPERTY_GET request to the firmware).
+
+Symptoms on the Odin 3:
+- The battery percentage in SteamOS/Steam UI is frozen while playing or
+  navigating menus; it only refreshes when entering/exiting a game (a
+  context change that forces a battery read).
+- Low-battery warnings and clean shutdown never trigger on time, because
+  nothing reads the battery while a game is running -> the battery drains
+  to empty and the system powers off abruptly.
+
+Fix: add a delayed_work that polls capacity + status every 30s and calls
+power_supply_changed() so the power supply core emits uevents and
+upower/Steam refresh the UI and low-battery logic fires.
+
+The polling only starts once the PDR service is up (service_up), and is
+cancelled when the service goes down. 30s matches other qcom battery
+drivers' poll intervals.
+
+Signed-off-by: Fransis <fransis@pocknix>
+---
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -333,6 +333,7 @@
+ 	struct qcom_battmgr_wireless wireless;
+ 
+ 	struct work_struct enable_work;
++	struct delayed_work poll_work;
+ 
+ 	/*
+ 	 * @lock is used to prevent concurrent power supply requests to the
+@@ -1599,6 +1600,23 @@
+ 		dev_err(battmgr->dev, "failed to request power notifications\n");
+ }
+ 
++/*
++ * The ADSP firmware does not push periodic battery updates; the percentage
++ * only moves when something reads sysfs (which triggers a property GET to
++ * the firmware). While a game is running nothing reads the battery, so the
++ * percentage freezes and low-battery warnings never fire.
++ */
++static void qcom_battmgr_poll_work(struct work_struct *work)
++{
++	struct qcom_battmgr *battmgr = container_of(work, struct qcom_battmgr,
++						    poll_work.work);
++
++	qcom_battmgr_bat_sm8350_update(battmgr, POWER_SUPPLY_PROP_CAPACITY);
++	power_supply_changed(battmgr->bat_psy);
++
++	schedule_delayed_work(&battmgr->poll_work, 30 * HZ);
++}
++
+ static void qcom_battmgr_pdr_notify(void *priv, int state)
+ {
+ 	struct qcom_battmgr *battmgr = priv;
+@@ -1606,8 +1624,10 @@
+ 	if (state == SERVREG_SERVICE_STATE_UP) {
+ 		battmgr->service_up = true;
+ 		schedule_work(&battmgr->enable_work);
++		schedule_delayed_work(&battmgr->poll_work, 30 * HZ);
+ 	} else {
+ 		battmgr->service_up = false;
++		cancel_delayed_work_sync(&battmgr->poll_work);
+ 	}
+ }
+ 
+@@ -1715,6 +1735,8 @@
+ 				   qcom_battmgr_enable_worker);
+ 	if (ret)
+ 		return ret;
++	devm_delayed_work_autocancel(dev, &battmgr->poll_work,
++				     qcom_battmgr_poll_work);
+ 
+ 	battmgr->client = devm_pmic_glink_client_alloc(dev, PMIC_GLINK_OWNER_BATTMGR,
+ 						       qcom_battmgr_callback,
