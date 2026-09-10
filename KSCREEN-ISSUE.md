@@ -108,6 +108,23 @@ s "kwayland"
 Antes del fix, `org.kde.KScreen` no tenía KCM que lo activara y su `backend`
 quedaba vacío.
 
+### Nota: `plasma-kscreen.service` "failed" al cambiar de sesión
+
+Al salir de Plasma hacia game mode puede aparecer `plasma-kscreen.service` en
+`failed` (con un core dump de `kscreen_backend_launcher`):
+
+```
+Failed to create wl_display (No such file or directory)
+```
+
+Es un **artefacto del teardown**: al cambiar de sesión se elimina el socket
+`wayland-0` y el daemon, activado por D-Bus, ya no puede conectar (sin
+`WAYLAND_DISPLAY` en el entorno systemd del usuario, Qt cae al `wayland-0` por
+defecto). **Durante** la sesión Plasma el daemon funciona (backend `kwayland`).
+No requiere acción; los servicios de usuario en `failed` se limpian al volver a
+iniciar sesión. **No** volver a poner `WAYLAND_DISPLAY=wayland-0` en
+`~/.config/environment.d/`: eso rompe KWin (pantalla negra).
+
 ---
 
 ## Notas / lo que NO era
