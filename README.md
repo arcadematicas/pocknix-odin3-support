@@ -23,8 +23,12 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
   fallo original: faltaba el paquete **`kscreen`** (KCM de pantalla); ver
   `KSCREEN-ISSUE.md`. La imagen oficial ya lo incluye vía
   `pocknix-desktop-full`.
-- ⚠️ **Sensores IIO**: `hexagonrpcd` compilado e instalado, pero los
-  dispositivos IIO aún no aparecen — falta ajustar el `sns_reg_config`.
+- ⚠️ **Sensores IIO**: `hexagonrpcd` compilado e instalado (servicio
+  `hexagonrpcd-adsp-sensorspd.service`), pero **sale al arrancar y no expone
+  dispositivos IIO** → no hay acelerómetro ni sensor de luz ambiental. Por eso no
+  funcionan la auto-rotación ni el **brillo adaptativo** (KScreen reporta
+  `Automatic brightness: unsupported`). Pendiente: bring-up del sensor PD del
+  ADSP (registry/`sns_reg` + logs de `hexagonrpcd`).
 
 ## Qué contiene
 | Ruta | Qué es |
@@ -49,7 +53,7 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | `config/mangohud/` | **MangoHud parcheado SM8750**: fuente + config compacta (barra horizontal) + toggle por paddle M2 (F13) |
 | `config/inputplumber/` | Capability map AYN modificado: paddle M2 → tecla F13 (toggle MangoHud) |
 | `config/pocknix-control-plugin/` | Plugin PocknixControl actualizado (backend + frontend): fan off, governor, power profiles (global y per-game) |
-| `config/odin3-display.service.clean` | `odin3-display.service` **limpiado**: sin los `echo 1 > calibrate/reset` (peligrosos) |
+| `config/odin3-display.service.clean` | `odin3-display.service` **limpiado**: sin el `rotation` sysfs (ya no existe; es propiedad DRM) ni los `modprobe` muertos → deja de fallar (era la única unidad en `failed`) |
 | `BATTERY-ISSUE.md` | Issue de batería: fuel gauge corre en el firmware ADSP (percent viene del firmware), descalibrado `Debug_Board`, solución = ciclo de carga en Android |
 | `KSCREEN-ISSUE.md` | **RESUELTO**: KScreen no veía el panel en escritorio — faltaba el paquete `kscreen` (KCM Ajustes → Pantalla) |
 
