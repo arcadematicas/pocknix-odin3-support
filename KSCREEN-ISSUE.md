@@ -129,11 +129,24 @@ quedaba vacío.
   aplicado** (`lsattr` sin flags).
 - El error histórico *"could not find plugin usr"* encaja con el KCM ausente.
 
-## Otros componentes del escritorio que también faltan en esta Odin
+## Otros componentes del escritorio (instalados 11/09/2026)
 
-Respecto a los `depends` de `pocknix-desktop-full` (no bloquean la pantalla):
+Esta Odin no tenía el meta-paquete `pocknix-desktop-full`, así que además de
+`kscreen` faltaban otros `depends`. Ya se instalaron (11/09/2026):
 
-`plasma-settings`, `bluedevil`, `waydroid`, `koko`, `kclock`, `kweather`, `unrar`.
+```bash
+sudo pacman -S --noconfirm plasma-settings bluedevil waydroid koko kclock kweather unrar
+# 28 paquetes nuevos (incl. deps: opencv, lxc, libgbinder, qt6-charts, kweathercore, ...)
+```
+
+Con esto el conjunto de dependencias de `pocknix-desktop-full` está completo.
+
+Notas:
+- **waydroid**: el paquete está instalado, pero para usarlo falta `waydroid init`
+  (descarga la imagen de Android) y montar binderfs. El kernel **sí** trae binder
+  compilado dentro (`CONFIG_ANDROID_BINDER_IPC=y`, `CONFIG_ANDROID_BINDERFS=y`,
+  `CONFIG_ANDROID_BINDER_DEVICES="binder,hwbinder,vndbinder"`), no como módulo.
+- **bluedevil**: requiere `bluetooth.service` activo para funcionar.
 
 ## Referencia de diagnóstico rápida
 
