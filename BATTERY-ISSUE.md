@@ -121,3 +121,34 @@ La diferencia está en **cómo el entorno de arranque inicializa el pmic-glink**
 1. Comparar el initramfs de ROCKNIX vs Pocknix (cómo cargan los módulos del pmic-glink)
 2. Probar el orden de carga de módulos (battmgr antes/después del ucsi)
 3. Debug serial/JTAG del arranque para ver la negociación PD
+
+---
+
+## ACTUALIZACIÓN 10/09/2026 TARDE — PISTA NUEVA (issue #402 ArmadaOS)
+
+### Issue #402 de ArmadaOS (creado por nosotros)
+https://github.com/armada-os/armada/issues/402
+
+**Título**: "AYN Odin 3 (SM8750): battery never charges under Linux - charger_pd PDR stays DOWN"
+
+### Dato clave NUEVO
+dmesg muestra: `PDR: Indication received from msm/adsp/charger_pd, state: 0x1fffffff`
+→ El **charger_pd PDR service NUNCA sube** en Linux.
+
+### Hipótesis refinada
+En Android, `qti_battery_charger` (driver del vendor) registra como cliente pmic_glink y **algo en ese flujo sube charger_pd**. Mainline `qcom_battmgr` se registra pero **no sube charger_pd**.
+
+### Probado sin éxito (documentado en el issue)
+1. charge_behaviour patch (USB_PROPERTY_SET 0x33 + USB_CHARGE_ENABLE 14, como ROCKNIX PR #2840) — el sysfs existe pero no activa carga
+2. Opcode 0x16 (del qti_battery_charger de Android) — el firmware lo acepta pero no carga
+3. PMIC_RTR_ADSP_APPS.driver_data = false (saltar espera PDR) — charger_pd sigue DOWN
+4. UCSI role fix (0509) — ya incluido
+
+### Confirmado
+- Kernel pmic_glink.c IDÉNTICO entre 7.2.0 y 7.2.4 → el kernel NO es la diferencia
+- Android carga con el MISMO adsp.mbn → el firmware SÍ puede cargar
+- ArmadaOS usa kernel stable (armada-os/linux, sin parches odin3) → no sirve directamente
+- MasOS: no encontrado en GitHub (buscar en Discord AYN/Armada)
+
+### Siguiente paso
+Comparar cómo ROCKNIX inicializa el pmic-glink en el arranque vs Pocknix (entorno de arranque, no kernel).
