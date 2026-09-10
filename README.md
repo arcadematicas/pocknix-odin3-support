@@ -18,10 +18,11 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
   Odin 3 dibujada en `/dev/fb0` (sin Plymouth, ver `config/splash/`).
 - ✅ **ADSP + CDSP** corriendo (`adsp`/`cdsp` remoteproc `running`).
 - ✅ **QAM** — botón Select abre el menú Quick Access.
-- ⚠️ **Escritorio (Plasma Mobile)**: arranca, pero **KScreen no enumera el
-  panel** (Ajustes no muestra el monitor ni la rotación) — *open issue*.
-- ⚠️ **Rotación Plasma Mobile**: fix manual aplicado (`chattr +i` sobre
-  `kwinoutputconfig.json`). Pendiente fix upstream de KScreen.
+- ✅ **Escritorio (Plasma Mobile)**: **KScreen enumera el panel** (Ajustes →
+  Pantalla muestra el monitor `DSI-1` con su resolución y rotación). Causa del
+  fallo original: faltaba el paquete **`kscreen`** (KCM de pantalla); ver
+  `KSCREEN-ISSUE.md`. La imagen oficial ya lo incluye vía
+  `pocknix-desktop-full`.
 - ⚠️ **Sensores IIO**: `hexagonrpcd` compilado e instalado, pero los
   dispositivos IIO aún no aparecen — falta ajustar el `sns_reg_config`.
 
@@ -50,7 +51,7 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | `config/pocknix-control-plugin/` | Plugin PocknixControl actualizado (backend + frontend): fan off, governor, power profiles (global y per-game) |
 | `config/odin3-display.service.clean` | `odin3-display.service` **limpiado**: sin los `echo 1 > calibrate/reset` (peligrosos) |
 | `BATTERY-ISSUE.md` | Issue de batería: fuel gauge corre en el firmware ADSP (percent viene del firmware), descalibrado `Debug_Board`, solución = ciclo de carga en Android |
-| `KSCREEN-ISSUE.md` | Issue abierto: KScreen no ve el panel en escritorio |
+| `KSCREEN-ISSUE.md` | **RESUELTO**: KScreen no veía el panel en escritorio — faltaba el paquete `kscreen` (KCM Ajustes → Pantalla) |
 
 ## Lo más valioso para upstream
 1. **Adreno a8xx GX-collapse fix** — resuelve el `VkDeviceLost` del compositor

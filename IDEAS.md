@@ -92,7 +92,7 @@ repos de la org con ideas:
 | Idea | Estado |
 |---|---|
 | **Sensores IIO** — verificar en dispositivo que aparecen (`ls /sys/bus/iio/devices/`) | 🟢 Probar en el próximo boot |
-| **KScreen no enumera el panel** en Plasma Mobile (issue abierto) | 🟡 Investigar fix upstream |
+| **KScreen no enumera el panel** en Plasma Mobile | ✅ **RESUELTO** (11/09/2026) — faltaba el paquete `kscreen` (KCM Ajustes → Pantalla). Ver `KSCREEN-ISSUE.md` |
 | **Pantalla negra** — hard power cycle pendiente (hardware) | 🔴 Bloqueado por hardware |
 | **hhd / gyro** — usar la IMU del Odin 3 (sensors pakala) para giroscopio en juegos | 🟡 Investigar |
 

@@ -142,3 +142,19 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 - **PENDIENTE**: hacerlo permanente en la imagen/build de Pocknix (incluir los 2 ficheros en `qcom/sm8750/`).
 - **CORRECCION**: el `0x1fffffff` del dmesg es `SERVREG_SERVICE_STATE_UP` (el PDR **sí** sube).
 - **VER DETALLE EN**: BATTERY-ISSUE.md (secciones "premisa CORREGIDA", "HERRAMIENTA...", "SOLUCIÓN ENCONTRADA").
+
+## ✅ KSCREEN / PANTALLA - RESUELTO (11/09/2026)
+- **SINTOMA**: en el escritorio Plasma, Ajustes → Pantalla no mostraba el monitor.
+- **CAUSA**: faltaba el paquete **`kscreen`** (solo `libkscreen` + `kscreenlocker`).
+  Sin él no existe el módulo Ajustes → Pantalla (`kcm_kscreen.so`) ni el KDED
+  `kscreen.so`; `libkscreen` sí da `kscreen-doctor` (por eso el script de rotación
+  funcionaba pero Ajustes no).
+- **FIX**: `sudo pacman -S --noconfirm kscreen` (+ `kimageformats`). Persistente.
+- **VERIFICADO**: `kcm_kscreen` carga en systemsettings; `kscreen-doctor -o` enumera
+  `DSI-1 1080x1920@120 scale 2.5 rotation Rotate270`; daemon `org.kde.KScreen`
+  con backend `kwayland`.
+- **NO era** kernel/DRM/DTS: el panel siempre se detectó (conector DSI-1, driver
+  `panel-chipone-icna35xx`, propiedad `panel orientation` = 3 Right Side Up).
+- La **imagen oficial ya incluye `kscreen`** vía `pocknix-desktop-full`; esta Odin
+  no tiene ese meta (escritorio montado a mano).
+- **VER DETALLE EN**: KSCREEN-ISSUE.md.
