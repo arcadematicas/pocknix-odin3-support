@@ -127,9 +127,10 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 
 ## CARGA BATERIA - INVESTIGACION EXHAUSTIVA COMPLETADA (10/09/2026) - PROBLEMA NO RESUELTO
 - **ESTADO**: Pocknix NO carga la bateria en Linux. ROCKNIX (7.1.3 y 7.2.0) SI carga en el MISMO hardware.
-- **DESCARTADO** (todo probado): config del kernel (95 diffs, casi todos flags de compilador), parches 0078/0079/0080 (el kernel sin ellos tampoco carga), firmware adsp.mbn (probado el de ROCKNIX 21.9MB), compilador (GCC 15.2 probado), battmgr.ko de ROCKNIX (incompatible), cmdline, scripts userspace.
-- **HIPOTESIS RESTANTE**: el ENTORNO DE ARRANQUE (DTB final/initramfs/ABL) inicializa el pmic-glink de forma distinta. ROCKNIX negocia PD 9V/3A, Pocknix se queda en 5V. En ROCKNIX el battmgr-usb aprende del UCSI (~18s delay al conectar); en Pocknix nunca.
-- **MECANISMO DE CARGA (entendido)**: el firmware ADSP envia BATTMGR_BAT_STATUS con charging_source; si source=USB -> battmgr.usb.online=1. En Pocknix el firmware no reporta USB.
-- **SINTOMA CLAVE**: ucsi-source-psy online=1 y current=1.25A en Pocknix, PERO la bateria no sube (energia no dirigida a la bateria). battmgr-usb online=0 siempre.
-- **VER DETALLE EN**: memoria persistente seccion "CARGA - CONCLUSION FINAL".
-- **PARA RETOMAR**: comparar entorno de arranque ROCKNIX vs Pocknix (ABL/initramfs/DTB).
+- **DESCARTADO** (todo probado): config del kernel (95 diffs, casi todos flags de compilador), parches 0078/0079/0080 (el kernel sin ellos tampoco carga), firmware adsp.mbn (probado el de ROCKNIX 21.9MB), compilador (GCC 15.2 probado), battmgr.ko de ROCKNIX (incompatible), cmdline, DTB, scripts userspace, ABL.
+- **⚠️ CORRECCION 10/09 noche - EL PDR SI SUBE**: `SERVREG_SERVICE_STATE_UP = 0x1FFFFFFF` (include/linux/soc/qcom/pdr.h). El dmesg `state: 0x1fffffff` es **UP**, no DOWN. `qcom_battmgr_pdr_notify()` compara contra ese valor -> `service_up=true` y el polling corre. **El canal kernel<->firmware ADSP funciona.** Descartada la hipotesis "PDR nunca sube".
+- **MECANISMO DE CARGA (entendido)**: el firmware ADSP envia BATTMGR_BAT_STATUS con charging_source; si source=USB -> battmgr.usb.online=1. En Pocknix el firmware NO reporta USB (aunque el UCSI si ve el cargador).
+- **SINTOMA CLAVE**: ucsi-source-psy online=1 y current=1.25A en Pocknix, PERO la bateria no sube (energia no dirigida a la bateria). battmgr-usb online=0 siempre. ROCKNIX negocia PD 9V/3A, Pocknix se queda en 5V.
+- **HERRAMIENTA NUEVA - `pmic_pdcharger_ulog`**: Pocknix NO compila `CONFIG_QCOM_PMIC_PDCHARGER_ULOG` (ArmadaOS/ROCKNIX si, `=m`). Expone el **log interno del firmware del cargador** via canal rpmsg `PMIC_LOGS_ADSP_APPS` (tracepoint `pmic_pdcharger_ulog_msg`). Es la unica via de ver POR QUE el firmware no activa la carga. Script listo: `/usr/bin/armada-charge-debug` (ArmadaOS).
+- **VER DETALLE EN**: BATTERY-ISSUE.md (seccion "premisa CORREGIDA" + "HERRAMIENTA DE DIAGNOSTICO NUEVA").
+- **PARA RETOMAR**: compilar 7.2.4 con `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` y leer el log del firmware en la Odin.

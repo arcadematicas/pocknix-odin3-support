@@ -124,31 +124,82 @@ La diferencia está en **cómo el entorno de arranque inicializa el pmic-glink**
 
 ---
 
-## ACTUALIZACIÓN 10/09/2026 TARDE — PISTA NUEVA (issue #402 ArmadaOS)
+## ACTUALIZACIÓN 10/09/2026 TARDE — issue #402 ArmadaOS (premisa CORREGIDA 10/09/2026 noche)
 
 ### Issue #402 de ArmadaOS (creado por nosotros)
 https://github.com/armada-os/armada/issues/402
 
-**Título**: "AYN Odin 3 (SM8750): battery never charges under Linux - charger_pd PDR stays DOWN"
+**Título original**: "AYN Odin 3 (SM8750): battery never charges under Linux - charger_pd PDR stays DOWN"
 
-### Dato clave NUEVO
-dmesg muestra: `PDR: Indication received from msm/adsp/charger_pd, state: 0x1fffffff`
-→ El **charger_pd PDR service NUNCA sube** en Linux.
+### ⚠️ CORRECCIÓN IMPORTANTE: el PDR NO está DOWN, está UP
 
-### Hipótesis refinada
-En Android, `qti_battery_charger` (driver del vendor) registra como cliente pmic_glink y **algo en ese flujo sube charger_pd**. Mainline `qcom_battmgr` se registra pero **no sube charger_pd**.
+Se interpretó mal el valor del dmesg. En el kernel:
+
+```
+include/linux/soc/qcom/pdr.h
+  SERVREG_SERVICE_STATE_DOWN       = 0x0FFFFFFF
+  SERVREG_SERVICE_STATE_UP         = 0x1FFFFFFF   ← ¡esto es 0x1fffffff!
+  SERVREG_SERVICE_STATE_EARLY_DOWN = 0x2FFFFFFF
+  SERVREG_SERVICE_STATE_UNINIT     = 0x7FFFFFFF
+```
+
+Y `qcom_battmgr_pdr_notify()` (qcom_battmgr.c L1781) hace:
+
+```c
+if (state == SERVREG_SERVICE_STATE_UP) {
+        battmgr->service_up = true;
+        schedule_work(&battmgr->enable_work);
+        schedule_delayed_work(&battmgr->poll_work, 30 * HZ);
+}
+```
+
+Por tanto, `state: 0x1fffffff` = **UP** → `service_up=true` y el polling del battmgr SÍ corre.
+**El canal kernel↔firmware ADSP (pmic-glink/PDR) funciona correctamente.** La hipótesis
+"charger_pd PDR nunca sube" es FALSA y hay que descartarla (y corregir el issue #402).
+
+### Conclusión revisada
+El kernel habla bien con el firmware. El problema es que el **firmware ADSP no reporta
+USB como `charging_source`** (battmgr-usb online=0 aunque el UCSI ve el cargador). La
+diferencia con ROCKNIX (que sí carga) NO está en el kernel, parches, config, cmdline,
+DTB, firmware adsp.mbn, battmgr.jsn, compilador, ABL ni scripts userspace (todo probado).
 
 ### Probado sin éxito (documentado en el issue)
 1. charge_behaviour patch (USB_PROPERTY_SET 0x33 + USB_CHARGE_ENABLE 14, como ROCKNIX PR #2840) — el sysfs existe pero no activa carga
 2. Opcode 0x16 (del qti_battery_charger de Android) — el firmware lo acepta pero no carga
-3. PMIC_RTR_ADSP_APPS.driver_data = false (saltar espera PDR) — charger_pd sigue DOWN
+3. PMIC_RTR_ADSP_APPS.driver_data = false (saltar espera PDR) — irrelevante: el PDR sí sube
 4. UCSI role fix (0509) — ya incluido
 
 ### Confirmado
 - Kernel pmic_glink.c IDÉNTICO entre 7.2.0 y 7.2.4 → el kernel NO es la diferencia
 - Android carga con el MISMO adsp.mbn → el firmware SÍ puede cargar
 - ArmadaOS usa kernel stable (armada-os/linux, sin parches odin3) → no sirve directamente
-- MasOS: no encontrado en GitHub (buscar en Discord AYN/Armada)
+- Lista de parches ROCKNIX SM8750 vs Pocknix: idéntica salvo 0055/0062 (backlight) y nuestros 0078/0079/0080
+- Cmdline ROCKNIX SM8750: `rootwait quiet video=efifb:off console=tty0 irqaffinity=0-1 cgroup.memory=nokmem,nosocket nosoftlockup` (= base de Pocknix; sin nada de typec/usb)
 
-### Siguiente paso
-Comparar cómo ROCKNIX inicializa el pmic-glink en el arranque vs Pocknix (entorno de arranque, no kernel).
+## HERRAMIENTA DE DIAGNÓSTICO NUEVA — `pmic_pdcharger_ulog` (10/09/2026 noche)
+
+**Hallazgo**: Pocknix NO compila el módulo que expone el **log interno del firmware del
+cargador (ADSP)**. ArmadaOS/ROCKNIX sí lo traen.
+
+- Pocknix `.config`: `# CONFIG_QCOM_PMIC_PDCHARGER_ULOG is not set` (no compilado)
+- ArmadaOS: `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` (`pmic_pdcharger_ulog.ko` presente)
+- Driver: `drivers/soc/qcom/pmic_pdcharger_ulog.c` (solo debug, se carga a mano).
+  Se suscribe al canal rpmsg **`PMIC_LOGS_ADSP_APPS`** y descarga el log del firmware
+  del cargador (opcode GET_CHG_ULOG_REQ=0x18, owner 32778). Lo publica como tracepoint
+  `pmic_pdcharger_ulog_msg` (tracefs).
+- Uso (adaptado del script de ArmadaOS `armada-charge-debug`):
+  ```sh
+  modprobe pmic_pdcharger_ulog
+  # (NO descargar el módulo: modprobe -r se cuelga en D en el teardown de GLINK)
+  echo 1 > /sys/kernel/tracing/events/pmic_pdcharger_ulog/enable
+  sleep 20; cat /sys/kernel/tracing/trace
+  ```
+  Si el canal no existe, el log dirá `ulog=channel-absent` (el firmware no expone PMIC_LOGS_ADSP_APPS).
+
+**Por qué importa**: es la única vía para ver **la decisión interna del firmware** (por qué
+no activa la carga / no reporta USB), sin JTAG ni debug serial. Siguiente paso: compilar el
+kernel 7.2.4 con `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` y leer ese log en la Odin.
+
+### Nota entorno de arranque
+- ArmadaOS = Fedora bootc + initramfs **dracut** (`--no-hostonly`, 645 módulos dentro, incluye pmic_pdcharger_ulog.ko).
+- Pocknix = **sin initramfs** (kernel monta root directo).
