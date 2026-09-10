@@ -203,3 +203,130 @@ kernel 7.2.4 con `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` y leer ese log en la Odin.
 ### Nota entorno de arranque
 - ArmadaOS = Fedora bootc + initramfs **dracut** (`--no-hostonly`, 645 módulos dentro, incluye pmic_pdcharger_ulog.ko).
 - Pocknix = **sin initramfs** (kernel monta root directo).
+
+---
+
+## 🎯 CAUSA RAÍZ ENCONTRADA (10/09/2026 noche) — el firmware está en TEST MODE
+
+Tras habilitar `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` y leer el **log interno del firmware
+del cargador** (canal `PMIC_LOGS_ADSP_APPS`), el firmware revela:
+
+```
+Warn: battmngr_plat_scpqchg_qbg_r1_check_state_change::WARNING::Test mode
+Info: battmngr_plat_scpqchg_qbg_r1_check_state_change::Change state to 0 from 9
+Info: BattMngrStateMachineLevel_Change_State::Cannot change state since current state is test
+```
+
+El **BattMngrStateMachine está atascado en el estado 9 (TEST)** y se niega a cambiar.
+Tabla de estados (del `.tmf` de símbolos `qcbattmngr850.pdb`):
+`0 ENTRY · 1 NO_CHG · 2 FAST · 3 TOP_OFF · 4 DONE · 5 RECHARGE · 6 TDONE · 7 NOT_CHARGING_THERMAL · 8 ERROR · 9 TEST`
+
+### Por qué entra en TEST MODE
+Strings del propio firmware:
+```
+Warn: ..._batt_err_handle_action_enable_test_mode:: Put the system in test mode
+```
+Lo dispara un **error de batería** (`batt_err_handle_action`). El handler de errores tiene
+3 acciones: `get_batt_st` (re-plugin/plug-out battery), `err_shutdown`, `emergency_shutdown`,
+`enable_test_mode`. Los disparadores que aparecen en el firmware:
+
+```
+..._check_for_error::Battery ID is invalid
+..._init::BattMngrTech_QBG_R1_Get_Battery_ID failed, cell_id=%d batt_id=%d status=0x%X
+..._charger_config:: disable charging if battery is un-authenticated and unAuthChargingAction = 0
+..._batt_auth_check:: Batt authentication failed
+..._batt_auth_check:: Batt authentication times out after %d s
+..._get_dev_cfg::BattAuthEn = %d, en_bsi_chip = %d, battAuthCOmms = %d, battAuthUidLen = %d, unAuthChargingAction = %d
+Info: override BattAuthData.enable to %d
+Info: override BattAuthData.unAuthChargingAction to %d
+```
+
+**Hipótesis fuerte**: en Linux la **autenticación de batería falla/timeout** (o el `batt_id`
+se lee inválido) y el handler de error mete el sistema en test mode. Android/vendor driver
+sobreescribe `BattAuthData` (`enable` / `unAuthChargingAction`) y por eso sí carga.
+El modelo reportado por el firmware es `Debug_Board` (perfil de batería de debug), coherente
+con "no hay perfil/autenticación válida de la batería real".
+
+### Cómo se capturó (reproducible)
+```sh
+modprobe pmic_pdcharger_ulog    # (no descargar: cuelga el teardown de GLINK)
+echo 1 > /sys/kernel/tracing/instances/<inst>/events/pmic_pdcharger_ulog/enable
+cat /sys/kernel/tracing/instances/<inst>/trace
+```
+También hay un servicio de arranque: `/usr/local/bin/odin-ulog-boot.sh` +
+`odin-ulog-boot.service` (vuelca el log a `/var/log/odin-ulog-boot-NN.txt` cada 5s).
+El log capturado más temprano (15s) ya muestra test mode → se entra **en el arranque del ADSP**,
+antes de que el AP cargue el módulo.
+
+### Corrección de un dato previo
+El `adsp.mbn` de ROCKNIX (21.9MB, `f82212a2`) está en
+`/lib/firmware/qcom/sm8750/ayn/odin3/`, **pero el kernel carga `qcom/sm8750/adsp.mbn`**
+(`firmware-name` del DTS, 17.68MB, `a1206f38`). Por tanto **la prueba previa del firmware de
+ROCKNIX fue inválida**: nunca se llegó a cargar. El firmware de ROCKNIX es la MISMA versión
+(iguales strings `qcbattmngr`) pero compilada **con símbolos de debug** (de ahí los 21.9MB).
+
+### Próximos pasos
+1. Ver cómo el driver Android (`qti_battery_charger`) sobreescribe `BattAuthData` /
+   desactiva la autenticación, y replicarlo (posible nuevo parche en `qcom_battmgr`).
+2. Probar el `adsp.mbn` de ROCKNIX **en la ruta correcta** (`qcom/sm8750/adsp.mbn`) — barato,
+   pero probablemente no cambia nada (misma versión).
+3. Buscar el comando/registro que sale de test mode (`set_debug_param`, `set_ship_mode`).
+
+---
+
+# ✅ SOLUCIÓN ENCONTRADA Y VERIFICADA (10/09/2026 noche)
+
+## La batería YA CARGA en Pocknix
+
+**El fix**: usar el **`adsp_dtb.mbn` de ArmadaOS** (`d88d7ecb`) además del `adsp.mbn` correcto.
+El `adsp_dtb.mbn` es la **configuración del cargador que va dentro del ADSP** e incluye la
+**autenticación de batería** (`batt_auth_cfg`, `batt-auth-public-key`, `batt-unauth-charging-action`,
+`en-batt-auth`...). El que traía Pocknix (`632e50f2`) NO tenía esa config → el firmware no podía
+autenticar la batería → su handler de error lo metía en TEST MODE → no cargaba.
+
+### Ficheros exactos (los de ArmadaOS, build 2026-07)
+| Fichero | Tamaño | md5 |
+|---|---|---|
+| `adsp.mbn` | 21907848 | `6cfcbbb80b956ddad76950c038ea1a3e` |
+| `adsp_dtb.mbn` | 167736 | `d88d7ecbba78ecacb13adcc7bcbe131d` |
+
+Rutas en Pocknix (las que carga el DTS):
+- `/lib/firmware/qcom/sm8750/adsp.mbn`
+- `/lib/firmware/qcom/sm8750/adsp_dtb.mbn`
+
+### Resultado verificado en la Odin
+```
+battery: status=Charging   current=+424207   capacity=99%
+qcom-battmgr-usb: online=1  current=553000
+ucsi-source-psy: status=Charging  current=3000000 (3A)
+typec port0: power_role=source [sink]   → negocia y recibe energía
+firmware ulog: "Test mode" = 0  → YA NO entra en test mode
+```
+
+## Cronología de cómo se llegó al fix
+1. **PDR**: se creía que `charger_pd` PDR "nunca subía" (`0x1fffffff`). **FALSO**: `0x1fffffff`
+   es `SERVREG_SERVICE_STATE_UP` (ver sección anterior). El canal pmic-glink funciona.
+2. **Diagnóstico decisivo**: se habilitó `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` y se leyó el log
+   interno del firmware (`PMIC_LOGS_ADSP_APPS`). Reveló: **BattMngrStateMachine atascado en
+   estado 9 (TEST)**, disparado por el handler de error de batería.
+3. **Comparación con ArmadaOS** (que carga): su firmware NO está en test mode. Se descubrió que
+   ArmadaOS carga desde `qcom/sm8750/ayn/odin3/adsp.mbn` (21.9MB, `6cfcbbb8`) + su `adsp_dtb.mbn`
+   (`d88d7ecb`), mientras Pocknix cargaba `qcom/sm8750/adsp.mbn` (17.68MB, `a1206f38`) +
+   `adsp_dtb.mbn` (`632e50f2`).
+4. **Prueba**: copiar el `adsp.mbn` de ROCKNIX SOLO no arreglaba (faltaba el dtb). Copiar
+   **los dos** ficheros de ArmadaOS → **CARGA**. 
+
+> Nota: el `adsp.mbn` de ROCKNIX (`f82212a2`, 21891464) es la misma build con símbolos de debug;
+> el de ArmadaOS (`6cfcbbb8`, 21907848) es el que se validó. La clave real es el **`adsp_dtb.mbn`**.
+
+## Cómo hacerlo permanente (pendiente)
+Incluir los dos ficheros en la imagen/build de Pocknix para `qcom/sm8750/` (el build los toma del
+overlay de ROCKNIX; hay que añadir un paso que los copie/sobrescriba). Mientras tanto, basta con
+tenerlos puestos en la Odin (`/lib/firmware/qcom/sm8750/`). Backups en la Odin:
+`adsp.mbn.bak-linux17` y `adsp_dtb.mbn.bak-orig`.
+
+## Lecciones
+- `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` + leer `pmic_pdcharger_ulog` es LA herramienta para depurar
+  carga en Qualcomm: muestra la decisión interna del firmware.
+- El `adsp_dtb.mbn` (config del ADSP) es tan importante como el `adsp.mbn` (código).
+- Comparar con una distro que funciona (ArmadaOS/ROCKNIX) a nivel de firmware fue lo definitivo.

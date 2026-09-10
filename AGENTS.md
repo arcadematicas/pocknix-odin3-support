@@ -125,12 +125,20 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 - 23 parches experimentales guardados en: /run/media/fransis/ROMS16TB/proyectos Alfred/kbuild-speedup/
 - Ver LEEME.txt ahi para el detalle. Pendiente de re-extraer de forma robusta e integrar.
 
-## CARGA BATERIA - INVESTIGACION EXHAUSTIVA COMPLETADA (10/09/2026) - PROBLEMA NO RESUELTO
-- **ESTADO**: Pocknix NO carga la bateria en Linux. ROCKNIX (7.1.3 y 7.2.0) SI carga en el MISMO hardware.
-- **DESCARTADO** (todo probado): config del kernel (95 diffs, casi todos flags de compilador), parches 0078/0079/0080 (el kernel sin ellos tampoco carga), firmware adsp.mbn (probado el de ROCKNIX 21.9MB), compilador (GCC 15.2 probado), battmgr.ko de ROCKNIX (incompatible), cmdline, DTB, scripts userspace, ABL.
-- **⚠️ CORRECCION 10/09 noche - EL PDR SI SUBE**: `SERVREG_SERVICE_STATE_UP = 0x1FFFFFFF` (include/linux/soc/qcom/pdr.h). El dmesg `state: 0x1fffffff` es **UP**, no DOWN. `qcom_battmgr_pdr_notify()` compara contra ese valor -> `service_up=true` y el polling corre. **El canal kernel<->firmware ADSP funciona.** Descartada la hipotesis "PDR nunca sube".
-- **MECANISMO DE CARGA (entendido)**: el firmware ADSP envia BATTMGR_BAT_STATUS con charging_source; si source=USB -> battmgr.usb.online=1. En Pocknix el firmware NO reporta USB (aunque el UCSI si ve el cargador).
-- **SINTOMA CLAVE**: ucsi-source-psy online=1 y current=1.25A en Pocknix, PERO la bateria no sube (energia no dirigida a la bateria). battmgr-usb online=0 siempre. ROCKNIX negocia PD 9V/3A, Pocknix se queda en 5V.
-- **HERRAMIENTA NUEVA - `pmic_pdcharger_ulog`**: Pocknix NO compila `CONFIG_QCOM_PMIC_PDCHARGER_ULOG` (ArmadaOS/ROCKNIX si, `=m`). Expone el **log interno del firmware del cargador** via canal rpmsg `PMIC_LOGS_ADSP_APPS` (tracepoint `pmic_pdcharger_ulog_msg`). Es la unica via de ver POR QUE el firmware no activa la carga. Script listo: `/usr/bin/armada-charge-debug` (ArmadaOS).
-- **VER DETALLE EN**: BATTERY-ISSUE.md (seccion "premisa CORREGIDA" + "HERRAMIENTA DE DIAGNOSTICO NUEVA").
-- **PARA RETOMAR**: compilar 7.2.4 con `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` y leer el log del firmware en la Odin.
+## ✅ CARGA BATERIA - RESUELTO Y VERIFICADO (10/09/2026 noche)
+- **ESTADO: LA BATERIA YA CARGA EN POCKNIX.** Verificado: `status=Charging`, `current=+424207`,
+  `qcom-battmgr-usb online=1` (553mA), `ucsi 3A`, `typec power_role=source [sink]`,
+  firmware `ulog "Test mode" = 0`.
+- **EL FIX**: copiar a `/lib/firmware/qcom/sm8750/` los **DOS** ficheros de firmware de ArmadaOS:
+  - `adsp.mbn` (21907848, md5 `6cfcbbb80b956ddad76950c038ea1a3e`)
+  - `adsp_dtb.mbn` (167736, md5 `d88d7ecbba78ecacb13adcc7bcbe131d`) ← **ESTA era la clave**
+- **POR QUE**: el `adsp_dtb.mbn` es la config del cargador dentro del ADSP e incluye la
+  **autenticación de batería** (`batt_auth_cfg`, `batt-auth-public-key`, `batt-unauth-charging-action`,
+  `en-batt-auth`). El de Pocknix (`632e50f2`) NO la tenía → el firmware no autenticaba la batería →
+  handler de error → **TEST MODE (estado 9)** → no cargaba.
+- **DIAGNOSTICO**: `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` + leer `pmic_pdcharger_ulog` (canal
+  `PMIC_LOGS_ADSP_APPS`) muestra la decisión interna del firmware. Ya compilado en el kernel 7.2.4.
+- **Backups en la Odin**: `adsp.mbn.bak-linux17` (`a1206f38`) y `adsp_dtb.mbn.bak-orig` (`632e50f2`).
+- **PENDIENTE**: hacerlo permanente en la imagen/build de Pocknix (incluir los 2 ficheros en `qcom/sm8750/`).
+- **CORRECCION**: el `0x1fffffff` del dmesg es `SERVREG_SERVICE_STATE_UP` (el PDR **sí** sube).
+- **VER DETALLE EN**: BATTERY-ISSUE.md (secciones "premisa CORREGIDA", "HERRAMIENTA...", "SOLUCIÓN ENCONTRADA").
