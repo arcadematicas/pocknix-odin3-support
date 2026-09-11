@@ -279,8 +279,8 @@ problema de KScreen/Plasma.
 
 ## 10. Almacenamiento / transferencia
 
-- **`setup-steamapps`**: crea la biblioteca de Steam como **subvolumen Btrfs con `chattr +C`**
-  (nodatacow) → menos fragmentación/desgaste. Solo aplica en Btrfs (Pocknix usa ext4, **no aplica**).
+- **`setup-steamapps`**: crea la biblioteca de Steam como **subvolumen Btrfs con `chattr +C`
+  (nodatacow)** → menos fragmentación/desgaste. Solo aplica en Btrfs (Pocknix usa ext4, **no aplica**).
 - **MTP**: paquete `umtp-responder` + `armada-mtp.service` + `mtp-gadget` → pasar archivos por USB.
   **Pocknix no lo tiene.**
 

@@ -139,7 +139,10 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 - **DIAGNOSTICO**: `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` + leer `pmic_pdcharger_ulog` (canal
   `PMIC_LOGS_ADSP_APPS`) muestra la decisión interna del firmware. Ya compilado en el kernel 7.2.4.
 - **Backups en la Odin**: `adsp.mbn.bak-linux17` (`a1206f38`) y `adsp_dtb.mbn.bak-orig` (`632e50f2`).
-- **PENDIENTE**: hacerlo permanente en la imagen/build de Pocknix (incluir los 2 ficheros en `qcom/sm8750/`).
+- **PERMANENTE EN EL BUILD (11/09/2026)**: los 2 ficheros están en
+  `pocknix-os/devices/sm8750/firmware/qcom/sm8750/` y `build-image.sh`
+  (`install_firmware()`) los aplica **después** del overlay de ROCKNIX → ganan.
+  Ya no hay que copiarlos a mano en la Odin.
 - **CORRECCION**: el `0x1fffffff` del dmesg es `SERVREG_SERVICE_STATE_UP` (el PDR **sí** sube).
 - **VER DETALLE EN**: BATTERY-ISSUE.md (secciones "premisa CORREGIDA", "HERRAMIENTA...", "SOLUCIÓN ENCONTRADA").
 

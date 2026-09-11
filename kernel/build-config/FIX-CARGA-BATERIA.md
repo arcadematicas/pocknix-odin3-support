@@ -45,6 +45,18 @@ O usar el script: `odin-charge-ulog.sh` (mismo directorio).
 Estados del BattMngr (de `qcbattmngr850.pdb`): 0 ENTRY, 1 NO_CHG, 2 FAST, 3 TOP_OFF, 4 DONE,
 5 RECHARGE, 6 TDONE, 7 NOT_CHARGING_THERMAL, 8 ERROR, **9 TEST**.
 
-## Pendiente
-Hacerlo permanente en la imagen/build de Pocknix: incluir estos 2 ficheros en `qcom/sm8750/`
-(por defecto el build sincroniza el firmware del overlay de ROCKNIX; hay que sobrescribirlos).
+## ✅ Permanente en el build (11/09/2026)
+
+Ya **no hay que copiar nada a mano**. El fix está en las fuentes de `pocknix-os`:
+
+- `devices/sm8750/firmware/qcom/sm8750/adsp.mbn` + `adsp_dtb.mbn` (los 2 ficheros,
+  commit en el repo de build; `README.md` en esa carpeta explica el porqué).
+- `scripts/build-image.sh` → `install_firmware()` ahora aplica **después** del
+  rsync del overlay de ROCKNIX un rsync de `${DEVICE_DIR}/firmware/` al rootfs, así
+  que estos blobs **ganan** sobre los del overlay.
+
+El DTS del Odin 3 (`cq8725s-ayn-odin3.dts`) usa `firmware-name = "qcom/sm8750/adsp.mbn"`,
+por eso los ficheros van a `qcom/sm8750/` (ArmadaOS los tiene en `qcom/sm8750/ayn/odin3/`
+porque su DTS usa la ruta con nombre de placa).
+
+Cualquier imagen nueva ya arranca con la batería cargando.
