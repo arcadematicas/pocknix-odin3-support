@@ -144,15 +144,17 @@ mapping:
       gamepad:
         button: LeftBumper
 
-  - name: Right Paddle
+  # Pocknix delta vs ArmadaOS: the right back paddle (M2) is kept as the MangoHud
+  # toggle (keyboard F13) instead of RightPaddle1 — a Pocknix feature the toggle
+  # daemon listens for. The left paddle stays a normal paddle.
+  - name: Right Paddle (MangoHud toggle F13)
     source_events:
       - evdev:
           event_type: KEY
           event_code: BTN_C
           value_type: button
     target_event:
-      gamepad:
-        button: RightPaddle1
+      keyboard: KeyF13
 
   - name: Left Paddle
     source_events:
