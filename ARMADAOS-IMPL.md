@@ -70,6 +70,31 @@ el mando "muerto" se recupere.
 
 ---
 
+## 4. `ENABLE_GAMESCOPE_WSI=1`
+
+**Fichero**: `packages/shared/pocknix-steam/pocknix-steam`. Habilita la capa **WSI de
+gamescope** (el juego presenta directamente en el compositor). ArmadaOS lo exporta en su
+sesión (`gamescope-session-plus`); nosotros no lo teníamos.
+
+---
+
+## HDR — mecanismo localizado (pendiente de decidir)
+
+`ARMADA_HDR_NITS=650` (perfil del Odin 3) se consume en `gamescope-session-plus` como
+**flags de gamescope**:
+
+- `--hdr-itm-target-nits 650` (+ `GAMESCOPE_INTERNAL_DEVICE_ID`,
+  `GAMESCOPE_EXPOSE_CLIENT_SAMPLEABLE_FORMATS=1`)
+- si `ENABLE_GAMESCOPE_HDR=1` y `ENABLE_GAMESCOPE_WSI=1`: `--hdr-enabled --hdr-itm-enable`
+  y `ENABLE_HDR_WSI=1`, `DXVK_HDR=1`, `GAMESCOPE_WAYLAND_DISPLAY=gamescope-0`.
+
+En ArmadaOS está **opt-in** (por defecto `highDynamicRange: false` en KWin). El mecanismo
+está documentado y los scripts de referencia guardados; **falta decidir si lo activamos y
+probarlo** en la Odin (el gamescope de Pocknix es ROCKNIX `6644cc9`, no el Terra de ArmadaOS,
+así que hay que comprobar que soporta los flags — ArmadaOS los guarda con `gamescope --help`).
+
+---
+
 ## Lo que NO se portó (y por qué)
 
 - **`controller-type`**: ya lo cubre `pocknix-gamepad-target` (deck/xb360/ds5…).
