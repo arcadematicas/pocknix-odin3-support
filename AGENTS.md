@@ -192,10 +192,20 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 
 ## 🔗 REPOS, FORK Y PR (11/09/2026)
 - **Nuestro repo de soporte** (público): `arcadematicas/pocknix-odin3-support` (`master`).
-- **Fork de pocknix-os**: `arcadematicas/pocknix-os`, rama **`odin3-sm8750`** con nuestro
-  trabajo (upstream `main` de shuuri-labs + 9 commits nuestros). Es un fork basado en un
-  `main` anterior; para el PR hay que **rebasar** sobre el `main` actual (hay conflictos,
-  sobre todo en ficheros generados del plugin Decky).
+- **Fork de pocknix-os**: `arcadematicas/pocknix-os`.
+  - Rama **`odin3-sm8750`**: nuestro árbol de trabajo completo (9 commits) tal cual.
+  - Rama **`odin3-pr`** (rama limpia de PR, partiendo del `main` actual de upstream):
+    solo el *enablement* de la familia SM8750 — `kernel/sm8750/` (DTS + serie de
+    parches + config), `config/tuning/sm8750.conf`, `devices/sm8750/` (profile +
+    `packages.list` + BSP `pocknix-bsp-sm8750` + metapaquete) y
+    `packages/soc/{linux-pocknix,pocknix-bootloader}-sm8750`.
+    **Verificado**: los 68 parches aplican limpios con el `apply_patches` ESTRICTO de
+    `build-kernel.sh` (sin fuzz). Fixes aplicados: eliminado el parche redundante
+    `0062-backlight-aw99706-honor-blank-power-state` (el fix ya está en el árbol) y
+    de-duplicado `10-mainline`/`30-version` (eran byte-idénticos).
+  - **Pendiente**: build completo (`make sync` + `make kernel` + imagen) para confirmar
+    que compila y arranca, y luego abrir el PR. Requiere un checkout de ROCKNIX
+    (`ROCKNIX_PROJECT_DIR`), que **no** está en el PC (solo hay el tarball del ABL).
 - **Issue upstream #54** (`shuuri-labs/pocknix-os`): comentario del 11/09/2026 con el
   resumen final (batería + KScreen + suspensión resueltos) y aviso de que estamos listos
   para la fase de merge/PR. https://github.com/shuuri-labs/pocknix-os/issues/54#issuecomment-5633616452
