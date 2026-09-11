@@ -158,3 +158,17 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 - La **imagen oficial ya incluye `kscreen`** vía `pocknix-desktop-full`; esta Odin
   no tiene ese meta (escritorio montado a mano).
 - **VER DETALLE EN**: KSCREEN-ISSUE.md.
+
+## 🔬 ESTUDIO ARMADAOS (11/09/2026)
+- **Informe completo**: `ARMADAOS-STUDY.md`. **Scripts de referencia**: `armadaos-reference/`
+  (`libexec-armada/`, `lib-armada/`, `gamescope-session-plus/`, `kernel-config-armada.txt`,
+  `packages-armada.txt`, `services-armada.txt`).
+- Hecho con la Odin en ArmadaOS (SSH `armada@192.168.4.29`, clave `armada`).
+- ArmadaOS = Fedora 44 bootc + ostree + Btrfs + dracut + SDDM + gamescope-session-plus;
+  kernel 7.2.3 con configs clave idénticas a las nuestras.
+- **Nos falta (prioridad)**: `dbus-update-activation-environment` en la sesión (env KScreen),
+  gestión de suspensión (`fake-suspend`), inyección de libs x86 + reparación de mando de
+  `armada-game-launch`, variables `STEAM_GAMESCOPE_*`, `armada-powerd` (D-Bus),
+  `controller-type`, MTP, HDR, UCM audio Odin 3.
+- **Ya portado**: proton-wrapper/FEX, guestos-mount, fex-profiles, scx_lavd, steamos-shim,
+  RGB, splash, install-internal.
