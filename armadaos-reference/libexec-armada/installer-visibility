@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+
+eval "$(/usr/libexec/armada/device-env)"
+source /usr/lib/armada/storage-lib
+
+# Hide the TryExec marker on internal boot; fail open so the installer surfaces detection errors.
+armada_running_from_internal && exit 0
+install -m 0755 /dev/null /run/armada/installable

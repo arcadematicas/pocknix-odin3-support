@@ -1,0 +1,24 @@
+#!/bin/bash
+# Stage armada's Android Mesa into Waydroid's vendor overlay, which shadows
+# vendor.img at container mount.
+set -euo pipefail
+
+eval "$(/usr/libexec/armada/device-env)"
+
+case "${ARMADA_SOC_CLASS:-}" in
+    SM8750) ;;
+    *) exit 0 ;;
+esac
+
+[[ -d /var/lib/waydroid/images ]] || exit 0
+
+source_dir=/usr/share/armada/waydroid/vendor/lib64
+target_dir=/var/lib/waydroid/overlay/vendor/lib64
+
+if [[ ! -d "$source_dir" ]]; then
+    rm -rf "$target_dir"
+    exit 0
+fi
+
+mkdir -p "$target_dir"
+rsync --archive --delete --itemize-changes "$source_dir/" "$target_dir/"

@@ -1,0 +1,85 @@
+#!/bin/bash
+set -euo pipefail
+
+device_env=${ARMADA_DEVICE_ENV:-/usr/libexec/armada/device-env}
+mem_sleep=${ARMADA_MEM_SLEEP_PATH:-/sys/power/mem_sleep}
+nm_ignore_sleep=${ARMADA_NM_IGNORE_SLEEP:-/etc/NetworkManager/ignore-sleep}
+sleep_config=${ARMADA_SLEEP_CONFIG:-/etc/armada/sleep.conf}
+
+eval "$("$device_env")"
+
+# AYANEO Pocket MCUs need this serial frame to switch to fake-Xbox-360 mode
+# (045e:028e); without it the kernel can't drive the controller.
+ayaneo_xbox_mode() {
+    local serial_device=/dev/ttyHS0
+
+    if [[ ! -e "$serial_device" ]]; then
+        echo "device-quirks: $serial_device not present, skipping AYANEO Xbox mode"
+        return 0
+    fi
+
+    stty -F "$serial_device" 115200 -clocal -opost -isig -icanon -echo
+    printf '\xe7\x55\x05\x01\x00\x00\x00\x00\x00\x5b\xed' >"$serial_device"
+    sleep 0.1
+    printf '\x35\x35\x30\x35\x30\x31\x30\x30\x30\x30\x30\x30\x30\x30\x30\x30' >"$serial_device"
+    sleep 0.1
+
+    echo "device-quirks: AYANEO MCU switched to Xbox 360 mode"
+}
+
+case "${ARMADA_GAMEPAD_QUIRK:-none}" in
+    ayaneo-xbox)
+        ayaneo_xbox_mode
+        ;;
+    none)
+        ;;
+esac
+
+# Older images could save suspend_mode=deep, which is no longer a valid value.
+if [[ -w "$sleep_config" ]] && grep -qx 'suspend_mode=deep' "$sleep_config"; then
+    if ! sed -i 's/^suspend_mode=deep$/suspend_mode=s2idle/' "$sleep_config"; then
+        echo "device-quirks: failed to retire suspend_mode=deep in $sleep_config" >&2
+    fi
+fi
+
+# Keep the kernel selection aligned with the saved preference after reboot.
+if [[ "${ARMADA_SUSPEND_MODE:-fake}" == "s2idle" ]]; then
+    if [[ -w "$mem_sleep" ]] && grep -qw s2idle "$mem_sleep"; then
+        if ! echo s2idle >"$mem_sleep"; then
+            echo "device-quirks: failed to select s2idle in $mem_sleep" >&2
+        fi
+    fi
+fi
+
+# fake-suspend keeps wifi associated; real suspend needs NM to drop and reconnect.
+if [[ "${ARMADA_SUSPEND_MODE:-fake}" != "fake" ]]; then
+    if ! rm -f "$nm_ignore_sleep"; then
+        echo "device-quirks: failed to remove $nm_ignore_sleep" >&2
+    fi
+else
+    if ! touch "$nm_ignore_sleep"; then
+        echo "device-quirks: failed to create $nm_ignore_sleep" >&2
+    fi
+fi
+
+# Some devices need synchronous device suspend ordering. On AYANEO Pocket DS,
+# async suspend can race the Goodix touchscreen against panel/regulator power
+# sequencing and make goodix_suspend abort with -EAGAIN.
+if [[ "${ARMADA_SYNC_SUSPEND:-0}" == "1" ]]; then
+    pm_async_path=${ARMADA_PM_ASYNC_PATH:-/sys/power/pm_async}
+    if [[ -w "$pm_async_path" ]]; then
+        if ! echo 0 >"$pm_async_path"; then
+            echo "device-quirks: failed to disable async suspend via $pm_async_path" >&2
+        fi
+    else
+        echo "device-quirks: $pm_async_path not writable, skipping sync suspend quirk" >&2
+    fi
+fi
+
+if [[ "${ARMADA_SOC_CLASS:-}" == "SM8550" ]]; then
+    # SM8550 UFS needs up to 3 seconds for UIC completion across suspend.
+    uic_timeout=/sys/module/ufshcd_core/parameters/uic_cmd_timeout
+    if [[ -w "$uic_timeout" ]]; then
+        echo 3000 >"$uic_timeout"
+    fi
+fi

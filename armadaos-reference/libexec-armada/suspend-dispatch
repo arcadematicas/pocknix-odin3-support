@@ -1,0 +1,37 @@
+#!/bin/bash
+# Dispatch to fake-suspend or real suspend per ARMADA_SUSPEND_MODE.
+set -uo pipefail
+
+device_env=${ARMADA_DEVICE_ENV:-/usr/libexec/armada/device-env}
+fake_suspend=${ARMADA_FAKE_SUSPEND:-/usr/libexec/armada/fake-suspend}
+eval "$("$device_env" 2>/dev/null)" || true
+mode="${ARMADA_SUSPEND_MODE:-fake}"
+
+if [[ "$mode" == "fake" ]]; then
+    exec "$fake_suspend" sleep
+fi
+
+if [[ "$mode" != "s2idle" ]]; then
+    echo "suspend-dispatch: invalid sleep mode $mode; using fake suspend" >&2
+    exec "$fake_suspend" sleep
+fi
+
+mem_sleep=${ARMADA_MEM_SLEEP_PATH:-/sys/power/mem_sleep}
+if [[ ! -w "$mem_sleep" ]] || ! grep -qw "$mode" "$mem_sleep"; then
+    echo "suspend-dispatch: unsupported sleep mode $mode; using fake suspend" >&2
+    exec "$fake_suspend" sleep
+fi
+if ! echo "$mode" >"$mem_sleep"; then
+    echo "suspend-dispatch: failed to select sleep mode $mode; using fake suspend" >&2
+    exec "$fake_suspend" sleep
+fi
+
+# Real suspend: prefer systemd-sleep so its sleep hooks and process freeze run.
+if [[ -n "${ARMADA_SYSTEMD_SLEEP:-}" ]]; then
+    exec "$ARMADA_SYSTEMD_SLEEP" suspend "$@"
+fi
+for sleep_bin in /usr/lib/systemd/systemd-sleep /lib/systemd/systemd-sleep; do
+    [[ -x "$sleep_bin" ]] && exec "$sleep_bin" suspend "$@"
+done
+# No systemd-sleep found: write the state directly rather than leave sleep dead.
+echo mem > /sys/power/state

@@ -1,0 +1,164 @@
+#!/bin/bash
+# Rebuild the ESP /KERNEL (Android boot.img) for the next-boot deployment so a
+# bootc upgrade/rollback takes effect — ostree is bootloader=none and won't.
+set -euo pipefail
+
+ESP="${ESP:-/boot/efi}"
+BOOTROOT="${BOOTROOT:-/boot}"
+SYSROOT="${SYSROOT:-/}"
+MKBOOTIMG="${MKBOOTIMG:-/usr/libexec/armada/mkbootimg.py}"
+DTB_LIST="${DTB_LIST:-/usr/lib/armada/supported-dtbs}"
+ARGS_FILE="${ARGS_FILE:-/usr/lib/armada/bootimg-args}"
+KERNEL_OUT="${ESP}/KERNEL"
+STAMP="${ESP}/.armada-bootimg.id"
+# Plain 8.3: a long name would also generate a short alias next to KERNEL, the
+# one name the ABL looks up.
+PREV_OUT="${ESP}/KERNEL.BAK"
+PREV_TMP="${ESP}/KERNEL.TMP"
+PREV_STAMP="${ESP}/.armada-bootimg.prev.id"
+
+snapshot=0
+[ "${1:-}" = "--snapshot-prev" ] && snapshot=1
+
+[ -r "${DTB_LIST}" ] || { echo "armada-bootimg-update: missing ${DTB_LIST}" >&2; exit 1; }
+[ -r "${ARGS_FILE}" ] || { echo "armada-bootimg-update: missing ${ARGS_FILE}" >&2; exit 1; }
+. "${ARGS_FILE}"
+
+# The boot-time run can still be hashing when the finalize chain starts its own
+# run, and both stage ${ESP}/.KERNEL.new. Bounded: waiting out a stalled holder
+# would hang shutdown, and force-powering-off there is what strands a device.
+exec 9>/run/armada-bootimg.lock
+flock -w 30 9 || {
+    echo "armada-bootimg-update: timed out waiting for another regen to finish" >&2
+    exit 1
+}
+
+# /KERNEL must land on the FAT ESP the ABL reads; if it isn't mounted we'd write
+# to a stray dir and the ABL would keep booting the old kernel. Fail loud instead.
+findmnt -rn "${ESP}" >/dev/null 2>&1 || {
+    echo "armada-bootimg-update: ${ESP} is not a mountpoint; refusing to write /KERNEL" >&2
+    exit 1
+}
+
+# A spare to rename over a corrupt /KERNEL from any PC that reads the SD card;
+# the initramfs fallback ships inside /KERNEL and cannot rescue that. Boot-time
+# only, so the spare is an image the ABL booted; never fails the caller.
+snapshot_prev() {
+    local cur need avail
+    [ -f "${KERNEL_OUT}" ] || return 0
+    cur=$(cat "${STAMP}" 2>/dev/null || true)
+    [ -n "${cur}" ] || return 0
+    # The spare has to still be on disk: a stamp outliving its image, which a
+    # manual recovery does, must not suppress recreating it.
+    if [ "${cur}" = "$(cat "${PREV_STAMP}" 2>/dev/null || true)" ] && [ -s "${PREV_OUT}" ]; then
+        return 0
+    fi
+    need=$(stat -c %s "${KERNEL_OUT}" 2>/dev/null || echo 0)
+    avail=$(df -B1 --output=avail "${ESP}" 2>/dev/null | tail -1 | tr -dc '0-9')
+    if [ "${avail:-0}" -lt $((need + 4 * 1024 * 1024)) ]; then
+        echo "armada-bootimg-update: ${ESP} lacks room for ${PREV_OUT##*/}; skipping snapshot" >&2
+        return 0
+    fi
+    # Drop the stamp first: it must never describe an image that is not there.
+    rm -f "${PREV_STAMP}" 2>/dev/null || true
+    if cp -f "${KERNEL_OUT}" "${PREV_TMP}" &&
+        sync "${PREV_TMP}" &&
+        mv -f "${PREV_TMP}" "${PREV_OUT}"; then
+        printf '%s' "${cur}" > "${PREV_STAMP}" 2>/dev/null || true
+        sync
+        echo "armada-bootimg-update: saved known-good ${PREV_OUT}"
+    else
+        rm -f "${PREV_TMP}" 2>/dev/null || true
+        echo "armada-bootimg-update: ${PREV_OUT} snapshot failed (continuing)" >&2
+    fi
+    return 0
+}
+if [ "${snapshot}" = 1 ]; then
+    snapshot_prev
+fi
+
+# Next-boot deployment = highest-version BLS entry (ostree gives its default,
+# and the rollback target, the highest version), via the shared helper.
+entry=$(armada_default_bls_entry "${BOOTROOT}")
+[ -n "${entry:-}" ] || { echo "armada-bootimg-update: no BLS entry in ${BOOTROOT}/loader/entries" >&2; exit 1; }
+
+linux=$(sed -n 's/^linux //p'   "${entry}" | head -1)
+initrd=$(sed -n 's/^initrd //p' "${entry}" | head -1)
+fdtdir=$(sed -n 's/^fdtdir //p' "${entry}" | head -1)
+options=$(sed -n 's/^options //p' "${entry}" | head -1)
+
+# The deployment being baked owns its DTB set: the running list can name a .dtb
+# that build dropped. An unresolvable karg names no deployment at all, so baking
+# it would stamp an unbootable /KERNEL and suppress the rollback that recovers.
+ostree_karg=""
+for t in ${options}; do
+    case "${t}" in ostree=*) ostree_karg="${t#ostree=}" ;; esac
+done
+[ -n "${ostree_karg}" ] || {
+    echo "armada-bootimg-update: no ostree= karg in ${entry}" >&2
+    exit 1
+}
+deploy_root=$(realpath -e "${SYSROOT%/}${ostree_karg}" 2>/dev/null) || {
+    echo "armada-bootimg-update: ${ostree_karg} does not resolve under ${SYSROOT}" >&2
+    exit 1
+}
+if [ -r "${deploy_root}/usr/lib/armada/supported-dtbs" ]; then
+    DTB_LIST="${deploy_root}/usr/lib/armada/supported-dtbs"
+fi
+
+# BLS paths carry a /boot prefix (bootprefix=true); the files live on this fs.
+kpath="${BOOTROOT}${linux#/boot}"
+ipath="${BOOTROOT}${initrd#/boot}"
+dpath="${BOOTROOT}${fdtdir#/boot}"
+
+content_files=("${kpath}" "${ipath}")
+while read -r name; do
+    [ -n "${name}" ] || continue
+    content_files+=("${dpath}/qcom/${name}.dtb")
+done < "${DTB_LIST}"
+id=$(armada_bootimg_id "${linux}" "${initrd}" "${options}" "${DTB_LIST}" "${ARGS_FILE}" \
+    "$(armada_bootimg_content_id "${content_files[@]}")")
+if [ -f "${KERNEL_OUT}" ] && [ "$(cat "${STAMP}" 2>/dev/null || true)" = "${id}" ]; then
+    echo "armada-bootimg-update: /KERNEL already current (${linux##*/})"
+    exit 0
+fi
+
+cmdline=$(armada_bootimg_cmdline "${options}") || {
+    echo "armada-bootimg-update: no ostree= karg in ${entry}; refusing to bake an unbootable /KERNEL" >&2
+    exit 1
+}
+
+# Fail loud rather than ship a silently-truncated, unbootable /KERNEL that can
+# only be recovered via fastboot. Limit is single-sourced (see bootimg-args).
+if [ "${#cmdline}" -gt "${ARMADA_CMDLINE_MAX}" ]; then
+    echo "armada-bootimg-update: assembled cmdline is ${#cmdline}B, over the ${ARMADA_CMDLINE_MAX}B limit" >&2
+    exit 1
+fi
+
+work=$(mktemp -d)
+trap 'rm -rf "${work}"' EXIT
+
+# ROCKNIX ABL expects gzip(Image) with all supported DTBs appended; its model
+# picker chooses among them at boot.
+gzip -c "${kpath}" > "${work}/kernel.gz"
+while read -r name; do
+    [ -n "${name}" ] || continue
+    dtb="${dpath}/qcom/${name}.dtb"
+    [ -f "${dtb}" ] || { echo "armada-bootimg-update: missing DTB ${dtb}" >&2; exit 1; }
+    cat "${dtb}" >> "${work}/kernel.gz"
+done < "${DTB_LIST}"
+
+python3 "${MKBOOTIMG}" \
+    --kernel "${work}/kernel.gz" --ramdisk "${ipath}" \
+    ${ARMADA_BOOTIMG_ARGS} --os_patch_level "$(date '+%Y-%m')" \
+    --cmdline "${cmdline}" \
+    -o "${work}/KERNEL"
+
+# Atomic on the FAT ESP: rename can't leave a half-written /KERNEL.
+cp -f "${work}/KERNEL" "${ESP}/.KERNEL.new"
+sync "${ESP}/.KERNEL.new"
+mv -f "${ESP}/.KERNEL.new" "${KERNEL_OUT}"
+printf '%s' "${id}" > "${STAMP}"
+sync
+
+echo "armada-bootimg-update: wrote ${KERNEL_OUT} for ${linux##*/}"

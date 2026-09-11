@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+# Translate bootc's --progress-fd JSON into the N% lines Steam reads off
+# steamos-update stdout. The phase weights track measured Armada update time;
+# bootc reports continuous download bytes, one import step, and three staging
+# steps. Progress is forward-only.
+import sys, json
+
+last = -1
+
+
+def emit(pct):
+    global last
+    pct = int(pct)
+    if pct > last and pct <= 100:
+        print(f"{pct}%", flush=True)
+        last = pct
+
+
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        e = json.loads(line)
+    except ValueError:
+        continue
+    t = e.get("type")
+    task = e.get("task")
+    if t == "ProgressBytes":
+        total = e.get("bytesTotal") or 0
+        if total:
+            # bytesTotal is the amount still needed for this run; bytesCached
+            # is separate and must not be added to it.
+            done = e.get("bytes", 0)
+            emit(min(60, done * 60 / total))
+        elif task == "pulling":
+            # A fully cached target has no byte denominator and is already
+            # through the download phase.
+            emit(60)
+    elif t == "ProgressSteps":
+        total = e.get("stepsTotal") or 0
+        if total:
+            done = e.get("steps", 0)
+            if task == "importing":
+                emit(60 + done * 20 / total)
+            elif task == "staging":
+                emit(80 + done * 20 / total)

@@ -1,0 +1,61 @@
+#!/usr/bin/python3
+import json
+from pathlib import Path
+
+
+CONFIG = Path("/etc/armada/input-calibration.json")
+CALIBRATION_BACKENDS = {
+    "rsinput": Path("/sys/module/rsinput/parameters"),
+    "retroid": Path("/sys/module/retroid/parameters"),
+}
+PARAM_NAMES = (
+    "axis_leftx_min",
+    "axis_leftx_center",
+    "axis_leftx_max",
+    "axis_leftx_deadzone",
+    "axis_leftx_antideadzone",
+    "axis_lefty_min",
+    "axis_lefty_center",
+    "axis_lefty_max",
+    "axis_lefty_deadzone",
+    "axis_lefty_antideadzone",
+    "axis_rightx_min",
+    "axis_rightx_center",
+    "axis_rightx_max",
+    "axis_rightx_deadzone",
+    "axis_rightx_antideadzone",
+    "axis_righty_min",
+    "axis_righty_center",
+    "axis_righty_max",
+    "axis_righty_deadzone",
+    "axis_righty_antideadzone",
+    "trigger_left_max",
+    "trigger_left_deadzone",
+    "trigger_left_antideadzone",
+    "trigger_right_max",
+    "trigger_right_deadzone",
+    "trigger_right_antideadzone",
+)
+
+
+def main():
+    if not CONFIG.exists():
+        return
+    with CONFIG.open(encoding="utf-8") as f:
+        params = json.load(f)
+    if not isinstance(params, dict):
+        raise SystemExit("input calibration config must be a JSON object")
+    backend = params.get("backend", "rsinput")
+    parameters = CALIBRATION_BACKENDS.get(backend)
+    if parameters is None:
+        return
+    if not parameters.exists():
+        return
+    for name in PARAM_NAMES:
+        if name in params:
+            (parameters / name).write_text(str(int(params[name])), encoding="utf-8")
+    (parameters / "update_params").write_text("1", encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
