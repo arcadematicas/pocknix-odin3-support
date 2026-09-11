@@ -1,0 +1,9 @@
+[Unit]
+Description=GSS User Proxy
+Documentation=man:gssproxy(8)
+
+[Service]
+Type=notify
+StandardError=journal
+ExecStart=/usr/bin/gssproxy -i -u
+Restart=on-failure

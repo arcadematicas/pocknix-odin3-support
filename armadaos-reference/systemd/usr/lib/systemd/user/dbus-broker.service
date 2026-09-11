@@ -1,0 +1,17 @@
+[Unit]
+Description=D-Bus User Message Bus
+Documentation=man:dbus-broker-launch(1)
+DefaultDependencies=false
+After=dbus.socket
+Before=basic.target shutdown.target
+Requires=dbus.socket
+Conflicts=shutdown.target
+
+[Service]
+Type=notify-reload
+Sockets=dbus.socket
+ExecStart=/usr/bin/dbus-broker-launch --scope user
+Slice=session.slice
+
+[Install]
+Alias=dbus.service

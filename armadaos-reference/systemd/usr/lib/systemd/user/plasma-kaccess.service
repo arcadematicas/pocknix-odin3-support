@@ -1,0 +1,9 @@
+[Unit]
+Description=KAccess
+After=plasma-core.target
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/kaccess
+Restart=on-failure
+Slice=background.slice

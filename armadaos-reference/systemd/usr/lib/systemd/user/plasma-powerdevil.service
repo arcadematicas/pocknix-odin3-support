@@ -1,0 +1,16 @@
+[Unit]
+Description=Powerdevil
+PartOf=graphical-session.target
+After=plasma-core.target
+
+[Service]
+# Enable this if you want to let powerdevil wakeup system on set schedules (e.g. alarms)
+# This works on system only where user is not considered system user. Currently this is useful
+# only in Plasma Mobile.
+# AmbientCapabilities=CAP_WAKE_ALARM
+ExecStart=/usr/libexec/org_kde_powerdevil
+Type=dbus
+BusName=org.kde.Solid.PowerManagement
+TimeoutStopSec=5sec
+Slice=background.slice
+Restart=on-failure

@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: None
+# SPDX-License-Identifier: CC0-1.0
+
+[Unit]
+Description=KDE Night Time Service
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=/usr/libexec/knighttimed
+BusName=org.kde.NightTime
+Slice=background.slice
