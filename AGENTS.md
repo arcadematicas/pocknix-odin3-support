@@ -199,13 +199,24 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
     parches + config), `config/tuning/sm8750.conf`, `devices/sm8750/` (profile +
     `packages.list` + BSP `pocknix-bsp-sm8750` + metapaquete) y
     `packages/soc/{linux-pocknix,pocknix-bootloader}-sm8750`.
-    **Verificado**: los 68 parches aplican limpios con el `apply_patches` ESTRICTO de
-    `build-kernel.sh` (sin fuzz). Fixes aplicados: eliminado el parche redundante
-    `0062-backlight-aw99706-honor-blank-power-state` (el fix ya está en el árbol) y
-    de-duplicado `10-mainline`/`30-version` (eran byte-idénticos).
-  - **Pendiente**: build completo (`make sync` + `make kernel` + imagen) para confirmar
-    que compila y arranca, y luego abrir el PR. Requiere un checkout de ROCKNIX
-    (`ROCKNIX_PROJECT_DIR`), que **no** está en el PC (solo hay el tarball del ABL).
+  - **`make sync` hecho** contra ROCKNIX `next` clonado en
+    `/home/fransis/pocknix-odin3-project/distribution` (shallow, branch `next`):
+    `kernel/sm8750` = árbol SM8750 actual de ROCKNIX + nuestro delta. `kernel.conf`
+    corregido (`KERNEL_VERSION=7.2`, `ROCKNIX_VERSION_PATCH_DIR=7.2`; antes 7.2.4/
+    `default`). Añadido **`0051-adreno-a8xx-force-gx-collapse-before-cx.patch`**
+    (regenerado sobre el árbol actual; complementa al 0050 de ROCKNIX). **71 parches
+    aplican limpios** con el `apply_patches` estricto (sin fuzz). Quitados los parches
+    de batería 0078/0079/0080 (workarounds previos al fix de firmware, van aparte).
+  - **`make kernel` OK**: kernel 7.2.0, `Image` + 2 DTBs (odin3 + konkr) + módulos +
+    boot image `build/image/sm8750/KERNEL`.
+  - **Build de imagen**: `make build` lanzado (log `/tmp/image_odin3pr2.log`). OJO:
+    el PC es **x86_64** y el chroot es **aarch64** → se ejecuta bajo **qemu-user**
+    (binfmt_misc). El registro `qemu-aarch64` no traía el flag **`C`** (credentials),
+    así que el `sudo` dentro del chroot fallaba ("effective uid is not 0") y makepkg
+    no instalaba dependencias. **Fix**: override `/etc/binfmt.d/qemu-aarch64-static.conf`
+    con flags `FPC` + `systemctl restart systemd-binfmt` (ahora `POCF`, suid OK).
+  - **Pendiente**: terminar el build de imagen (lento por qemu), generar la SD y
+    probar el arranque en la Odin; luego abrir el PR.
 - **Issue upstream #54** (`shuuri-labs/pocknix-os`): comentario del 11/09/2026 con el
   resumen final (batería + KScreen + suspensión resueltos) y aviso de que estamos listos
   para la fase de merge/PR. https://github.com/shuuri-labs/pocknix-os/issues/54#issuecomment-5633616452
