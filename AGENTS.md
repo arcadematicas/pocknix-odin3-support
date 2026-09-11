@@ -190,6 +190,19 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
   para y el suspend aborta. Usar `systemctl suspend`.
 - **VER DETALLE EN**: `SUSPEND-ISSUE.md`.
 
+## 🔗 REPOS, FORK Y PR (11/09/2026)
+- **Nuestro repo de soporte** (público): `arcadematicas/pocknix-odin3-support` (`master`).
+- **Fork de pocknix-os**: `arcadematicas/pocknix-os`, rama **`odin3-sm8750`** con nuestro
+  trabajo (upstream `main` de shuuri-labs + 9 commits nuestros). Es un fork basado en un
+  `main` anterior; para el PR hay que **rebasar** sobre el `main` actual (hay conflictos,
+  sobre todo en ficheros generados del plugin Decky).
+- **Issue upstream #54** (`shuuri-labs/pocknix-os`): comentario del 11/09/2026 con el
+  resumen final (batería + KScreen + suspensión resueltos) y aviso de que estamos listos
+  para la fase de merge/PR. https://github.com/shuuri-labs/pocknix-os/issues/54#issuecomment-5633616452
+- El mantenedor pidió: (1) pushear la rama del fork que compila, (2) rebasar sobre el árbol
+  SM8750 de ROCKNIX actual, (3) PR en la forma espejo de `kernel/sm8550` + entrada de board
+  en el `device.conf` de la BSP.
+
 ## 🔬 ESTUDIO ARMADAOS (11/09/2026)
 - **Informe completo**: `ARMADAOS-STUDY.md`. **Scripts de referencia**: `armadaos-reference/`
   (`libexec-armada/`, `lib-armada/`, `gamescope-session-plus/`, `kernel-config-armada.txt`,
