@@ -95,6 +95,29 @@ así que hay que comprobar que soporta los flags — ArmadaOS los guarda con `ga
 
 ---
 
+## 5. Botones Steam/Quick Access del Odin 3 (mapeo del mando)
+
+**Problema**: en Pocknix los botones Steam (Guide) y Quick Access (QAM) no quedan
+en lados opuestos como en ArmadaOS.
+
+**Causa**: la config AYN de ROCKNIX (`ayn_mcu.yaml`) mapea `BTN_BACK` (botón
+Quick Access físico) a la **tecla `KeyF1`** (la UI propia de ROCKNIX), así que
+Steam no recibe el botón QuickAccess. Pocknix **ya aplicaba el delta** en SM8250
+(`rp5-gamepad.yaml`) y SM8550 (`sm8550-gamepad.yaml`): `BTN_BACK -> QuickAccess`.
+Faltaba en el Odin 3 (SM8750).
+
+**Fix** (`pocknix-os`):
+- `devices/sm8750/inputplumber/capability_maps/ayn_mcu.yaml` (de ArmadaOS):
+  `BTN_MODE -> Guide`, **`BTN_BACK -> QuickAccess`**, `KEY_F24 -> KeyHome`,
+  paddles -> `LeftPaddle1`/`RightPaddle1`.
+- `devices/sm8750/inputplumber/devices/01-ayn-controller.yaml`: target **`deck`**
+  + `keyboard` (pad Steam-native).
+- `build-image.sh`: `install_inputplumber_overrides()` aplica el override
+  **después** de `install_local_packages` para que gane.
+- Copias de referencia en `config/inputplumber/`.
+
+---
+
 ## Lo que NO se portó (y por qué)
 
 - **`controller-type`**: ya lo cubre `pocknix-gamepad-target` (deck/xb360/ds5…).

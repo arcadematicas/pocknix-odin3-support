@@ -81,16 +81,26 @@ mapping:
           value_type: button
     target_event:
       gamepad:
-        button: QuickAccess
+        button: Select
 
-  - name: F1 Key
+  - name: Quick Access Button
     source_events:
       - evdev:
           event_type: KEY
           event_code: BTN_BACK
           value_type: button
     target_event:
-      keyboard: KeyF1
+      gamepad:
+        button: QuickAccess
+
+  - name: Home Key
+    source_events:
+      - evdev:
+          event_type: KEY
+          event_code: KEY_F24
+          value_type: button
+    target_event:
+      keyboard: KeyHome
 
   - name: Right Trigger
     source_events:
@@ -134,14 +144,15 @@ mapping:
       gamepad:
         button: LeftBumper
 
-  - name: Right Paddle (MangoHud toggle F13)
+  - name: Right Paddle
     source_events:
       - evdev:
           event_type: KEY
           event_code: BTN_C
           value_type: button
     target_event:
-      keyboard: KeyF13
+      gamepad:
+        button: RightPaddle1
 
   - name: Left Paddle
     source_events:
@@ -151,7 +162,7 @@ mapping:
           value_type: button
     target_event:
       gamepad:
-        button: LeftPaddle2
+        button: LeftPaddle1
 
   - name: Right Stick
     source_events:
