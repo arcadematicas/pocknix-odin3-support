@@ -23,6 +23,10 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
   fallo original: faltaba el paquete **`kscreen`** (KCM de pantalla); ver
   `KSCREEN-ISSUE.md`. La imagen oficial ya lo incluye vía
   `pocknix-desktop-full`.
+- ✅ **Suspensión (s2idle real)**: el botón de encendido **suspende de verdad** y,
+  al resumir, la pantalla se reactiva sola. Causa del fallo original: un stub
+  `pocknix-fake-suspend.sh` interceptaba `systemd-suspend.service` y salía al
+  instante (solo parpadeaba la pantalla). Detalle en `SUSPEND-ISSUE.md`.
 - ⚠️ **Sensores IIO**: `hexagonrpcd` compilado e instalado (servicio
   `hexagonrpcd-adsp-sensorspd.service`), pero **sale al arrancar y no expone
   dispositivos IIO** → no hay acelerómetro ni sensor de luz ambiental. Por eso no
@@ -45,7 +49,7 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | `config/daemons/` | **Daemons**: `power-button-daemon.py` (botón encendido → pantalla on/off) + `volume-button-daemon.py` (volumen → PipeWire en modo juego) + sus servicios systemd |
 | `config/oled-care/` | **OLED care**: `oled-care-daemon` (pixel refresher automático tras N min de inactividad) + `oled-refresher-auto` + refresher C |
 | `config/decky-plugin/` | Backend del plugin Decky: `oled_care.py` (pixel refresher, detección de modo juego) |
-| `config/fake-suspend/` | **Fake Suspend**: script + servicio + override systemd para evitar suspensión real (cuelgue SM8750). Apaga pantalla + CPU powersave. |
+| `config/fake-suspend/` | **Fake Suspend (OBSOLETO)**: script + servicio + override systemd que evitaba la suspensión real. **Ya no se usa**: el Odin 3 suspende con `s2idle` real y despierta con la pantalla encendida (ver `SUSPEND-ISSUE.md`). |
 | `config/splash/` | **Bootanimation Odin 3**: splash de arranque dibujando en `/dev/fb0` (servicio + reproductor + conversor de frames). Sin Plymouth (no dibuja en el panel DSI). |
 | `config/power/` | **Gestión de potencia**: fan mode `off`, selector de governor CPU, power profiles (pseudo-TDP bajo/medio/alto) y aplicación **por juego** con restauración automática. Todo integrado en PocknixControl. |
 | `config/steamui-watchdog/` | **Watchdog de la UI de Steam**: reinicia steamwebhelper si la UI se congela (bug FEX/CEF). Healthcheck al puerto de debug cada 30s. |
@@ -56,6 +60,7 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | `config/odin3-display.service.clean` | `odin3-display.service` **limpiado**: sin el `rotation` sysfs (ya no existe; es propiedad DRM) ni los `modprobe` muertos → deja de fallar (era la única unidad en `failed`) |
 | `BATTERY-ISSUE.md` | Issue de batería: fuel gauge corre en el firmware ADSP (percent viene del firmware), descalibrado `Debug_Board`, solución = ciclo de carga en Android |
 | `KSCREEN-ISSUE.md` | **RESUELTO**: KScreen no veía el panel en escritorio — faltaba el paquete `kscreen` (KCM Ajustes → Pantalla) |
+| `SUSPEND-ISSUE.md` | **RESUELTO**: suspensión real (s2idle) del Odin 3 — causa (stub `fake-suspend`), bloqueo de `vhci_hcd`/InputPlumber, y hook que reactiva la pantalla al resumir |
 
 ## Lo más valioso para upstream
 1. **Adreno a8xx GX-collapse fix** — resuelve el `VkDeviceLost` del compositor
@@ -74,9 +79,12 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
    (solo en modo juego, cada 4h).
 7. **FEX fix** — `FEX_EARLY_LOG_DISABLE=1` para reducir crashes de
    `steamwebhelper` (bug CEF + FEX, fix parcial upstream 2603).
-8. **Fake Suspend** — evita el cuelgue del SM8750 en suspensión real. Intercepta
-   `systemd-suspend.service` y ejecuta un "fake suspend" (pantalla off + CPU
-   powersave) seguro y despertable al instante.
+8. **Suspensión real (s2idle) + hook de pantalla** — el Odin 3 suspende de verdad
+   (`s2idle`) y al resumir la pantalla se reactiva sola. Incluye:
+   `mem_sleep_default=s2idle` en el cmdline, `pocknix-powerd` mirando el **DPMS del
+   conector** (no `bl_power`), y el hook `sleep.d/post/004-display`
+   (`gamescopectl drm_sleep_internal_screen 0` + desbloqueo de `bl_power`).
+   Ver `SUSPEND-ISSUE.md`. (El antiguo "fake-suspend" queda **obsoleto**.)
 9. **Bootanimation en fb0** — el patrón para splash de arranque en handhelds con
    panel DSI sin EDID: **dibujar en `/dev/fb0`** desde un servicio systemd (como
    `rocknix-splash`), no Plymouth. Incluye la extracción del bootanimation

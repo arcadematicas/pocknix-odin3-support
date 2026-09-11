@@ -3,7 +3,8 @@
 Portado desde el estudio de ArmadaOS (`ARMADAOS-STUDY.md`). Todo va en las
 **fuentes de build** (`pocknix-os`); se aplicará en la próxima imagen.
 
-> Estado: **pendiente de compilar y probar en la Odin** (la Odin está con ArmadaOS).
+> Estado: **desplegado en la Odin y verificado** (suspensión real resuelta, ver
+> `SUSPEND-ISSUE.md`). El resto queda pendiente de validación fina en uso.
 
 ---
 
@@ -118,14 +119,39 @@ Faltaba en el Odin 3 (SM8750).
 
 ---
 
+## 6. Suspensión real (s2idle) + hook de pantalla
+
+**Problema**: el botón de encendido solo "parpadeaba" la pantalla (un stub
+`pocknix-fake-suspend.sh` interceptaba `systemd-suspend.service` y salía al
+instante).
+
+**Fix** (portado del modelo de ArmadaOS, que en el Odin 3 usa `s2idle` real):
+
+- **`devices/sm8750/profile.conf`**: `mem_sleep_default=s2idle` en el cmdline
+  (específico de sm8750).
+- **`overlay/usr/local/bin/pocknix-powerd`**: `screen_is_on()` mira el **DPMS del
+  conector DRM interno** (DSI/eDP/LVDS), no solo `bl_power` (que en la Odin 3 se
+  queda en 4 aunque el panel esté encendido).
+- **`packages/shared/pocknix-bsp-common/display-sleep-post`** (nuevo, instalado
+  como `sleep.d/post/004-display`): al resumir, pide a gamescope despertar la
+  pantalla (`gamescopectl drm_sleep_internal_screen 0`) y desbloquea el backlight
+  (`echo 0 > .../bl_power`).
+
+Detalle completo, diagnóstico y verificación en **`SUSPEND-ISSUE.md`**.
+
+---
+
 ## Lo que NO se portó (y por qué)
 
 - **`controller-type`**: ya lo cubre `pocknix-gamepad-target` (deck/xb360/ds5…).
 - **Perfiles FEX**: ya tenemos `fex-profiles.json` (default/fast/compatible).
 - **`scx_loader`**: usamos `scx_lavd` directamente (`pocknix-lavd-mode`).
-- **`fake-suspend`**: Pocknix usa suspensión real (`pocknix-powerd` → `systemctl
-  suspend`). Pendiente decidir si el Odin 3 necesita el modo "fake" (ArmadaOS lo
-  usa como reserva; su perfil de Odin 3 usa `s2idle` real).
+- **`fake-suspend` como sustituto**: **no se usa**. Igual que ArmadaOS en el
+  Odin 3, Pocknix usa **s2idle real**; el fake-suspend de ArmadaOS es solo su
+  reserva. Lo que sí se portó es el espíritu de su `display_on`: el hook
+  `004-display` que reactiva la pantalla al resumir. Detalle completo en
+  `SUSPEND-ISSUE.md`. (El fake-suspend + `suspend-dispatch` como red de
+  seguridad queda como opción futura, hoy innecesaria.)
 - **Btrfs nodatacow**: no aplica (Pocknix usa ext4).
 - **`armada-powerd` completo**: Pocknix ya tiene `pocknix-fancontrol`,
   `pocknix-lavd-mode`, `pocknix-powerd` y el plugin Decky. El D-Bus unificado de

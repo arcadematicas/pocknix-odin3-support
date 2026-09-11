@@ -162,6 +162,34 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
   no tiene ese meta (escritorio montado a mano).
 - **VER DETALLE EN**: KSCREEN-ISSUE.md.
 
+## ✅ SUSPENSIÓN (s2idle) - RESUELTA (11/09/2026)
+- **SÍNTOMA**: el botón de encendido solo "parpadeaba" la pantalla (apagaba y encendía).
+- **CAUSA**: `/etc/systemd/system/systemd-suspend.service.d/override.conf` interceptaba
+  `systemd-suspend.service` y ejecutaba `/usr/local/bin/pocknix-fake-suspend.sh`, un stub
+  que solo apagaba `bl_power` + CPU `powersave` + `sync` y **salía al instante** → systemd
+  daba la suspensión por hecha. (La premisa "suspender cuelga el SM8750" era falsa: lo que
+  cuelga es `deep`, no `s2idle`.)
+- **MODELO ArmadaOS**: en el Odin 3 usa `ARMADA_SUSPEND_MODE=s2idle` (real); su `fake-suspend`
+  es solo reserva. `suspend-dispatch` → `systemd-sleep suspend`.
+- **FIX (Odin)**:
+  1. Quitar el override (`.disabled-20260911` + backups) + `daemon-reload`.
+  2. `mem_sleep` = s2idle (`/usr/lib/systemd/sleep.conf.d/10-pocknix-s2idle.conf` +
+     `/usr/lib/tmpfiles.d/10-pocknix-mem-sleep.conf`).
+  3. Hook `/usr/lib/pocknix/sleep.d/post/004-display`.
+- **DOS bloqueos encontrados**:
+  - `vhci_hcd` (mando virtual de InputPlumber, target `deck` por USB/IP) → `platform_pm_suspend`
+    devuelve `-16` y aborta el suspend. Ya lo resolvía el pre-hook `001-inputplumber`.
+  - Al resumir, el panel quedaba negro (`bl_power=4`, `actual_brightness=0`, DPMS On);
+    gamescope no lo reactivaba → lo arregla el hook `004-display`.
+- **PERMANENTE en `pocknix-os`**: `devices/sm8750/profile.conf` (`mem_sleep_default=s2idle` en
+  el cmdline), `overlay/usr/local/bin/pocknix-powerd` (`screen_is_on` lee DPMS del conector
+  DSI/eDP/LVDS), `pocknix-bsp-common/display-sleep-post` (pkgrel 14 → `post/004-display`).
+- **VERIFICADO**: `systemctl suspend` + alarma RTC duerme los N s y despierta; botón de
+  encendido suspende y despierta con pantalla encendida (`bl_power=0`, `actual=3721`).
+- **OJO**: probar con `rtcwake -m mem` NO ejecuta los hooks de systemd → InputPlumber no se
+  para y el suspend aborta. Usar `systemctl suspend`.
+- **VER DETALLE EN**: `SUSPEND-ISSUE.md`.
+
 ## 🔬 ESTUDIO ARMADAOS (11/09/2026)
 - **Informe completo**: `ARMADAOS-STUDY.md`. **Scripts de referencia**: `armadaos-reference/`
   (`libexec-armada/`, `lib-armada/`, `gamescope-session-plus/`, `kernel-config-armada.txt`,
@@ -170,8 +198,9 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 - ArmadaOS = Fedora 44 bootc + ostree + Btrfs + dracut + SDDM + gamescope-session-plus;
   kernel 7.2.3 con configs clave idénticas a las nuestras.
 - **Nos falta (prioridad)**: `dbus-update-activation-environment` en la sesión (env KScreen),
-  gestión de suspensión (`fake-suspend`), inyección de libs x86 + reparación de mando de
-  `armada-game-launch`, variables `STEAM_GAMESCOPE_*`, `armada-powerd` (D-Bus),
-  `controller-type`, MTP, HDR, UCM audio Odin 3.
+  inyección de libs x86 + reparación de mando de `armada-game-launch`, variables
+  `STEAM_GAMESCOPE_*`, `armada-powerd` (D-Bus), `controller-type`, MTP, HDR, UCM audio Odin 3.
+- **Suspensión**: RESUELTA con s2idle real + hook de pantalla (ver `SUSPEND-ISSUE.md`); el
+  `fake-suspend` de ArmadaOS no se usa (solo es su reserva).
 - **Ya portado**: proton-wrapper/FEX, guestos-mount, fex-profiles, scx_lavd, steamos-shim,
   RGB, splash, install-internal.
