@@ -217,6 +217,13 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
     con flags `FPC` + `systemctl restart systemd-binfmt` (ahora `POCF`, suid OK).
   - **Pendiente**: terminar el build de imagen (lento por qemu), generar la SD y
     probar el arranque en la Odin; luego abrir el PR.
+  - **Feedback del creador (issue #54, 12/09) — atendido**: cmdline quiet/plymouth
+    (mirror sm8550), README.provenance SM8750 + sha256 correcto, blobs ArmadaOS
+    fuera del repo (gitignore; sin binarios), a8xx 0051 confirmado en la rama,
+    re-sync 7.2/7.2 con patch dir 20-sm8750. **Pendiente**: probar el
+    `adsp_dtb.mbn` actual de ROCKNIX (`qcom/sm8750/ayn/odin3/`, md5 6f4c2eca) en
+    la Odin; si la capacidad reporta bien → quitar el nodo `simple-battery` del
+    DTS y abrir el PR (deltas sobre su `make sync`).
 - **Issue upstream #54** (`shuuri-labs/pocknix-os`): comentario del 11/09/2026 con el
   resumen final (batería + KScreen + suspensión resueltos) y aviso de que estamos listos
   para la fase de merge/PR. https://github.com/shuuri-labs/pocknix-os/issues/54#issuecomment-5633616452
