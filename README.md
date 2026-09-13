@@ -61,6 +61,7 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | `BATTERY-ISSUE.md` | Issue de batería: fuel gauge corre en el firmware ADSP (percent viene del firmware), descalibrado `Debug_Board`, solución = ciclo de carga en Android |
 | `KSCREEN-ISSUE.md` | **RESUELTO**: KScreen no veía el panel en escritorio — faltaba el paquete `kscreen` (KCM Ajustes → Pantalla) |
 | `SUSPEND-ISSUE.md` | **RESUELTO**: suspensión real (s2idle) del Odin 3 — causa (stub `fake-suspend`), bloqueo de `vhci_hcd`/InputPlumber, y hook que reactiva la pantalla al resumir |
+| `FIRMWARE-ISSUE.md` | **RESUELTO (13/09/2026)**: una imagen limpia no tenía WiFi ni sonido — `linux-firmware` no trae los blobs del Odin 3 (ath12k **WCN7860**, ADSP/CDSP en `qcom/sm8750/ayn/odin3/`, `aw883xx_acf.bin`, `SM8750-AYN-tplg.bin`). Se bajan de `ROCKNIX/extra-firmware` en `make sync`. Incluye el bug de `pocknix-flathub.service` bloqueando el boot. Commit `fbe787e` (`odin3-pr`) |
 
 ## Lo más valioso para upstream
 1. **Adreno a8xx GX-collapse fix** — resuelve el `VkDeviceLost` del compositor
