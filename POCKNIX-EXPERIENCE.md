@@ -68,6 +68,12 @@ instalar paquetes hay que forzar `extra/<paquete>`.
   Expone `Manager2`, `PerformanceProfile1` (low-power/balanced/performance),
   `GpuPerformanceLevel1` y `SessionManagement1` → el QAM de Steam controla el
   perfil de rendimiento real de Pocknix. Código en `config/steamos-manager/`.
+- **OOBE inicial de Steam (14/09/2026)**: el cliente Steam solo muestra el asistente
+  inicial (idioma/zona horaria/WiFi) si existe `/etc/steamos-oobe-image`; sin él salta
+  directo al login. El paquete `pocknix-steamos-shim` (0.1.0-8) ahora lo instala, junto
+  con los shims `steamos-mandatory-update` y `jupiter-initial-firmware-update` que la
+  OOBE ejecuta (sin ellos el check fallaba con 127 y la sesión pedía un reinicio tras
+  el paso de idioma/WiFi en vez de continuar).
 - **No se instaló el paquete `pocknix-steam` oficial** (para RP6; la Odin 3
   usa su versión adaptada en `config/steamos-manager/pocknix-steam.*`)
 
