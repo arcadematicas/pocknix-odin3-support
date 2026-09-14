@@ -62,6 +62,7 @@ este soporte** y ofrecer el Odin 3 como dispositivo soportado.
 | `KSCREEN-ISSUE.md` | **RESUELTO**: KScreen no veía el panel en escritorio — faltaba el paquete `kscreen` (KCM Ajustes → Pantalla) |
 | `SUSPEND-ISSUE.md` | **RESUELTO**: suspensión real (s2idle) del Odin 3 — causa (stub `fake-suspend`), bloqueo de `vhci_hcd`/InputPlumber, y hook que reactiva la pantalla al resumir |
 | `FIRMWARE-ISSUE.md` | **RESUELTO (13/09/2026)**: una imagen limpia no tenía WiFi ni sonido — `linux-firmware` no trae los blobs del Odin 3 (ath12k **WCN7860**, ADSP/CDSP en `qcom/sm8750/ayn/odin3/`, `aw883xx_acf.bin`, `SM8750-AYN-tplg.bin`). Se bajan de `ROCKNIX/extra-firmware` en `make sync`. Incluye el bug de `pocknix-flathub.service` bloqueando el boot. Commit `fbe787e` (`odin3-pr`) |
+| `BOOT-OOBE-ISSUE.md` | **RESUELTO (14/09/2026)**: arranque lentísimo (minutos → 20.7 s) por `pocknix-diag.service` bloqueando `multi-user.target` + race de gamescope vs panel DSI; OOBE de Steam no aparecía (faltaba `/etc/steamos-oobe-image`) y se reiniciaba en bucle (`apply` devolvía 0 en vez de 7). Commits `e574b2a`, `b88018d`, `d13f65d` |
 
 ## Lo más valioso para upstream
 1. **Adreno a8xx GX-collapse fix** — resuelve el `VkDeviceLost` del compositor
