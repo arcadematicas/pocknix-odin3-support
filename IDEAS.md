@@ -25,7 +25,7 @@ Odin 3). Derivado de Armada Control (armada-os). GPL-2.0.
 | **OLED care / pixel refresher** | En paneles OLED detectados, ejecuta el refrescador de píxeles tras timeout de inactividad en Steam GamepadUI. Claves `display.oledcare*`. | ✅ **IMPLEMENTADO** — binario nativo `/usr/local/bin/oled-refresher` + timer systemd cada 4h (solo en modo juego) |
 | **Sleep mode (s2idle/deep)** | Selecciona modo de suspensión cuando el kernel anuncia más de una opción en `/sys/power/mem_sleep`. | 🟡 Nosotros lo deshabilitamos; útil para el futuro |
 | **MangoHud toggle** | `mangohudctl toggle no_display` para mostrar/ocultar overlay sin cambiar el preset del QAM. | 🟢 Ya usamos MangoHud en gamescope |
-| **LSFG (Lossless Scaling)** | Integra LSFG-VK para Steam (requiere DLL comercial). | ✅ **IMPLEMENTADO** — plugin MAKO Decky v3.2.0 integrado en `pocknix-decky` (pkgrel 29). MAKO Renderer x86_64 para juegos bajo FEX/Proton; LSFG/LS1 requieren DLL comercial; MAKO Scaler open source. |
+| **LSFG (Lossless Scaling)** | Integra LSFG-VK para Steam (requiere DLL comercial). | ⛔ **INTEGRADO PERO BLOQUEADO** — plugin MAKO Decky integrado en `pocknix-decky` (pkgrel 31), pero su Renderer es **x86_64** y en la Odin el Vulkan es **aarch64** (FEX thunkea) → la capa no carga. **Requiere Renderer AArch64 de MAKO.** Ver `MAKO-AARCH64.md`. |
 | **Emulation settings por juego** | Expone emulador/core/opciones `es_features.cfg` por ROM (Batocera). | 🟡 Solo Batocera — adaptar si hacemos capa de emulación |
 
 **Nota:** El repo también referencia `batocera.pocket` (imágenes Batocera para
@@ -95,7 +95,7 @@ repos de la org con ideas:
 | **KScreen no enumera el panel** en Plasma Mobile | ✅ **RESUELTO** (11/09/2026) — faltaba el paquete `kscreen` (KCM Ajustes → Pantalla). Ver `KSCREEN-ISSUE.md` |
 | **Pantalla negra** — hard power cycle pendiente (hardware) | 🔴 Bloqueado por hardware |
 | **hhd / gyro** — usar la IMU del Odin 3 (sensors pakala) para giroscopio en juegos | 🟡 Investigar |
-| **MAKO Decky (Lossless Scaling / LSFG)** — plugin Decky para frame generation | ✅ **IMPLEMENTADO** (15/09/2026) — integrado en `pocknix-decky` (pkgrel 29). MAKO Renderer x86_64 para juegos bajo FEX/Proton; LSFG/LS1 requieren DLL comercial. |
+| **MAKO Decky (Lossless Scaling / LSFG)** — plugin Decky para frame generation | ⛔ **INTEGRADO PERO BLOQUEADO** (15/09/2026) — plugin + Renderer + DLL + toggle por juego listos en `pocknix-decky` (pkgrel 31), pero el Renderer de MAKO es **x86_64** y la Odin usa Vulkan **aarch64** (FEX thunkea) → la capa no puede cargarse. **Esperando el Renderer AArch64 oficial.** Ver `MAKO-AARCH64.md`. |
 
 ---
 
