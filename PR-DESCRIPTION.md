@@ -56,8 +56,14 @@ bootloader, device profile, and firmware sourced from ROCKNIX extra-firmware
 - `steamos-update` and `steamos-mandatory-update` now return exit code 7 ("no
   update available") for `apply` and any call without `check`, matching Valve's
   contract in `jupiter-legacy-support`. Previously `apply` returned 0, which the
-  client interpreted as "update applied → system restart required", causing an
-  infinite reboot loop during OOBE.
+  client interpreted as "update applied → system restart required".
+- `pocknix-oobe-marker.service` (one-shot, before the autologin getty) drops the
+  marker once Steam records `CompletedOOBEStage1=1` in `~/.steam/registry.vdf`.
+  Without it the wizard never counts as completed: the marker makes the client
+  treat the image as a "Deck factory image", so the wizard is shown unconditionally
+  and, when it finishes, the client calls `RestartPC()` — a fresh SD install
+  rebooted into the wizard forever. With the service the wizard runs exactly once
+  and the next boot goes straight to the Steam sign-in.
 
 **Other**
 - `pocknix-flathub.service` no longer blocks boot (removed
@@ -76,7 +82,7 @@ bootloader, device profile, and firmware sourced from ROCKNIX extra-firmware
 | Audio | ADSP + CDSP running, `SM8750-AYN` card | `aw883xx` speaker amp + topology |
 | Battery / charging | Charging, `battmgr-usb online=1` | Requires `adsp_dtb.mbn` with auth config |
 | Suspend (s2idle) | Real suspend + resume with screen | `mem_sleep_default=s2idle` in cmdline |
-| OOBE | Full first-run wizard works | No reboot loop, wizard completes |
+| OOBE | Full first-run wizard works | Runs once, then the marker is cleared → no reboot loop |
 | Steam login | OK | `steamdeck_publicbeta` channel |
 | Desktop (Plasma) | KScreen detects panel, rotation OK | `kscreen` package included |
 
@@ -93,13 +99,21 @@ bootloader, device profile, and firmware sourced from ROCKNIX extra-firmware
   for some Odin 3 units. If upstream catches up, this can be dropped.
 - `steamos-mandatory-update` does not exist in upstream SteamOS; it is a
   Pocknix shim used as a check gate by the OOBE. Returning 7 is correct.
+- **The `/etc/steamos-oobe-image` marker is required in practice.** `build-image.sh`
+  strips `registry.vdf` expecting the wizard to appear without it, but verified on
+  the Odin 3 that without the marker the client goes straight to the sign-in (tested
+  with a fully wiped Steam state). ArmadaOS instead does `rm -f
+  /etc/steamos-oobe-image`. If you prefer not to carry the marker, the whole OOBE
+  block (marker + `pocknix-oobe-marker.service` + the two update shims) can be
+  dropped as a unit — nothing else depends on it.
 - The Adreno a8xx patch (`0051`) complements ROCKNIX's `0050` — both are
   required. The `0050` defines `power_off` for the GX GDSC but only with
   `synced_poweroff`; `0051` is who triggers it in `a8xx_recover`.
 
-### Commits (10)
+### Commits (11)
 
 ```
+a5bfc9d fix(oobe): clear the SteamOS OOBE marker once the wizard completes (no reboot loop)
 d13f65d fix(steamos-shim): steamos-update/mandatory apply -> exit 7 (no 'system restart required')
 b88018d feat(steamos-shim): OOBE marker + shims steamos-mandatory-update/jupiter-initial-firmware-update (pkgrel 8)
 e574b2a fix(boot): pocknix-diag a timer (no bloquea multi-user.target) + gate DRM en pocknix-steam

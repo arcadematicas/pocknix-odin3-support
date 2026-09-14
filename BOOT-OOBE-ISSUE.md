@@ -1,8 +1,9 @@
 # Arranque lento + Asistente OOBE de Steam — RESUELTO (14/09/2026)
 
 **Estado: la Odin 3 arranca en ~20 s, llega a `graphical.target` en ~9.5 s de
-userspace, y el asistente inicial de Steam (idioma/zona/WiFi) aparece y funciona
-sin reiniciar la consola.**
+userspace, y el asistente inicial de Steam (idioma/zona/WiFi) aparece **una sola
+vez** en una imagen limpia: se completa, la consola reinicia una vez (modo
+"factory image") y el siguiente arranque va directo al login de Steam — sin bucle.**
 
 Rama `odin3-pr` de `arcadematicas/pocknix-os`. Imagen limpia de Pocknix, SM8750,
 kernel 7.2.0.
@@ -145,35 +146,78 @@ Shims afectados (instalados en `/usr/bin/` **Y** `/usr/bin/steamos-polkit-helper
 
 `jupiter-initial-firmware-update` ya era no-op (exit 0). pkgrel 8 → 9.
 
-### 6. Verificación
+### 6. Causa raíz (parte 3: el marker fuerza modo "factory image" → bucle)
+
+El fix `d13f65d` eliminó el reinicio provocado por el **paso de update**, pero la
+consola seguía reiniciándose. Log del cliente Steam (UI, bundle
+`steamui/chunk~2dcc5aaf7.js`):
+
+```js
+IsDeckFactoryImage() || … ? bRequireReboot = true : bRequireSteamRestart = true
+…
+if (kr) { console.warn("Restarting PC"); SteamClient.System.RestartPC() }
+```
+
+y la condición de "OOBE completada":
+
+```js
+GetOOBEStage1Complete() { return (oobe_completed) && !IsDeckFactoryImage() }
+```
+
+Es decir: `/etc/steamos-oobe-image` hace que el cliente trate la imagen como una
+**"Deck factory image"**. Consecuencias:
+
+1. la OOBE se muestra **siempre** (`!IsDeckFactoryImage()` es `false` → nunca se da
+   por completada), y
+2. al terminar llama a `RestartPC()` → reinicia **la consola entera**, no solo Steam.
+
+Como nadie borraba el marker, una imagen limpia entraba en **bucle**: OOBE →
+reinicio → OOBE → …
+
+> **Nota importante**: `scripts/build-image.sh` (código upstream) asume que borrar
+> `registry.vdf` hace que la OOBE aparezca **sin** marker. Verificado en la Odin que
+> **no es así**: sin el marker la OOBE **no sale** y va directo al login (probado con
+> el estado de Steam completamente limpio). El proyecto hermano ArmadaOS
+> directamente hace `rm -f /etc/steamos-oobe-image` (renuncia a la OOBE). Por eso
+> nuestra solución **mantiene** el marker y lo limpia después.
+
+### 7. Fix 3: servicio que borra el marker al completar la OOBE (commit `a5bfc9d`)
+
+| Fichero | Cambio |
+|---|---|
+| `overlay/usr/local/bin/pocknix-oobe-marker` | **Nuevo**: one-shot. Si existe el marker **y** `~/.steam/registry.vdf` contiene `CompletedOOBEStage1 "1"` (lo escribe Steam al terminar idioma/zona/WiFi), borra `/etc/steamos-oobe-image` |
+| `overlay/etc/systemd/system/pocknix-oobe-marker.service` | **Nuevo**: `Before=getty@tty1.service` (mismo slot que `pocknix-expand-root.service`), `ConditionPathExists=/etc/steamos-oobe-image` |
+| `scripts/build-sd-image.sh` | Lo instala (`chmod +x`) y lo habilita (`systemctl enable`) |
+
+Resultado: la OOBE sale **una vez** (arranque 1), la consola reinicia una vez
+(comportamiento normal del modo factory) y en el arranque 2 el servicio ya borró el
+marker → **directo al login de Steam**.
+
+### 8. Verificación
+
+Exit codes del shim (en el rootfs de la SD):
 
 ```bash
-# En el rootfs de la SD:
 $ /usr/bin/steamos-update --supports-duplicate-detection
 0
-
 $ /usr/bin/steamos-update check
 7
-
-$ /usr/bin/steamos-update --enable-duplicate-detection check
-7
-
 $ /usr/bin/steamos-update          # sin args (= apply)
 7
-
-$ /usr/bin/steamos-update apply
-7
-
 $ /usr/bin/steamos-mandatory-update check
-7
-
-$ /usr/bin/steamos-mandatory-update
 7
 ```
 
-Resultado en la Odin: la OOBE aparece, el usuario elige idioma/zona/WiFi, y la
-consola **no se reinicia**. Tras completar la OOBE, Steam llega al login
-correctamente.
+Ciclo completo en la Odin (imagen con el fix):
+
+- **Arranque 1**: OOBE (idioma → zona → WiFi) → se completa → la consola reinicia.
+- **Arranque 2**: `/etc/steamos-oobe-image` ya no existe (lo borró el servicio),
+  `CompletedOOBEStage1=1` en el registry, `pocknix-oobe-marker.service` = `active
+  (exited)`, **0 unidades fallidas** → **directo al login de Steam, sin OOBE.**
+
+> Observación menor: tras el reinicio de la OOBE, en el primer arranque en modo juego
+> el audio de la interfaz de Steam apareció mudo hasta volver a entrar en modo juego
+> (en Plasma sonaba bien). Transitorio; no se ha reproducido después.
 
 ---
 
@@ -184,6 +228,7 @@ correctamente.
 | `e574b2a` | `fix(boot)`: pocknix-diag a timer (no bloquea multi-user.target) + gate DRM en pocknix-steam |
 | `b88018d` | `feat(steamos-shim)`: OOBE marker (`/etc/steamos-oobe-image`) + shims `steamos-mandatory-update` / `jupiter-initial-firmware-update` (pkgrel 8) |
 | `d13f65d` | `fix(steamos-shim)`: `steamos-update` / `steamos-mandatory-update` `apply` → exit 7 (no "system restart required") |
+| `a5bfc9d` | `fix(oobe)`: servicio `pocknix-oobe-marker` que borra el marker al completar la OOBE (fin del bucle de reinicio) |
 
 ## Ficheros tocados
 
@@ -191,9 +236,11 @@ correctamente.
 |---|---|
 | `overlay/etc/systemd/system/pocknix-diag.timer` | `e574b2a` |
 | `overlay/etc/systemd/system/pocknix-diag.service` | `e574b2a` |
-| `scripts/build-sd-image.sh` | `e574b2a` |
+| `scripts/build-sd-image.sh` | `e574b2a`, `a5bfc9d` |
 | `packages/shared/pocknix-steam/pocknix-steam` | `e574b2a` |
 | `packages/shared/pocknix-steamos-shim/PKGBUILD` | `b88018d`, `d13f65d` |
 | `packages/shared/pocknix-steamos-shim/steamos-update` | `d13f65d` |
 | `packages/shared/pocknix-steamos-shim/steamos-mandatory-update` | `b88018d`, `d13f65d` |
 | `packages/shared/pocknix-steamos-shim/steamos-oobe-image` | `b88018d` |
+| `overlay/usr/local/bin/pocknix-oobe-marker` | `a5bfc9d` |
+| `overlay/etc/systemd/system/pocknix-oobe-marker.service` | `a5bfc9d` |
