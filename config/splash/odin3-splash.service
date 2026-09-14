@@ -1,9 +1,13 @@
 [Unit]
 Description=Odin 3 boot splash (fb0)
 After=local-fs.target
+# Type=simple, NO oneshot: the splash (animation + logo hold, up to 120s) must not
+# block the boot. With Type=oneshot + WantedBy=multi-user.target it held the whole
+# boot transaction hostage (+2min measured on the Odin 3). The script self-exits
+# when kwin/gamescope takes the DRM master.
 
 [Service]
-Type=oneshot
+Type=simple
 ExecStart=/usr/local/bin/odin3-splash-play.sh
 
 [Install]
