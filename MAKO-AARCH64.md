@@ -2,6 +2,7 @@
 
 **Fecha:** 15/09/2026
 **Estado:** integración **lista**, funcionalidad **bloqueada por MAKO** (falta un Renderer AArch64)
+**Issue abierto en MAKO:** https://github.com/eugeniosegala/MAKO/issues/60 (preguntando por el roadmap AArch64 y ofreciendo la Odin 3 para probar)
 
 ---
 
