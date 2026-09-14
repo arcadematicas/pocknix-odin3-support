@@ -224,3 +224,28 @@ unavailable, is hexagonrpcd running?`.
   still don't appear. The sensor config files may need to match the exact
   format expected by the ADSP firmware. Further investigation needed.
 - See `config/hexagonrpcd/` for service files and cross-compile setup.
+
+## 13. Slow shutdown (WiFi flapping while powering off)
+
+**Symptom:** shutdown/reboot takes ~3 minutes. During shutdown NetworkManager
+keeps retrying the WiFi (`Activation: (wifi) association took too long` →
+`asking for new secrets` → retry), `wpa_supplicant` re-auths, `iwd` scans and
+`dhcpcd` re-DHCPs — the interface flaps instead of going down cleanly.
+
+- **Root cause:** three ALARM leftovers fighting over `wlan0` at the same time:
+  1. **two WiFi backends** — `wpa_supplicant` (the intended one,
+     `/etc/NetworkManager/conf.d/20-wifi-backend.conf` sets `wifi.backend=wpa_supplicant`)
+     **and** `iwd` (D-Bus activated, `net.connman.iwd`), both trying to manage the
+     interface;
+  2. **two DHCP clients** — `dhcpcd@wlan0` (ALARM default) **and** NetworkManager.
+  The double-management makes the radio flap, so NM's association/DHCP loop
+  never settles before poweroff.
+- **Fix:**
+  ```bash
+  systemctl disable dhcpcd@wlan0.service   # NM already runs DHCP on wlan0
+  systemctl stop iwd.service
+  systemctl mask iwd.service               # no D-Bus activation, single backend
+  ```
+- Also see `config/splash/odin3-splash.service` — the boot was slow for the same
+  class of problem (a `Type=oneshot` unit holding `multi-user.target`; changed to
+  `Type=simple`).
