@@ -249,3 +249,52 @@ keeps retrying the WiFi (`Activation: (wifi) association took too long` →
 - Also see `config/splash/odin3-splash.service` — the boot was slow for the same
   class of problem (a `Type=oneshot` unit holding `multi-user.target`; changed to
   `Type=simple`).
+
+## 14. Steam "Restart"/"Shut down" only restarts Steam (no console reboot)
+
+**Symptom:** clicking Restart (or Shut down) in the Steam QAM only restarts the
+Steam client; the console never reboots/powers off.
+
+- **Root cause (two missing pieces):**
+  1. `pocknix-steam` exports the SteamOS reboot/shutdown sentinels
+     (`STEAMOS_STEAM_REBOOT_SENTINEL=/tmp/steamos-reboot-sentinel`,
+     `STEAMOS_STEAM_SHUTDOWN_SENTINEL=/tmp/steamos-shutdown-sentinel`) but
+     **nothing reads them** — Steam writes the file and exits, and the supervisor
+     just relaunches the client.
+  2. The polkit rule `50-pocknix-deck.rules` (which lets `deck` run
+     `org.freedesktop.login1.*` without a password) was missing from the device —
+     it exists in the repo's `overlay/etc/polkit-1/rules.d/`. So `systemctl reboot`
+     from `deck` would be denied anyway.
+- **Fix:**
+  - In `pocknix-steam`'s exit cleanup, honour the sentinel:
+    ```bash
+    if [ -e /tmp/steamos-reboot-sentinel ]; then
+      rm -f /tmp/steamos-reboot-sentinel; systemctl reboot
+    elif [ -e /tmp/steamos-shutdown-sentinel ]; then
+      rm -f /tmp/steamos-shutdown-sentinel; systemctl poweroff
+    fi
+    ```
+  - Install `overlay/etc/polkit-1/rules.d/50-pocknix-deck.rules` on the device and
+    `systemctl restart polkit`.
+
+## 15. Black screen after a Steam crash (stale gamescope holding DRM)
+
+**Symptom:** on some first boots Steam crashes
+(`compatmanager.cpp: Assertion Failed: Tool steamlinuxruntime_4 (4183110) is not
+in registered state`) and the session stays on a black screen — a stale gamescope
+keeps `/dev/dri/card0`, so every relaunch fails with "Device or resource busy".
+
+- **Root cause:** `pocknix-steam` never killed its gamescope child when the script
+  exited (Steam exited/crashed, or the ready socket timed out), so the orphaned
+  gamescope kept the DRM master and the supervisor hot-looped.
+- **Fix:** add an EXIT trap that kills gamescope (and mangoapp) on any exit:
+  ```bash
+  cleanup() {
+    kill "${GS_PID}" 2>/dev/null || true
+    pkill -x mangoapp 2>/dev/null || true
+    # ... sentinel check from #14 ...
+  }
+  trap cleanup EXIT
+  ```
+  The Steam crash itself (steamlinuxruntime compat-tool registration) is a
+  separate, intermittent Steam client issue; the trap makes it self-recovering.
