@@ -42,6 +42,7 @@ cmp_tree "${HERE}/packages/pocknix-device-sm8750" "${OS}/devices/sm8750/packages
 cmp_tree "${HERE}/packages/pocknix-bsp-common"    "${OS}/packages/shared/pocknix-bsp-common"
 cmp_tree "${HERE}/kernel/patches"                 "${OS}/kernel/sm8750/patches/20-sm8750"
 cmp_tree "${HERE}/kernel/dts"                     "${OS}/kernel/sm8750/dts/qcom"
+cmp_tree "${HERE}/packages/gamescope"             "${OS}/packages/soc/gamescope"
 
 if [ "${missing}" -eq 0 ] && [ "${drift}" -eq 0 ]; then
   echo "check-sync: OK — the build tree matches the centre."

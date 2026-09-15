@@ -60,10 +60,13 @@ overlay "packages/pocknix-bsp-common" "packages/shared/pocknix-bsp-common"
 overlay "kernel/patches" "kernel/sm8750/patches/20-sm8750"
 overlay "kernel/dts"     "kernel/sm8750/dts/qcom"
 
+# --- gamescope: our patch + our PKGBUILD -------------------------------------
+# packages/gamescope/PKGBUILD is a FULL COPY of the build's, with 0009 added to source=() and
+# prepare(). It is an override: if upstream changes its gamescope PKGBUILD, this copy has to be
+# re-merged (the check will NOT notice that, only that the two files match).
+overlay "packages/gamescope" "packages/soc/gamescope"
+
 # --- NOT synced (needs manual work — see the note below) ---------------------
-# gamescope/patches/0004-fps-limit-atom-persist.patch: copying the file is not enough, the
-# gamescope PKGBUILD has to reference it in source=() and apply it. Left out on purpose so the
-# sync never half-lands a patch that would silently not be applied.
 # kernel/patches is an OVERLAY: a patch we REMOVE from the centre is NOT removed from the build.
 # If you retire a patch, delete it in pocknix-os too (or the image keeps applying it).
 

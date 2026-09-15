@@ -1,0 +1,79 @@
+# gamescope (pocknix) — patched build for rotated msm/DPU panels.
+# Vanilla gamescope cannot drive them: it asks for a DRM plane rotation the msm DPU rejects,
+# so every flip fails ("Failed to prepare 1-layer flip"). 0007/0008 rotate in the composite
+# pass instead; pocknix-steam forces it and passes logical LANDSCAPE -W/-H.
+# epoch=1 outranks ALARM's gamescope. The pkgver segment after "rocknix." must vercmp higher
+# on every bump, hence commit date then sha — a bare sha is non-monotonic.
+pkgname=gamescope
+epoch=1
+pkgver=3.16.0.rocknix.20260802.6644cc9
+pkgrel=4
+_commit=6644cc9a07d8ba937003deae8bd7c28a490d0c64
+install=gamescope.install
+pkgdesc="SteamOS session compositing WM — patched (rotation-shader, for msm/rotated panels)"
+arch=('aarch64')
+url="https://github.com/ValveSoftware/gamescope"
+license=('BSD-2-Clause')
+provides=('gamescope')
+conflicts=('gamescope')
+depends=('wayland' 'libdrm' 'libinput' 'libxkbcommon' 'pixman' 'systemd-libs' 'libcap'
+         'luajit' 'libdecor' 'libx11' 'libxext' 'libxfixes' 'libxdamage' 'libxcomposite'
+         'libxrender' 'libxxf86vm' 'libxtst' 'libxi' 'libxcursor' 'libxmu' 'libxres'
+         'libxcb' 'xcb-util-wm' 'seatd' 'hwdata' 'sdl2' 'pipewire' 'vulkan-icd-loader'
+         'glslang' 'xorg-xwayland' 'libdisplay-info')
+makedepends=('git' 'meson' 'ninja' 'cmake' 'pkgconf' 'glslang' 'vulkan-headers'
+             'wayland-protocols' 'python' 'libxkbcommon' 'wayland'
+             # wlroots subproject build-deps (else meson tries to build them itself):
+             'xorg-xwayland' 'libdisplay-info' 'xcb-util-errors' 'xcb-util-renderutil'
+             'xcb-util-image' 'xcb-util-keysyms')
+source=("gamescope::git+https://github.com/ValveSoftware/gamescope.git#commit=${_commit}"
+        '0001-WaylandBackend-wire-up-wl_touch-implementation.patch'
+        '0004-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch'
+        '0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch'
+        '0007-Add-composited-output-rotation-for-displays-that-can.patch'
+        '0008-steamcompmgr-classify-the-interactive-overlay-by-out.patch'
+        # NUESTRO: hace que el atom GAMESCOPE_FPS_LIMIT del QAM se quede (ver el parche)
+        '0009-fps-limit-atom-persist.patch')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+prepare() {
+  cd gamescope
+  git submodule update --init --recursive
+  # Numbering is inherited: 0001/0004/0006 keep ROCKNIX's, 0007/0008 are upstream PR #2228.
+  patch -p1 < "${srcdir}/0001-WaylandBackend-wire-up-wl_touch-implementation.patch"
+  patch -p1 < "${srcdir}/0004-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch"
+  patch -p1 < "${srcdir}/0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch"
+  patch -p1 < "${srcdir}/0007-Add-composited-output-rotation-for-displays-that-can.patch"
+  patch -p1 < "${srcdir}/0008-steamcompmgr-classify-the-interactive-overlay-by-out.patch"
+  # NUESTRO (pocknix-odin3-support): el QAM frame limiter no tenia efecto en HW.
+  patch -p1 < "${srcdir}/0009-fps-limit-atom-persist.patch"
+}
+
+build() {
+  cd gamescope
+  # gamescope and wlroots build with -Werror against older libs than ALARM ships (newer
+  # libinput enums alone break -Werror=switch); appended last, these override it, and they
+  # propagate into the subprojects.
+  export CFLAGS+=" -Wno-error" CXXFLAGS+=" -Wno-error"
+  # Appended last so -march/-mtune override ALARM's defaults, subprojects included.
+  # Fallback = sm8550, as in packages/soc/mesa.
+  local _rocknix_tune="${POCKNIX_TUNE_CFLAGS:--march=armv9-a+fp16+crypto+i8mm+bf16+memtag+sm4+sha3+nosve+nosve2 -mtune=cortex-x3 -mno-outline-atomics}"
+  export CFLAGS+=" ${_rocknix_tune}" CXXFLAGS+=" ${_rocknix_tune}"
+  meson setup build \
+    --prefix=/usr --buildtype=release -Db_lto=false \
+    -Ddrm_backend=enabled \
+    -Dpipewire=enabled \
+    -Denable_openvr_support=false \
+    -Davif_screenshots=disabled \
+    -Dbenchmark=disabled \
+    -Dinput_emulation=disabled \
+    -Drt_cap=enabled \
+    -Denable_tests=false \
+    -Dsdl2_backend=enabled
+  meson compile -C build
+}
+
+package() {
+  cd gamescope
+  meson install -C build --destdir "${pkgdir}"
+}
