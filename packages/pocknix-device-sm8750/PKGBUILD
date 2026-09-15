@@ -1,0 +1,28 @@
+# pocknix-device-sm8750 — metapackage: the per-SoC members of an SM8750 system.
+# ONLY per-SoC packages belong here (BSP, kernel, bootloader, the SoC's proton choice); shared
+# members live on pocknix-core / the pocknix-*-full layers — a dep edge from here would block
+# `pacman -Rs` of an optional layer.
+#
+# `devices/sm8750/packages.list` names this package and build-image.sh installs it, so until now
+# the image asked for a package that did not exist. Modelled on pocknix-device-sm8550.
+pkgname=pocknix-device-sm8750
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="pocknix device metapackage: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite)"
+arch=('any')
+url="https://github.com/arcadematicas/pocknix-odin3-support"
+license=('GPL2')
+depends=('pocknix-bsp-sm8750'
+         'linux-pocknix-sm8750'
+         'pocknix-bootloader-sm8750'
+         # sm8750 ships the stock ARM protons (same as sm8550; sm8250 needs the -dxvk2 variants)
+         'proton-cachyos'
+         'proton-ge')
+# Exactly one device metapackage per install (wrong-device guard, same pattern as the BSPs).
+provides=('pocknix-device')
+conflicts=('pocknix-device')
+replaces=('pocknix-device-odin3')
+
+package() {
+  :   # pure metapackage
+}

@@ -1,0 +1,135 @@
+# pocknix-bsp-sm8750 — board support for the SM8750 FAMILY (AYN Odin 3, KONKR Pocket FIT Elite).
+# One package per SoC (same shape as pocknix-bsp-sm8550): board facts in
+# /usr/lib/pocknix/boards/<board>.conf, device.conf is a sourced dispatcher keyed on the DT model.
+#
+# This is OUR device package: it carries the Odin 3 daemons, services and quirks that until now
+# were only applied BY HAND on the device (and therefore never reached a freshly built image).
+# `devices/sm8750/profile.conf` has always referenced it as DEVICE_BSP_PKG; it simply did not
+# exist until now.
+#
+# NOTE ON source=(): the files are grouped in topic subdirectories and NOT listed in source=.
+# build-packages.sh copies the WHOLE package directory to /build/<name> (${startdir}), so the
+# subdirectories are reachable from package() directly. Listing ~45 flat local sources would
+# only lose the grouping. The incremental skip still works: it rebuilds when ANY file in the
+# package dir is newer than the artifact.
+pkgname=pocknix-bsp-sm8750
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — Odin 3 daemons (OLED care, button/power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim), udev rules, board dispatch"
+arch=('any')
+url="https://github.com/arcadematicas/pocknix-odin3-support"
+license=('GPL2')
+# pocknix-bsp-common is the device-neutral half (sleep.d dispatcher, wheel sudo, fan/scheduler).
+# python is needed by the button/OLED/pergame/MangoHud daemons and the session-manager shim.
+depends=('pocknix-bsp-common' 'python' 'sudo')
+# Exactly one device BSP may be installed (wrong-device guard for a shared repo).
+provides=('pocknix-bsp')
+conflicts=('pocknix-bsp')
+replaces=('pocknix-bsp')
+optdepends=('inputplumber: the button remaps and the QAM target come from the InputPlumber maps'
+            'mangohud: MangoHud.conf is the Odin 3 layout (compact top bar)'
+            'hexagonrpcd: sensor daemon — the unit is shipped but the binary is not (see README)'
+            'fex-emu: /etc/environment.d/fex-fix.conf carries the steamwebhelper stability flags')
+backup=('etc/sudoers.d/90-pocknix-steamos-manager'
+        'etc/MangoHud/MangoHud.conf'
+        'etc/environment.d/fex-fix.conf')
+
+package() {
+  local sd="${startdir}"
+
+  # --- board dispatch --------------------------------------------------------
+  # device.conf sources the board file picked from /proc/device-tree/model; the
+  # boards/ dir is NOT in source= (makepkg local sources are flat), it comes from startdir.
+  install -Dm644 "${sd}/device.conf" "${pkgdir}/usr/lib/pocknix/device.conf"
+  local b
+  for b in "${sd}/boards/"*.conf; do
+    install -Dm644 "${b}" "${pkgdir}/usr/lib/pocknix/boards/$(basename "${b}")"
+  done
+
+  # --- daemons and CLI helpers -> /usr/local/bin ------------------------------
+  # /usr/local/bin, not /usr/bin: these are device-local glue, not distro binaries, and every
+  # unit below hardcodes that path (ExecStart), so moving them means touching every unit.
+  local bin="${pkgdir}/usr/local/bin"
+  install -Dm755 "${sd}/daemons/power-button-daemon.py"          "${bin}/power-button-daemon.py"
+  install -Dm755 "${sd}/daemons/volume-button-daemon.py"         "${bin}/volume-button-daemon.py"
+  install -Dm755 "${sd}/oled-care/oled-care-daemon.py"           "${bin}/oled-care-daemon.py"
+  install -Dm755 "${sd}/oled-care/oled-refresher-auto"           "${bin}/oled-refresher-auto"
+  install -Dm755 "${sd}/mangohud/mangohud-toggle-daemon.py"      "${bin}/mangohud-toggle-daemon.py"
+  install -Dm755 "${sd}/power/pocknix-power-profile"             "${bin}/pocknix-power-profile"
+  install -Dm755 "${sd}/power/pocknix-cpu-governor"              "${bin}/pocknix-cpu-governor"
+  install -Dm755 "${sd}/power/pocknix-pergame-power.py"          "${bin}/pocknix-pergame-power.py"
+  install -Dm755 "${sd}/splash/odin3-splash-play.sh"             "${bin}/odin3-splash-play.sh"
+  install -Dm755 "${sd}/splash/convert_frames.py"                "${bin}/odin3-splash-convert-frames.py"
+  install -Dm755 "${sd}/steamui-watchdog/steamui-watchdog.sh"    "${bin}/steamui-watchdog.sh"
+  install -Dm755 "${sd}/fake-suspend/pocknix-fake-suspend.sh"    "${bin}/pocknix-fake-suspend.sh"
+  install -Dm755 "${sd}/steamos-manager/pocknix-steamos-manager" "${bin}/pocknix-steamos-manager"
+  # Post-flash helper: applies the runtime tweaks that cannot be baked (masks suspend, WiFi
+  # powersave off, SSH on, Plasma rotation, sensor config). Kept for re-imaging a device.
+  install -Dm755 "${sd}/odin3-post-boot-setup.sh"                "${bin}/odin3-post-boot-setup.sh"
+  install -Dm755 "${sd}/udev/install-odin3-gamepad-perms.sh"     "${bin}/install-odin3-gamepad-perms.sh"
+
+  # --- systemd units ----------------------------------------------------------
+  local unit="${pkgdir}/usr/lib/systemd/system"
+  install -Dm644 "${sd}/daemons/power-button-daemon.service"              "${unit}/power-button-daemon.service"
+  install -Dm644 "${sd}/daemons/volume-button-daemon.service"             "${unit}/volume-button-daemon.service"
+  install -Dm644 "${sd}/oled-care/oled-care-daemon.service"               "${unit}/oled-care-daemon.service"
+  install -Dm644 "${sd}/oled-care/oled-refresher.service"                 "${unit}/oled-refresher.service"
+  install -Dm644 "${sd}/oled-care/oled-refresher.timer"                   "${unit}/oled-refresher.timer"
+  install -Dm644 "${sd}/mangohud/mangohud-toggle-daemon.service"          "${unit}/mangohud-toggle-daemon.service"
+  install -Dm644 "${sd}/power/pocknix-power-profile.service"              "${unit}/pocknix-power-profile.service"
+  install -Dm644 "${sd}/power/pocknix-cpu-governor.service"               "${unit}/pocknix-cpu-governor.service"
+  install -Dm644 "${sd}/power/pocknix-pergame-power.service"              "${unit}/pocknix-pergame-power.service"
+  install -Dm644 "${sd}/splash/odin3-splash.service"                      "${unit}/odin3-splash.service"
+  install -Dm644 "${sd}/steamui-watchdog/steamui-watchdog.service"        "${unit}/steamui-watchdog.service"
+  install -Dm644 "${sd}/fake-suspend/pocknix-fake-suspend.service"        "${unit}/pocknix-fake-suspend.service"
+  install -Dm644 "${sd}/hexagonrpcd/hexagonrpcd-adsp-sensorspd.service"   "${unit}/hexagonrpcd-adsp-sensorspd.service"
+  install -Dm644 "${sd}/steamos-manager/pocknix-steamos-manager.service"  "${unit}/pocknix-steamos-manager.service"
+  # Ships as 'odin3-display.service.clean' upstream-in-our-notes; installed under its real name.
+  install -Dm644 "${sd}/odin3-display.service.clean"                      "${unit}/odin3-display.service"
+  # Drop-in that adds the resume side of the fake-suspend unit (ExecStop).
+  install -Dm644 "${sd}/fake-suspend/override.conf" \
+    "${pkgdir}/usr/lib/systemd/system/pocknix-fake-suspend.service.d/override.conf"
+
+  # --- dbus activation + polkit/sudoers --------------------------------------
+  # Session-bus activation file for the SteamOS session-manager shim (Steam talks to
+  # com.steampowered.SteamOSManager1 for the QAM performance profiles).
+  install -Dm644 "${sd}/steamos-manager/com.steampowered.SteamOSManager1.service" \
+    "${pkgdir}/usr/share/dbus-1/services/com.steampowered.SteamOSManager1.service"
+  # 0440 is a sudoers.d requirement (sudo skips group/world-writable files). It allows ONLY
+  # the session-manager helper to switch power profiles without a password.
+  install -Dm440 "${sd}/steamos-manager/90-pocknix-steamos-manager" \
+    "${pkgdir}/etc/sudoers.d/90-pocknix-steamos-manager"
+
+  # --- udev / environment / configs -------------------------------------------
+  install -Dm644 "${sd}/udev/70-odin3-gamepad.rules" \
+    "${pkgdir}/usr/lib/udev/rules.d/70-odin3-gamepad.rules"
+  # FEX stability flags for steamwebhelper (x86_64 under FEX); see configs/fex-README.md.
+  install -Dm644 "${sd}/configs/fex-fix.conf" \
+    "${pkgdir}/etc/environment.d/fex-fix.conf"
+  # Compact top-bar MangoHud layout (ROCKNIX S922X style).
+  install -Dm644 "${sd}/mangohud/MangoHud.conf" \
+    "${pkgdir}/etc/MangoHud/MangoHud.conf"
+
+  # --- enable the units that declare [Install] --------------------------------
+  # Done here rather than in a .install scriptlet so the symlinks are owned by the package
+  # (removing it removes them).
+  local want="${pkgdir}/usr/lib/systemd/system/multi-user.target.wants"
+  install -d "${want}"
+  for u in power-button-daemon volume-button-daemon oled-care-daemon mangohud-toggle-daemon \
+           pocknix-power-profile pocknix-cpu-governor pocknix-pergame-power odin3-splash \
+           steamui-watchdog hexagonrpcd-adsp-sensorspd; do
+    ln -sf "../${u}.service" "${want}/${u}.service"
+  done
+  install -d "${pkgdir}/usr/lib/systemd/system/timers.target.wants"
+  ln -sf "../oled-refresher.timer" \
+    "${pkgdir}/usr/lib/systemd/system/timers.target.wants/oled-refresher.timer"
+  # fake-suspend hooks the suspend target; the session-manager shim is a user-session service.
+  install -d "${pkgdir}/usr/lib/systemd/system/systemd-suspend.service.wants"
+  ln -sf "../pocknix-fake-suspend.service" \
+    "${pkgdir}/usr/lib/systemd/system/systemd-suspend.service.wants/pocknix-fake-suspend.service"
+  install -d "${pkgdir}/usr/lib/systemd/user/default.target.wants"
+  install -Dm644 "${sd}/steamos-manager/pocknix-steamos-manager.service" \
+    "${pkgdir}/usr/lib/systemd/user/pocknix-steamos-manager.service"
+  ln -sf "../pocknix-steamos-manager.service" \
+    "${pkgdir}/usr/lib/systemd/user/default.target.wants/pocknix-steamos-manager.service"
+}

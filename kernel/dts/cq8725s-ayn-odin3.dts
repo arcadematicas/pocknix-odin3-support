@@ -217,7 +217,7 @@
 &display_panel {
 	compatible = "chipone,icna3520";
 
-	reset-gpios = <&tlmm 98 GPIO_ACTIVE_LOW>;
+			reset-gpios = <&tlmm 98 GPIO_ACTIVE_LOW>;
 
 	vddio-supply = <&vreg_l12b_1p8>;
 	vci-supply = <&vreg_l13b_3p0>;
@@ -233,17 +233,17 @@
 };
 
 &remoteproc_adsp {
-	firmware-name = "qcom/sm8750/ayn/odin3/adsp.mbn",
-			"qcom/sm8750/ayn/odin3/adsp_dtb.mbn";
+	firmware-name = "qcom/sm8750/adsp.mbn",
+			"qcom/sm8750/adsp_dtb.mbn";
 
 	status = "okay";
 };
 
 &remoteproc_cdsp {
-	firmware-name = "qcom/sm8750/ayn/odin3/cdsp.mbn",
-			"qcom/sm8750/ayn/odin3/cdsp_dtb.mbn";
+	firmware-name = "qcom/sm8750/cdsp.mbn",
+			"qcom/sm8750/cdsp_dtb.mbn";
 
-	status = "okay";
+	status = "disabled";
 };
 
 &spk_amp_l {
@@ -349,4 +349,16 @@
 			debounce-interval = <15>;
 		};
 	};
+
+	battery: battery {
+		compatible = "simple-battery";
+		voltage-min-design-microvolt = <3400000>;
+		voltage-max-design-microvolt = <4480000>;
+		energy-full-design-microwatt-hours = <18500000>;
+		charge-full-design-microamp-hours = <5000000>;
+	};
+};
+
+&{/pmic-glink} {
+	monitored-battery = <&battery>;
 };
