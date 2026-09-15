@@ -1,54 +1,94 @@
 # pocknix-bsp-sm8750 — board support for the SM8750 FAMILY (AYN Odin 3, KONKR Pocket FIT Elite).
-# One package per SoC (same shape as pocknix-bsp-sm8550): board facts in
-# /usr/lib/pocknix/boards/<board>.conf, device.conf is a sourced dispatcher keyed on the DT model.
+# One package per SoC: board facts in /usr/lib/pocknix/boards/<board>.conf, device.conf is a
+# sourced dispatcher keyed on the DT model, InputPlumber configs are dt-model gated.
 #
-# This is OUR device package: it carries the Odin 3 daemons, services and quirks that until now
-# were only applied BY HAND on the device (and therefore never reached a freshly built image).
-# `devices/sm8750/profile.conf` has always referenced it as DEVICE_BSP_PKG; it simply did not
-# exist until now.
+# Input map rationale (why we ship our own ayn_mcu.yaml / 01-ayn-controller.yaml instead of
+# ROCKNIX's): ROCKNIX's AYN capability map maps BTN_BACK (the physical Quick Access button) to
+# keyboard KeyF1 — a key ROCKNIX's own UI uses. On a Steam Deck target that leaves Steam without
+# a Quick Access button. Our map (taken from ArmadaOS, with the MangoHud paddle delta) maps
+# BTN_BACK -> gamepad QuickAccess, BTN_MODE -> Guide, and the composite device targets `deck` +
+# `keyboard` so Steam Input sees a Steam-native pad.
 #
-# NOTE ON source=(): the files are grouped in topic subdirectories and NOT listed in source=.
-# build-packages.sh copies the WHOLE package directory to /build/<name> (${startdir}), so the
-# subdirectories are reachable from package() directly. Listing ~45 flat local sources would
-# only lose the grouping. The incremental skip still works: it rebuilds when ANY file in the
-# package dir is newer than the artifact.
+# No suspend quirk ships here: the SM8750 family pins s2idle in the kernel cmdline
+# (mem_sleep_default=s2idle, see kernel-cmdline) — the only safe suspend mode on this SoC (deep
+# wedges it) — so no sleep.conf.d drop-in is needed (unlike sm8550, whose s2idle pin lives in the BSP).
+#
+# No pocknix-firmware-sm8750 dep: the Odin 3's proprietary firmware blobs (adsp.mbn / adsp_dtb.mbn
+# charger firmware, etc.) are NOT in this repo — build-image.sh's install_firmware() applies them
+# to the image rootfs from devices/sm8750/firmware/ (see its README).
+#
+# THE DAEMONS BELOW ARE OURS (arcadematicas/pocknix-odin3-support). Until 15/09/2026 they were
+# installed BY HAND on the device and existed only in the support repo, so a freshly built image
+# shipped without them (no OLED care, no button daemons, no power profiles, no splash, no SteamOS
+# session-manager shim, no Steam UI watchdog). They are packaged here so pacman tracks them.
 pkgname=pocknix-bsp-sm8750
 pkgver=0.2.0
 pkgrel=1
-pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — Odin 3 daemons (OLED care, button/power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim), udev rules, board dispatch"
+pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
 license=('GPL2')
-# pocknix-bsp-common is the device-neutral half (sleep.d dispatcher, wheel sudo, fan/scheduler).
-# python is needed by the button/OLED/pergame/MangoHud daemons and the session-manager shim.
+# python is for the button/OLED/pergame/MangoHud daemons and the session-manager shim; sudo is
+# for the sudoers.d drop-in that lets the shim switch power profiles without a password.
 depends=('pocknix-bsp-common' 'python' 'sudo')
 # Exactly one device BSP may be installed (wrong-device guard for a shared repo).
+# No retired per-device BSPs exist for the SM8750 family, so no 'replaces'.
 provides=('pocknix-bsp')
 conflicts=('pocknix-bsp')
-replaces=('pocknix-bsp')
-optdepends=('inputplumber: the button remaps and the QAM target come from the InputPlumber maps'
+optdepends=('inputplumber: gamepad -> Steam Input mapping (01-ayn-controller.yaml)'
+            'alsa-ucm-conf: base UCM (codec include sequences for the AYN-Odin3 UCM)'
             'mangohud: MangoHud.conf is the Odin 3 layout (compact top bar)'
-            'hexagonrpcd: sensor daemon — the unit is shipped but the binary is not (see README)'
+            'hexagonrpcd: sensor daemon — the unit ships but the binary does not (see its README)'
             'fex-emu: /etc/environment.d/fex-fix.conf carries the steamwebhelper stability flags')
 backup=('etc/sudoers.d/90-pocknix-steamos-manager'
         'etc/MangoHud/MangoHud.conf'
         'etc/environment.d/fex-fix.conf')
+source=('device.conf'
+        'ayn_mcu.yaml' '01-ayn-controller.yaml'
+        'AYN-Odin3.conf' 'HiFi.conf'
+        'kernel-cmdline')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   local sd="${startdir}"
 
   # --- board dispatch --------------------------------------------------------
-  # device.conf sources the board file picked from /proc/device-tree/model; the
-  # boards/ dir is NOT in source= (makepkg local sources are flat), it comes from startdir.
-  install -Dm644 "${sd}/device.conf" "${pkgdir}/usr/lib/pocknix/device.conf"
+  # boards/ is not in source= (makepkg local sources are flat): taken from startdir,
+  # which build-packages.sh populates with the whole package dir.
+  install -Dm644 "${srcdir}/device.conf" "${pkgdir}/usr/lib/pocknix/device.conf"
   local b
-  for b in "${sd}/boards/"*.conf; do
+  for b in "${startdir}/boards/"*.conf; do
     install -Dm644 "${b}" "${pkgdir}/usr/lib/pocknix/boards/$(basename "${b}")"
   done
 
+  # --- InputPlumber maps -----------------------------------------------------
+  install -Dm644 "${srcdir}/01-ayn-controller.yaml" \
+    "${pkgdir}/usr/share/inputplumber/devices/01-ayn-controller.yaml"
+  install -Dm644 "${srcdir}/ayn_mcu.yaml" \
+    "${pkgdir}/usr/share/inputplumber/capability_maps/ayn_mcu.yaml"
+
+  # --- ALSA UCM --------------------------------------------------------------
+  # The Odin 3 card reports longname "SM8750-AYN". The codec include sequences (/lib,
+  # /codecs/wcd939x, /codecs/qcom-lpass) come from base alsa-ucm-conf. (ArmadaOS also ships a
+  # legacy `ayn-AYNOdin3-` match name for older kernels; our longname is SM8750-AYN, so only that
+  # match is installed.)
+  local ucm="${pkgdir}/usr/share/alsa/ucm2"
+  install -Dm644 "${srcdir}/AYN-Odin3.conf" "${ucm}/AYN/Odin3/AYN-Odin3.conf"
+  install -Dm644 "${srcdir}/HiFi.conf"      "${ucm}/AYN/Odin3/HiFi.conf"
+  install -d "${ucm}/conf.d/sm8750"
+  ln -sf "../../AYN/Odin3/AYN-Odin3.conf" "${ucm}/conf.d/sm8750/SM8750-AYN.conf"
+
+  # --- family kernel cmdline -------------------------------------------------
+  # For the on-device /flash/KERNEL rebuild (pocknix-build-bootimg); build-packages.sh asserts it
+  # matches devices/sm8750/profile.conf.
+  install -Dm644 "${srcdir}/kernel-cmdline" "${pkgdir}/usr/lib/pocknix/kernel-cmdline"
+
+  # ===========================================================================
+  # OUR ADDITIONS (from here down: everything that used to be applied by hand)
+  # ===========================================================================
+
   # --- daemons and CLI helpers -> /usr/local/bin ------------------------------
-  # /usr/local/bin, not /usr/bin: these are device-local glue, not distro binaries, and every
-  # unit below hardcodes that path (ExecStart), so moving them means touching every unit.
+  # /usr/local/bin, not /usr/bin: device-local glue, and every unit below hardcodes that path.
   local bin="${pkgdir}/usr/local/bin"
   install -Dm755 "${sd}/daemons/power-button-daemon.py"          "${bin}/power-button-daemon.py"
   install -Dm755 "${sd}/daemons/volume-button-daemon.py"         "${bin}/volume-button-daemon.py"
@@ -64,7 +104,7 @@ package() {
   install -Dm755 "${sd}/fake-suspend/pocknix-fake-suspend.sh"    "${bin}/pocknix-fake-suspend.sh"
   install -Dm755 "${sd}/steamos-manager/pocknix-steamos-manager" "${bin}/pocknix-steamos-manager"
   # Post-flash helper: applies the runtime tweaks that cannot be baked (masks suspend, WiFi
-  # powersave off, SSH on, Plasma rotation, sensor config). Kept for re-imaging a device.
+  # powersave off, SSH on, Plasma rotation, sensor config).
   install -Dm755 "${sd}/odin3-post-boot-setup.sh"                "${bin}/odin3-post-boot-setup.sh"
   install -Dm755 "${sd}/udev/install-odin3-gamepad-perms.sh"     "${bin}/install-odin3-gamepad-perms.sh"
 
@@ -84,19 +124,19 @@ package() {
   install -Dm644 "${sd}/fake-suspend/pocknix-fake-suspend.service"        "${unit}/pocknix-fake-suspend.service"
   install -Dm644 "${sd}/hexagonrpcd/hexagonrpcd-adsp-sensorspd.service"   "${unit}/hexagonrpcd-adsp-sensorspd.service"
   install -Dm644 "${sd}/steamos-manager/pocknix-steamos-manager.service"  "${unit}/pocknix-steamos-manager.service"
-  # Ships as 'odin3-display.service.clean' upstream-in-our-notes; installed under its real name.
+  # Ships as 'odin3-display.service.clean' in our notes; installed under its real name.
   install -Dm644 "${sd}/odin3-display.service.clean"                      "${unit}/odin3-display.service"
   # Drop-in that adds the resume side of the fake-suspend unit (ExecStop).
   install -Dm644 "${sd}/fake-suspend/override.conf" \
     "${pkgdir}/usr/lib/systemd/system/pocknix-fake-suspend.service.d/override.conf"
 
-  # --- dbus activation + polkit/sudoers --------------------------------------
-  # Session-bus activation file for the SteamOS session-manager shim (Steam talks to
+  # --- dbus activation + sudoers ---------------------------------------------
+  # Session-bus activation for the SteamOS session-manager shim (Steam talks to
   # com.steampowered.SteamOSManager1 for the QAM performance profiles).
   install -Dm644 "${sd}/steamos-manager/com.steampowered.SteamOSManager1.service" \
     "${pkgdir}/usr/share/dbus-1/services/com.steampowered.SteamOSManager1.service"
-  # 0440 is a sudoers.d requirement (sudo skips group/world-writable files). It allows ONLY
-  # the session-manager helper to switch power profiles without a password.
+  # 0440 is a sudoers.d requirement (sudo skips group/world-writable files). It allows ONLY the
+  # session-manager helper to switch power profiles without a password.
   install -Dm440 "${sd}/steamos-manager/90-pocknix-steamos-manager" \
     "${pkgdir}/etc/sudoers.d/90-pocknix-steamos-manager"
 
@@ -115,6 +155,7 @@ package() {
   # (removing it removes them).
   local want="${pkgdir}/usr/lib/systemd/system/multi-user.target.wants"
   install -d "${want}"
+  local u
   for u in power-button-daemon volume-button-daemon oled-care-daemon mangohud-toggle-daemon \
            pocknix-power-profile pocknix-cpu-governor pocknix-pergame-power odin3-splash \
            steamui-watchdog hexagonrpcd-adsp-sensorspd; do
@@ -123,13 +164,12 @@ package() {
   install -d "${pkgdir}/usr/lib/systemd/system/timers.target.wants"
   ln -sf "../oled-refresher.timer" \
     "${pkgdir}/usr/lib/systemd/system/timers.target.wants/oled-refresher.timer"
-  # fake-suspend hooks the suspend target; the session-manager shim is a user-session service.
   install -d "${pkgdir}/usr/lib/systemd/system/systemd-suspend.service.wants"
   ln -sf "../pocknix-fake-suspend.service" \
     "${pkgdir}/usr/lib/systemd/system/systemd-suspend.service.wants/pocknix-fake-suspend.service"
-  install -d "${pkgdir}/usr/lib/systemd/user/default.target.wants"
   install -Dm644 "${sd}/steamos-manager/pocknix-steamos-manager.service" \
     "${pkgdir}/usr/lib/systemd/user/pocknix-steamos-manager.service"
+  install -d "${pkgdir}/usr/lib/systemd/user/default.target.wants"
   ln -sf "../pocknix-steamos-manager.service" \
     "${pkgdir}/usr/lib/systemd/user/default.target.wants/pocknix-steamos-manager.service"
 }

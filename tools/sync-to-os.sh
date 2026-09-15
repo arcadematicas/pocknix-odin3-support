@@ -56,9 +56,11 @@ mirror "packages/pocknix-device-sm8750" "devices/sm8750/packages/pocknix-device-
 overlay "packages/pocknix-bsp-common" "packages/shared/pocknix-bsp-common"
 
 # --- kernel patches + DTS ----------------------------------------------------
-# 20-sm8750 also holds the ROCKNIX patches, so this is an overlay, not a mirror.
-overlay "kernel/patches" "kernel/sm8750/patches/20-sm8750"
-overlay "kernel/dts"     "kernel/sm8750/dts/qcom"
+# kernel/patches/ mirrors the build's kernel/sm8750/patches/ layout (10-mainline, 20-sm8750...).
+# Those dirs also hold ROCKNIX's patches, so these are overlays, not mirrors.
+overlay "kernel/patches/10-mainline" "kernel/sm8750/patches/10-mainline"
+overlay "kernel/patches/20-sm8750"   "kernel/sm8750/patches/20-sm8750"
+overlay "kernel/dts"                 "kernel/sm8750/dts/qcom"
 
 # --- gamescope: our patch + our PKGBUILD -------------------------------------
 # packages/gamescope/PKGBUILD is a FULL COPY of the build's, with 0009 added to source=() and
