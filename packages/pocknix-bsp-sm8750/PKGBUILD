@@ -30,7 +30,9 @@ url="https://github.com/arcadematicas/pocknix-odin3-support"
 license=('GPL2')
 # python is for the button/OLED/pergame/MangoHud daemons and the session-manager shim; sudo is
 # for the sudoers.d drop-in that lets the shim switch power profiles without a password.
-depends=('pocknix-bsp-common' 'python' 'sudo')
+depends=('pocknix-bsp-common' 'python' 'sudo' 'sdl2')
+# gcc + SDL2 headers to build the OLED pixel refresher (see build()).
+makedepends=('sdl2')
 # Exactly one device BSP may be installed (wrong-device guard for a shared repo).
 # No retired per-device BSPs exist for the SM8750 family, so no 'replaces'.
 provides=('pocknix-bsp')
@@ -48,6 +50,16 @@ source=('device.conf'
         'AYN-Odin3.conf' 'HiFi.conf'
         'kernel-cmdline')
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+build() {
+  # Compile the OLED pixel refresher. It is tiny (~17 KB) but it MUST be built here: the
+  # original was compiled by hand ON the device and the source was never committed, so the
+  # first image built from this repo shipped without it and oled-care-daemon logged
+  # "Refresher finished with code 127" (command not found) — i.e. the OLED had no pixel
+  # refresh at all. See oled-care/oled-refresher.c for what it does.
+  gcc -Wall -O2 -o "${srcdir}/oled-refresher" "${startdir}/oled-care/oled-refresher.c" \
+      $(pkg-config --cflags --libs sdl2)
+}
 
 package() {
   local sd="${startdir}"
@@ -94,12 +106,21 @@ package() {
   install -Dm755 "${sd}/daemons/volume-button-daemon.py"         "${bin}/volume-button-daemon.py"
   install -Dm755 "${sd}/oled-care/oled-care-daemon.py"           "${bin}/oled-care-daemon.py"
   install -Dm755 "${sd}/oled-care/oled-refresher-auto"           "${bin}/oled-refresher-auto"
+  # el binario del refresco de píxeles (compilado en build())
+  install -Dm755 "${srcdir}/oled-refresher"                      "${bin}/oled-refresher"
   install -Dm755 "${sd}/mangohud/mangohud-toggle-daemon.py"      "${bin}/mangohud-toggle-daemon.py"
   install -Dm755 "${sd}/power/pocknix-power-profile"             "${bin}/pocknix-power-profile"
   install -Dm755 "${sd}/power/pocknix-cpu-governor"              "${bin}/pocknix-cpu-governor"
   install -Dm755 "${sd}/power/pocknix-pergame-power.py"          "${bin}/pocknix-pergame-power.py"
   install -Dm755 "${sd}/splash/odin3-splash-play.sh"             "${bin}/odin3-splash-play.sh"
   install -Dm755 "${sd}/splash/convert_frames.py"                "${bin}/odin3-splash-convert-frames.py"
+  # Boot splash: the player streams frames.raw.zst into /dev/fb0 (one dd per frame). The raw
+  # frames are 1.9 GB (240 x 8,355,840 B) — far too big for the repo AND too slow for the SD
+  # (30 fps needs 250 MB/s). zstd gets them to ~45 MB because the animation is very coherent
+  # between frames, and decompressing at ~1 GB/s is what makes the frame rate possible.
+  # Regenerate: python3 splash/convert_frames.py (needs Pillow+numpy), then
+  #   cat frames_raw/frame_*.raw | zstd -19 -T0 -o splash/frames.raw.zst
+  install -Dm644 "${sd}/splash/frames.raw.zst" "${pkgdir}/usr/share/odin3-splash/frames.raw.zst"
   install -Dm755 "${sd}/steamui-watchdog/steamui-watchdog.sh"    "${bin}/steamui-watchdog.sh"
   install -Dm755 "${sd}/fake-suspend/pocknix-fake-suspend.sh"    "${bin}/pocknix-fake-suspend.sh"
   install -Dm755 "${sd}/steamos-manager/pocknix-steamos-manager" "${bin}/pocknix-steamos-manager"
