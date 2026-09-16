@@ -1,0 +1,114 @@
+Module finalisation on allmodconfig builds consists of a large number of
+very short-lived jobs, and the make job dispatcher cannot possibly dispatch
+jobs fast enough.
+
+For allmodconfig x86-64 this can be on the order of ~22,000 jobs of a few
+milliseconds in duration each.
+
+However per-job cost grows with the variables the instance holds, here the
+savedcmd_* of every .mod.o and .ko read back from the .cmd files, since it
+walks them all to build each child's environment.
+
+This makes module finalisation very inefficient when large numbers of
+modules are being built.
+
+Fix this by splitting modules.order into chunks of 128 at a time, run in
+parallel.
+
+Each instance holds only its own modules' variables and the top-level one
+reads no per-module .cmd files at all, the same rules serve both levels,
+and an instance is told its chunk with modfinal-first=<index>.
+
+"make modules" with every *.mod.o and *.ko deleted goes from 28.9s to 15.9s
+with clang 22. No-op "make modules" goes from 5.6s to 4.8s, as checking the
+22,000 targets is spread over the chunks too.
+
+Whole build, 128-thread Threadripper 9980X, best of N runs:
+
+                                         before   after     delta
+                                         -------------------------------
+  x86 allmodconfig, no-op make, gcc         1.9s     1.2s    -0.74s (-39%)
+  x86 allmodconfig, no-op make, clang       2.4s     1.6s    -0.77s (-32%)
+  x86 allmodconfig, clean, gcc            304.5s   291.4s     -13.1s (-4%)
+  x86 allmodconfig, clean, clang          301.7s   297.0s     -4.7s (-2%)
+
+Assisted-by: LLM
+Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
+---
+ scripts/Makefile.modfinal | 26 +++++++++++++++++++++++++-
+ scripts/mod/sumversion.c  |  4 ++--
+ 2 files changed, 27 insertions(+), 3 deletions(-)
+
+diff --git a/scripts/Makefile.modfinal b/scripts/Makefile.modfinal
+index 75e9effdf02c..858fa798090b 100644
+--- a/scripts/Makefile.modfinal
++++ b/scripts/Makefile.modfinal
+@@ -13,9 +13,30 @@ include $(srctree)/scripts/Makefile.lib
+ # find all modules listed in modules.order
+ modules := $(call read-file, modules.order)
+ 
++modfinal-chunk-size := 128
++
++ifdef modfinal-first
++
++# this instance handles the chunk of modules.order starting at $(modfinal-first)
++modules := $(wordlist $(modfinal-first), $(words $(modules)), $(modules))
++modules := $(wordlist 1, $(modfinal-chunk-size), $(modules))
++
+ __modfinal: $(modules:%.o=%.ko)
+ 	@:
+ 
++else
++
++modfinal-chunks := $(addprefix chunk-, $(shell seq 1 $(modfinal-chunk-size) $(words $(modules))))
++
++PHONY += $(modfinal-chunks)
++$(modfinal-chunks): .module-common.o
++	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modfinal modfinal-first=$(@:chunk-%=%)
++
++__modfinal: $(modfinal-chunks)
++	@:
++
++endif
++
+ # modname and part-of-module are set to make c_flags define proper module flags
+ modname = $(notdir $(@:.mod.o=))
+ part-of-module = y
+@@ -58,7 +79,10 @@ ifdef CONFIG_DEBUG_INFO_BTF_MODULES
+ endif
+ 	+$(call cmd,check_tracepoint)
+ 
+-targets += $(modules:%.o=%.ko) $(modules:%.o=%.mod.o) .module-common.o
++targets += .module-common.o
++ifdef modfinal-first
++targets += $(modules:%.o=%.ko) $(modules:%.o=%.mod.o)
++endif
+ 
+ # Add FORCE to the prerequisites of a target to force it to be always rebuilt.
+ # ---------------------------------------------------------------------------
+diff --git a/scripts/mod/sumversion.c b/scripts/mod/sumversion.c
+index 2cbadd3cd97d..5501d6aa0bea 100644
+--- a/scripts/mod/sumversion.c
++++ b/scripts/mod/sumversion.c
+@@ -249,7 +249,7 @@ static int parse_comment(const char *file, unsigned long len)
+ /* FIXME: Handle .s files differently (eg. # starts comments) --RR */
+ static bool stop_char[256];
+ 
+-static void init_stop_chars(void)
++static void sumversion_init(void)
+ {
+ 	static bool done;
+ 	int chr;
+@@ -274,7 +274,7 @@ static int parse_file(const char *fname, struct md4_ctx *md)
+ 	len = strlen(file);
+ 	if (!len)
+ 		goto out_file;
+-	init_stop_chars();
++	sumversion_init();
+ 	buf = xmalloc(len); /* File output buffer. */
+ 
+ 	for (i = 0; i < len; i++) {
+
+-- 
+2.55.0
+

@@ -43,6 +43,8 @@ cmp_tree "${HERE}/packages/linux-pocknix-sm8750"      "${OS}/packages/soc/linux-
 cmp_tree "${HERE}/packages/pocknix-bootloader-sm8750" "${OS}/packages/soc/pocknix-bootloader-sm8750"
 cmp_tree "${HERE}/packages/pocknix-bsp-common"    "${OS}/packages/shared/pocknix-bsp-common"
 cmp_tree "${HERE}/overlay"                        "${OS}/overlay"
+cmp_tree "${HERE}/scripts"                        "${OS}/scripts"
+cmp_tree "${HERE}/kernel/patches/05-speedup"       "${OS}/kernel/sm8750/patches/05-speedup"
 cmp_tree "${HERE}/kernel/patches/10-mainline"      "${OS}/kernel/sm8750/patches/10-mainline"
 cmp_tree "${HERE}/kernel/patches/20-sm8750"        "${OS}/kernel/sm8750/patches/20-sm8750"
 cmp_tree "${HERE}/kernel/patches/30-version"       "${OS}/kernel/sm8750/patches/30-version"

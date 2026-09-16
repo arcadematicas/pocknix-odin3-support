@@ -1,0 +1,115 @@
+Unless instructed otherwise, nm sorts by name.
+
+There are places where this is unnecessary - an invocation from
+scripts/sorttable every vmlinux link, scripts/check-function-names.sh run
+after every vmlinux.o link, and the x86 VOFFSET and ZOFFSET listings
+between vmlinux and bzImage.
+
+Both GNU nm and llvm-nm accept the same '-p' parameter to disable sorting
+in these instances, so use that to prevent this unnecessary work.
+
+Each nm run on its own, x86-64, median of 5:
+
+                             GNU nm 2.47              llvm-nm 22
+                          before  after   delta    before  after   delta
+  defconfig
+  sorttable, nm -S vmlinux 0.080s 0.039s -0.041s   0.265s 0.113s -0.152s
+  check-function-names.sh  0.072s 0.033s -0.039s   0.244s 0.102s -0.142s
+  VOFFSET                  0.077s 0.034s -0.043s   0.261s 0.113s -0.148s
+  ZOFFSET                  0.007s 0.005s -0.002s   0.005s 0.005s  0.000s
+  TOTAL                                  -0.125s                 -0.442s
+
+  allmodconfig
+  sorttable, nm -S vmlinux 0.156s 0.063s -0.093s   0.539s 0.223s -0.316s
+  check-function-names.sh  0.149s 0.054s -0.095s   0.537s 0.217s -0.320s
+  VOFFSET                  0.146s 0.052s -0.094s   0.524s 0.221s -0.303s
+  ZOFFSET                  0.007s 0.005s -0.002s   0.006s 0.004s -0.002s
+  TOTAL                                  -0.284s                 -0.941s
+
+llvm-nm appears to be a lot slower than GNU nm, so these builds naturally
+improve the most.
+
+The four run one after another in the serial tail of every build that links
+vmlinux so impact kernel builds directly.
+
+In an allmodconfig the decompressor is built in parallel while the modules,
+so only the two before the vmlinux link contribute to build time.
+
+The build outputs remain unchanged.
+
+Whole build, 128-thread Threadripper 9980X, median of 3:
+
+                                         before    after     delta
+                                       ----------------------------------
+  x86 defconfig, touch mm/vma.c, gcc    10.02s     9.83s    -0.19s (-2%)
+  x86 defconfig, touch mm/vma.c, clang   9.52s     9.24s    -0.28s (-3%)
+  x86 defconfig, clean, gcc             28.71s    28.58s    -0.13s (-0.5%)
+  x86 defconfig, clean, clang           28.69s    28.31s    -0.38s (-1%)
+  x86 allmodconfig, touch mm/vma.c, cl  40.52s    39.83s    -0.69s (-2%)
+
+Assisted-by: LLM
+Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
+---
+ arch/x86/boot/Makefile            | 2 +-
+ arch/x86/boot/compressed/Makefile | 2 +-
+ scripts/check-function-names.sh   | 3 ++-
+ scripts/link-vmlinux.sh           | 2 +-
+ 4 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/arch/x86/boot/Makefile b/arch/x86/boot/Makefile
+index 3f9fb3698d66..4a9bce32586d 100644
+--- a/arch/x86/boot/Makefile
++++ b/arch/x86/boot/Makefile
+@@ -74,7 +74,7 @@ SETUP_OBJS = $(addprefix $(obj)/,$(setup-y))
+ sed-zoffset := -e 's/^\([0-9a-fA-F]*\) [a-zA-Z] \(startup_32\|efi.._stub_entry\|efi\(32\)\?_pe_entry\|input_data\|kernel_info\|_end\|_ehead\|_text\|_e\?data\|_e\?sbat\|z_.*\)$$/\#define ZO_\2 0x\1/p'
+ 
+ quiet_cmd_zoffset = ZOFFSET $@
+-      cmd_zoffset = $(NM) $< | sed -n $(sed-zoffset) > $@
++      cmd_zoffset = $(NM) -p $< | sed -n $(sed-zoffset) > $@
+ 
+ targets += zoffset.h
+ $(obj)/zoffset.h: $(obj)/compressed/vmlinux FORCE
+diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
+index 06934f9691d6..6ec5e031db1d 100644
+--- a/arch/x86/boot/compressed/Makefile
++++ b/arch/x86/boot/compressed/Makefile
+@@ -76,7 +76,7 @@ HOST_EXTRACFLAGS += -I$(srctree)/tools/include
+ sed-voffset := -e 's/^\([0-9a-fA-F]*\) [ABbCDGRSTtVW] \(_text\|__start_rodata\|_sinittext\|__inittext_end\|__bss_start\|_end\)$$/\#define VO_\2 _AC(0x\1,UL)/p'
+ 
+ quiet_cmd_voffset = VOFFSET $@
+-      cmd_voffset = $(NM) $< | sed -n $(sed-voffset) > $@
++      cmd_voffset = $(NM) -p $< | sed -n $(sed-voffset) > $@
+ 
+ targets += ../voffset.h
+ 
+diff --git a/scripts/check-function-names.sh b/scripts/check-function-names.sh
+index 08071133e5a5..94883e690627 100755
+--- a/scripts/check-function-names.sh
++++ b/scripts/check-function-names.sh
+@@ -13,7 +13,8 @@ if [ ! -f "$objfile" ]; then
+ 	exit 1
+ fi
+ 
+-bad_symbols=$(${NM:-nm} "$objfile" | awk '$2 ~ /^[TtWw]$/ {print $3}' | grep -E '^(startup|exit|split|unlikely|hot|unknown)(\.|$)')
++bad_symbols=$(${NM:-nm} -p "$objfile" | awk '$2 ~ /^[TtWw]$/ {print $3}' |
++	      grep -E '^(startup|exit|split|unlikely|hot|unknown)(\.|$)')
+ 
+ if [ -n "$bad_symbols" ]; then
+ 	echo "$bad_symbols" | while read -r sym; do
+diff --git a/scripts/link-vmlinux.sh b/scripts/link-vmlinux.sh
+index e88604150d2c..970ca10f8fa9 100755
+--- a/scripts/link-vmlinux.sh
++++ b/scripts/link-vmlinux.sh
+@@ -161,7 +161,7 @@ mksysmap()
+ 
+ sorttable()
+ {
+-	${NM} -S ${1} > .tmp_vmlinux.nm-sort
++	${NM} -p -S ${1} > .tmp_vmlinux.nm-sort
+ 	${objtree}/scripts/sorttable -s .tmp_vmlinux.nm-sort ${1}
+ }
+ 
+
+-- 
+2.55.0
+

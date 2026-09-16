@@ -1,0 +1,121 @@
+The gzip step of a kernel build is very lengthily, especially for larger
+builds such as allmodconfig.
+
+gzip itself cannot be run in parallel, however an alternative tool exists
+that can, providing the same feature set as gzip itself - pigz - which
+works as a drop-in replacement.
+
+On a 128-core Threadripper, gzip -9 of a 36 MiB x86-64 vmlinux.bin takes
+1.6s, and with pigz it takes 0.09s, so the performance increase is
+significant.
+
+It is already possible to specify the KGZIP environmental variable to make
+use of pigz, however it seems sensible to make use of pigz if it is
+available.
+
+Therefore default to using pigz if it is available on the system upon which
+the kernel is being built, otherwise fall back to gzip.
+
+The output is byte-for-byte identical between pigz/gzip invocations, but
+gzip and pigz do not produce the same stream as one another.
+
+Therefore, for reproducible builds, the same set of tools should be used.
+
+This seems to already be an implicit requirement in any case, but update
+the reproducible build documentation to make this clear.
+
+Also update the kbuild documentation to reflect the change.
+
+Every x86 build ends with the compression of vmlinux.bin, 36MB for
+defconfig and over 200MB for allmodconfig, no-op builds are unchanged.
+
+Whole build, 128-thread Threadripper 9980X, best of N runs:
+
+                                         before   after     delta
+                                         -------------------------------
+  x86 defconfig, touch mm/vma.c, gcc        7.4s     5.4s     -2.0s (-27%)
+  x86 defconfig, touch mm/vma.c, clang      6.6s     4.9s     -1.7s (-26%)
+  x86 defconfig, clean, gcc                26.2s    24.4s     -1.8s (-7%)
+  x86 defconfig, clean, clang              25.8s    24.3s     -1.5s (-6%)
+  x86 allmodconfig, touch mm/vma.c, gcc    23.7s    15.3s     -8.4s (-35%)
+  x86 allmodconfig, touch mm/vma.c, clang  22.1s    15.2s     -6.9s (-31%)
+  x86 allmodconfig, clean, gcc            291.4s   275.2s     -16.2s (-6%)
+  x86 allmodconfig, clean, clang          278.3s   265.7s     -12.6s (-5%)
+
+Link: https://zlib.net/pigz/
+Assisted-by: LLM
+Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
+---
+ Documentation/kbuild/kbuild.rst              | 13 +++++++++++++
+ Documentation/kbuild/reproducible-builds.rst | 16 ++++++++++++++++
+ Makefile                                     |  2 +-
+ 3 files changed, 30 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/kbuild/kbuild.rst b/Documentation/kbuild/kbuild.rst
+index 5a9013bacfb7..ebfc2319d6da 100644
+--- a/Documentation/kbuild/kbuild.rst
++++ b/Documentation/kbuild/kbuild.rst
+@@ -110,6 +110,19 @@ HOSTLDLIBS
+ ----------
+ Additional libraries to link against when building host programs.
+ 
++KGZIP
++-----
++The gzip compressor used for the compressed kernel image, compressed
++modules and packaging.
++
++If unset, it defaults to pigz (a parallel implementation of gzip) if available,
++otherwise gzip.
++
++KBZIP2, KLZOP, LZMA, LZ4, XZ, ZSTD
++----------------------------------
++The compressor programs for the other formats. Each defaults to the program
++of the same name.
++
+ .. _userkbuildflags:
+ 
+ USERCFLAGS
+diff --git a/Documentation/kbuild/reproducible-builds.rst b/Documentation/kbuild/reproducible-builds.rst
+index bc1eb82211df..b95586df2cb5 100644
+--- a/Documentation/kbuild/reproducible-builds.rst
++++ b/Documentation/kbuild/reproducible-builds.rst
+@@ -76,6 +76,22 @@ include generated files.  You should ensure the source tree is
+ pristine by running ``make mrproper`` or ``git clean -d -f -x`` before
+ building a source package.
+ 
++Compression tools
++-----------------
++
++The compressed kernel image, compressed modules and packages are produced
++using the binary specified by the environment variable ``KGZIP`` (described
++in Documentation/kbuild/kbuild.rst).
++
++This variable defaults to ``pigz`` if installed (a parallel implementation
++of gzip), or ``gzip`` otherwise.
++
++The generated output between two invocations of identical builds with
++either of the default tools will be byte-for-byte equivalent.
++
++However, for reproducible builds, ensure the same tool is used on all build
++hosts, as different tools may generate different output from one another.
++
+ Module signing
+ --------------
+ 
+diff --git a/Makefile b/Makefile
+index 3805f72428cb..5cb819034372 100644
+--- a/Makefile
++++ b/Makefile
+@@ -561,7 +561,7 @@ PERL		= perl
+ PYTHON3		= python3
+ CHECK		= sparse
+ BASH		= bash
+-KGZIP		= gzip
++KGZIP		:= $(if $(shell command -v pigz 2>/dev/null),pigz,gzip)
+ KBZIP2		= bzip2
+ KLZOP		= lzop
+ LZMA		= lzma
+
+-- 
+2.55.0
+

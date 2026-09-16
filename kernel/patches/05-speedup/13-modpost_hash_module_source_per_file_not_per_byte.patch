@@ -1,0 +1,133 @@
+modpost spends a long time md4 hashing module source at a per-byte
+granularity.
+
+Fix this by doing this hashing per-file instead by accumulating a per-file
+buffer in parse_file().
+
+All 11,189 .mod.c files and Module.symvers were confirmed to be identical
+with this change applied.
+
+This is especially impactful for allmodconfig incremental builds (where
+CONFIG_MODULE_SRCVERSION_ALL is set).
+
+Whole build, 128-thread Threadripper 9980X, best of N runs:
+
+                                         before   after     delta
+                                         -------------------------------
+  x86 allmodconfig, touch mm/vma.c, gcc    40.6s    38.2s     -2.4s (-6%)
+  x86 allmodconfig, touch mm/vma.c, clang  36.2s    35.0s     -1.2s (-3%)
+
+Assisted-by: LLM
+Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
+---
+ scripts/mod/sumversion.c | 56 +++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 44 insertions(+), 12 deletions(-)
+
+diff --git a/scripts/mod/sumversion.c b/scripts/mod/sumversion.c
+index 3dd28b4d0099..2cbadd3cd97d 100644
+--- a/scripts/mod/sumversion.c
++++ b/scripts/mod/sumversion.c
+@@ -224,19 +224,11 @@ static void md4_final_ascii(struct md4_ctx *mctx, char *out, unsigned int len)
+ 		 mctx->hash[0], mctx->hash[1], mctx->hash[2], mctx->hash[3]);
+ }
+ 
+-static inline void add_char(unsigned char c, struct md4_ctx *md)
+-{
+-	md4_update(md, &c, 1);
+-}
+-
+-static int parse_string(const char *file, unsigned long len,
+-			struct md4_ctx *md)
++static int parse_string(const char *file, unsigned long len)
+ {
+ 	unsigned long i;
+ 
+-	add_char(file[0], md);
+ 	for (i = 1; i < len; i++) {
+-		add_char(file[i], md);
+ 		if (file[i] == '"' && file[i-1] != '\\')
+ 			break;
+ 	}
+@@ -255,15 +247,44 @@ static int parse_comment(const char *file, unsigned long len)
+ }
+ 
+ /* FIXME: Handle .s files differently (eg. # starts comments) --RR */
++static bool stop_char[256];
++
++static void init_stop_chars(void)
++{
++	static bool done;
++	int chr;
++
++	if (done)
++		return;
++
++	for (chr = 0; chr < 256; chr++)
++		if (chr == '\\' || chr == '"' || chr == '/' || isspace(chr))
++			stop_char[chr] = true;
++
++	done = true;
++}
++
+ static int parse_file(const char *fname, struct md4_ctx *md)
+ {
++	unsigned long i, len, n = 0;
++	unsigned char *buf;
+ 	char *file;
+-	unsigned long i, len;
+ 
+ 	file = read_text_file(fname);
+ 	len = strlen(file);
++	if (!len)
++		goto out_file;
++	init_stop_chars();
++	buf = xmalloc(len); /* File output buffer. */
+ 
+ 	for (i = 0; i < len; i++) {
++		const unsigned char chr = file[i];
++
++		if (!stop_char[chr]) {
++			buf[n++] = file[i];
++			continue;
++		}
++
+ 		/* Collapse and ignore \ and CR. */
+ 		if (file[i] == '\\' && (i+1 < len) && file[i+1] == '\n') {
+ 			i++;
+@@ -276,7 +297,14 @@ static int parse_file(const char *fname, struct md4_ctx *md)
+ 
+ 		/* Handle strings as whole units */
+ 		if (file[i] == '"') {
+-			i += parse_string(file+i, len - i, md);
++			unsigned long slen = parse_string(file+i, len - i);
++
++			/* Closing quote is included if there is one. */
++			if (slen < len - i)
++				slen++;
++			memcpy(buf + n, file + i, slen);
++			n += slen;
++			i += slen - 1;
+ 			continue;
+ 		}
+ 
+@@ -286,11 +314,15 @@ static int parse_file(const char *fname, struct md4_ctx *md)
+ 			continue;
+ 		}
+ 
+-		add_char(file[i], md);
++		buf[n++] = file[i];
+ 	}
++	md4_update(md, buf, n);
++	free(buf);
++out_file:
+ 	free(file);
+ 	return 1;
+ }
++
+ /* Check whether the file is a static library or not */
+ static bool is_static_library(const char *objfile)
+ {
+
+-- 
+2.55.0
+

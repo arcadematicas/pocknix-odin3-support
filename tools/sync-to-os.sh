@@ -60,14 +60,25 @@ mirror "packages/pocknix-bootloader-sm8750" "packages/soc/pocknix-bootloader-sm8
 # --- our files that the build copies verbatim into the rootfs ----------------
 overlay "overlay" "overlay"
 
+# --- our override of the package-build harness -------------------------------
+# scripts/build-packages.sh: adds MAKEFLAGS=-j$(nproc) to the chroot's makepkg.conf (the ALARM
+# base ships it commented out, so every build ran SERIAL — hours instead of minutes) and skips
+# the opt-in emulation packages unless POCKNIX_EMULATION=1. FULL COPY: if upstream changes its
+# build-packages.sh this file has to be re-merged (the check only verifies the two match).
+overlay "scripts" "scripts"
+
 # --- our versions of files that live in upstream's packages ------------------
 # pocknix-bsp-common is upstream's device-neutral BSP; we carry newer fan control scripts
 # (the "off" fan mode, the [ -f ] guard). Copied in, never deleted.
 overlay "packages/pocknix-bsp-common" "packages/shared/pocknix-bsp-common"
 
 # --- kernel patches + DTS ----------------------------------------------------
-# kernel/patches/ mirrors the build's kernel/sm8750/patches/ layout (10-mainline, 20-sm8750...).
-# Those dirs also hold ROCKNIX's patches, so these are overlays, not mirrors.
+# kernel/patches/ mirrors the build's kernel/sm8750/patches/ layout (05-speedup, 10-mainline,
+# 20-sm8750, 30-version). Those dirs also hold ROCKNIX's patches, so these are overlays, not
+# mirrors. 05-speedup is the Lorenzo Stoakes "kbuild: significantly speed up kernel builds" series
+# (22 of 23; #15 needs a manual port) — it is what makes the kernel build take ~5 min instead of
+# ~40 on this machine, so it lives in the centre rather than only in the build tree.
+overlay "kernel/patches/05-speedup"  "kernel/sm8750/patches/05-speedup"
 overlay "kernel/patches/10-mainline" "kernel/sm8750/patches/10-mainline"
 overlay "kernel/patches/20-sm8750"   "kernel/sm8750/patches/20-sm8750"
 overlay "kernel/patches/30-version"  "kernel/sm8750/patches/30-version"

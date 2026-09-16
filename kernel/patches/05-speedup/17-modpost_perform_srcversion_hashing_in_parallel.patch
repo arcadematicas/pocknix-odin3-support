@@ -1,0 +1,197 @@
+modpost does a lot of single-threaded work hashing files from each object's
+.cmd file.
+
+This makes the build slower than it needs to be, so do this work in
+parallel.
+
+This is egregious for allmodconfig builds - for instance x86-64 can end up
+opening 200,000 files individually and hashing them all serially.
+
+Parallelise this operation by maintaining a thread pool for the hashing
+work.
+
+Combined with the per-file hashing commit this cuts modpost's run time
+nearly in half for an allmodconfig build.
+
+Module.symvers and every *.mod.S are byte for byte the same.
+
+modpost is on the serial tail of every allmodconfig build, however
+defconfig does not set CONFIG_MODULE_SRCVERSION_ALL and is unchanged.
+
+Whole build, 128-thread Threadripper 9980X, best of N runs:
+
+                                         before   after     delta
+                                         -------------------------------
+  x86 allmodconfig, touch mm/vma.c, gcc    33.4s    30.2s     -3.2s (-10%)
+  x86 allmodconfig, touch mm/vma.c, clang  31.1s    28.1s     -3.0s (-10%)
+
+Assisted-by: LLM
+Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
+---
+ scripts/mod/Makefile     |  1 +
+ scripts/mod/modpost.c    | 72 ++++++++++++++++++++++++++++++++++++++++++++++--
+ scripts/mod/modpost.h    |  2 ++
+ scripts/mod/sumversion.c |  3 +-
+ 4 files changed, 74 insertions(+), 4 deletions(-)
+
+diff --git a/scripts/mod/Makefile b/scripts/mod/Makefile
+index fbd5099e0441..fdd486184f9c 100644
+--- a/scripts/mod/Makefile
++++ b/scripts/mod/Makefile
+@@ -5,6 +5,7 @@ hostprogs-always-y	+= modpost mk_elfconfig
+ always-y		+= empty.o
+ 
+ modpost-objs	:= modpost.o file2alias.o sumversion.o symsearch.o
++HOSTLDLIBS_modpost := -lpthread
+ 
+ devicetable-offsets-file := devicetable-offsets.h
+ 
+diff --git a/scripts/mod/modpost.c b/scripts/mod/modpost.c
+index 550ccd753ed8..882169e51851 100644
+--- a/scripts/mod/modpost.c
++++ b/scripts/mod/modpost.c
+@@ -16,6 +16,7 @@
+ #include <fnmatch.h>
+ #include <stdio.h>
+ #include <ctype.h>
++#include <pthread.h>
+ #include <string.h>
+ #include <limits.h>
+ #include <stdbool.h>
+@@ -1717,8 +1718,7 @@ static void read_symbols(const char *modname)
+ 	if (!mod->is_vmlinux) {
+ 		version = get_modinfo(&info, "version");
+ 		if (version || all_versions)
+-			get_src_version(mod->name, mod->srcversion,
+-					sizeof(mod->srcversion) - 1);
++			mod->need_srcversion = true;
+ 	}
+ 
+ 	parse_elf_finish(&info);
+@@ -1736,6 +1736,72 @@ static void read_symbols(const char *modname)
+ 	}
+ }
+ 
++static struct module **srcversion_mods;
++static unsigned int nr_srcversion_mods, next_srcversion_mod;
++
++static bool get_next_src_version(void)
++{
++	struct module *mod;
++	unsigned int idx;
++
++	idx = __sync_fetch_and_add(&next_srcversion_mod, 1);
++	if (idx >= nr_srcversion_mods)
++		return false;
++	mod = srcversion_mods[idx];
++
++	get_src_version(mod->name, mod->srcversion,
++			sizeof(mod->srcversion) - 1);
++	return true;
++}
++
++static void *srcversion_worker(void *arg)
++{
++	while (get_next_src_version())
++		;
++
++	return NULL;
++}
++
++static void hash_srcversions(void)
++{
++	unsigned int i = 0;
++	struct module *mod;
++	pthread_t *threads;
++	long nr_threads;
++
++	list_for_each_entry(mod, &modules, list)
++		if (mod->need_srcversion)
++			nr_srcversion_mods++;
++
++	if (!nr_srcversion_mods)
++		return;
++
++	srcversion_mods = xmalloc(nr_srcversion_mods * sizeof(*srcversion_mods));
++
++	list_for_each_entry(mod, &modules, list)
++		if (mod->need_srcversion)
++			srcversion_mods[i++] = mod;
++
++	nr_threads = sysconf(_SC_NPROCESSORS_ONLN);
++	nr_threads = nr_threads < 1 ? 1 : nr_threads; /* On error assume 1. */
++	if (nr_threads > nr_srcversion_mods)
++		nr_threads = nr_srcversion_mods;
++
++	sumversion_init();
++	threads = xmalloc(nr_threads * sizeof(*threads));
++	for (i = 0; i < nr_threads; i++) {
++		if (pthread_create(&threads[i], NULL, srcversion_worker, NULL)) {
++			perror("pthread_create");
++			exit(1);
++		}
++	}
++	for (i = 0; i < nr_threads; i++)
++		pthread_join(threads[i], NULL);
++
++	free(threads);
++	free(srcversion_mods);
++}
++
+ static void read_symbols_from_files(const char *filename)
+ {
+ 	FILE *in = stdin;
+@@ -2729,6 +2795,8 @@ int main(int argc, char **argv)
+ 	if (files_source)
+ 		read_symbols_from_files(files_source);
+ 
++	hash_srcversions();
++
+ 	list_for_each_entry(mod, &modules, list) {
+ 		keep_no_trim_symbols(mod);
+ 
+diff --git a/scripts/mod/modpost.h b/scripts/mod/modpost.h
+index d5f6d82837d5..10d5f8f2f293 100644
+--- a/scripts/mod/modpost.h
++++ b/scripts/mod/modpost.h
+@@ -127,6 +127,7 @@ struct module {
+ 	bool has_init;
+ 	bool has_cleanup;
+ 	char	     srcversion[25];
++	bool need_srcversion;
+ 	// Missing namespace dependencies
+ 	struct list_head missing_namespaces;
+ 	// Actual imported namespaces
+@@ -213,6 +214,7 @@ void handle_moddevtable(struct module *mod, struct elf_info *info,
+ 			Elf_Sym *sym, const char *symname);
+ 
+ /* sumversion.c */
++void sumversion_init(void);
+ void get_src_version(const char *modname, char sum[], unsigned sumlen);
+ 
+ /* from modpost.c */
+diff --git a/scripts/mod/sumversion.c b/scripts/mod/sumversion.c
+index 5501d6aa0bea..4521b92ef868 100644
+--- a/scripts/mod/sumversion.c
++++ b/scripts/mod/sumversion.c
+@@ -249,7 +249,7 @@ static int parse_comment(const char *file, unsigned long len)
+ /* FIXME: Handle .s files differently (eg. # starts comments) --RR */
+ static bool stop_char[256];
+ 
+-static void sumversion_init(void)
++void sumversion_init(void)
+ {
+ 	static bool done;
+ 	int chr;
+@@ -402,7 +402,6 @@ static int parse_source_files(const char *objfile, struct md4_ctx *md)
+ 				     line, strerror(errno));
+ 				goto out_file;
+ 			}
+-
+ 		}
+ 
+ 	}
+
+-- 
+2.55.0
+

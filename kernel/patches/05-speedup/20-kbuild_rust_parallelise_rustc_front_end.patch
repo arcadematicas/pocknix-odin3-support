@@ -1,0 +1,87 @@
+Rust crates are compiled in a serial chain on the critical path - core,
+bindings, kernel crates and then the drivers - each a rustc invocation.
+
+With CONFIG_RUST set and every rust driver enabled, the entire chain takes
+around 25 seconds on a 128-thread machine, with the associated C code
+taking 24 seconds.
+
+Each time a change is made to any of the bindings, it triggers a rebuild.
+
+Use the -Zthreads option to have rustc perform builds in parallel. This has
+been available since rust 1.84 (rust-lang/rust#132282), and the kernel
+requires rust 1.85 or above.
+
+A future -j/--jobs option is planned for
+rustc:(rust-lang/compiler-team#1005), so check to see if this available and
+if so use it.
+
+If the user's rustc supports neither, then it falls back gracefully and
+neither are used.
+
+The threads are taken from make's jobserver, so a parallel build is not
+oversubscribed. It was found that benefits level off at 8 threads (16 was
+found to be around the same, and 32 slower).
+
+Generated output was confirmed byte-for-byte identical.
+
+Observed build time changes (using rustc 1.98, clang):
+
+                                        before    after
+  core.o                                   7.7s	    4.9s
+  bindings.o                               4.3s     3.1s
+  kernel.o                                 2.0s     1.4s
+  clean build                             39.3s    34.6s
+  touch rust/kernel/lib.rs                12.9s    12.1s
+  touch rust/bindings/bindings_helper.h   19.5s    17.5s
+
+Whole build, 128-thread Threadripper 9980X, best of N runs:
+
+                                         before   after     delta
+                                         -------------------------------
+  x86 defconfig+RUST, clean               41.0s    36.4s     -4.6s (-11%)
+  x86 defconfig+RUST, touch lib.rs         8.3s     7.7s    -0.56s (-7%)
+
+Assisted-by: LLM
+Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
+---
+ Makefile     | 4 ++++
+ init/Kconfig | 7 +++++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index 997fc7ebe096..7d23d7b64be3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1204,6 +1204,10 @@ KBUILD_RUSTFLAGS += --remap-path-prefix=$(srcroot)/= --remap-path-scope=macro
+ endif
+ endif
+ 
++ifdef CONFIG_RUST
++KBUILD_RUSTFLAGS += $(if $(CONFIG_RUSTC_HAS_JOBS),-j8,$(if $(CONFIG_RUSTC_HAS_ZTHREADS),-Zthreads=8))
++endif
++
+ # include additional Makefiles when needed
+ include-y			:= scripts/Makefile.warn
+ include-$(CONFIG_DEBUG_INFO)	+= scripts/Makefile.debug
+diff --git a/init/Kconfig b/init/Kconfig
+index 3c92c87254a3..4096a306e2ab 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -231,6 +231,13 @@ config RUSTC_HAS_FILE_AS_C_STR
+ config RUSTC_HAS_SUSPICIOUS_RUNTIME_SYMBOL_DEFINITIONS
+ 	def_bool RUSTC_VERSION >= 109800
+ 
++# rustc's parallel front end: -j is the coming spelling, -Zthreads the current one
++config RUSTC_HAS_JOBS
++	def_bool $(rustc-option,-j8)
++
++config RUSTC_HAS_ZTHREADS
++	def_bool $(rustc-option,-Zthreads=8)
++
+ config PAHOLE_VERSION
+ 	int
+ 	default "$(PAHOLE_VERSION)"
+
+-- 
+2.55.0
+

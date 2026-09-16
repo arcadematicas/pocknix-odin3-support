@@ -1,0 +1,307 @@
+The kallsyms program compresses symbols by figuring out the most commonly
+used substrings in all of the input symbols then uses special character
+codes to represent them.
+
+For instance, 0xf7 might end up representing "write_", then every single
+symbol that contains "write_" can use 0xf7 as a shorthand and save 5 bytes
+each time.
+
+'Special' character codes are any byte value that is not used in any
+symbol, either due to being an invalid character, or not being present in
+any symbol (e.g. if no symbol contains 'z', then 'z' can be used as special
+character).
+
+It does this by first figuring out which special characters are available
+in insert_real_symbols_in_table(), then iterating through every available
+special character, counting how many times each pair of adjacent characters
+appear in symbols in build_initial_token_table().
+
+These adjacent pairs are known as 'tokens'.
+
+Token counts are initially obtained by build_initial_token_table(), then
+optimize_result() calls find_best_token() to determine the token that
+appeared the most number of times and assigns it the next special
+character.
+
+Finally, optimize_result() calls compress_symbols() to replace every token
+in every symbol with its special character, which updates token_profit[] as
+it does so.
+
+This process is repeated for each remaining available special character,
+with tokens now perhaps containing previously assigned special
+characters (e.g. if 'wr' was assigned 0x80, then the token representing
+'wri' would be '\x80i').
+
+This compresses that token by 50% in each symbol it appears in (two bytes
+are now represented by one) and thus by repeatedly doing this kallsyms
+obtains good symbol compression.
+
+However, compress_symbols() is seriously inefficient - it iterates through
+EVERY symbol for EVERY special character assignment, i.e. ~256 *
+nr_symbols.
+
+Modern x86-64 kernels, for instance, have ~158,000 symbols, so millions of
+iterations are performed, most of which are entirely unnecessary (tokens
+don't appear in most symbols).
+
+In practice kallsyms spends half its runtime doing this, two or three times
+per vmlinux link step.
+
+Fix this by tracking which symbols each token appears in token_syms[], and
+only compress symbols which actually need to be updated.
+
+Each time a token is compressed that token can no longer appear in any
+symbol, so that token_syms[] entry can be freed.
+
+However new token_syms[] entries must be created for each new token
+containing the assigned special character, but this is bounded by the
+number of replacements in the symbol which is very small.
+
+In testing on an x86-64 platform using clang, each kallsyms invocation
+dropped from 0.59s to 0.33s with CONFIG_KALLSYMS_ALL set and from 0.38s to
+0.22s without it set.
+
+The data was carefully checked and verified to be byte-for-byte identical
+for six symbol sets (two vmlinux passes, vmlinux.o, three userspace
+binaries) with all option combinations.
+
+As part of this change, additionally refactor the code to be a little
+easier to follow.
+
+kallsyms runs two or three times on the serial tail of every build that
+links vmlinux, no-op builds do not link and are unchanged.
+
+Whole build, 128-thread Threadripper 9980X, best of N runs:
+
+                                         before   after     delta
+                                         -------------------------------
+  x86 defconfig, touch mm/vma.c, gcc       11.4s    10.8s    -0.55s (-5%)
+  x86 defconfig, touch mm/vma.c, clang     11.4s    10.7s    -0.66s (-6%)
+  x86 defconfig, clean, gcc                30.3s    29.5s    -0.80s (-3%)
+  x86 defconfig, clean, clang              30.3s    29.7s    -0.62s (-2%)
+  x86 allmodconfig, touch mm/vma.c, gcc    46.2s    45.3s    -0.91s (-2%)
+  x86 allmodconfig, touch mm/vma.c, clang  44.2s    42.9s     -1.3s (-3%)
+
+Assisted-by: LLM
+Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
+---
+ scripts/kallsyms.c | 138 +++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 124 insertions(+), 14 deletions(-)
+
+diff --git a/scripts/kallsyms.c b/scripts/kallsyms.c
+index 494852ade6d8..350d118c3b9e 100644
+--- a/scripts/kallsyms.c
++++ b/scripts/kallsyms.c
+@@ -58,12 +58,47 @@ static unsigned int table_size, table_cnt;
+ static int all_symbols;
+ static int pc_relative;
+ 
++/* A dynamic array of symbols, encoded by symbol index. */
++struct sym_arr {
++	unsigned int *sym_indexes;
++	unsigned int cnt, cap;
++};
++
+ static int token_profit[0x10000];
++static struct sym_arr token_syms[0x10000];
+ 
+ /* the table that holds the result of the compression */
+ static unsigned char best_table[256][2];
+ static unsigned char best_table_len[256];
+ 
++static unsigned int sym_arr_last(const struct sym_arr *arr)
++{
++	return arr->cnt ? arr->sym_indexes[arr->cnt - 1] : UINT_MAX;
++}
++
++static void sym_arr_maybe_expand(struct sym_arr *arr)
++{
++	if (arr->cap > arr->cnt)
++		return;
++
++	arr->cap = arr->cap ? arr->cap * 2 : 16;
++	arr->sym_indexes = xrealloc(arr->sym_indexes,
++				    arr->cap * sizeof(*arr->sym_indexes));
++}
++
++static void sym_arr_add(struct sym_arr *arr, unsigned int sym_idx)
++{
++	sym_arr_maybe_expand(arr);
++	arr->sym_indexes[arr->cnt++] = sym_idx;
++}
++
++static void sym_arr_free(struct sym_arr *arr)
++{
++	free(arr->sym_indexes);
++	arr->sym_indexes = NULL;
++	arr->cnt = 0;
++	arr->cap = 0;
++}
+ 
+ static void usage(void)
+ {
+@@ -458,6 +493,15 @@ static void write_src(void)
+ 	printf("\n");
+ }
+ 
++static unsigned int token_index(unsigned char first, unsigned char second)
++{
++	return first + (second << 8);
++}
++
++static unsigned int sym_token_index(const unsigned char *symbol, int first_idx)
++{
++	return token_index(symbol[first_idx], symbol[first_idx + 1]);
++}
+ 
+ /* table lookup compression functions */
+ 
+@@ -467,7 +511,7 @@ static void learn_symbol(const unsigned char *symbol, int len)
+ 	int i;
+ 
+ 	for (i = 0; i < len - 1; i++)
+-		token_profit[ symbol[i] + (symbol[i + 1] << 8) ]++;
++		token_profit[sym_token_index(symbol, i)]++;
+ }
+ 
+ /* decrease the count for all the possible tokens in a symbol */
+@@ -476,16 +520,76 @@ static void forget_symbol(const unsigned char *symbol, int len)
+ 	int i;
+ 
+ 	for (i = 0; i < len - 1; i++)
+-		token_profit[ symbol[i] + (symbol[i + 1] << 8) ]--;
++		token_profit[sym_token_index(symbol, i)]--;
++}
++
++static void token_add_symbol(unsigned int token_idx, unsigned int sym_idx)
++{
++	struct sym_arr *arr = &token_syms[token_idx];
++
++	/* Symbol indexes kept in sorted order, check for duplicate. */
++	if (sym_arr_last(arr) == sym_idx)
++		return;
++
++	sym_arr_add(arr, sym_idx);
++}
++
++static void symbol_index_all_tokens(const unsigned char *symbol, int len,
++				    unsigned int sym_idx)
++{
++	int i;
++
++	for (i = 0; i < len - 1; i++) {
++		const unsigned int token_idx = sym_token_index(symbol, i);
++
++		token_add_symbol(token_idx, sym_idx);
++	}
++}
++
++/*
++ * The symbol just got compressed. The only parts of the symbol that changed
++ * meaningfully are those containing the newly assigned compressed char, so
++ * index those.
++ */
++static void symbol_index_new_tokens(const unsigned char *symbol, int len,
++				    unsigned int sym_idx, int compressed_chr)
++{
++	int i;
++
++	for (i = 0; i < len - 1; i++) {
++		const unsigned int token_idx = sym_token_index(symbol, i);
++
++		if (symbol[i] == compressed_chr ||
++		    symbol[i + 1] == compressed_chr)
++			token_add_symbol(token_idx, sym_idx);
++	}
+ }
+ 
+-/* do the initial token count */
+ static void build_initial_token_table(void)
+ {
+ 	unsigned int i;
+ 
+ 	for (i = 0; i < table_cnt; i++)
+ 		learn_symbol(table[i]->sym, table[i]->len);
++
++	/*
++	 * The initial occurrence counts tell us exactly how much memory should
++	 * be reserved for each token's symbol array.
++	 */
++	for (i = 0; i < ARRAY_SIZE(token_syms); i++) {
++		const int nr_syms = token_profit[i];
++
++		if (!nr_syms)
++			continue;
++
++		token_syms[i].cap = nr_syms;
++		token_syms[i].sym_indexes =
++			xmalloc(nr_syms * sizeof(unsigned int));
++	}
++
++	/* For every symbol, index every token -> symbol it is present in. */
++	for (i = 0; i < table_cnt; i++)
++		symbol_index_all_tokens(table[i]->sym, table[i]->len, i);
+ }
+ 
+ static unsigned char *find_token(unsigned char *str, int len,
+@@ -502,27 +606,30 @@ static unsigned char *find_token(unsigned char *str, int len,
+ 
+ /* replace a given token in all the valid symbols. Use the sampled symbols
+  * to update the counts */
+-static void compress_symbols(const unsigned char *str, int idx)
++static void compress_symbols(const unsigned char *str, int compressed_chr)
+ {
+-	unsigned int i, len, size;
++	const unsigned int token_idx = sym_token_index(str, 0);
++	struct sym_arr *arr = &token_syms[token_idx];
++	unsigned int sym_idx, j, len, size;
+ 	unsigned char *p1, *p2;
+ 
+-	for (i = 0; i < table_cnt; i++) {
++	/* Iterate through all symbols this token is found in and compress. */
++	for (j = 0; j < arr->cnt; j++) {
++		sym_idx = arr->sym_indexes[j];
+ 
+-		len = table[i]->len;
+-		p1 = table[i]->sym;
++		len = table[sym_idx]->len;
++		p1 = table[sym_idx]->sym;
+ 
+-		/* find the token on the symbol */
+ 		p2 = find_token(p1, len, str);
+ 		if (!p2) continue;
+ 
+ 		/* decrease the counts for this symbol's tokens */
+-		forget_symbol(table[i]->sym, len);
++		forget_symbol(table[sym_idx]->sym, len);
+ 
+ 		size = len;
+ 
+ 		do {
+-			*p2 = idx;
++			*p2 = compressed_chr;
+ 			p2++;
+ 			size -= (p2 - p1);
+ 			memmove(p2, p2 + 1, size);
+@@ -536,11 +643,14 @@ static void compress_symbols(const unsigned char *str, int idx)
+ 
+ 		} while (p2);
+ 
+-		table[i]->len = len;
++		table[sym_idx]->len = len;
+ 
+-		/* increase the counts for this symbol's new tokens */
+-		learn_symbol(table[i]->sym, len);
++		learn_symbol(table[sym_idx]->sym, len);
++		symbol_index_new_tokens(table[sym_idx]->sym, len, sym_idx,
++					compressed_chr);
+ 	}
++
++	sym_arr_free(arr); /* No symbol contains this token any more. */
+ }
+ 
+ /* search the token with the maximum profit */
+
+-- 
+2.55.0
+

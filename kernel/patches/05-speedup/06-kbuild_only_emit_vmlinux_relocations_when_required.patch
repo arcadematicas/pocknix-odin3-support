@@ -1,0 +1,92 @@
+A kernel build consists of more than one linking pass on vmlinux.o and
+vmlinux, at minimum two, and with CONFIG_KALLSYMS and BTF enabled on x86-64
+for example there are 5 such stages.
+
+For architectures that build their own relocation tables (x86, riscv, mips,
+s390), vmlinux is linked with the --emit-relocs parameter specified.
+
+However, this is only required on the final vmlinux link.
+
+Symbol tables of trial links preceding it don't need it because they
+already check that System.map matches kallsyms symbols on each build.
+
+GNU ld is slow at emitting relocation tables, so this results in a
+reduction in build time.
+
+Whole build, 128-thread Threadripper 9980X, best of N runs:
+
+                                         before   after     delta
+                                         -------------------------------
+  x86 defconfig, touch mm/vma.c, gcc        9.8s     9.4s    -0.43s (-4%)
+  x86 defconfig, clean, gcc                28.6s    28.1s    -0.47s (-2%)
+  x86 allmodconfig, touch mm/vma.c, gcc    44.0s    42.7s     -1.3s (-3%)
+
+Note that this has little impact on LLVM ld which performs this operation
+more efficiently.
+
+Assisted-by: LLM
+Signed-off-by: Lorenzo Stoakes (ARM) <ljs@kernel.org>
+---
+ Makefile                 | 4 +++-
+ scripts/Makefile.vmlinux | 3 ++-
+ scripts/link-vmlinux.sh  | 6 ++++++
+ 3 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 66654fa71655..85eb2fd026cb 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1263,8 +1263,10 @@ LDFLAGS_vmlinux += --orphan-handling=$(CONFIG_LD_ORPHAN_WARN_LEVEL)
+ endif
+ 
+ ifneq ($(CONFIG_ARCH_VMLINUX_NEEDS_RELOCS),)
+-LDFLAGS_vmlinux	+= --emit-relocs --discard-none
++LDFLAGS_vmlinux	+= --discard-none
++LDFLAGS_vmlinux_relocs := --emit-relocs
+ endif
++export LDFLAGS_vmlinux_relocs
+ 
+ # Align the architecture of userspace programs with the kernel
+ USERFLAGS_FROM_KERNEL := --target=%
+diff --git a/scripts/Makefile.vmlinux b/scripts/Makefile.vmlinux
+index fcae1e432d9a..4b54aaeca65d 100644
+--- a/scripts/Makefile.vmlinux
++++ b/scripts/Makefile.vmlinux
+@@ -64,7 +64,8 @@ ARCH_POSTLINK := $(wildcard $(srctree)/arch/$(SRCARCH)/Makefile.postlink)
+ 
+ # Final link of vmlinux with optional arch pass after final link
+ cmd_link_vmlinux =							\
+-	$< "$(LD)" "$(KBUILD_LDFLAGS)" "$(LDFLAGS_vmlinux)" "$@";	\
++	$< "$(LD)" "$(KBUILD_LDFLAGS)" "$(LDFLAGS_vmlinux)" "$@"	\
++	   "$(LDFLAGS_vmlinux_relocs)";					\
+ 	$(if $(ARCH_POSTLINK), $(MAKE) -f $(ARCH_POSTLINK) $@, true)
+ 
+ targets += vmlinux.unstripped .vmlinux.export.o
+diff --git a/scripts/link-vmlinux.sh b/scripts/link-vmlinux.sh
+index 970ca10f8fa9..09c5222ccb94 100755
+--- a/scripts/link-vmlinux.sh
++++ b/scripts/link-vmlinux.sh
+@@ -32,6 +32,7 @@ LD="$1"
+ KBUILD_LDFLAGS="$2"
+ LDFLAGS_vmlinux="$3"
+ VMLINUX="$4"
++LDFLAGS_vmlinux_relocs="$5"
+ 
+ is_enabled() {
+ 	grep -q "^$1=y" include/config/auto.conf
+@@ -96,6 +97,11 @@ vmlinux_link()
+ 		ldflags="${ldflags} ${wl}--strip-debug"
+ 	fi
+ 
++	# Only the final link actually requires the relocations.
++	if [ "${output}" = "${VMLINUX}" ] && [ -n "${LDFLAGS_vmlinux_relocs}" ]; then
++		ldflags="${ldflags} ${wl}${LDFLAGS_vmlinux_relocs}"
++	fi
++
+ 	if [ -n "${generate_map}" ];  then
+ 		ldflags="${ldflags} ${wl}-Map=vmlinux.map"
+ 	fi
+
+-- 
+2.55.0
+
