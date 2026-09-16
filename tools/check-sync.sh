@@ -39,9 +39,13 @@ cmp_tree() {
 echo "check-sync: comparing ${HERE} -> ${OS}"
 cmp_tree "${HERE}/packages/pocknix-bsp-sm8750"    "${OS}/devices/sm8750/packages/pocknix-bsp-sm8750"
 cmp_tree "${HERE}/packages/pocknix-device-sm8750" "${OS}/devices/sm8750/packages/pocknix-device-sm8750"
+cmp_tree "${HERE}/packages/linux-pocknix-sm8750"      "${OS}/packages/soc/linux-pocknix-sm8750"
+cmp_tree "${HERE}/packages/pocknix-bootloader-sm8750" "${OS}/packages/soc/pocknix-bootloader-sm8750"
 cmp_tree "${HERE}/packages/pocknix-bsp-common"    "${OS}/packages/shared/pocknix-bsp-common"
+cmp_tree "${HERE}/overlay"                        "${OS}/overlay"
 cmp_tree "${HERE}/kernel/patches/10-mainline"      "${OS}/kernel/sm8750/patches/10-mainline"
 cmp_tree "${HERE}/kernel/patches/20-sm8750"        "${OS}/kernel/sm8750/patches/20-sm8750"
+cmp_tree "${HERE}/kernel/patches/30-version"       "${OS}/kernel/sm8750/patches/30-version"
 cmp_tree "${HERE}/kernel/dts"                     "${OS}/kernel/sm8750/dts/qcom"
 cmp_tree "${HERE}/packages/gamescope"             "${OS}/packages/soc/gamescope"
 

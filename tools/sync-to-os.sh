@@ -50,6 +50,16 @@ overlay() {
 mirror "packages/pocknix-bsp-sm8750"    "devices/sm8750/packages/pocknix-bsp-sm8750"
 mirror "packages/pocknix-device-sm8750" "devices/sm8750/packages/pocknix-device-sm8750"
 
+# --- the SoC packages our branch was missing entirely ------------------------
+# Without these two the image could not rebuild its own kernel or bootloader: it silently kept
+# whatever was in the localrepo (a 09-11 kernel package whose modules no longer matched the
+# freshly built Image). They came from odin3-pr, which had them all along.
+mirror "packages/linux-pocknix-sm8750"      "packages/soc/linux-pocknix-sm8750"
+mirror "packages/pocknix-bootloader-sm8750" "packages/soc/pocknix-bootloader-sm8750"
+
+# --- our files that the build copies verbatim into the rootfs ----------------
+overlay "overlay" "overlay"
+
 # --- our versions of files that live in upstream's packages ------------------
 # pocknix-bsp-common is upstream's device-neutral BSP; we carry newer fan control scripts
 # (the "off" fan mode, the [ -f ] guard). Copied in, never deleted.
@@ -60,6 +70,7 @@ overlay "packages/pocknix-bsp-common" "packages/shared/pocknix-bsp-common"
 # Those dirs also hold ROCKNIX's patches, so these are overlays, not mirrors.
 overlay "kernel/patches/10-mainline" "kernel/sm8750/patches/10-mainline"
 overlay "kernel/patches/20-sm8750"   "kernel/sm8750/patches/20-sm8750"
+overlay "kernel/patches/30-version"  "kernel/sm8750/patches/30-version"
 overlay "kernel/dts"                 "kernel/sm8750/dts/qcom"
 
 # --- gamescope: our patch + our PKGBUILD -------------------------------------
