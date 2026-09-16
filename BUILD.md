@@ -77,6 +77,36 @@ tarjeta** en el primer arranque. Aviso `partprobe` de "espacio sin usar" es **no
 
 ---
 
+## 3-bis. DESARROLLAR SIN REFLASHEAR (el flujo del día a día)
+
+Flashear la imagen entera (~30-45 min) **solo** hace falta para distribuir o para una
+instalación desde cero. Para iterar sobre el sistema hay vías mucho más rápidas:
+
+| Cambio | Cómo | Tiempo |
+|---|---|---|
+| Scripts, configs, unidades systemd | `tools/push-file.sh <fichero-del-centro> <ruta-en-la-odin>` | **segundos** |
+| Un paquete nuestro (BSP, decky, tools, gamescope…) | `tools/deploy-to-device.sh <paquete>` | **minutos** |
+| Kernel | paquete `linux-pocknix-sm8750` (mismo deploy) + el bootloader | minutos |
+| Imagen completa | solo para distribuir / instalar de cero | ~30-45 min |
+
+```bash
+# ejemplo: cambio en un daemon -> probarlo en la consola en 10 segundos
+tools/push-file.sh packages/pocknix-bsp-sm8750/oled-care/oled-care-daemon.py \
+                   /usr/local/bin/oled-care-daemon.py \
+                   RELOAD="systemctl try-restart oled-care-daemon.service"
+
+# ejemplo: cambio en el paquete BSP -> compilarlo e instalarlo en caliente
+tools/deploy-to-device.sh pocknix-bsp-sm8750
+```
+
+La Odin se alcanza en `deck@192.168.4.29` (contraseña por defecto `pocknix`; se le instala
+la clave pública con `ssh-copy-id`). **Cada imagen nueva cambia las claves de host**, así que
+la primera conexión pide `ssh-keygen -R 192.168.4.29`.
+
+⚠️ **Regla de oro también aquí**: se edita SIEMPRE en `pocknix-odin3-support`. Lo que se
+prueba en caliente en la consola tiene que estar en el centro y commiteado, o se pierde en la
+siguiente imagen (es exactamente cómo se perdieron el OOBE, los daemons y el `oled-refresher`).
+
 ## 4. Qué hace el build (para entenderlo)
 
 ```
