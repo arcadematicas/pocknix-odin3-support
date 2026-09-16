@@ -54,7 +54,7 @@ cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix
 if [ -d "${HERE}/packages/soc-overrides" ]; then
   for d in "${HERE}"/packages/soc-overrides/*/; do
     [ -d "${d}" ] || continue
-    cmp_tree "packages/soc-overrides/$(basename "${d}")" "packages/soc/$(basename "${d}")"
+    cmp_tree "${HERE}/packages/soc-overrides/$(basename "${d}")" "${OS}/packages/soc/$(basename "${d}")"
   done
 fi
 
