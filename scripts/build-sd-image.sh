@@ -207,10 +207,20 @@ EOF
   # Steam queries battery and enumerates drives once at startup and never retries, so they
   # must already be running. fstrim: root is mounted without discard. No USB gadget on purpose
   # (dev/building.md).
+  # NOTE: the Odin 3 daemons come from pocknix-bsp-sm8750, whose PKGBUILD also ships
+  # /usr/lib/systemd/system/<target>.wants/ symlinks. Those make the units START but systemd
+  # reports them as "disabled" (is-enabled only counts the /etc/systemd/system ones), which is
+  # confusing and leaves them at the mercy of preset-all. Enabling them here creates the proper
+  # /etc symlinks. hexagonrpcd-adsp-sensorspd is deliberately absent: its binary is not shipped
+  # and the sensor PD does not come up on this SoC yet, so it only restarted forever.
   chroot "${root}" systemctl enable iwd NetworkManager systemd-resolved seatd inputplumber \
         bluetooth upower udisks2 fstrim.timer \
         pocknix-diag.timer pocknix-expand-root.service pocknix-oobe-marker.service \
         pocknix-lavd.service pocknix-gamescope-rt.service \
+        oled-care-daemon.service oled-refresher.timer mangohud-toggle-daemon.service \
+        power-button-daemon.service volume-button-daemon.service \
+        pocknix-power-profile.service pocknix-cpu-governor.service \
+        pocknix-pergame-power.service odin3-splash.service steamui-watchdog.service \
         >/dev/null 2>&1 || true
   # A well-known password is baked in, so sshd ships off. ALARM enables it: disable, not skip.
   if [ "${SD_SSH:-off}" = on ]; then

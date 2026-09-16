@@ -156,9 +156,14 @@ package() {
   local want="${pkgdir}/usr/lib/systemd/system/multi-user.target.wants"
   install -d "${want}"
   local u
+  # NOTE: hexagonrpcd-adsp-sensorspd is deliberately NOT in this list. Its binary is not shipped
+  # (it has to be cross-compiled, see hexagonrpcd/README.md) and even with the binary the ADSP
+  # sensor PD does not come up on this SoC yet ("Unexpected buffer count" after INIT_ATTACH_SNS),
+  # so enabling it only produces an endless restart loop (measured: 434 restarts, and it was the
+  # only error in the journal). The unit still ships for whoever does the sensor bring-up.
   for u in power-button-daemon volume-button-daemon oled-care-daemon mangohud-toggle-daemon \
            pocknix-power-profile pocknix-cpu-governor pocknix-pergame-power odin3-splash \
-           steamui-watchdog hexagonrpcd-adsp-sensorspd; do
+           steamui-watchdog; do
     ln -sf "../${u}.service" "${want}/${u}.service"
   done
   install -d "${pkgdir}/usr/lib/systemd/system/timers.target.wants"
