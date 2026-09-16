@@ -84,6 +84,24 @@ overlay "kernel/patches/20-sm8750"   "kernel/sm8750/patches/20-sm8750"
 overlay "kernel/patches/30-version"  "kernel/sm8750/patches/30-version"
 overlay "kernel/dts"                 "kernel/sm8750/dts/qcom"
 
+# --- per-SoC package overrides -----------------------------------------------
+# packages/soc-overrides/<name>/ mirrors packages/soc/<name>/. Needed because build-packages.sh
+# SKIPS any packages/soc/ package whose ./socs does not list the current SoC: upstream's
+# fex-emu/mangohud/mesa/pocknix-turnip-arm only listed "sm8550 sm8250", so on an sm8750 build
+# they were silently never rebuilt (and gamescope's frame-limiter patch never reached the image).
+if [ -d "${HERE}/packages/soc-overrides" ]; then
+  for d in "${HERE}"/packages/soc-overrides/*/; do
+    [ -d "${d}" ] || continue
+    overlay "packages/soc-overrides/$(basename "${d}")" "packages/soc/$(basename "${d}")"
+  done
+fi
+
+# --- pocknix-desktop: our service ordering fixes -----------------------------
+# pocknix-flathub.service: upstream orders it after network-online.target and wants it in the
+# boot transaction, which stalls multi-user.target for the whole >300 MB flatpak seed. Ours is
+# started only by the NM dispatcher once a link is really up (odin3-pr e574b2a).
+overlay "packages/pocknix-desktop" "packages/shared/pocknix-desktop"
+
 # --- gamescope: our patch + our PKGBUILD -------------------------------------
 # packages/gamescope/PKGBUILD is a FULL COPY of the build's, with 0009 added to source=() and
 # prepare(). It is an override: if upstream changes its gamescope PKGBUILD, this copy has to be

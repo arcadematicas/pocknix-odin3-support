@@ -50,6 +50,13 @@ cmp_tree "${HERE}/kernel/patches/20-sm8750"        "${OS}/kernel/sm8750/patches/
 cmp_tree "${HERE}/kernel/patches/30-version"       "${OS}/kernel/sm8750/patches/30-version"
 cmp_tree "${HERE}/kernel/dts"                     "${OS}/kernel/sm8750/dts/qcom"
 cmp_tree "${HERE}/packages/gamescope"             "${OS}/packages/soc/gamescope"
+cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix-desktop"
+if [ -d "${HERE}/packages/soc-overrides" ]; then
+  for d in "${HERE}"/packages/soc-overrides/*/; do
+    [ -d "${d}" ] || continue
+    cmp_tree "packages/soc-overrides/$(basename "${d}")" "packages/soc/$(basename "${d}")"
+  done
+fi
 
 if [ "${missing}" -eq 0 ] && [ "${drift}" -eq 0 ]; then
   echo "check-sync: OK — the build tree matches the centre."
