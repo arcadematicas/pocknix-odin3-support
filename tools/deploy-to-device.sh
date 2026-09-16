@@ -27,6 +27,11 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OS="${POCKNIX_OS_DIR:-${HERE}/../pocknix-os}"
 HOST="${DEVICE_HOST:-deck@192.168.4.29}"
 DEVICE="${DEVICE:-sm8750}"
+# Contraseña de sudo en la Odin (usuario deck). La imagen la trae por defecto: pocknix.
+DEVICE_SUDO_PASS="${DEVICE_SUDO_PASS:-pocknix}"
+
+# Ejecuta algo como root en la Odin sin depender de un tty.
+dsudo() { ssh "${HOST}" "echo '${DEVICE_SUDO_PASS}' | sudo -S sh -c '$*'"; }
 
 [ "$#" -ge 1 ] || { echo "uso: $0 <paquete> [paquete...]" >&2; exit 1; }
 PKGS="$*"
@@ -37,7 +42,13 @@ echo "==> 1/5 sincronizando el centro al árbol de compilación"
 echo "    OK"
 
 echo "==> 2/5 compilando: ${PKGS}"
-( cd "${OS}" && DEVICE="${DEVICE}" PKG="${PKGS}" make packages )
+# `make packages` monta un chroot aarch64 y hace bind mounts: necesita root.
+# Si tu sudo pide contraseña y no hay tty, pásala en PC_SUDO_PASS (no se guarda en el script).
+if [ -n "${PC_SUDO_PASS:-}" ]; then
+  ( cd "${OS}" && echo "${PC_SUDO_PASS}" | sudo -S env DEVICE="${DEVICE}" PKG="${PKGS}" make packages )
+else
+  ( cd "${OS}" && sudo env DEVICE="${DEVICE}" PKG="${PKGS}" make packages )
+fi
 
 echo "==> 3/5 buscando los paquetes compilados"
 FILES=()
@@ -53,7 +64,7 @@ echo "==> 4/5 instalando en ${HOST}"
 scp -q "${FILES[@]}" "${HOST}:/tmp/"
 for f in "${FILES[@]}"; do
   echo "    pacman -U ${f##*/}"
-  ssh "${HOST}" "sudo pacman -U --noconfirm /tmp/${f##*/} >/dev/null && rm -f /tmp/${f##*/}"
+  dsudo "pacman -U --noconfirm /tmp/${f##*/} >/dev/null && rm -f /tmp/${f##*/}"
 done
 
 echo "==> 5/5 servicios"
@@ -65,7 +76,7 @@ else
   for s in oled-care-daemon mangohud-toggle-daemon power-button-daemon volume-button-daemon \
            pocknix-power-profile pocknix-cpu-governor pocknix-pergame-power steamui-watchdog \
            pocknix-decky-loader; do
-    ssh "${HOST}" "sudo systemctl try-restart ${s}.service 2>/dev/null" || true
+    dsudo "systemctl try-restart ${s}.service" 2>/dev/null || true
   done
   echo "    daemons reiniciados (los que existían)"
   echo
