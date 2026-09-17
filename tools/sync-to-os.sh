@@ -120,6 +120,12 @@ overlay "packages/deckstation-arm" "packages/shared/deckstation-arm"
 # paquete instala el wheel aarch64 de pygame-ce (drop-in, modulo `pygame`).
 overlay "packages/python-pygame-ce" "packages/shared/python-pygame-ce"
 
+# --- suyu-libretro: core de Nintendo Switch para RetroArch ---------------------
+# Compilado nativo aarch64 (no hay builds publicados). Se instala en
+# /usr/lib/libretro/; la integracion con el RetroArch portable de DeckStation
+# (copia al dir de cores) es un pendiente aparte.
+overlay "packages/suyu-libretro" "packages/shared/suyu-libretro"
+
 # --- NOT synced (needs manual work — see the note below) ---------------------
 # kernel/patches is an OVERLAY: a patch we REMOVE from the centre is NOT removed from the build.
 # If you retire a patch, delete it in pocknix-os too (or the image keeps applying it).

@@ -1,0 +1,77 @@
+# Maintainer: Fransis <arcadematicas>
+# Core de libretro de Suyu (emulador de Nintendo Switch) para aarch64.
+#
+# POR QUE EXISTE ESTE PAQUETE:
+#   No hay builds aarch64 publicados de suyu_libretro (el release solo trae
+#   linux-x64 y el buildbot de libretro no lo compila). Compilado nativo en
+#   aarch64 ejecuta el codigo ARM de la Switch SIN traduccion -> rinde mejor
+#   que en x86_64.
+#
+# INTEGRACION CON DECKSTATION:
+#   El core se instala en /usr/lib/libretro/ (ubicacion estandar). El RetroArch
+#   de DeckStation es PORTABLE y busca los cores en
+#   /opt/deckstation/Apps/RetroArch/.../.config/retroarch/cores/ (lo resuelve
+#   %CORE_RETROARCH% de ES-DE). PENDIENTE: que deckstation-setup (o un hook)
+#   copie este core al dir portable cuando descargue RetroArch.
+#
+# NOTA GCC 16:
+#   GCC 16 da un falso positivo en cheat_engine.cpp:221
+#   ('<unknown>' may be used uninitialized [-Werror=maybe-uninitialized]) que,
+#   con -Werror, aborta el build. Se desactiva con -Wno-maybe-uninitialized.
+pkgname=suyu-libretro
+pkgver=0.0.4
+pkgrel=1
+pkgdesc="Nintendo Switch emulator (Suyu) libretro core for aarch64"
+arch=('aarch64')
+url="https://suyu.dev"
+license=('GPLv3')
+depends=(
+    'boost'
+    'openssl'
+    'libusb'
+    'vulkan-icd-loader'
+    'sdl2'
+    'enet'
+    'fmt'
+    'zlib'
+    'zstd'
+    'lz4'
+)
+makedepends=(
+    'cmake'
+    'ninja'
+    'git'
+    'glslang'
+    'catch2'
+    'vulkan-headers'
+)
+source=(
+    "git+https://github.com/suyu-emu/suyu-v0.0.4.git#branch=main"
+    "suyu_libretro.info"
+)
+sha256sums=('SKIP'
+            'SKIP')
+
+prepare() {
+    # makepkg no trae los submódulos (28: dynarmic, ffmpeg, SDL, cubeb, ...).
+    # Shallow para no bajar GBs de historial (verificado en la Odin 17/09).
+    git -C "${srcdir}/suyu-v0.0.4" submodule update --init --recursive --depth 1
+}
+
+build() {
+    cmake -B build -S "${srcdir}/suyu-v0.0.4" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DSUYU_BUILD_LIBRETRO_CORE=ON \
+        -DENABLE_QT=OFF \
+        -DVulkanHeaders_FORCE_BUNDLED=ON \
+        -DCMAKE_CXX_FLAGS="-Wno-maybe-uninitialized" \
+        -GNinja
+    cmake --build build --target suyu_libretro
+}
+
+package() {
+    install -Dm755 "${srcdir}/suyu-v0.0.4/build/src/libretro_core/suyu_libretro.so" \
+        "${pkgdir}/usr/lib/libretro/suyu_libretro.so"
+    install -Dm644 "${startdir}/suyu_libretro.info" \
+        "${pkgdir}/usr/share/libretro/info/suyu_libretro.info"
+}
