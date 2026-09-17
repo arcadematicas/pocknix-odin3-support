@@ -59,8 +59,12 @@ un dispositivo recién flasheado **no puede instalar nada**.
 - Añadidos `[core]` y `[extra]` con `Include = /etc/pacman.d/mirrorlist`
 - **NO hacer `pacman -Syu`** (actualizaría todo y rompería Pocknix)
 
-**⚠️ PENDIENTE: arreglarlo en el `pacman.conf` que genera el build** (y decidir qué hacemos con
-nuestro propio repo de paquetes, que es lo que debería ocupar el sitio de `pocknix.*`).
+**✅ ARREGLADO EN EL CÓDIGO (17/09 tarde)**: commit `ee47098` en `arcadematicas/pocknix-os`
+  (`odin3-sm8750`). La imagen ahora SIEMPRE lleva `[core]`/`[extra]`/`[alarm]`/`[aur]` de ALARM
+  y NO shippea la stanza `[pocknix]` (sm8750) — upstream nunca la publica (es nuestro PR #81
+  sin mergear) y un repo 404 hace fallar `pacman -Sy` entero. Knob: `POCKNIX_SHIP_SOC_REPO`
+  (default 1; `devices/sm8750/profile.conf` lo pone a 0).
+  **Pendiente**: decidir qué hacemos con nuestro propio repo de paquetes (el sitio de `pocknix.*`).
 
 ---
 
