@@ -7,3 +7,7 @@ backups/
 # bootanimation original de la ROM (105 MB) — excede el limite de 100 MB de
 # GitHub. Se conserva localmente; ver config/splash/README.md para extraerlo.
 overlay/bootanimation-odin3.zip
+
+# bytecode de Python
+__pycache__/
+*.pyc
