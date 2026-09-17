@@ -34,6 +34,11 @@ DEFAULT_ROMS = os.path.join(DECKSTATION_ROOT, "ROMs")
 # se añaden solos.
 PLAY = "/usr/bin/deckstation-play"
 
+# Moonlight: cliente de juego remoto (streaming desde un PC con Sunshine o
+# GeForce Experience). moonlight-qt viene del repo extra de ALARM (aarch64).
+MOONLIGHT = "/usr/bin/moonlight"
+MOONLIGHT_ICON = "/usr/share/icons/hicolor/256x256/apps/moonlight.png"
+
 
 def rom_dir() -> str:
     """Directorio de ROMs: el ajuste ROMDirectory de ES-DE de DeckStation (el
@@ -180,18 +185,35 @@ def sync(cfgdir: str, desired: list[dict]) -> None:
           f"{len(desired)} pocknix entries + {len(kept)} untouched")
 
 
-def main() -> None:
-    # DeckStation es la capa de emulación de esta imagen: su tile es lo que
-    # aparece en el modo juego. Sin DeckStation no hay nada que sincronizar (y un
-    # set vacío poda nuestros tiles antiguos).
-    desired = []
+def _icon(path: str) -> str:
+    """Steam solo acepta ficheros de imagen reales: si no existe, vacio."""
+    return path if os.path.exists(path) else ""
+
+
+def tiles() -> list[dict]:
+    """Lo que Pocknix mantiene en la biblioteca de Steam (Game Mode).
+    Anade aqui cualquier cosa que deba aparecer en el modo juego."""
+    out = []
+    # DeckStation: la capa de emulacion de esta imagen.
     if os.path.exists(DECKSTATION):
-        icon = os.path.join(DECKSTATION_ROOT, "DeckStation.png")
-        desired = [make_entry("DeckStation", f'"{DECKSTATION}"',
+        out.append(make_entry("DeckStation", f'"{DECKSTATION}"',
                               startdir=DECKSTATION_ROOT,
-                              icon=icon if os.path.exists(icon) else "")]
+                              icon=_icon(os.path.join(DECKSTATION_ROOT,
+                                                      "DeckStation.png"))))
         if os.path.exists(PLAY):
-            desired += favorites()
+            out += favorites()
+    # Moonlight: juego remoto desde un PC.
+    if os.path.exists(MOONLIGHT):
+        out.append(make_entry("Moonlight", f'"{MOONLIGHT}"',
+                              startdir=HOME,
+                              icon=_icon(MOONLIGHT_ICON)))
+    return out
+
+
+def main() -> None:
+    # Un set vacio poda nuestros tiles antiguos; los del usuario se conservan
+    # siempre (solo se reemplaza el subconjunto con DevkitGameID=OWNER).
+    desired = tiles()
     for cfgdir in glob.glob(os.path.join(HOME, ".local/share/Steam/userdata/*/config")):
         if os.path.basename(os.path.dirname(cfgdir)) == "0":
             continue  # anonymous placeholder account
