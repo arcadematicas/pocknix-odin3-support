@@ -46,6 +46,8 @@ package() {
         "${pkgdir}/opt/deckstation/scripts/lanzar.sh"
     install -Dm755 "${sd}/scripts/deckstation-configs.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-configs.sh"
+    install -Dm755 "${sd}/scripts/deckstation-bios.sh" \
+        "${pkgdir}/opt/deckstation/scripts/deckstation-bios.sh"
 
     # Configs de emuladores (portables, rutas relativas)
     install -dm755 "${pkgdir}/opt/deckstation/configs"
@@ -53,6 +55,16 @@ package() {
     # El paquete se construye como root: asegurar que deck pueda leerlos
     # (DeckStation corre como deck y el despliegue de configs lee de aqui).
     chmod -R a+rX "${pkgdir}/opt/deckstation/configs"
+
+    # BIOS: solo el README, el manifiesto y las subcarpetas vacias. Los
+    # ficheros reales los pone el usuario (copyright) y deckstation-bios.sh
+    # los reparte. Ver bios/README.md.
+    install -dm755 "${pkgdir}/opt/deckstation/bios"
+    install -Dm644 "${sd}/bios/README.md" "${pkgdir}/opt/deckstation/bios/README.md"
+    install -Dm644 "${sd}/bios/deploy-bios.txt" "${pkgdir}/opt/deckstation/bios/deploy-bios.txt"
+    for s in psx ps2 dreamcast saturn segacd pcecd 3do neogeo msx switch 3ds misc; do
+        install -dm755 "${pkgdir}/opt/deckstation/bios/${s}"
+    done
 
     # Overlay: comando del sistema
     install -Dm755 "${sd}/overlay/usr/bin/deckstation" \

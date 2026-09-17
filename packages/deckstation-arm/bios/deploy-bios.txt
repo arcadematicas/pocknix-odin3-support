@@ -1,0 +1,57 @@
+# ======================================================================
+# Manifiesto de despliegue de BIOS — DeckStation
+# ======================================================================
+# Mapea cada subcarpeta de bios/ (organizada por sistema) a los destinos
+# donde cada emulador espera encontrar sus BIOS/firmware.
+#
+# Formato:  <origen en bios/>|<destino relativo a la raiz de DeckStation>|<politica>
+#
+#   politica (opcional, por defecto "keep"):
+#     keep  -> solo se copia si el destino NO existe
+#     force -> siempre se sobrescribe
+#
+#   Token {HOME:NombreApp} = el directorio *.home de Apps/<NombreApp>.
+#   Si esa app no esta instalada, la entrada se omite sin error.
+#
+# Una misma carpeta puede aparecer varias veces (varios destinos).
+# Los ficheros reales NO van en git (copyright): solo este manifiesto y el
+# README. Ver bios/README.md para que ficheros necesita cada sistema.
+# ======================================================================
+
+# --- PlayStation 1 (RetroArch: Beetle/SwanStation/GooseStation + DuckStation) ---
+psx|{HOME:RetroArch}/.config/retroarch/system
+psx|{HOME:Duckstation}/.local/share/duckstation/bios
+
+# --- PlayStation 2 (RetroArch no tiene core; PCSX2 si algun dia hay ARM) ---
+ps2|{HOME:RetroArch}/.config/retroarch/system
+ps2|{HOME:Pcsx2}/.config/PCSX2/bios
+
+# --- Dreamcast (Flycast espera dc_boot.bin / dc_flash.bin en system/dc) ---
+dreamcast|{HOME:RetroArch}/.config/retroarch/system/dc
+
+# --- Sega Saturn ---
+saturn|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Sega CD / Mega CD ---
+segacd|{HOME:RetroArch}/.config/retroarch/system
+
+# --- PC Engine CD / TurboGrafx-CD (syscard*.pce) ---
+pcecd|{HOME:RetroArch}/.config/retroarch/system
+
+# --- 3DO ---
+3do|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Neo Geo (neogeo.zip) ---
+neogeo|{HOME:RetroArch}/.config/retroarch/system
+
+# --- MSX / MSX2 ---
+msx|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Nintendo Switch: claves (prod.keys / title.keys) para el core Suyu ---
+switch|{HOME:RetroArch}/.config/retroarch/system/suyu/keys
+
+# --- Nintendo 3DS: sysdata para Azahar (aes_keys.txt, seeddb.bin, ...) ---
+3ds|{HOME:Azahar}/.local/share/azahar-emu/sysdata
+
+# --- Cualquier otra BIOS suelta -> system/ de RetroArch ---
+misc|{HOME:RetroArch}/.config/retroarch/system
