@@ -44,10 +44,15 @@ package() {
         "${pkgdir}/opt/deckstation/scripts/setup_arm64_apps.py"
     install -Dm755 "${sd}/scripts/lanzar.sh" \
         "${pkgdir}/opt/deckstation/scripts/lanzar.sh"
+    install -Dm755 "${sd}/scripts/deckstation-configs.sh" \
+        "${pkgdir}/opt/deckstation/scripts/deckstation-configs.sh"
 
     # Configs de emuladores (portables, rutas relativas)
     install -dm755 "${pkgdir}/opt/deckstation/configs"
     cp -r "${sd}/configs/"* "${pkgdir}/opt/deckstation/configs/"
+    # El paquete se construye como root: asegurar que deck pueda leerlos
+    # (DeckStation corre como deck y el despliegue de configs lee de aqui).
+    chmod -R a+rX "${pkgdir}/opt/deckstation/configs"
 
     # Overlay: comando del sistema
     install -Dm755 "${sd}/overlay/usr/bin/deckstation" \
