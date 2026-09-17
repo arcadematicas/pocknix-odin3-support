@@ -1,0 +1,41 @@
+--- a/src/libretro_core/retro_core.cpp
++++ b/src/libretro_core/retro_core.cpp
+@@ -100,6 +100,7 @@
+         {"suyu_anti_aliasing", "Anti-Aliasing; None|FXAA|SMAA"},
+         {"suyu_cpu_accuracy", "CPU Accuracy; Auto|Accurate|Unsafe"},
+         {"suyu_use_docked", "Docked Mode; Yes|No"},
++        {"suyu_language", "Console Language; EnglishAmerican|Spanish|SpanishLatin|French|German|Italian|Japanese|Korean|Dutch|Portuguese|Russian|ChineseSimplified|ChineseTraditional|Polish|Thai"},
+         {"suyu_fastmem", "Fastmem; Enabled|Disabled"},
+         {"suyu_audio_output", "Audio Output; Host (direct)|Frontend (libretro)"},
+         // suyu's own online play. RetroArch's netplay can't drive this core
+@@ -464,6 +465,30 @@
+                 std::string(var.value) == "Yes" ? Settings::ConsoleMode::Docked
+                                                 : Settings::ConsoleMode::Handheld);
+         }
++        // Console (system) language: games pick their language from it. Without
++        // this option the core has no way to change it (it never reads a config
++        // file), so everything came out in English.
++        var.key = "suyu_language";
++        var.value = nullptr;
++        if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
++            const std::string v(var.value);
++            auto lang = Settings::Language::EnglishAmerican;
++            if (v == "Japanese") lang = Settings::Language::Japanese;
++            else if (v == "French") lang = Settings::Language::French;
++            else if (v == "German") lang = Settings::Language::German;
++            else if (v == "Italian") lang = Settings::Language::Italian;
++            else if (v == "Spanish") lang = Settings::Language::Spanish;
++            else if (v == "SpanishLatin") lang = Settings::Language::SpanishLatin;
++            else if (v == "ChineseSimplified") lang = Settings::Language::ChineseSimplified;
++            else if (v == "ChineseTraditional") lang = Settings::Language::ChineseTraditional;
++            else if (v == "Korean") lang = Settings::Language::Korean;
++            else if (v == "Dutch") lang = Settings::Language::Dutch;
++            else if (v == "Portuguese") lang = Settings::Language::Portuguese;
++            else if (v == "Russian") lang = Settings::Language::Russian;
++            else if (v == "Polish") lang = Settings::Language::Polish;
++            else if (v == "Thai") lang = Settings::Language::Thai;
++            Settings::values.language_index.SetValue(lang);
++        }
+         var.key = "suyu_cpu_accuracy";
+         var.value = nullptr;
+         if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {

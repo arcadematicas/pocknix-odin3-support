@@ -10,9 +10,12 @@
 # INTEGRACION CON DECKSTATION:
 #   El core se instala en /usr/lib/libretro/ (ubicacion estandar). El RetroArch
 #   de DeckStation es PORTABLE y busca los cores en
-#   /opt/deckstation/Apps/RetroArch/.../.config/retroarch/cores/ (lo resuelve
-#   %CORE_RETROARCH% de ES-DE). PENDIENTE: que deckstation-setup (o un hook)
-#   copie este core al dir portable cuando descargue RetroArch.
+#   /opt/deckstation/Apps/RetroArch/.../.config/retroarch/cores/.
+#   Lo enlaza scripts/deckstation-cores.sh (lo llaman el setup y el launcher).
+#
+# PARCHE PROPIO:
+#   suyu-language.patch anade la core option "suyu_language" (Console Language),
+#   que el core de serie NO tiene. Ver el comentario en prepare().
 #
 # NOTA GCC 16:
 #   GCC 16 da un falso positivo en cheat_engine.cpp:221
@@ -48,14 +51,22 @@ makedepends=(
 source=(
     "git+https://github.com/suyu-emu/suyu-v0.0.4.git#branch=main"
     "suyu_libretro.info"
+    "suyu-language.patch"
 )
 sha256sums=('SKIP'
+            'SKIP'
             'SKIP')
 
 prepare() {
     # makepkg no trae los submódulos (28: dynarmic, ffmpeg, SDL, cubeb, ...).
     # Shallow para no bajar GBs de historial (verificado en la Odin 17/09).
     git -C "${srcdir}/suyu-v0.0.4" submodule update --init --recursive --depth 1
+    # Opcion de idioma de consola (suyu_language). Sin ella el core NO tiene
+    # forma de cambiarlo: no expone la opcion y no lee ningun fichero de config,
+    # asi que language_index se quedaba en su default (EnglishAmerican) y todos
+    # los juegos salian en ingles. Con el parche: RetroArch > Opciones del core
+    # > Suyu > Console Language > Spanish.
+    patch -p1 -d "${srcdir}/suyu-v0.0.4" < "${srcdir}/suyu-language.patch"
 }
 
 build() {
