@@ -108,6 +108,18 @@ overlay "packages/pocknix-desktop" "packages/shared/pocknix-desktop"
 # re-merged (the check will NOT notice that, only that the two files match).
 overlay "packages/gamescope" "packages/soc/gamescope"
 
+# --- deckstation-arm: PKGBUILD + el Updater ----------------------------------
+# deckstation-arm es un paquete NUESTRO (vendored de stshunz) que vive entero en
+# packages/shared/. Aqui solo llevamos las partes que editamos: el PKGBUILD
+# (pkgrel + instalacion del Updater) y updater/ (el port aarch64). El resto del
+# paquete (configs, scripts, overlay) sigue editandose en el arbol.
+overlay "packages/deckstation-arm" "packages/shared/deckstation-arm"
+
+# --- python-pygame-ce: dependencia del Updater ---------------------------------
+# pygame no esta en ALARM y el clasico no tiene wheel para Python 3.14. Este
+# paquete instala el wheel aarch64 de pygame-ce (drop-in, modulo `pygame`).
+overlay "packages/python-pygame-ce" "packages/shared/python-pygame-ce"
+
 # --- NOT synced (needs manual work — see the note below) ---------------------
 # kernel/patches is an OVERLAY: a patch we REMOVE from the centre is NOT removed from the build.
 # If you retire a patch, delete it in pocknix-os too (or the image keeps applying it).

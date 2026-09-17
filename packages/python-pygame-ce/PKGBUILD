@@ -1,0 +1,35 @@
+# python-pygame-ce — pygame Community Edition, desde el wheel aarch64 de PyPI.
+# ---------------------------------------------------------------------------
+# POR QUE EXISTE: el Updater de DeckStation (Apps/Updater/updater.py) tiene
+# interfaz en pygame. pygame NO esta en los repos de ALARM, y el pygame "clasico"
+# 2.6.1 solo publica wheels hasta cp313 mientras que ALARM va por Python 3.14.
+# pygame-ce es un fork drop-in: instala el MISMO modulo `pygame`, y si publica
+# wheel cp314 aarch64. De ahi que se instale desde el wheel (como python-pyxel):
+# compilar desde fuente arrastraria las SDL de desarrollo enteras.
+#
+# MANTENIMIENTO: el nombre del wheel lleva la version de Python (cp314). Si ALARM
+# sube de 3.14, hay que cambiar _wheel y el sha256 (o el paquete no se construye).
+pkgname=python-pygame-ce
+pkgver=2.5.8
+pkgrel=1
+pkgdesc="pygame Community Edition (wheel aarch64; provee el modulo pygame)"
+arch=('aarch64')
+url="https://github.com/pygame-community/pygame-ce"
+license=('LGPL2.1')
+depends=('python' 'sdl2')
+provides=('python-pygame')
+conflicts=('python-pygame')
+options=('!strip')
+_wheel="pygame_ce-${pkgver}-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.whl"
+source=("https://files.pythonhosted.org/packages/2e/f3/4f90a0b5e86635d741111084eaa4d4c65fcab2f461edb8c9efa502e4c630/${_wheel}")
+sha256sums=('bb91d0bb0b5e2a4da61910d752769d4580cacffb4b7338cee57c932351c67e7b')
+noextract=("${_wheel}")
+
+package() {
+    local sitedir
+    sitedir="$(python -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')"
+    install -d "${pkgdir}${sitedir}"
+    # Un wheel es un zip: bsdtar lo descomprime en su sitio (modulo `pygame`
+    # + `pygame_ce.libs` con las SDL embebidas)
+    bsdtar -xf "${srcdir}/${_wheel}" -C "${pkgdir}${sitedir}"
+}

@@ -1,0 +1,75 @@
+# ============================================================
+# DeckStation Updater - fuentes de emuladores para aarch64 (Odin 3)
+# Formato: una linea el NOMBRE, la siguiente la URL de releases.
+# Las lineas que empiezan por # se ignoran.
+# ============================================================
+#
+# --- AppImages aarch64 de PkgForge (anylinux-aarch64.AppImage) ---
+Dolphin
+https://github.com/pkgforge-dev/Dolphin-emu-AppImage/releases
+Flycast
+https://github.com/pkgforge-dev/Flycast-AppImage-Enhanced/releases
+MAME
+https://github.com/pkgforge-dev/MAME-AppImage/releases
+Supermodel
+https://github.com/pkgforge-dev/Supermodel-AppImage/releases
+Cemu
+https://github.com/pkgforge-dev/Cemu-AppImage-Enhanced/releases
+DosBoxPure
+https://github.com/pkgforge-dev/DOSBox-Pure-Unleashed-AppImage/releases
+#
+# --- Releases oficiales con build Linux aarch64/arm64 ---
+Duckstation
+https://github.com/stenzek/duckstation/releases
+PPSSPP
+https://github.com/hrydgard/ppsspp/releases
+mGBA
+https://github.com/mgba-emu/mgba/releases
+Mesen
+https://github.com/SourMesen/Mesen2/releases
+Xemu
+https://github.com/xemu-project/xemu/releases
+Vita3K
+https://github.com/Vita3K/Vita3K-builds/releases
+melonDS
+https://github.com/melonDS-emu/melonDS/releases
+Ruffle
+https://github.com/ruffle-rs/ruffle/releases
+Amiberry
+https://github.com/midwan/amiberry/releases
+SnowboardKids2
+https://github.com/cdlewis/snowboardkids2-recomp/releases
+#
+# --- URL directa (no es un repo: descarga fija) ---
+Retroarch
+https://buildbot.libretro.com/nightly/linux/aarch64/RetroArch.7z
+#
+# ============================================================
+# SIN BUILD AARCH64 (desactivados; el dia que publiquen, se descomentan)
+# ============================================================
+# RPCS3
+# https://github.com/RPCS3/rpcs3-binaries-linux/releases
+# Citron
+# https://github.com/citron-neo/CI/releases
+# shadPS4
+# https://github.com/shadps4-emu/shadPS4/releases
+# Xenia Edge
+# https://github.com/xenia-canary/xenia-canary/releases
+# PCSX2
+# https://github.com/PCSX2/pcsx2/releases
+# OpenMSX
+# https://github.com/openmsx/openMSX/releases
+# RMG
+# https://github.com/rosalie241/RMG/releases
+# PrimeHack
+# https://github.com/wermipls/PrimeHack/releases
+# Hypseus Singe
+# https://github.com/DirtBagXon/hypseus-singe/releases
+# UZDoom
+# https://github.com/UZDoom/UZDoom/releases
+# GZDoom
+# https://gitlab.com/ose-appimages/gzdoom/-/releases
+# OpenBor
+# https://github.com/DCurrent/openbor/releases
+# Redream
+# https://github.com/inolen/redream/releases

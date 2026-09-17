@@ -1,0 +1,61 @@
+# deckstation-arm.install
+# Hooks de instalación para el paquete (versión ARM)
+
+post_install() {
+    echo ""
+    echo "=========================================="
+    echo "  DeckStation ARM instalado!"
+    echo "  (aarch64 / armv7h)"
+    echo "=========================================="
+    echo ""
+    echo "Directorio: /opt/deckstation/"
+    echo ""
+    echo "Siguiente paso: descargar emuladores ARM64"
+    echo ""
+    echo "  deckstation-setup"
+    echo ""
+    echo "Esto descargará:"
+    echo "  - RetroArch (multi-sistema)"
+    echo "  - Dolphin (GameCube/Wii)"
+    echo "  - DuckStation (PS1)"
+    echo "  - PPSSPP (PSP)"
+    echo "  - Y más..."
+    echo ""
+    echo "Una vez descargado:"
+    echo "  deckstation          # Lanzar"
+    echo "  deckstation-update   # Actualizar"
+    echo ""
+    echo "Documentación: /opt/deckstation/docs/"
+    echo "=========================================="
+
+    # El Updater (Apps/Updater) escribe su cache y settings.conf como el usuario
+    # deck. pacman los instala root:root, asi que hay que cederlos o el updater
+    # no puede guardar nada.
+    if [ -d /opt/deckstation/Apps/Updater ]; then
+        chown -R deck:deck /opt/deckstation/Apps/Updater 2>/dev/null || true
+    fi
+}
+
+post_upgrade() {
+    echo ""
+    echo "=========================================="
+    echo "  DeckStation ARM actualizado!"
+    echo "=========================================="
+    echo ""
+    echo "Para actualizar emuladores:"
+    echo "  deckstation-update"
+    echo "  (o el Updater con interfaz: /opt/deckstation/Apps/Updater/launcher.sh)"
+    echo ""
+
+    if [ -d /opt/deckstation/Apps/Updater ]; then
+        chown -R deck:deck /opt/deckstation/Apps/Updater 2>/dev/null || true
+    fi
+}
+
+pre_remove() {
+    echo ""
+    echo "Nota: Los emuladores en /opt/deckstation/Apps/"
+    echo "NO se eliminan. Para limpiar manualmente:"
+    echo "  sudo rm -rf /opt/deckstation/"
+    echo ""
+}
