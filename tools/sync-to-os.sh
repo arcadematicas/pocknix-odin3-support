@@ -128,6 +128,12 @@ overlay "packages/python-pygame-ce" "packages/shared/python-pygame-ce"
 # encontraba nada y el tile nunca aparecia en el modo juego.
 overlay "packages/pocknix-steam" "packages/shared/pocknix-steam"
 
+# --- pocknix-tools: la opcion de preparar la capa de emulacion ------------------
+# do_deckstation() ahora prepara DeckStation (assets/cores/configs/bios) y OFRECE
+# el asistente de WProton; ademas hay una entrada propia para WProton. Solo
+# llevamos el script (el PKGBUILD es de upstream y no cambia).
+overlay "packages/pocknix-tools" "packages/shared/pocknix-tools"
+
 # --- suyu-libretro: core de Nintendo Switch para RetroArch ---------------------
 # Compilado nativo aarch64 (no hay builds publicados). Se instala en
 # /usr/lib/libretro/; la integracion con el RetroArch portable de DeckStation
