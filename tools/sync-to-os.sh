@@ -120,6 +120,14 @@ overlay "packages/deckstation-arm" "packages/shared/deckstation-arm"
 # paquete instala el wheel aarch64 de pygame-ce (drop-in, modulo `pygame`).
 overlay "packages/python-pygame-ce" "packages/shared/python-pygame-ce"
 
+# --- pocknix-steam: el sync de la biblioteca de Steam --------------------------
+# pocknix-steam llama a pocknix-steam-sync JUSTO ANTES de arrancar Steam, que es el
+# unico momento seguro para escribir shortcuts.vdf (Steam lo reescribe al salir).
+# Lo reapuntamos a DeckStation: la capa de emulacion de upstream NO esta en esta
+# imagen, asi que el script original buscaba ~/ES-DE + /usr/bin/pocknix-play, no
+# encontraba nada y el tile nunca aparecia en el modo juego.
+overlay "packages/pocknix-steam" "packages/shared/pocknix-steam"
+
 # --- suyu-libretro: core de Nintendo Switch para RetroArch ---------------------
 # Compilado nativo aarch64 (no hay builds publicados). Se instala en
 # /usr/lib/libretro/; la integracion con el RetroArch portable de DeckStation

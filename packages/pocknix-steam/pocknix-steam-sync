@@ -1,0 +1,205 @@
+#!/usr/bin/python3
+# pocknix-steam-sync — writes the DeckStation tile (and, when a per-game launcher
+# exists, every starred ES-DE favorite) into Steam's shortcuts.vdf, per logged-in
+# account. MUST run while Steam is DOWN: Steam rewrites shortcuts.vdf wholesale on
+# exit. Entries carry DevkitGameID="pocknix" and each run replaces exactly that owned
+# subset, so a user's own shortcuts survive.
+#
+# REPURPOSED for DeckStation: the upstream emulation layer (and its pocknix-play)
+# is NOT part of this image — DeckStation is the emulation layer, and its ES-DE is
+# PORTABLE (lives in /opt/deckstation, not in ~/ES-DE). Before this change the
+# script looked for ~/ES-DE + /usr/bin/pocknix-play, found neither, and pruned
+# itself to nothing (the tile never appeared in Game Mode).
+import os
+import re
+import struct
+import sys
+import zlib
+import glob
+import xml.etree.ElementTree as ET
+
+HOME = os.path.expanduser("~")
+
+# DeckStation es portable: ES-DE y las ROMs viven dentro de /opt/deckstation.
+DECKSTATION = "/usr/bin/deckstation"
+DECKSTATION_ROOT = os.environ.get("DECKSTATION_ROOT", "/opt/deckstation")
+ES_DE_HOME = os.environ.get(
+    "DECKSTATION_ES_DE_HOME",
+    os.path.join(DECKSTATION_ROOT, "DeckStation.AppImage.home", "ES-DE"),
+)
+GAMELISTS = os.path.join(ES_DE_HOME, "gamelists")
+DEFAULT_ROMS = os.path.join(DECKSTATION_ROOT, "ROMs")
+# Lanzador por-juego: aun NO existe (haría falta un wrapper que resuelva el
+# emulador de cada sistema desde es_systems.xml). Cuando exista, los favoritos
+# se añaden solos.
+PLAY = "/usr/bin/deckstation-play"
+
+
+def rom_dir() -> str:
+    """Directorio de ROMs: el ajuste ROMDirectory de ES-DE de DeckStation (el
+    único mando para moverlas). El settings es un fragmento XML sin raíz, así que
+    se saca con regex. Vacío/ausente = <deckstation>/ROMs."""
+    try:
+        with open(os.path.join(ES_DE_HOME, "settings", "es_settings.xml")) as f:
+            m = re.search(r'name="ROMDirectory"\s+value="([^"]*)"', f.read())
+        val = (m.group(1) if m else "").strip()
+    except OSError:
+        val = ""
+    if val.startswith("~"):
+        val = HOME + val[1:]
+    return val or DEFAULT_ROMS
+
+
+ROMS = rom_dir()
+OWNER = "pocknix"
+TAG = "Pocknix"
+
+TYPE_MAP, TYPE_STR, TYPE_INT, END = 0x00, 0x01, 0x02, 0x08
+
+
+def parse_map(data: bytes, pos: int):
+    out = {}
+    while True:
+        t = data[pos]
+        if t == END:
+            return out, pos + 1
+        pos += 1
+        key_end = data.index(b"\x00", pos)
+        key = data[pos:key_end].decode("utf-8", "replace")
+        pos = key_end + 1
+        if t == TYPE_MAP:
+            out[key], pos = parse_map(data, pos)
+        elif t == TYPE_STR:
+            val_end = data.index(b"\x00", pos)
+            out[key] = data[pos:val_end].decode("utf-8", "replace")
+            pos = val_end + 1
+        elif t == TYPE_INT:
+            out[key] = struct.unpack_from("<i", data, pos)[0]
+            pos += 4
+        else:
+            raise ValueError(f"unknown vdf type 0x{t:02x} at {pos}")
+
+
+def dump_map(d: dict) -> bytes:
+    out = b""
+    for k, v in d.items():
+        kb = k.encode() + b"\x00"
+        if isinstance(v, dict):
+            out += bytes([TYPE_MAP]) + kb + dump_map(v)
+        elif isinstance(v, int):
+            out += bytes([TYPE_INT]) + kb + struct.pack("<i", v)
+        else:
+            out += bytes([TYPE_STR]) + kb + str(v).encode() + b"\x00"
+    return out + bytes([END])
+
+
+def make_entry(appname: str, exe: str, launch_options: str = "",
+               startdir: str | None = None, icon: str = "") -> dict:
+    appid = zlib.crc32((exe + appname).encode()) | 0x80000000
+    return {
+        "appid": struct.unpack("<i", struct.pack("<I", appid))[0],
+        "appname": appname,
+        "exe": exe,
+        "StartDir": f'"{startdir or HOME}"',
+        "icon": icon,
+        "ShortcutPath": "",
+        "LaunchOptions": launch_options,
+        "IsHidden": 0,
+        "AllowDesktopConfig": 1,
+        "AllowOverlay": 1,
+        "OpenVR": 0,
+        "Devkit": 0,
+        "DevkitGameID": OWNER,
+        "DevkitOverrideAppID": 0,
+        "LastPlayTime": 0,
+        "FlatpakAppID": "",
+        "tags": {"0": TAG},
+    }
+
+
+def favorites() -> list[dict]:
+    """Accesos por juego (solo si existe un lanzador por-juego)."""
+    out = []
+    for gl in sorted(glob.glob(os.path.join(GAMELISTS, "*", "gamelist.xml"))):
+        system = os.path.basename(os.path.dirname(gl))
+        try:
+            root = ET.parse(gl).getroot()
+        except ET.ParseError as e:
+            print(f"[pocknix-steam-sync] {gl}: bad XML ({e}) — skipped", file=sys.stderr)
+            continue
+        for game in root.iter("game"):
+            if (game.findtext("favorite") or "").strip().lower() != "true":
+                continue
+            path = (game.findtext("path") or "").strip()
+            if not path:
+                continue
+            if path.startswith("./"):
+                path = os.path.join(ROMS, system, path[2:])
+            if not os.path.exists(path):
+                print(f"[pocknix-steam-sync] favorite missing on disk, skipped: {path}",
+                      file=sys.stderr)
+                continue
+            name = (game.findtext("name") or "").strip() or \
+                os.path.splitext(os.path.basename(path))[0]
+            out.append(make_entry(name, f'"{PLAY}"', f'{system} "{path}"'))
+    return out
+
+
+def sync(cfgdir: str, desired: list[dict]) -> None:
+    path = os.path.join(cfgdir, "shortcuts.vdf")
+    shortcuts = {}
+    if os.path.exists(path) and os.path.getsize(path) > 2:
+        with open(path, "rb") as f:
+            data = f.read()
+        try:
+            if data[0] != TYPE_MAP:
+                raise ValueError("unexpected leading byte")
+            shortcuts, _ = parse_map(data, data.index(b"\x00", 1) + 1)
+        except (ValueError, IndexError) as e:
+            print(f"[pocknix-steam-sync] {path}: unparseable ({e}) — leaving untouched",
+                  file=sys.stderr)
+            return
+    # legacy ES-DE entries carry no DevkitGameID, so they are matched by appname.
+    kept = [
+        v for v in shortcuts.values()
+        if isinstance(v, dict)
+        and v.get("DevkitGameID") != OWNER
+        and str(v.get("appname", v.get("AppName", ""))).lower() != "es-de"
+    ]
+    merged = kept + desired
+    blob = (
+        bytes([TYPE_MAP]) + b"shortcuts\x00"
+        + dump_map({str(i): e for i, e in enumerate(merged)})
+        + bytes([END])
+    )
+    tmp = path + ".pocknix-tmp"
+    with open(tmp, "wb") as f:
+        f.write(blob)
+    os.replace(tmp, path)
+    print(f"[pocknix-steam-sync] {os.path.basename(os.path.dirname(cfgdir))}: "
+          f"{len(desired)} pocknix entries + {len(kept)} untouched")
+
+
+def main() -> None:
+    # DeckStation es la capa de emulación de esta imagen: su tile es lo que
+    # aparece en el modo juego. Sin DeckStation no hay nada que sincronizar (y un
+    # set vacío poda nuestros tiles antiguos).
+    desired = []
+    if os.path.exists(DECKSTATION):
+        icon = os.path.join(DECKSTATION_ROOT, "DeckStation.png")
+        desired = [make_entry("DeckStation", f'"{DECKSTATION}"',
+                              startdir=DECKSTATION_ROOT,
+                              icon=icon if os.path.exists(icon) else "")]
+        if os.path.exists(PLAY):
+            desired += favorites()
+    for cfgdir in glob.glob(os.path.join(HOME, ".local/share/Steam/userdata/*/config")):
+        if os.path.basename(os.path.dirname(cfgdir)) == "0":
+            continue  # anonymous placeholder account
+        try:
+            sync(cfgdir, desired)
+        except OSError as e:
+            print(f"[pocknix-steam-sync] {cfgdir}: {e}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main()
