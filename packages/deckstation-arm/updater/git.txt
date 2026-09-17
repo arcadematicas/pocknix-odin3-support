@@ -2,41 +2,73 @@
 # DeckStation Updater - fuentes de emuladores para aarch64 (Odin 3)
 # Formato: una linea el NOMBRE, la siguiente la URL de releases.
 # Las lineas que empiezan por # se ignoran.
+#
+# El updater.py detecta la arquitectura en runtime (IS_AARCH64) y descarta
+# los assets de la arquitectura contraria, asi que estas rutas sirven tanto
+# en la Odin (aarch64) como en PC/Steam Deck (x86_64).
 # ============================================================
 #
 # --- AppImages aarch64 de PkgForge (anylinux-aarch64.AppImage) ---
+# PkgForge compila AppImages aarch64 aunque upstream no los publique.
+# https://pkgforge.dev / https://github.com/pkgforge-dev
+Amiberry
+https://github.com/pkgforge-dev/Amiberry-AppImage/releases
+ares
+https://github.com/pkgforge-dev/ares-emu-appimage/releases
+Azahar
+https://github.com/pkgforge-dev/Azahar-AppImage-Enhanced/releases
+BigPEmu
+https://github.com/pkgforge-dev/BigPEmu-AppImage/releases
+Cemu
+https://github.com/pkgforge-dev/Cemu-AppImage-Enhanced/releases
+ClownMDEmu
+https://github.com/pkgforge-dev/ClownMDEmu-AppImage-Enhanced/releases
 Dolphin
 https://github.com/pkgforge-dev/Dolphin-emu-AppImage/releases
+DosBoxPure
+https://github.com/pkgforge-dev/DOSBox-Pure-Unleashed-AppImage/releases
+DOSBox-X
+https://github.com/pkgforge-dev/DOSBox-X-AppImage/releases
+Dreamm
+https://github.com/pkgforge-dev/DREAMM-AppImage/releases
+Duckstation
+https://github.com/pkgforge-dev/DuckStation-GPL-AppImage-Enhanced/releases
 Flycast
 https://github.com/pkgforge-dev/Flycast-AppImage-Enhanced/releases
 MAME
 https://github.com/pkgforge-dev/MAME-AppImage/releases
+MelonDS
+https://github.com/pkgforge-dev/melonDS-AppImage-Enhanced/releases
+mGBA
+https://github.com/pkgforge-dev/mGBA-AppImage-Enhanced/releases
+OpenMSX
+https://github.com/pkgforge-dev/openMSX-AppImage/releases
+PCSX-Redux
+https://github.com/pkgforge-dev/PCSX-Redux-AppImage-Enhanced/releases
+RMG
+https://github.com/pkgforge-dev/RMG-AppImage-Enhanced/releases
+Ruffle
+https://github.com/pkgforge-dev/Ruffle-AppImage/releases
+ScummVM
+https://github.com/pkgforge-dev/ScummVM-AppImage/releases
+SkyEmu
+https://github.com/pkgforge-dev/SkyEmu-AppImage/releases
 Supermodel
 https://github.com/pkgforge-dev/Supermodel-AppImage/releases
-Cemu
-https://github.com/pkgforge-dev/Cemu-AppImage-Enhanced/releases
-DosBoxPure
-https://github.com/pkgforge-dev/DOSBox-Pure-Unleashed-AppImage/releases
+Xemu
+https://github.com/pkgforge-dev/xemu-AppImage-Enhanced/releases
+Ymir
+https://github.com/pkgforge-dev/Ymir-AppImage/releases
+ZSNES
+https://github.com/pkgforge-dev/ZSNES-AppImage/releases
+#
+# --- Gitea: builds ARM propios (el updater convierte web -> API solo) ---
+Eden
+https://git.eden-emu.dev/eden-emu/eden/releases
 #
 # --- Releases oficiales con build Linux aarch64/arm64 ---
-Duckstation
-https://github.com/stenzek/duckstation/releases
-PPSSPP
-https://github.com/hrydgard/ppsspp/releases
-mGBA
-https://github.com/mgba-emu/mgba/releases
-Mesen
-https://github.com/SourMesen/Mesen2/releases
-Xemu
-https://github.com/xemu-project/xemu/releases
 Vita3K
 https://github.com/Vita3K/Vita3K-builds/releases
-MelonDS
-https://github.com/melonDS-emu/melonDS/releases
-Ruffle
-https://github.com/ruffle-rs/ruffle/releases
-Amiberry
-https://github.com/midwan/amiberry/releases
 SnowboardKids2
 https://github.com/cdlewis/snowboardkids2-recomp/releases
 #
@@ -47,20 +79,22 @@ https://buildbot.libretro.com/nightly/linux/aarch64/RetroArch.7z
 # ============================================================
 # SIN BUILD AARCH64 (desactivados; el dia que publiquen, se descomentan)
 # ============================================================
+# PCSX2
+# https://github.com/pkgforge-dev/PCSX2-AppImage-Enhanced/releases
+# PPSSPP
+# https://github.com/pkgforge-dev/PPSSPP-AppImage/releases
+# SUPER-ZSNES
+# https://github.com/pkgforge-dev/SUPER-ZSNES-AppImage/releases
 # RPCS3
 # https://github.com/RPCS3/rpcs3-binaries-linux/releases
-# Citron
+# Citron (bloqueado por DMCA de Nintendo, feb 2026)
 # https://github.com/citron-neo/CI/releases
+# Ryujinx (instancia gitea por confirmar)
+# https://git.ryujinx.app/ryujinx/ryujinx/releases
 # shadPS4
 # https://github.com/shadps4-emu/shadPS4/releases
 # Xenia Edge
 # https://github.com/xenia-canary/xenia-canary/releases
-# PCSX2
-# https://github.com/PCSX2/pcsx2/releases
-# OpenMSX
-# https://github.com/openmsx/openMSX/releases
-# RMG
-# https://github.com/rosalie241/RMG/releases
 # PrimeHack
 # https://github.com/wermipls/PrimeHack/releases
 # Hypseus Singe
