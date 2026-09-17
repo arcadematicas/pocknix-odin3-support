@@ -245,6 +245,19 @@ ARCH_BAD  = ('x86_64', 'amd64', 'x64')    if IS_AARCH64 else ('aarch64', 'arm64'
 # Etiquetas de sistemas que NO son Linux (un .zip de macOS no nos vale)
 OS_BAD    = ('macos', 'darwin', 'osx', 'windows', 'win64', 'win32', '.exe', '.dmg', 'android', 'ios')
 
+# ── Auto-actualización de DeckStation (payload de MediaFire) ──────────────────
+# DESACTIVADA EN ARM. El auto-actualizador de DeckStation descarga un payload/
+# de una carpeta de MediaFire y lo aplica ENCIMA de la instalación. Esa carpeta
+# (MF_FOLDER_KEY) es la del proyecto **x86_64**: su payload trae AppImages y
+# .AppImage.home de x86_64, así que aplicarlo en un dispositivo ARM **pisaría los
+# emuladores ARM con binarios x86_64**, que no arrancan.
+#
+# Para volver a activarlo hace falta una carpeta de MediaFire con payload ARM:
+# poner su clave en MF_FOLDER_KEY y SYSTEM_UPDATE_ENABLED = True. Mientras tanto
+# la opción "Actualizar DeckStation" no se muestra en el menú.
+MF_FOLDER_KEY = "1ixylxeqkr0wo"
+SYSTEM_UPDATE_ENABLED = False
+
 # Fallback repos (used only if git.txt is missing)
 EXTERNAL_REPOS_FALLBACK = {
     'rpcs3': ('github', 'RPCS3/rpcs3-binaries-linux'),
@@ -398,7 +411,7 @@ class UpdaterEngine:
         self.changelog_lines = []
         self.changelog_scroll = 0
 
-        self.mf_folder_key = "1ixylxeqkr0wo"
+        self.mf_folder_key = MF_FOLDER_KEY
         self.update_dir = os.path.join(DECKSTATION_ROOT, "update")
         self.installed_dir = os.path.join(self.update_dir, ".installed")
         os.makedirs(self.update_dir, exist_ok=True)
@@ -491,7 +504,12 @@ class UpdaterEngine:
         self._fetch_loading = False
 
     def _check_system_update(self):
-        """Verifica en segundo plano si hay actualización de DeckStation disponible."""
+        """Verifica en segundo plano si hay actualización de DeckStation disponible.
+
+        Desactivado en ARM: el payload de MediaFire es de x86_64 y pisaría los
+        emuladores ARM. Ver SYSTEM_UPDATE_ENABLED."""
+        if not SYSTEM_UPDATE_ENABLED:
+            return
         if self._system_update_checked:
             return
         self._system_update_checked = True
@@ -990,6 +1008,12 @@ class UpdaterEngine:
         self.cancel_requested = True
 
     def start_system_update(self):
+        # Salvaguarda: nunca aplicar un payload que no sea de nuestra arquitectura.
+        if not SYSTEM_UPDATE_ENABLED:
+            self.state = "HUB"
+            self.status_msg = ("Actualización de DeckStation desactivada en ARM "
+                               "(el payload disponible es x86_64)")
+            return
         self.state = "DOWNLOADING"
         self.status_msg = "Consultando API de MediaFire..."
         self.download_progress = 0.0
@@ -1114,9 +1138,12 @@ class UpdaterEngine:
         running = True
         hub_options = [
             ("Actualizar Emuladores", "EMU_MENU"),
-            ("Actualizar DeckStation", "SYSTEM_UPDATE"),
             ("Apariencia", "THEME_MENU"),
         ]
+        # La opción de actualizar DeckStation (payload de MediaFire) solo se ofrece
+        # si hay un payload de NUESTRA arquitectura. Ver SYSTEM_UPDATE_ENABLED.
+        if SYSTEM_UPDATE_ENABLED:
+            hub_options.insert(1, ("Actualizar DeckStation", "SYSTEM_UPDATE"))
         hub_spacing = 120
         while running:
             screen.fill(BG_COLOR)
@@ -1137,19 +1164,20 @@ class UpdaterEngine:
                 sub_rect = sub_text.get_rect(center=(SCREEN_WIDTH//2, 290))
                 screen.blit(sub_text, sub_rect)
                 icon_x, icon_y = SCREEN_WIDTH//2 - 200, 310
-                for idx, (opt_text, _) in enumerate(hub_options):
+                for idx, (opt_text, opt_action) in enumerate(hub_options):
                     y_pos = icon_y + idx * hub_spacing
                     is_sel = (idx == self.hub_idx)
                     bg = ACCENT_COLOR if is_sel else PANEL_COLOR
                     txt_color = SEL_FG_COLOR if is_sel else TEXT_COLOR
                     pygame.draw.rect(screen, bg, (icon_x, y_pos, 400, 80), border_radius=RADIUS)
-                    # Mostrar badge de actualización en "Actualizar DeckStation"
-                    if idx == 1 and self._system_update_available:
+                    # Badge de actualización en "Actualizar DeckStation" (por ACCION,
+                    # no por indice: si se oculta una opcion los indices se desplazan)
+                    if opt_action == "SYSTEM_UPDATE" and self._system_update_available:
                         display_text = "⬆ Actualizar DeckStation ⬆"
                         txt_color_badge = SEL_FG_COLOR if is_sel else GREEN_COLOR
                         txt_surf = font.render(display_text, True, txt_color_badge)
                     else:
-                        if idx == 2:
+                        if opt_action == "THEME_MENU":
                             opt_text = f"{opt_text} · {ACTIVE_THEME.capitalize()}"
                         txt_surf = font.render(opt_text, True, txt_color)
                     screen.blit(txt_surf, (icon_x + 20, y_pos + 20))

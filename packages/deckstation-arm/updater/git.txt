@@ -31,7 +31,7 @@ Xemu
 https://github.com/xemu-project/xemu/releases
 Vita3K
 https://github.com/Vita3K/Vita3K-builds/releases
-melonDS
+MelonDS
 https://github.com/melonDS-emu/melonDS/releases
 Ruffle
 https://github.com/ruffle-rs/ruffle/releases
@@ -41,7 +41,7 @@ SnowboardKids2
 https://github.com/cdlewis/snowboardkids2-recomp/releases
 #
 # --- URL directa (no es un repo: descarga fija) ---
-Retroarch
+RetroArch
 https://buildbot.libretro.com/nightly/linux/aarch64/RetroArch.7z
 #
 # ============================================================

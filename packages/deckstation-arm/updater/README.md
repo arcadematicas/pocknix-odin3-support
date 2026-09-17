@@ -59,6 +59,26 @@ paquete se construye desde el wheel (como `python-pyxel`), sin compilar.
 - **Mantenimiento**: el nombre del wheel lleva la versión de Python (`cp314`). Si ALARM
   sube de 3.14 hay que actualizar `_wheel` y el `sha256` o el paquete no se construye.
 
+## Auto-actualización de DeckStation: DESACTIVADA en ARM
+
+El Updater original trae un botón **"Actualizar DeckStation"** que descarga un `payload/`
+de una carpeta de MediaFire y lo aplica encima de la instalación (en `update/`, con
+registro en `update/.installed/`).
+
+**Esa carpeta (`1ixylxeqkr0wo`) es la del proyecto x86_64**, y su payload trae AppImages
+y `.AppImage.home` de **x86_64**. Aplicarlo en la Odin **pisaría los emuladores ARM con
+binarios x86_64**, que no arrancan.
+
+Por eso en este port:
+- `SYSTEM_UPDATE_ENABLED = False` → la opción **no se muestra** en el menú del Updater.
+- `_check_system_update()` y `start_system_update()` tienen salvaguarda y no hacen nada.
+- `MF_FOLDER_KEY` queda documentada por si algún día existe una carpeta con payload ARM:
+  basta poner su clave y activar el flag.
+
+De paso, el dibujado del menú se cambió de **índices fijos** (`idx == 1`) a **nombre de
+acción**, porque al ocultar una opción los índices se desplazan y el badge/el tema
+habrían aparecido en la fila equivocada.
+
 ## Cómo se lanza
 
 ```bash
