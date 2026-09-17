@@ -106,6 +106,21 @@ El formato plano `[AC]` se IGNORA. Referencia: `/etc/xdg/powerdevilrc`.
 | `stshunz/deckstation-arm` | `3011a92` (git.txt aarch64) · `296931b` (es_find_rules) · `c39d880` (es_systems 27 emus) |
 | `arcadematicas/pocknix-odin3-support` (centro) | `e1b756b` (git.txt) + este documento |
 | `arcadematicas/pocknix-os` (`odin3-sm8750`) | `ee47098` (pacman.conf) |
+| **PR #81** (`shuuri-labs/pocknix-os`) | **REBASEADO y MERGEABLE** (17/09 noche) |
+
+## ✅ PR #81 — REBASE HECHO, MERGEABLE (17/09/2026, noche)
+
+- El PR estaba **CONFLICTING** (upstream publicó v0.4: 32 commits nuevos en main).
+- **Rebase completo** de los 11 commits de `odin3-pr` sobre `origin/main` (rama temporal
+  `rebase-pr-20260917`, luego `git branch -f odin3-pr` + force-push a `arcadematicas`).
+- **2 conflictos resueltos**:
+  1. `pocknix-emulation-full/PKGBUILD`: mantuvimos nuestro cambio (los `-bin` a optdepends,
+     que es el propósito del commit eec2d4a) + el pkgdesc de upstream.
+  2. `pocknix-steam`: mantuvimos el gate DRM (esperar al panel DSI connected) + el `mark
+     "starting gamescope"` de upstream.
+- **Estado: `MERGEABLE`** (antes CONFLICTING). Sin checks de CI en la rama.
+- El mantenedor comentó el 15/09 ("lo revisaré mañana") pero no ha vuelto. **Pendiente**:
+  esperar su respuesta y responderle.
 
 ## ⚠️ GAPS DETECTADOS (pendientes)
 
@@ -113,8 +128,16 @@ El formato plano `[AC]` se IGNORA. Referencia: `/etc/xdg/powerdevilrc`.
    PKGBUILD referencia `deckstation-setup.sh`, `deckstation-launcher.sh`, `deckstation-update.sh`,
    `setup_arm64_apps.py` que **faltan** en `packages/deckstation-arm/scripts/` (solo hay `lanzar.sh`).
    → Sincronizar esas piezas al centro.
+   - **NOTA (noche)**: el sync de deckstation-arm usa `overlay` (sin `--delete`), así que los
+     configs editados a mano en el árbol SOBREVIVEN al sync. Los configs definitivos
+     (es_find_rules `1a1331cf`, es_systems `bb23cb59`, git.txt `49b4d79a`, lanzar.sh, updater.py)
+     ya están copiados al árbol → la próxima imagen los lleva.
 2. **`setup_arm64_apps.py` sin conectar** al flujo (nadie lo llama) y `deckstation-setup.sh`
    roto (descargaba el APK de Android de RetroArch). → Arreglar para que el setup sea reproducible.
-3. **Licencia GooseStation** (CC-BY-NC-ND + no distribuir): decidir si entra en la imagen.
+3. **Licencia GooseStation** (CC-BY-NC-ND + no distribuir): decisión de Fransis = **servidor
+   externo + descarga automatizada** (como lossless.dll). Pendiente de montar.
 4. **Ryujinx** (gitea por confirmar) y **PCSX2/PPPSPP/RPCS3/Citron** (sin ARM) siguen sin build.
 5. **Powerdevilrc + autostart DPMS**: llevarlos al proyecto (que las imágenes nuevas los traigan).
+   Estado: powerdevilrc anidado en la Odin (DisplaySleep=0, TurnOffDisplay=false, SuspendSession=0)
+   + autostart `deckstation-dpms-fix.desktop`. **Monitor de pantalla corriendo en la Odin**
+   (`/tmp/pantalla_monitor.log`, cada 30s) — pendiente de confirmar que ya no se apaga.
