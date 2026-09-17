@@ -1,0 +1,44 @@
+RPCS3
+https://github.com/RPCS3/rpcs3-binaries-linux/releases
+Duckstation
+https://github.com/stenzek/duckstation/releases
+Citron
+https://github.com/citron-neo/CI/releases/tag/nightly-linux
+PPSSPP
+https://github.com/hrydgard/ppsspp/releases
+Eden
+https://git.eden-emu.dev/api/v1/repos/eden-emu/eden/releases
+Hypseus Singe
+https://github.com/DirtBagXon/hypseus-singe/releases
+Retroarch
+https://buildbot.libretro.com/nightly/linux/x86_64/RetroArch.7z
+shadps4
+https://github.com/shadps4-emu/shadPS4/releases
+Dolphin
+https://github.com/pkgforge-dev/Dolphin-emu-AppImage/releases
+Mesen
+https://github.com/SourMesen/Mesen2/releases
+UZDoom
+https://github.com/UZDoom/UZDoom/releases
+Xenia Edge
+https://github.com/xenia-canary/xenia-canary/releases
+DosBoxPure
+https://github.com/pkgforge-dev/DOSBox-Pure-Unleashed-AppImage/releases
+Antimicrox
+https://github.com/AntiMicroX/antimicrox/releases
+GZDoom
+https://gitlab.com/ose-appimages/gzdoom/-/releases
+OpenBor
+https://github.com/DCurrent/openbor/releases
+Ryujinx
+https://git.ryujinx.app/Ryubing/Canary/releases
+Solarus
+https://gitlab.com/solarus-games/solarus/-/releases
+SuperZsnes
+https://github.com/pkgforge-dev/SUPER-ZSNES-AppImage/releases
+Vita3K
+https://github.com/Vita3K/Vita3K-builds/releases
+Xemu Chihiro
+https://github.com/xemu-project/xemu/releases
+SnowboardKids2
+https://github.com/cdlewis/snowboardkids2-recomp/releases
