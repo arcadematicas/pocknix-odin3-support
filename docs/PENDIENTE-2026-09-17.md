@@ -101,12 +101,77 @@ El formato plano `[AC]` se IGNORA. Referencia: `/etc/xdg/powerdevilrc`.
 
 ## 📦 Estado de los repos
 
-| Repo | Últimos commits (17/09 noche) |
+| Repo | Últimos commits |
 |---|---|
-| `stshunz/deckstation-arm` | `3011a92` (git.txt aarch64) · `296931b` (es_find_rules) · `c39d880` (es_systems 27 emus) |
-| `arcadematicas/pocknix-odin3-support` (centro) | `e1b756b` (git.txt) + este documento |
-| `arcadematicas/pocknix-os` (`odin3-sm8750`) | `ee47098` (pacman.conf) |
+| `stshunz/deckstation-arm` | `3011a92` · `296931b` · `c39d880` · **`4f43efe`** (Suyu+GooseStation+glcore) · **`006b927`** (XMB/FlatUX) · **`6f95157`** (despliegue de configs) · **`abec664`** (BIOS) |
+| `arcadematicas/pocknix-odin3-support` (centro) | `e1b756b` · **`589b256`** (oled-care) · **`0e97795`** (PKGBUILD) · **`3604ab3`** (bios) |
+| `arcadematicas/pocknix-os` (`odin3-sm8750`) | `ee47098` (pacman.conf) + árbol sincronizado |
 | **PR #81** (`shuuri-labs/pocknix-os`) | **REBASEADO y MERGEABLE** (17/09 noche) |
+
+## ✅ SESIÓN DE MADRUGADA (17→18/09) — lo hecho después
+
+### 1. ES-DE: cores de Suyu y GooseStation (regresión corregida)
+- El commit `c39d880` borró por error el `<command>` de **Suyu** → restaurado como primera
+  opción de `switch`. Añadido **GooseStation** como primera opción de `psx` (el core estaba
+  copiado pero ES-DE no lo conocía).
+- **Suyu arranca ya**: la causa del crash era que las claves van en
+  `<system>/suyu/keys/`, no en la raíz de `system/`. Sin ellas el cifrador AES queda sin
+  inicializar y el core revienta en `aes_util.cpp`. Verificado: "game loaded and running".
+
+### 2. RetroArch
+- `video_driver` vulkan → **glcore** (el Vulkan de Turnip en Adreno 8xx relentiza; problema
+  de driver, no de RetroArch).
+- Menú **XMB** + tema **FlatUX** con los 9 temas de iconos instalados (assets de
+  `libretro/retroarch-assets`, 82 MB — **no van en git**).
+
+### 3. OLED care — daemon arreglado
+- `oled-care-daemon.py`: guarda de modo juego (no refresca si corre ES-DE/RetroArch/Steam/
+  gamescope), `IDLE_SECONDS` 180 → 600, y re-escaneo de `/dev/input/event*` cada 60 s.
+- Antes lanzaba el refresher **~221 veces al día** (cada 3 min) y saltaba en mitad de una
+  partida. Desplegado en la Odin y en el centro (commit `589b256`).
+
+### 4. Configuración base reproducible
+- **`configs/deploy-manifest.txt`** + **`scripts/deckstation-configs.sh`**: despliegan la
+  config en cada emulador. Lo llaman el setup y el launcher (no-op si ya está todo).
+- Ya no hace falta el payload de MediaFire del Updater (era x86_64).
+- PKGBUILD: `chmod -R a+rX` en `configs/` (2 ficheros quedaban en 600 e ilegibles para deck).
+
+### 5. BIOS — solución externa
+- **`bios/`** con subcarpetas por sistema + **`bios/README.md`** (qué ficheros necesita cada
+  uno) + **`bios/deploy-bios.txt`** + **`scripts/deckstation-bios.sh`**. Se ejecuta también
+  en cada arranque. Los ficheros del usuario no se versionan.
+
+## ⚠️ GAPS DETECTADOS (pendientes)
+
+1. **Core de Suyu en la imagen**: el paquete `suyu-libretro` existe en el centro pero **no
+   está en `devices/sm8750/packages.list`** ni instalado. Hoy el `.so` es de un build manual.
+   → Añadirlo a la imagen y copiarlo a la carpeta portable de cores.
+2. **Core de GooseStation**: sin paquete ni entrada en `updater/git.txt`. Licencia
+   CC-BY-NC-ND + no redistribuir → **servidor externo + descarga automatizada** (decisión de
+   Fransis), pendiente de montar.
+3. **Assets XMB de RetroArch** (82 MB): no se descargan. → Añadir a `deckstation-setup.sh`.
+4. **`setup_arm64_apps.py` sin conectar** al flujo y `deckstation-setup.sh` todavía con el
+   `setup_retroarch` viejo (descargaba el APK de Android). Hoy los emuladores los instala el
+   **Updater** desde `git.txt`. → Unificar.
+5. **Centro vs stshunz**: el centro (`packages/deckstation-arm/`) ya tiene PKGBUILD +
+   `deckstation-configs.sh` + `deckstation-bios.sh` + `bios/`. Faltan en él
+   `configs/es-de/` y los scripts `deckstation-setup.sh`/`deckstation-launcher.sh`/
+   `deckstation-update.sh`/`setup_arm64_apps.py` (el sync es aditivo, así que no rompe).
+6. **Vita3K**: no es AppImage (`.7z` extraído) → no tiene `.home` portable ni recibe configs.
+7. **PCSX2 / PPSSPP / RPCS3 / Citron**: sin build ARM (sus entradas se omiten sin error).
+8. **Ryujinx** (gitea por confirmar) sin build.
+9. **Powerdevilrc + autostart DPMS**: llevarlos al proyecto para que las imágenes nuevas los
+   traigan. Estado: powerdevilrc anidado en la Odin (DisplaySleep=0, TurnOffDisplay=false,
+   SuspendSession=0) + autostart `deckstation-dpms-fix.desktop`.
+
+## 🔧 Para que una imagen nueva quede completa
+
+1. Recompilar la imagen (`make build` + `make sd-image`) con el árbol ya sincronizado.
+2. Flash + primer arranque → Pocknix Tools → "Download DeckStation (emulators)".
+3. Lanzar DeckStation: el launcher despliega las configs base solo.
+4. Bios: dejar los ficheros en `/opt/deckstation/bios/<sistema>/` (se reparten solos).
+5. **Falta**: meter el core de Suyu en la imagen (gap 1) y decidir GooseStation (gap 2).
+
 
 ## ✅ PR #81 — REBASE HECHO, MERGEABLE (17/09/2026, noche)
 
