@@ -48,6 +48,8 @@ package() {
         "${pkgdir}/opt/deckstation/scripts/deckstation-configs.sh"
     install -Dm755 "${sd}/scripts/deckstation-bios.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-bios.sh"
+    install -Dm755 "${sd}/scripts/deckstation-cores.sh" \
+        "${pkgdir}/opt/deckstation/scripts/deckstation-cores.sh"
 
     # Configs de emuladores (portables, rutas relativas)
     install -dm755 "${pkgdir}/opt/deckstation/configs"
