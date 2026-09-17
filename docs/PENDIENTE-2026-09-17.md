@@ -165,6 +165,20 @@ El formato plano `[AC]` se IGNORA. Referencia: `/etc/xdg/powerdevilrc`.
    traigan. Estado: powerdevilrc anidado en la Odin (DisplaySleep=0, TurnOffDisplay=false,
    SuspendSession=0) + autostart `deckstation-dpms-fix.desktop`.
 
+### 6. DeckStation en el modo juego de Steam + setup arreglado
+- **Setup arreglado**: `deckstation-setup.sh` descargaba el **RetroArch de Android**
+  (`RetroArch_ra32.apk`) y lo descomprimía en `Apps/RetroArch/` → rompía RetroArch en una
+  instalación limpia (y es el script de Pocknix Tools). Ahora baja los **assets** del
+  buildbot, **enlaza los cores** del sistema (`deckstation-cores.sh`), despliega
+  lanzar.sh + configs + bios, y **abre el Updater** para los emuladores.
+- **Game Mode**: `pocknix-steam-sync` (que corre antes de Steam) estaba muerto (apuntaba a
+  `~/ES-DE` + `pocknix-play`, de la capa de upstream que no instalamos). Reapuntado a
+  DeckStation → tile **"DeckStation"** en la biblioteca.
+- **Fix imprescindible**: el launcher de DeckStation no fijaba `SDL_VIDEODRIVER` → ES-DE
+  salía **en negro** desde gamescope.
+- **Pocknix Tools**: la opción prepara DeckStation y **ofrece** el asistente de WProton;
+  entrada propia para WProton.
+
 ## 🔧 Para que una imagen nueva quede completa
 
 1. Recompilar la imagen (`make build` + `make sd-image`) con el árbol ya sincronizado.
