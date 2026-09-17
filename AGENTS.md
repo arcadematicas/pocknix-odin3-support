@@ -243,5 +243,29 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
   `STEAM_GAMESCOPE_*`, `armada-powerd` (D-Bus), `controller-type`, MTP, HDR, UCM audio Odin 3.
 - **Suspensión**: RESUELTA con s2idle real + hook de pantalla (ver `SUSPEND-ISSUE.md`); el
   `fake-suspend` de ArmadaOS no se usa (solo es su reserva).
-- **Ya portado**: proton-wrapper/FEX, guestos-mount, fex-profiles, scx_lavd, steamos-shim,
-  RGB, splash, install-internal.
+  - **Ya portado**: proton-wrapper/FEX, guestos-mount, fex-profiles, scx_lavd, steamos-shim,
+    RGB, splash, install-internal.
+
+## 🎮 DECKSTATION EN LA IMAGEN (18/09/2026)
+
+**DeckStation ARM** es un proyecto **independiente de `stshunz`** (no es de Pocknix), pero
+nuestra imagen lo instala como capa de emulación. Lo vendored vive en
+`packages/deckstation-arm/` (PKGBUILD + updater + scripts) y el árbol de compilación lo
+tiene completo en `packages/shared/deckstation-arm/`.
+
+- **Documentación autoritativa**: `stshunz/deckstation-arm` →
+  `CAMBIOS-REALIZADOS.md` (secciones 8-11), `configs/README.md`, `bios/README.md`,
+  `docs/INSTALACION.md`. Y la sección "DeckStation" de
+  `/home/fransis/pocknix-odin3-project/AGENTS.md`.
+- **Config base reproducible**: `scripts/deckstation-configs.sh` +
+  `configs/deploy-manifest.txt` despliegan la config en cada emulador (lo llaman el setup
+  y el launcher). Ya **no** hace falta el payload de MediaFire del Updater (era x86_64).
+- **BIOS**: solución externa en `bios/` + `scripts/deckstation-bios.sh` (copyright: el
+  usuario pone sus ficheros y el script los reparte).
+- **Cores**: Suyu (Switch) necesita las claves en `<retroarch>/system/suyu/keys/`, y tanto
+  Suyu como GooseStation (PSX) necesitan su `<command>` en `es_systems.xml`.
+- **⚠️ Gap**: el paquete `suyu-libretro` **no está en `devices/sm8750/packages.list`** →
+  el core de Switch no entra en la imagen. Pendiente.
+- **Ojo con el sync**: `tools/sync-to-os.sh` usa `rsync` **sin `--delete`** → los ficheros
+  editados a mano en el árbol sobreviven; los ficheros nuevos del centro se añaden.
+
