@@ -143,20 +143,21 @@ El formato plano `[AC]` se IGNORA. Referencia: `/etc/xdg/powerdevilrc`.
 
 ## ⚠️ GAPS DETECTADOS (pendientes)
 
-1. **Core de Suyu en la imagen**: el paquete `suyu-libretro` existe en el centro pero **no
-   está en `devices/sm8750/packages.list`** ni instalado. Hoy el `.so` es de un build manual.
-   → Añadirlo a la imagen y copiarlo a la carpeta portable de cores.
+1. **Core de Suyu en la imagen**: ✅ HECHO — `build-image.sh` lo instala como **opcional**
+   (`for oe in suyu-libretro`, warn-on-fail) y `deckstation-cores.sh` lo enlaza a la carpeta
+   portable. **Ojo**: se compila desde fuente (submódulos + cmake) → build pesado; si falla,
+   la imagen sale sin el core de Switch.
 2. **Core de GooseStation**: sin paquete ni entrada en `updater/git.txt`. Licencia
    CC-BY-NC-ND + no redistribuir → **servidor externo + descarga automatizada** (decisión de
    Fransis), pendiente de montar.
-3. **Assets XMB de RetroArch** (82 MB): no se descargan. → Añadir a `deckstation-setup.sh`.
-4. **`setup_arm64_apps.py` sin conectar** al flujo y `deckstation-setup.sh` todavía con el
-   `setup_retroarch` viejo (descargaba el APK de Android). Hoy los emuladores los instala el
-   **Updater** desde `git.txt`. → Unificar.
+3. **Assets XMB de RetroArch** (82 MB): ✅ HECHO — `deckstation-setup.sh` los baja del
+   buildbot (`assets.zip`, ~75 MB) a la carpeta portable de assets.
+4. **`setup_arm64_apps.py` sin conectar** al flujo (lista de repos hardcodeada, no lee
+   `git.txt`). El **Updater** es el instalador real. → Unificar o retirarlo.
+   (`deckstation-setup.sh` ya NO descarga emuladores: abre el Updater.)
 5. **Centro vs stshunz**: el centro (`packages/deckstation-arm/`) ya tiene PKGBUILD +
-   `deckstation-configs.sh` + `deckstation-bios.sh` + `bios/`. Faltan en él
-   `configs/es-de/` y los scripts `deckstation-setup.sh`/`deckstation-launcher.sh`/
-   `deckstation-update.sh`/`setup_arm64_apps.py` (el sync es aditivo, así que no rompe).
+   `deckstation-{configs,bios,cores,setup,launcher}.sh` + `bios/`. Faltan en él
+   `configs/es-de/` y `deckstation-update.sh`/`setup_arm64_apps.py` (el sync es aditivo, no rompe).
 6. **Vita3K**: no es AppImage (`.7z` extraído) → no tiene `.home` portable ni recibe configs.
 7. **PCSX2 / PPSSPP / RPCS3 / Citron**: sin build ARM (sus entradas se omiten sin error).
 8. **Ryujinx** (gitea por confirmar) sin build.
