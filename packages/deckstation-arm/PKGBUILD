@@ -3,7 +3,7 @@
 # Proyecto independiente. Versión original (x86_64): deckstation-x86_64.
 pkgname=deckstation-arm
 pkgver=1.0.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Sistema de emulación portable para ARM (aarch64/armv7h)"
 arch=('aarch64' 'armv7h')
 url="https://github.com/stshunz/deckstation-arm"
