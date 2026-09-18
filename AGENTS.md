@@ -374,9 +374,73 @@ estable, ramas en `_versions`, `_develcommit` vs el HEAD de main). Solo informa.
   `glcore` (OpenGL) como workaround.
 - **ROCKNIX está en Mesa 26.2.0** → vamos por delante. **Mesa 26.3** sale en noviembre 2026.
 
-**⚠️ PENDIENTE (18/09)**: compilar los 2 paquetes (`sudo make packages PKG="mesa
-pocknix-turnip-arm"`) — no se pudo lanzar por falta de sudo en el PC. El tarball de Mesa
-26.2.3 ya está cacheado en `build/cache/`.
+  **⚠️ PENDIENTE (18/09)**: compilar los 2 paquetes (`sudo make packages PKG="mesa
+  pocknix-turnip-arm"`) — no se pudo lanzar por falta de sudo en el PC. El tarball de Mesa
+  26.2.3 ya está cacheado en `build/cache/`.
+
+## 🔴 KERNEL: 7.2.6 DESCARTADO → 7.2.4 + ROTACIÓN (18/09/2026)
+
+**Ver `docs/PENDIENTE-2026-09-18.md` para el detalle completo.**
+
+### Decisión
+El **7.2.6 tiene 2 regresiones de mainline** que lo hacen inviable en la Odin 3:
+
+1. **Display (panel negro)**: `dsi_calc_clk_rate_6g()` (7.2.5+) añade `clk_round_rate()`
+   del byte clock y **sobrescribe** `byte_clk_rate` → el pixel clock deja de cuadrar →
+   `Failed to set rate pixel clk, -22` → panel negro + bucle de
+   `dpu_encoder_frame_done_timeout` → la red nunca sube (parece que no arranca).
+   Revertir `dsi_host.c` a 7.2.4 lo arreglaba ✅ (**el display arrancó**).
+2. **WiFi**: `ath12k_wifi7_pci ... failed to set mhi state: POWER_ON(2)` →
+   `failed to start mhi: -110` → `probe with driver ath12k_wifi7_pci failed with error -110`
+   (timeout del MHI a los ~90 s → no hay `wlan0`). Revertir el **driver ath12k completo**
+   a 7.2.4 **NO bastó** → el fallo está en el **MHI** (`drivers/bus/mhi/host/*`) y/o
+   **`pcie-qcom.c`**, que también cambiaron. (Ese revert combinado está generado y
+   aplica limpio, pero no llegó a compilarse.)
+
+**Los parches de rotación NO eran los culpables** (un 7.2.6 sin rotación fallaba igual).
+
+### Estado actual (lo compilado y flasheado)
+```
+Base:    linux-7.2.4  (sha256 01710ee01737dac492f1bae52becd057e08d20d11589089aa06accff415c28dd)
+Parches: 98 (05-speedup 22 + 10-mainline 5 + 20-sm8750 66 + 30-version 5), 0 conflictos
+KERNEL:  18.964.480 bytes, md5 204c05194598
+```
+Los **3 parches de rotación** aplican **sin offset** y están verificados en el árbol:
+`0013` (infra inline rotation), `0067` (QSEED detail enhancer), `0068` (rotación sm8750).
+Commit **`bc08546`** en `pocknix-os` rama `odin3-sm8750`.
+
+> ⚠️ **Cómo verificar parches**: mirar el **árbol de fuentes**
+> (`build/kernel/sm8750/linux-7.2.4/`), **no** la imagen `KERNEL` (está comprimida).
+> `rot_v2` no sirve de marcador (es upstream). Ojo con mayúsculas (`QSEED` ≠ `qseed`).
+> **`rot_maxheight` no lo añade ningún parche nuestro.**
+
+### 🚨 La SD se corrompió (btrfs) — 18/09/2026
+Al copiar los módulos 7.2.4 saltó `Error de entrada/salida`; dmesg:
+`BTRFS error (device sde2): parent transid verify failed ... wanted 4292 found 4279`.
+El `btrfs check` mostró patrón de **rollback** (`Extent back ref already exists` +
+transid mismatch) — probablemente **la Odin restauró un snapshot** al arrancar
+(hay `@snapshots/0006`…`0010`). El montaje normal ya no funciona.
+
+**Leer los datos**:
+```bash
+sudo mount -o ro,rescue=all /dev/sde2 /mnt                      # subvol @
+sudo mount -o ro,rescue=all,subvol=@home /dev/sde2 /mnt2        # @home
+```
+**Backup hecho** en
+`/run/media/fransis/ROMS16TB/proyectos Alfred/pocknix-odin3/backup-sd-2026-09-18/`
+(`home-deck/` 38 GB + `etc/` + `root/` + `var_lib_pacman/`).
+El **KERNEL del FAT está intacto** (vfat) → el flasheo funcionó.
+**Pendiente**: `btrfs check --repair` vs re-flashear la imagen + restaurar.
+
+### ⏳ Pendiente para el domingo
+1. Arrancar con el kernel flasheado → display + WiFi (es 7.2.4, debería ir todo).
+2. Decidir la SD (reparar vs re-flashear).
+3. Rotación **por hardware**: quitar `--force-composition-rotation` de `pocknix-steam`
+   (hoy se rota por composición).
+4. **gamescope**: nuestro `6644cc9a` vs el de ROCKNIX `fa0b4d33` (43 commits más nuevo).
+   Falta `--rotated-output-max-height` (parche ROCKNIX `0008`, 2 de 4 hunks fallan
+   contra el nuestro). Decidir: subir a `fa0b4d33` o rebasar el parche.
+5. ABL 1.1.7→1.1.8 · Mesa 26.2.3 + Turnip · frame limiter QAM · ext4 vs F2FS.
 
 
 
