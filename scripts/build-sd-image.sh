@@ -10,7 +10,7 @@
 source "$(dirname "$0")/lib.sh"
 need_linux
 need_root sd-image
-for t in parted sgdisk mkfs.vfat mkfs.btrfs btrfs losetup rsync chroot truncate du; do need_tool "$t"; done   # sgdisk: gptfdisk pkg
+for t in parted sgdisk mkfs.vfat mkfs.btrfs btrfs losetup rsync chroot truncate du chattr; do need_tool "$t"; done   # sgdisk: gptfdisk pkg
 
 KERNEL_IMG="${IMAGE_DIR}/KERNEL"
 KOUT="${KERNEL_BUILD_DIR}/out"   # per-SoC (set in lib.sh)
@@ -81,8 +81,8 @@ firstboot_config() {
 PARTUUID=${SD_ROOT_PARTUUID}  /                  btrfs  rw,noatime,compress=zstd:1                       0 0
 PARTUUID=${SD_ROOT_PARTUUID}  /home              btrfs  rw,noatime,compress=zstd:1,subvol=@home          0 0
 PARTUUID=${SD_ROOT_PARTUUID}  /.snapshots        btrfs  rw,noatime,compress=zstd:1,subvol=@snapshots     0 0
-PARTUUID=${SD_ROOT_PARTUUID}  /var/cache/pacman  btrfs  rw,noatime,compress=zstd:1,subvol=@pacman-cache  0 0
-PARTUUID=${SD_ROOT_PARTUUID}  /var/log           btrfs  rw,noatime,compress=zstd:1,subvol=@var-log       0 0
+  PARTUUID=${SD_ROOT_PARTUUID}  /var/cache/pacman  btrfs  rw,noatime,nodatacow,subvol=@pacman-cache  0 0
+  PARTUUID=${SD_ROOT_PARTUUID}  /var/log           btrfs  rw,noatime,nodatacow,subvol=@var-log       0 0
 PARTUUID=${SD_BOOT_PARTUUID}  /flash             vfat   rw,noatime,nofail                                0 2
 EOF
   echo "pocknix" > "${root}/etc/hostname"
@@ -113,6 +113,14 @@ EOF
   for d in Desktop Documents Downloads Music Pictures Videos; do
     mkdir -p "${root}/home/deck/${d}"
   done
+  # Steam's library is the highest-churn tree on the device: game downloads, shader
+  # caches and the compatdata prefixes. COW + checksums there buy nothing (the data is
+  # re-downloadable) and cost write amplification and fragmentation, so create it up
+  # front with nodatacow. `chattr +C` is inherited by every file created inside, and
+  # Steam populates it on first run. Mirrors ArmadaOS's setup-steamapps. No-op off btrfs.
+  mkdir -p "${root}/home/deck/.local/share/Steam/steamapps"
+  chattr +C "${root}/home/deck/.local/share/Steam/steamapps" 2>/dev/null \
+    || log "warn: chattr +C on steamapps failed (not btrfs?) — Steam library stays COW"
   # also owns the Steam tree build-image.sh pre-extracted here (root-owned until now)
   chroot "${root}" chown -R deck:deck /home/deck
   # DeckStation (emulation) and WProton (Windows games) live in /opt and must be writable by
