@@ -185,20 +185,34 @@ sudo mount -o ro,rescue=all,subvol=@home /dev/sde2 /mnt2
 
 ---
 
-## 5. Pendiente: decidir qué hacer con la SD
+## 5. La SD: qué se hizo y en qué estado queda
 
-Opciones (de menos a más destructiva):
+Se aplicaron, en este orden:
 
-1. **`btrfs check --repair`** sobre `/dev/sde2` (desmontada). Puede arreglar el
-   transid + los backrefs. Riesgo: puede empeorar. Con la copia hecha, el riesgo
-   es asumible.
-2. **`btrfs rescue super-recover -y`** (falló con "device is busy" porque estaba
-   montada — reintentar desmontada).
-3. **Re-flashear la imagen completa de la SD** (`make sd-image` / el script del
-   repo) + restaurar `home-deck/`. Es lo más limpio y garantiza SD sana para el
-   domingo, pero hay que reinstalar/restaurar.
+1. **`btrfs check --repair`** → decía `ERROR: failed to repair root items` (el árbol
+   raíz del FS, root **-9**, está roto), pero **dejó la SD montable**.
+2. **`btrfs rescue zero-log`** → `Clearing log on /dev/sde2, previous log_root 0`.
+   **Esto fue lo que arregló el montaje en lectura/escritura** (antes solo montaba RO;
+   el error era `nologreplay must be used with ro mount option`).
+3. **Segunda pasada de `check --repair`** → mismo error del root -9, sin mejoría.
 
-**Recomendación**: probar (1); si no queda perfecta, ir a (3) con la copia ya hecha.
+**Estado resultante**:
+- ✅ Monta en **RW** y escribe correctamente.
+- ✅ Módulos `7.2.4` completos (286 `.ko`, `ath12k.ko` 20.489.096 bytes, `modules.dep`
+  y `modules.dep.bin` presentes). Se borraron los `7.2.6` sobrantes.
+- ✅ `KERNEL` en el FAT: 18.964.480 bytes, md5 `204c05194598` (7.2.4 + rotación).
+- ⚠️ **Quedan 16.450 inodos huérfanos** (`no inode item, link count wrong` +
+  `unresolved ref`), sobre todo configs de RetroArch en el home. El árbol raíz del FS
+  (-9) sigue roto → **no es 100% fiable**.
+
+**Decisión**: se deja la SD **tal cual** (arranca y tiene lo necesario) y se prueba el
+domingo. Si da problemas, hay **`tools/reflash-sd.sh`** listo (re-flashea la imagen +
+expande la partición + flashea nuestro kernel + restaura el home desde el backup).
+Alternativa **sin borrar**: desde el menú de arranque de la Odin, restaurar un snapshot
+de `@snapshots` (`0006`…`0010`) — eso reconstruye un árbol consistente.
+
+> El `KERNEL` del FAT siempre está a salvo (es vfat, no btrfs). Los backups de la SD
+> están en `/run/media/fransis/ROMS16TB/proyectos Alfred/pocknix-odin3/backup-sd-2026-09-18/`.
 
 ---
 
