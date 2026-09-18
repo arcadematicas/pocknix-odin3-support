@@ -247,8 +247,7 @@ ROCKNIX) o (B) rebasar el parche `0008` a nuestro commit `6644cc9a`.
 
 ## 7. Herramientas y trucos (reutilizables)
 
-- `tools/check-mesa.sh`, `tools/flash-kernel.sh`, `tools/restore-kernel-from-sd.sh`,
-  `tools/build-suyu-core-x86.sh`.
+- `tools/check-mesa.sh`, `tools/flash-kernel.sh`, `tools/restore-kernel-from-sd.sh`.
 - **Leer el journal de la SD** (funciona siempre, aunque la Odin no tenga red):
   ```bash
   sudo mount -o ro,subvol=@var-log /dev/sde2 /mnt
