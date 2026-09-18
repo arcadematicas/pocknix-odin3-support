@@ -99,6 +99,34 @@ repos de la org con ideas:
 
 ---
 
+## 6. Almacenamiento: ext4 vs F2FS en la UFS interna (`pocknix-install-internal`)
+
+**Fuente:** análisis propio (18/09/2026) + `armadaos-reference/libexec-armada/setup-steamapps`
+**Qué es:** valorar con qué filesystem se instala el sistema en la **UFS interna** (mucho más
+rápida que la microSD) y si merece la pena dar soporte F2FS de verdad.
+
+**Contexto medido (18/09/2026):**
+- Raíz actual: **btrfs en microSD**, **~82 MB/s** de lectura secuencial (`dd iflag=direct`,
+  81.6-83.9 MB/s en 3 pasadas). Es el techo real para cargar juegos.
+- `pocknix-install-internal` **ya existe** y clona el rootfs a la UFS interna… **en ext4**.
+- El kernel **ya trae F2FS** (`CONFIG_F2FS_FS=y`) y desde el 18/09 se empaqueta
+  `f2fs-tools` (`config/packages/base.list`).
+
+| Idea | Qué aporta | Estado |
+|---|---|---|
+| **F2FS como raíz de la microSD** | Nada que lo compense | 🔴 **DESCARTADA** — perdería snapshots/rollback (`pocknix-snapshots` + `pocknix-rollback` + hook alpm), checksums y compresión zstd; y en una SD el controlador ya hace wear-leveling/FTL (la ventaja de F2FS es para NAND/UFS crudos). *Dato: ArmadaOS tiene F2FS en el kernel y empaqueta `f2fs-tools`… pero su raíz es Btrfs.* |
+| **F2FS en el root de la UFS interna** | Es el **único escenario donde tiene sentido**: el root interno **ya es ext4** (sin snapshots), así que F2FS **no perdería nada en seguridad** y sí ganaría su gestión de flash donde el SO ve el dispositivo | 🟡 **REVISAR** — decidir `ext4` vs `f2fs` en `pocknix-install-internal`. Requiere: opción de formato, cmdline/initramfs, `pocknix-expand-root`, y **medir** (fio) antes/después |
+| **`read_ahead_kb` 128→512** | — | 🔴 **DESCARTADA por medición** — experimento controlado (fichero de 536 MB, caché frío, 3 pasadas alternando): 128 KB → 6303/6329 ms vs 512 KB → 6340/6378 ms. **Sin diferencia** (la SD está limitada por ancho de banda, no por latencia). Regla udev revertida |
+| **`nodatacow` en `steamapps` + `/var/log` + `/var/cache/pacman`** | Menos amplificación de escritura y fragmentación (no más velocidad bruta) | ✅ **IMPLEMENTADO** (18/09/2026) — `build-sd-image.sh` crea `steamapps` con `chattr +C`; fstab con `nodatacow` en los dos subvolúmenes. Espeja el `setup-steamapps` de ArmadaOS |
+| **`f2fs-tools` en la imagen** | F2FS *disponible* para una partición de datos/externa | ✅ **IMPLEMENTADO** (18/09/2026) — `config/packages/base.list` |
+
+**Para retomar esta idea:** mirar `pocknix-install-internal` (reparto de la UFS + clonado +
+`pocknix-expand-root`) y decidir el FS. Si se elige F2FS: `mkfs.f2fs` en el instalador,
+`f2fs` en cmdline/initramfs si hiciera falta, y **medir con `fio` en la UFS interna** — hoy
+no hay ni un dato de la UFS, solo de la SD (~82 MB/s).
+
+---
+
 ## Cómo añadir una idea
 
 1. Añade una entrada con: **fuente** (URL), **qué hace**, **qué nos aporta**,

@@ -269,3 +269,26 @@ tiene completo en `packages/shared/deckstation-arm/`.
 - **Ojo con el sync**: `tools/sync-to-os.sh` usa `rsync` **sin `--delete`** → los ficheros
   editados a mano en el árbol sobreviven; los ficheros nuevos del centro se añaden.
 
+## 💾 ALMACENAMIENTO: ext4 vs F2FS en la UFS interna — PENDIENTE DE REVISAR (18/09/2026)
+
+**Análisis completo en `docs/IDEAS.md` §6.** Resumen:
+
+- **Medido**: raíz btrfs en microSD → **~82 MB/s** de lectura secuencial (`dd iflag=direct`).
+  Es el techo real para cargar juegos. No hay ningún dato de la UFS interna todavía.
+- **F2FS en la raíz de la microSD → 🔴 DESCARTADA**: perdería snapshots/rollback
+  (`pocknix-snapshots` + `pocknix-rollback` + hook alpm), checksums y compresión zstd; y en
+  una SD el controlador ya hace wear-leveling/FTL. *(ArmadaOS tiene F2FS en el kernel y
+  empaqueta `f2fs-tools`… pero su raíz es Btrfs.)*
+- **F2FS en el root de la UFS interna → 🟡 A REVISAR**: `pocknix-install-internal` **ya existe**
+  y clona a la UFS interna **en ext4** — o sea que **ya pierde los snapshots** → F2FS ahí **no
+  perdería nada en seguridad** y sí ganaría su gestión de flash donde el SO ve el dispositivo.
+- **`read_ahead_kb` 128→512 → 🔴 DESCARTADA por medición**: 128 KB → 6303/6329 ms vs
+  512 KB → 6340/6378 ms (fichero de 536 MB, caché frío, 3 pasadas alternando). Sin diferencia.
+- **Ya implementado (18/09)**: `f2fs-tools` en `config/packages/base.list`; `nodatacow` en
+  `steamapps` (`chattr +C`) + `/var/log` + `/var/cache/pacman` (tweak de ArmadaOS que no
+  teníamos). Commits `64bc7e0` (árbol) y `c6d99bd` (centro).
+
+**Siguiente paso si se retoma**: leer `pocknix-install-internal` (reparto de la UFS + clonado +
+`pocknix-expand-root`), decidir `ext4` vs `f2fs` y **medir con `fio` en la UFS interna**.
+
+
