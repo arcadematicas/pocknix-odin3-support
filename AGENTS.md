@@ -336,5 +336,48 @@ se creyó que el cliente Steam ARM64 no comunicaba el límite a gamescope por **
 
 **⚠️** El atom a 60 **no prueba nada** (el 09/09 ya se vio 60 sin que Steam lo escribiera).
 
+## 🎨 STACK GRÁFICO — Mesa / Turnip (18/09/2026)
+
+**Qué tenemos** (paquetes en `pocknix-os/packages/soc/`, versiones en el centro solo como
+`soc-overrides/<name>/socs` para añadir `sm8750`):
+- **`mesa`** → `pkgname=(mesa vulkan-freedreno)`, build propio desde el tarball de
+  `archive.mesa3d.org` (recortado para handhelds, tuned cortex-x3). Ahora **26.2.3**.
+- **`pocknix-turnip-arm`** → instala **una build de Turnip por rama upstream** en
+  `/usr/share/pocknix/vk-arm/<version>/libvulkan_freedreno.so` + su `icd.json`:
+  `25.0.7 25.1.9 25.2.8 25.3.6 26.0.8 26.1.6 26.3.0devel`.
+  El `26.3.0devel` es un **snapshot fijo de mesa main** (`_develcommit`) — la vía para "ir
+  siempre a la última" **sin arriesgar el driver del sistema**.
+- **`pocknix-turnip-x86`** → equivalente x86_64 para apps bajo FEX.
+
+**Cómo se usa la versión por juego**: PocknixControl → pestaña **Games** → elegir juego →
+activar **"Use Per-Game Settings"** → aparece **"Mesa Version"** (el plugin apunta
+`VK_DRIVER_FILES` a esa versión). ⚠️ **No está en el menú global del QAM** — es por juego y
+está oculta hasta activar ese toggle.
+
+**Herramienta**: `tools/check-mesa.sh` — compara upstream con lo nuestro y avisa (Mesa
+estable, ramas en `_versions`, `_develcommit` vs el HEAD de main). Solo informa.
+
+**Actualizar**:
+1. `tools/check-mesa.sh` → ver qué está desfasado.
+2. Mesa del sistema: bumpear `pkgver` + `sha256sums` en `pocknix-os/packages/soc/mesa/PKGBUILD`.
+   **Mirar antes las notas del release** (`docs.mesa3d.org/relnotes/<v>.html`): si no trae
+   nada de **freedreno/Turnip**, no merece la pena el rebuild.
+3. Turnip devel: refrescar `_develcommit` (+ `pkgver`) en `pocknix-turnip-arm/PKGBUILD`.
+4. Compilar: `sudo make packages PKG="mesa pocknix-turnip-arm"` (**necesita root**;
+   `pocknix-turnip-arm` compila **una Mesa por rama** → build muy largo).
+
+**Notas de hardware (Adreno 830 / Gen8)**:
+- El problema histórico era que Turnip **no cargaba** en Gen8; se resolvió con Turnip
+  **v26.1.0+**. ⚠️ Las builds **25.x probablemente NO funcionan** en esta GPU — no tiene
+  sentido probarlas por juego.
+- No hay issues abiertos de *stutter* con Vulkan en Adreno 8xx; en RetroArch seguimos con
+  `glcore` (OpenGL) como workaround.
+- **ROCKNIX está en Mesa 26.2.0** → vamos por delante. **Mesa 26.3** sale en noviembre 2026.
+
+**⚠️ PENDIENTE (18/09)**: compilar los 2 paquetes (`sudo make packages PKG="mesa
+pocknix-turnip-arm"`) — no se pudo lanzar por falta de sudo en el PC. El tarball de Mesa
+26.2.3 ya está cacheado en `build/cache/`.
+
+
 
 
