@@ -81,17 +81,34 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 - **Overlay Steam sobre juegos**: sigue sin funcionar (upstream FEX/ARM); se oyen menús pero no se dibuja. No es nuestra config.
 - Cargar la Odin y arrancar en Linux para validar todo lo anterior.
 
-## FRAME LIMITER QAM - DIAGNOSTICADO (09/09/2026) - PENDIENTE SOLUCION REAL
+## FRAME LIMITER QAM — ⏳ PROBAR ESTA NOCHE (actualizado 18/09/2026)
+
 - **Sintoma**: el selector de fps del QAM (24/30/60, global e individual) se mueve pero los fps no varian.
-- **CAUSA RAIZ**: el cliente Steam ARM64 NO comunica el limite a gamescope por NINGUN canal:
-  - Atom X GAMESCOPE_FPS_LIMIT: NO lo escribe (se queda en 60, verificado con xprop -root en :0)
-  - Protocolo Wayland de gamescope: NO se conecta al socket (ss -x muestra solo gamescope-wl consigo mismo)
+- **CAUSA RAIZ (diagnostico del 09/09)**: el cliente Steam ARM64 NO comunicaba el limite a gamescope
+  por NINGUN canal:
+  - Atom X GAMESCOPE_FPS_LIMIT: NO lo escribia (se quedaba en 60, verificado con xprop -root en :0)
+  - Protocolo Wayland de gamescope: NO se conectaba al socket (ss -x: solo gamescope-wl consigo mismo)
   - D-Bus (pocknix-steamos-manager): NO llama
-  - Archivo de config: NO guarda nada (grep fps en todos los .vdf = vacio)
-- El selector del QAM es SOLO UI; el valor no llega a ningun sitio.
-- **WORKAROUND APLICADO**: gamescopectl debug_set_fps_limit 60 en pocknix-steam (linea ~131) al arrancar la sesion. Limite FIJO 60fps.
-- **PARA SOLUCION FUTURA**: probar otra version/canal de Steam que implemente el frame limiter ARM64, o un daemon que lea el limite de un archivo y lo aplique con gamescopectl. El parche 0004-fps-limit-atom-persist.patch SI esta en el binario y funciona (validado con vkcube: 30->29fps) - el problema es que Steam no escribe el atom.
-- Backup pocknix-steam: /usr/bin/pocknix-steam.bak-fps60
+  - Archivo de config: NO guardaba nada (grep fps en todos los .vdf = vacio)
+- **WORKAROUND (09/09)**: `gamescopectl debug_set_fps_limit 60` en `pocknix-steam`. Limite FIJO 60.
+  → **YA NO ESTA** (se quito el 16/09) y no existe en ningun otro sitio. El backup
+  `/usr/bin/pocknix-steam.bak-fps60` tampoco existe ya.
+- **🔄 ACTUALIZACION 18/09 (manana) — ESTO CAMBIA EL DIAGNOSTICO**:
+  - **Steam SI persiste el limite por app** en
+    `~/.local/share/Steam/userdata/<id>/config/localconfig.vdf`:
+    `"Gamescope" { "AppTargetFrameRate" { "<appid>" "<fps>" } }`
+    (el 18/09 a las 08:00 tenia 1 entrada y el fichero se reescribe con actividad).
+    **Esa era exactamente la pieza que faltaba** para el "daemon que lea el limite de un archivo".
+  - El atom marca **60** y el parche `0004-fps-limit-atom-persist.patch` **si** esta aplicado
+    (gamescope `3.16.25-7-g6644cc9a+`). Pero **60 no prueba nada**: el 09/09 ya se observo 60
+    sin que Steam lo escribiera → hay que hacer el test para distinguir.
+  - Canal de Steam: `steamdeck_publicbeta`. El shim no expone nada de fps.
+- **⏳ TEST PENDIENTE (30 s, necesita UI)**: en Game Mode, cambiar el limite del QAM a **30** y mirar
+  (a) si `localconfig.vdf` pasa a 30, (b) si el atom pasa a 30, (c) si el juego va a 30.
+  - **Si cambia el atom** → **ya funciona** (un cliente mas nuevo lo arreglo) → cerrar el tema.
+  - **Si solo cambia el fichero** → **implementar el daemon**: vigilar `localconfig.vdf` (inotify)
+    + el atom `GAMESCOPE_FOCUSED_APP` y aplicar con `gamescopectl debug_set_fps_limit <fps>`.
+    El parche de gamescope ya hace **persistir** el atom, asi que con eso deberia quedar cerrado.
 
 ## FIX % BATERIA - INSTALADO Y VERIFICADO (09/09/2026)
 - **CAUSA**: el firmware Debug_Board congela voltage_ocv tras el arranque (solo lo reporta una vez). El parche 0078 usaba ese OCV congelado -> % estatico.
@@ -290,5 +307,34 @@ tiene completo en `packages/shared/deckstation-arm/`.
 
 **Siguiente paso si se retoma**: leer `pocknix-install-internal` (reparto de la UFS + clonado +
 `pocknix-expand-root`), decidir `ext4` vs `f2fs` y **medir con `fio` en la UFS interna**.
+
+## ⏳ FRAME LIMITER DEL QAM — PROBAR ESTA NOCHE (anotado 18/09/2026)
+
+**Contexto**: el selector de FPS del QAM (24/30/60) se diagnosticó el 09/09 como "solo UI" —
+se creyó que el cliente Steam ARM64 no comunicaba el límite a gamescope por **ningún** canal
+(atom, protocolo Wayland, D-Bus, fichero) y se aplicó un workaround **fijo a 60**
+(`gamescopectl debug_set_fps_limit 60` en `pocknix-steam`).
+
+**Estado verificado el 18/09**:
+- El workaround **YA NO ESTÁ** en `pocknix-steam` (se quitó el 16/09) ni en ningún otro sitio.
+- El atom `GAMESCOPE_FPS_LIMIT` marca **60**.
+- El parche `fps-limit-atom-persist` **sí está aplicado** (gamescope `3.16.25-7-g6644cc9a+`).
+- **🔑 Hallazgo nuevo**: Steam **SÍ persiste** el límite por app en
+  `~/.local/share/Steam/userdata/<id>/config/localconfig.vdf` →
+  `"Gamescope" { "AppTargetFrameRate" { "<appid>" "<fps>" } }`.
+- El shim `pocknix-steamos-manager` **no** expone nada de fps.
+
+**TEST (30 s, necesita UI)**:
+1. Game Mode → QAM → cambiar el límite de FPS a **30**.
+2. Comprobar: (a) `localconfig.vdf` → ¿30? · (b) `DISPLAY=:0 xprop -root | grep GAMESCOPE_FPS_LIMIT`
+   → ¿30? · (c) ¿el juego va a 30?
+3. **Interpretación**: si cambia el atom → **ya funciona**, cerrar el tema. Si **solo** cambia
+   el fichero → **implementar el daemon**: vigilar `localconfig.vdf` (inotify) + el atom
+   `GAMESCOPE_FOCUSED_APP` y aplicar con `gamescopectl debug_set_fps_limit <fps>` (el parche de
+   gamescope ya hace persistir el atom). **Ya sabemos de qué fichero leerlo** — era la pieza que
+   faltaba en el diagnóstico del 09/09.
+
+**⚠️** El atom a 60 **no prueba nada** (el 09/09 ya se vio 60 sin que Steam lo escribiera).
+
 
 
