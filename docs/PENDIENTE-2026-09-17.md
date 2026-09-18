@@ -152,14 +152,17 @@ El formato plano `[AC]` se IGNORA. Referencia: `/etc/xdg/powerdevilrc`.
    Fransis), pendiente de montar.
 3. **Assets XMB de RetroArch** (82 MB): ✅ HECHO — `deckstation-setup.sh` los baja del
    buildbot (`assets.zip`, ~75 MB) a la carpeta portable de assets.
-4. **`setup_arm64_apps.py` sin conectar** al flujo (lista de repos hardcodeada, no lee
-   `git.txt`). El **Updater** es el instalador real. → Unificar o retirarlo.
-   (`deckstation-setup.sh` ya NO descarga emuladores: abre el Updater.)
+4. **`setup_arm64_apps.py`: ✅ RETIRADO (18/09).** Era un instalador headless con la lista de
+   repos hardcodeada y **sin conectar al flujo** (nadie lo llamaba). El **Updater**
+   (`updater/git.txt`) es el único mecanismo de descarga. Al retirarlo se migró **PPSSPP** a
+   `git.txt` (sí publica `anylinux-aarch64.AppImage`); **Mesen** y **Redream** se
+   descartaron (sin build Linux ARM limpio / repo inexistente en GitHub) y sus sistemas ya
+   los cubren cores de RetroArch.
 5. **Centro vs stshunz**: el centro (`packages/deckstation-arm/`) ya tiene PKGBUILD +
    `deckstation-{configs,bios,cores,setup,launcher}.sh` + `bios/`. Faltan en él
-   `configs/es-de/` y `deckstation-update.sh`/`setup_arm64_apps.py` (el sync es aditivo, no rompe).
+   `configs/es-de/` y `deckstation-update.sh` (el sync es aditivo, no rompe).
 6. **Vita3K**: no es AppImage (`.7z` extraído) → no tiene `.home` portable ni recibe configs.
-7. **PCSX2 / PPSSPP / RPCS3 / Citron**: sin build ARM (sus entradas se omiten sin error).
+7. **PCSX2 / RPCS3 / Citron**: sin build ARM (sus entradas se omiten sin error).
 8. **Ryujinx** (gitea por confirmar) sin build.
 9. **Powerdevilrc + autostart DPMS**: llevarlos al proyecto para que las imágenes nuevas los
    traigan. Estado: powerdevilrc anidado en la Odin (DisplaySleep=0, TurnOffDisplay=false,
@@ -204,16 +207,16 @@ El formato plano `[AC]` se IGNORA. Referencia: `/etc/xdg/powerdevilrc`.
 
 ## ⚠️ GAPS DETECTADOS (pendientes)
 
-1. **El centro NO tiene `configs/es-de/`** (los ES-DE configs solo viven en stshunz). El
-   PKGBUILD referencia `deckstation-setup.sh`, `deckstation-launcher.sh`, `deckstation-update.sh`,
-   `setup_arm64_apps.py` que **faltan** en `packages/deckstation-arm/scripts/` (solo hay `lanzar.sh`).
-   → Sincronizar esas piezas al centro.
+1. **Centro vs stshunz**: el centro (`packages/deckstation-arm/`) ya tiene PKGBUILD +
+   `scripts/{deckstation-setup,deckstation-launcher,deckstation-configs,deckstation-bios,deckstation-cores,lanzar}.sh`
+   + `bios/` + `updater/`. **Faltan** en él `configs/` (los configs viven en el repo de stshunz)
+   y `deckstation-update.sh`. → Sincronizar esas piezas al centro.
    - **NOTA (noche)**: el sync de deckstation-arm usa `overlay` (sin `--delete`), así que los
      configs editados a mano en el árbol SOBREVIVEN al sync. Los configs definitivos
      (es_find_rules `1a1331cf`, es_systems `bb23cb59`, git.txt `49b4d79a`, lanzar.sh, updater.py)
      ya están copiados al árbol → la próxima imagen los lleva.
-2. **`setup_arm64_apps.py` sin conectar** al flujo (nadie lo llama) y `deckstation-setup.sh`
-   roto (descargaba el APK de Android de RetroArch). → Arreglar para que el setup sea reproducible.
+2. **`setup_arm64_apps.py`: ✅ RETIRADO (18/09)** — nadie lo llamaba y el Updater es el
+   instalador real. `deckstation-setup.sh` ya no descarga emuladores (abre el Updater) ✅.
 3. **Licencia GooseStation** (CC-BY-NC-ND + no distribuir): decisión de Fransis = **servidor
    externo + descarga automatizada** (como lossless.dll). Pendiente de montar.
 4. **Ryujinx** (gitea por confirmar) y **PCSX2/PPPSPP/RPCS3/Citron** (sin ARM) siguen sin build.

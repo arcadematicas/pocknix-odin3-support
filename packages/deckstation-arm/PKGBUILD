@@ -40,8 +40,6 @@ package() {
         "${pkgdir}/opt/deckstation/scripts/deckstation-launcher.sh"
     install -Dm755 "${sd}/scripts/deckstation-update.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-update.sh"
-    install -Dm755 "${sd}/scripts/setup_arm64_apps.py" \
-        "${pkgdir}/opt/deckstation/scripts/setup_arm64_apps.py"
     install -Dm755 "${sd}/scripts/lanzar.sh" \
         "${pkgdir}/opt/deckstation/scripts/lanzar.sh"
     install -Dm755 "${sd}/scripts/deckstation-configs.sh" \

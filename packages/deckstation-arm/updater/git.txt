@@ -71,6 +71,11 @@ Vita3K
 https://github.com/Vita3K/Vita3K-builds/releases
 SnowboardKids2
 https://github.com/cdlewis/snowboardkids2-recomp/releases
+# PPSSPP publica anylinux-aarch64.AppImage en su propio repo (v1.20.4+).
+# El sistema psp de ES-DE ya tiene el core de RetroArch como opcion 1 y este
+# standalone como opcion 2 (es_find_rules -> ./Apps/PPSSPP/lanzar.sh).
+PPSSPP
+https://github.com/hrydgard/ppsspp/releases
 #
 # --- URL directa (no es un repo: descarga fija) ---
 RetroArch
@@ -81,8 +86,6 @@ https://buildbot.libretro.com/nightly/linux/aarch64/RetroArch.7z
 # ============================================================
 # PCSX2
 # https://github.com/pkgforge-dev/PCSX2-AppImage-Enhanced/releases
-# PPSSPP
-# https://github.com/pkgforge-dev/PPSSPP-AppImage/releases
 # SUPER-ZSNES
 # https://github.com/pkgforge-dev/SUPER-ZSNES-AppImage/releases
 # RPCS3
