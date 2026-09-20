@@ -374,9 +374,23 @@ estable, ramas en `_versions`, `_develcommit` vs el HEAD de main). Solo informa.
   `glcore` (OpenGL) como workaround.
 - **ROCKNIX está en Mesa 26.2.0** → vamos por delante. **Mesa 26.3** sale en noviembre 2026.
 
-  **⚠️ PENDIENTE (18/09)**: compilar los 2 paquetes (`sudo make packages PKG="mesa
-  pocknix-turnip-arm"`) — no se pudo lanzar por falta de sudo en el PC. El tarball de Mesa
-  26.2.3 ya está cacheado en `build/cache/`.
+  **✅ HECHO (20/09/2026) — INSTALADO EN LA ODIN**:
+  ```
+  mesa              2:26.2.2-1  →  2:26.2.3-1
+  vulkan-freedreno  2:26.2.2-1  →  2:26.2.3-1
+  pocknix-turnip-arm  20260904  →  20260918
+  ```
+  Verificado con `vulkaninfo --summary`: `driverName = turnip Mesa driver`,
+  `driverInfo = Mesa 26.2.3-pocknix2.1`, `deviceName = Adreno (TM) 830`,
+  `apiVersion = 1.4.354`.
+
+  **⚠️ Al compilar: `DEVICE=sm8750` es obligatorio** (`sudo make packages PKG="mesa
+  pocknix-turnip-arm"` a secas va al repo `sm8550`). **La Mesa nueva solo entra en
+  procesos nuevos** → hay que reiniciar sesión/reiniciar para que la use la sesión.
+
+  **Si makepkg falla con "Integrity checks (sha256) differ in size from the source array"**:
+  al añadir un `source=` hay que añadir su entrada en `sha256sums=` (un `SKIP` vale para
+  parches).
 
 ## 🔴 KERNEL: 7.2.6 DESCARTADO → 7.2.4 + ROTACIÓN (18/09/2026)
 
@@ -432,15 +446,27 @@ sudo mount -o ro,rescue=all,subvol=@home /dev/sde2 /mnt2        # @home
 El **KERNEL del FAT está intacto** (vfat) → el flasheo funcionó.
 **Pendiente**: `btrfs check --repair` vs re-flashear la imagen + restaurar.
 
-### ⏳ Pendiente para el domingo
-1. Arrancar con el kernel flasheado → display + WiFi (es 7.2.4, debería ir todo).
-2. Decidir la SD (reparar vs re-flashear).
-3. Rotación **por hardware**: quitar `--force-composition-rotation` de `pocknix-steam`
-   (hoy se rota por composición).
-4. **gamescope**: nuestro `6644cc9a` vs el de ROCKNIX `fa0b4d33` (43 commits más nuevo).
-   Falta `--rotated-output-max-height` (parche ROCKNIX `0008`, 2 de 4 hunks fallan
-   contra el nuestro). Decidir: subir a `fa0b4d33` o rebasar el parche.
-5. ABL 1.1.7→1.1.8 · Mesa 26.2.3 + Turnip · frame limiter QAM · ext4 vs F2FS.
+### ✅ RESULTADO (20/09/2026) — TODO RESUELTO, objetivo cumplido
+
+Se hizo todo lo pendiente del domingo y más. **Detalle completo de la rotación en
+`docs/ROTACION-HARDWARE.md`**; resumen de la sesión en `docs/PENDIENTE-2026-09-20.md`.
+
+| Qué | Resultado |
+|---|---|
+| **SD** | Estaba **irrecuperable** (`btrfs check --repair` no basta). **Re-flasheada** + FAT reformateado (estaba corrupto) + expandida a 119G + home/`opt` restaurados. Ver `docs/PENDIENTE-2026-09-18.md` y `tools/reflash-sd.sh` |
+| **Display/WiFi** | ✅ El 7.2.4 + rotación arranca; WiFi, audio y mando OK |
+| **Rotación por hardware** | ✅ **CONSEGUIDA** — `rotation=8` (`ROTATE_270`) en los planos activos → rota el DPU en scanout. Parche `packages/soc/gamescope/0010-…`, commit `51c8def` |
+| **gamescope** | Decisión tomada: **rebasado el parche** (no subir a `fa0b4d33`). Aplica con 0 hunks fallidos. Versión resultante `6644cc9-5` |
+| **ABL 1.1.8** | ✅ **Ya estaba flasheado** en ambos slots (`state=uptodate`); solo el kit estaba en 1.1.7 |
+| **Mesa 26.2.3 + Turnip** | ✅ Instalados y verificados con `vulkaninfo` |
+| **BTF (rompía los módulos)** | ✅ Fix con `DEBUG_INFO_DWARF4`, commit `6d9f751` |
+
+### ⏳ Sigue pendiente (no era de esta sesión)
+1. **Frame limiter del QAM** — validar con un juego (ver sección propia arriba).
+2. **ext4 vs F2FS** en la UFS interna (`docs/IDEAS.md` §6).
+3. **Carga de batería** (`charge_enable`, opcode 0x16 vs 0x33) — no es nuevo.
+4. (Menor) Reiniciar para que la Mesa nueva entre en la sesión.
+
 
 
 
