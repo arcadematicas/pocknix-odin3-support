@@ -205,6 +205,55 @@ deploy_lanzar_sh() {
 }
 
 # Configs base + BIOS (no destructivos: solo rellenan lo que falte).
+# ----------------------------------------------------------------------
+# libXss: RetroArch en DeckStation NO es un AppImage, es el binario nativo del
+# buildbot, y enlaza contra libXss.so.1. Hay hosts (imagenes minimalistas) que
+# no traen el paquete libxss -> "error while loading shared libraries:
+# libXss.so.1" y ES-DE no lanza NINGUN emulador de RetroArch.
+#
+# Se provisiona en <root>/lib (que lanzar.sh ya mete en el LD_LIBRARY_PATH)
+# desde el paquete oficial de ALARM, sin exigir que el host lo tenga ni
+# ensuciar /usr/lib. Si el host ya lo tiene, no se hace nada.
+# ----------------------------------------------------------------------
+setup_libxss() {
+    local lib_dir="${DECKSTATION_ROOT}/lib"
+    local arch pkg base url tmp
+
+    if [ -e /usr/lib/libXss.so.1 ] || [ -e "${lib_dir}/libXss.so.1" ]; then
+        log_ok "libXss disponible"
+        return 0
+    fi
+
+    case "$(uname -m)" in
+        aarch64) arch="aarch64" ;;
+        armv7l)  arch="armv7h" ;;
+        *) log_warn "libXss: sin paquete para $(uname -m); se omite"; return 0 ;;
+    esac
+
+    # Version pinneada (la que usa ALARM extra). Si upstream la sube, el
+    # fallback de lanzar.sh (runtime de Steam) sigue cubriendo el caso.
+    pkg="libxss-1.2.5-1-${arch}.pkg.tar.xz"
+    base="http://mirror.archlinuxarm.org/${arch}/extra"
+    url="${base}/${pkg}"
+    tmp="${LOG_DIR}/${pkg}"
+
+    log "libXss no esta en el sistema; provisionando en ${lib_dir}..."
+    if ! curl -L --progress-bar -o "$tmp" "$url"; then
+        rm -f "$tmp"
+        log_warn "No se pudo descargar libXss; RetroArch podria no arrancar"
+        return 0
+    fi
+
+    mkdir -p "$lib_dir"
+    if tar -xJf "$tmp" -C "$lib_dir" --strip-components=2 usr/lib/libXss.so.1.0.0 2>/dev/null; then
+        ln -sf libXss.so.1.0.0 "${lib_dir}/libXss.so.1" 2>/dev/null || true
+        log_ok "libXss provisionada en ${lib_dir}"
+    else
+        log_warn "No se pudo extraer libXss del paquete"
+    fi
+    rm -f "$tmp"
+}
+
 deploy_configs_and_bios() {
     if [ -x "${SCRIPTS_DIR}/deckstation-configs.sh" ]; then
         log "Desplegando configs base de DeckStation..."
@@ -285,6 +334,7 @@ main() {
     echo ""
 
     setup_retroarch_assets
+    setup_libxss
     deploy_system_cores
     deploy_lanzar_sh
     deploy_configs_and_bios
