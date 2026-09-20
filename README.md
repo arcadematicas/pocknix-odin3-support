@@ -1,129 +1,176 @@
-# pocknix-os · AYN Odin 3 (SM8750 / Snapdragon 8 Elite)
+# pocknix-odin3-support — AYN Odin 3 (SM8750 / Snapdragon 8 Elite)
 
-Aportes para hacer que **pocknix-os** corra en el **AYN Odin 3** (plataforma
-SM8750, Adreno 830). El objetivo es que el proyecto pocknix pueda **fusionar
-este soporte** y ofrecer el Odin 3 como dispositivo soportado.
+**El centro de nuestro trabajo** para hacer que [pocknix-os](https://github.com/shuuri-labs/pocknix-os)
+(Arch Linux ARM) corra en la **AYN Odin 3** (Qualcomm **SM8750** / **Adreno 830**).
 
-## Estado actual
-- ✅ **Arranca** (kernel 7.2.0 + DTS de dispositivo).
-- ✅ **Sesión de juego** (gamescope + Steam Deck gamepadui) **estable**, sin
-  `VkDeviceLost`.
-- ✅ **Mando + táctil** funcionando (InputPlumber, incluido el gamepad UART del
-  Odin 3 vía driver `rsinput`).
-- ✅ **WiFi** (NetworkManager) + **cuenta de Steam** + **juegos**.
-- ✅ **Audio** — sound card `SM8750-AYN` funciona (ADSP habilitado).
-- ✅ **Batería** — `pmic_glink` reporta capacidad correctamente (aunque el fuel
-  gauge del ADSP puede venir descalibrado de fábrica; ver `BATTERY-ISSUE.md`).
-- ✅ **Bootanimation Odin 3** — splash de arranque con la animación oficial del
-  Odin 3 dibujada en `/dev/fb0` (sin Plymouth, ver `config/splash/`).
-- ✅ **ADSP + CDSP** corriendo (`adsp`/`cdsp` remoteproc `running`).
-- ✅ **QAM** — botón Select abre el menú Quick Access.
-- ✅ **Escritorio (Plasma Mobile)**: **KScreen enumera el panel** (Ajustes →
-  Pantalla muestra el monitor `DSI-1` con su resolución y rotación). Causa del
-  fallo original: faltaba el paquete **`kscreen`** (KCM de pantalla); ver
-  `KSCREEN-ISSUE.md`. La imagen oficial ya lo incluye vía
-  `pocknix-desktop-full`.
-- ✅ **Suspensión (s2idle real)**: el botón de encendido **suspende de verdad** y,
-  al resumir, la pantalla se reactiva sola. Causa del fallo original: un stub
-  `pocknix-fake-suspend.sh` interceptaba `systemd-suspend.service` y salía al
-  instante (solo parpadeaba la pantalla). Detalle en `SUSPEND-ISSUE.md`.
-- ⚠️ **Sensores IIO**: `hexagonrpcd` compilado e instalado (servicio
-  `hexagonrpcd-adsp-sensorspd.service`), pero **sale al arrancar y no expone
-  dispositivos IIO** → no hay acelerómetro ni sensor de luz ambiental. Por eso no
-  funcionan la auto-rotación ni el **brillo adaptativo** (KScreen reporta
-  `Automatic brightness: unsupported`). Pendiente: bring-up del sensor PD del
-  ADSP (registry/`sns_reg` + logs de `hexagonrpcd`).
+Este repo es la **fuente de verdad**: parches de kernel y gamescope, paquetes propios
+(Mesa/Turnip, bootloader, BSP, DeckStation…), overlay de sistema, herramientas y toda la
+documentación. El árbol de compilación (`pocknix-os`) **se regenera desde aquí**, nunca al revés.
 
-## Qué contiene
+> ⚠️ **No es un fork del sistema.** El sistema vive en
+> **`arcadematicas/pocknix-os`** (rama **`odin3-sm8750`**), que mezcla upstream + lo de aquí.
+> Este repo solo contiene *lo nuestro*.
+
+---
+
+## 📊 Estado actual (20/09/2026)
+
+| Área | Estado |
+|---|---|
+| **Arranque** | ✅ Kernel **7.2.4** + DTS del Odin 3. Arranque en ~20 s (`pocknix-diag` a timer, no bloquea) |
+| **Rotación de pantalla** | ✅ **POR HARDWARE** — el DPU rota en scanout (`rotation=8`/`ROTATE_270`), sin coste de GPU. Ver [`docs/ROTACION-HARDWARE.md`](docs/ROTACION-HARDWARE.md) |
+| **Sesión de juego** | ✅ gamescope + Steam gamepadui estable (sin `VkDeviceLost`) |
+| **Gráficos** | ✅ **Mesa 26.2.3** + **Turnip 20260918** (`driverInfo = Mesa 26.2.3-pocknix2.1`, Adreno 830, Vulkan 1.4.354) |
+| **Mando + táctil** | ✅ InputPlumber, incluido el gamepad UART (driver `rsinput`) |
+| **WiFi / Bluetooth** | ✅ NetworkManager + `hci0` (ath12k **WCN7860**) |
+| **Audio** | ✅ Sound card `SM8750AYN` (ADSP + stack LPASS completo) |
+| **Batería** | ✅ Carga + % estimado por OCV (ver [`docs/BATTERY-ISSUE.md`](docs/BATTERY-ISSUE.md)) |
+| **Suspensión** | ✅ `s2idle` real + hook que reactiva la pantalla al resumir ([`docs/SUSPEND-ISSUE.md`](docs/SUSPEND-ISSUE.md)) |
+| **Escritorio (Plasma)** | ✅ KScreen enumera el panel ([`docs/KSCREEN-ISSUE.md`](docs/KSCREEN-ISSUE.md)) |
+| **Bootanimation** | ✅ Splash del Odin 3 dibujado en `/dev/fb0` (sin Plymouth) |
+| **Bootloader** | ✅ **ABL 1.1.8** en ambos slots (`pocknix-update-abl --status` → `uptodate`) |
+| **Emulación** | ✅ DeckStation ARM en `/opt/deckstation/` (capa de emulación propia) + WProton |
+| **Panel Decky** | ✅ PocknixControl en la imagen (potencia, luces, OLED care) |
+| **Sensores IIO** | ⚠️ `hexagonrpcd` sale al arrancar y no expone IIO → **sin auto-rotación ni brillo adaptativo** |
+
+> El detalle de la sesión más reciente y lo que queda: [`docs/PENDIENTE-2026-09-20.md`](docs/PENDIENTE-2026-09-20.md)
+
+---
+
+## 🎯 El hito: rotación por hardware
+
+El panel es **1080x1920 portrait** y el escritorio se usa en landscape. Rotar en el
+**compositor** cuesta una pasada de GPU **por frame**; rotar en el **scanout del DPU** es gratis.
+
+Conseguirlo requirió dos mitades que tienen que encajar:
+
+1. **Kernel** — los parches de rotación inline del DPU (`0013`, `0067`, `0068`).
+2. **gamescope** — el parche `0010` (rebasado del de ROCKNIX) que añade
+   `--rotated-output-max-height`, para que gamescope sepa **cuándo** puede rotar en scanout.
+
+Y el detalle que costó más: **la BTF**. Con GCC 16 el DWARF por defecto es DWARF 5, y pahole
+generaba BTF de módulos **malformada** → el kernel rechazaba **todos** los módulos (sin audio,
+sin mando, sin zram). Fix: `DEBUG_INFO_DWARF4`.
+
+👉 **Guía completa (incluye cómo verificarlo):** [`docs/ROTACION-HARDWARE.md`](docs/ROTACION-HARDWARE.md)
+
+---
+
+## 🗂️ Estructura
+
 | Ruta | Qué es |
 |---|---|
-| `kernel/cq8725s-ayn-odin3.dts` | DTS del dispositivo Odin 3 (SM8750) — ADSP/CDSP habilitados, rutas firmware corregidas a `ayn/odin3` |
-| `kernel/cq8725s-ayn-common.dtsi` | DTS común AYN CQ8725S (compartido entre Odin 3 y otros dispositivos AYN) |
-| `kernel/0001-adreno-a8xx-force-gx-collapse-before-cx.patch` | **Fix del GPU** (VkDeviceLost / GMU GX-GDSC). Complementario al `0050` de ROCKNIX |
-| `kernel/0002-input-rsinput-uart-gamepad.patch` | **Fix del gamepad UART** (driver `rsinput`), necesario para el mando del Odin 3 en modo consola (backport a 7.2) |
-| `kernel/sm8750-patches/` | **64 patches SM8750** (0026-1300): SoC ID, panel, touchscreen, LEDs, GPU, WiFi/BT, audio, haptics, rsinput, fan, etc. |
-| `config/session-fixes.md` | Documentación completa de todos los fixes (12 fixes documentados) |
-| `config/odin3-post-boot-setup.sh` | Script de setup post-boot (suspensión, WiFi, rotación, sensores) |
-| `config/ayn_mcu.yaml` | InputPlumber fix: Select → QuickAccess (QAM) |
-| `config/hexagonrpcd/` | hexagonrpcd cross-compile + service file para sensores IIO |
-| `config/daemons/` | **Daemons**: `power-button-daemon.py` (botón encendido → pantalla on/off) + `volume-button-daemon.py` (volumen → PipeWire en modo juego) + sus servicios systemd |
-| `config/oled-care/` | **OLED care**: `oled-care-daemon` (pixel refresher automático tras N min de inactividad) + `oled-refresher-auto` + refresher C |
-| `config/decky-plugin/` | Backend del plugin Decky: `oled_care.py` (pixel refresher, detección de modo juego) |
-| `config/fake-suspend/` | **Fake Suspend (OBSOLETO)**: script + servicio + override systemd que evitaba la suspensión real. **Ya no se usa**: el Odin 3 suspende con `s2idle` real y despierta con la pantalla encendida (ver `SUSPEND-ISSUE.md`). |
-| `config/splash/` | **Bootanimation Odin 3**: splash de arranque dibujando en `/dev/fb0` (servicio + reproductor + conversor de frames). Sin Plymouth (no dibuja en el panel DSI). |
-| `config/power/` | **Gestión de potencia**: fan mode `off`, selector de governor CPU, power profiles (pseudo-TDP bajo/medio/alto) y aplicación **por juego** con restauración automática. Todo integrado en PocknixControl. |
-| `config/steamui-watchdog/` | **Watchdog de la UI de Steam**: reinicia steamwebhelper si la UI se congela (bug FEX/CEF). Healthcheck al puerto de debug cada 30s. |
-| `config/fex/` | Variables FEX de estabilidad (`FEX_JIT_BlockLinking=0`, `FEX_GDBServer=0`, `FEX_EARLY_LOG_DISABLE=1`) |
-| `config/mangohud/` | **MangoHud parcheado SM8750**: fuente + config compacta (barra horizontal) + toggle por paddle M2 (F13) |
-| `config/inputplumber/` | Capability map AYN modificado: paddle M2 → tecla F13 (toggle MangoHud) |
-| `config/pocknix-control-plugin/` | Plugin PocknixControl actualizado (backend + frontend): fan off, governor, power profiles (global y per-game) |
-| `config/odin3-display.service.clean` | `odin3-display.service` **limpiado**: sin el `rotation` sysfs (ya no existe; es propiedad DRM) ni los `modprobe` muertos → deja de fallar (era la única unidad en `failed`) |
-| `BATTERY-ISSUE.md` | Issue de batería: fuel gauge corre en el firmware ADSP (percent viene del firmware), descalibrado `Debug_Board`, solución = ciclo de carga en Android |
-| `KSCREEN-ISSUE.md` | **RESUELTO**: KScreen no veía el panel en escritorio — faltaba el paquete `kscreen` (KCM Ajustes → Pantalla) |
-| `SUSPEND-ISSUE.md` | **RESUELTO**: suspensión real (s2idle) del Odin 3 — causa (stub `fake-suspend`), bloqueo de `vhci_hcd`/InputPlumber, y hook que reactiva la pantalla al resumir |
-| `FIRMWARE-ISSUE.md` | **RESUELTO (13/09/2026)**: una imagen limpia no tenía WiFi ni sonido — `linux-firmware` no trae los blobs del Odin 3 (ath12k **WCN7860**, ADSP/CDSP en `qcom/sm8750/ayn/odin3/`, `aw883xx_acf.bin`, `SM8750-AYN-tplg.bin`). Se bajan de `ROCKNIX/extra-firmware` en `make sync`. Incluye el bug de `pocknix-flathub.service` bloqueando el boot. Commit `fbe787e` (`odin3-pr`) |
-| `BOOT-OOBE-ISSUE.md` | **RESUELTO (14/09/2026)**: arranque lentísimo (minutos → 20.7 s) por `pocknix-diag.service` bloqueando `multi-user.target` + race de gamescope vs panel DSI; OOBE de Steam no aparecía (faltaba `/etc/steamos-oobe-image`) y, con el marker, reiniciaba en bucle (Steam lo trata como "Deck factory image" → `RestartPC()` al terminar). Fix final: `pocknix-oobe-marker.service` borra el marker al completarse la OOBE. Commits `e574b2a`, `b88018d`, `d13f65d`, `a5bfc9d` |
+| **`kernel/patches/`** | Nuestro set de parches del kernel, aplicados en orden numérico por el build: `05-speedup` (22, aceleración de kbuild), `10-mainline` (5, input/pwm/BT/DPU), `20-sm8750` (6, **nuestros**), `30-version` (2) |
+| **`kernel/dts/`** | `cq8725s-ayn-odin3.dts` + `cq8725s-ayn-common.dtsi` (panel, WiFi, mando, rutas de firmware `ayn/odin3`) |
+| **`packages/`** | Paquetes propios: `gamescope` (parche 0010), `pocknix-steam`, `pocknix-bootloader-sm8750`, `pocknix-bsp-sm8750` (daemons/servicios/device.conf), `pocknix-bsp-common`, `linux-pocknix-sm8750`, `soc-overrides` (mesa, turnip, mangohud…), `deckstation-arm`, `suyu-libretro`, `python-pygame-ce`, `pocknix-tools`, `pocknix-desktop` |
+| **`overlay/`** | Ficheros que van al rootfs: `pocknix-diag.timer`, `pocknix-oobe-marker.service`, bootanimation, `pocknix-oobe-marker` |
+| **`tools/`** | `sync-to-os.sh` + `check-sync.sh` (centro ↔ árbol), `flash-kernel.sh`, `reflash-sd.sh`, `restore-kernel-from-sd.sh`, `deploy-to-device.sh`, `check-mesa.sh`, `push-file.sh` |
+| **`scripts/`** | `build-packages.sh` y `build-sd-image.sh` (nuestras versiones; el sync las lleva al árbol) |
+| **`docs/`** | Toda la documentación (índice abajo) |
+| **`reference/`** | Material de consulta: estudio de ArmadaOS, backups de ABL/kernel, parches superados, variantes de lanzador |
+| **`BUILD.md`** | Guía de compilación desde cero para colaboradores |
 
-## Lo más valioso para upstream
-1. **Adreno a8xx GX-collapse fix** — resuelve el `VkDeviceLost` del compositor
-   en Adreno 830 (SM8750). Afecta a GPU de esta familia. **Complementario** al
-   `0050` de ROCKNIX (el `0050` define el `.power_off` del GX GDSC pero solo
-   colapsa con `synced_poweroff`; este parche es quien lo activa en
-   `a8xx_recover` — ambos son necesarios).
-2. **DTS del Odin 3** — soporte de dispositivo SM8750 (panel, WiFi, mando),
-   con firmware ADSP/CDSP apuntando a `ayn/odin3/`.
-3. **Driver gamepad `rsinput`** (backport a 7.2) — sin él no se detecta el mando
-   del Odin 3 en modo consola.
-4. **Ajustes de sesión** — el recetario para que gamescope/Steam funcionen.
-5. **Daemons de botones** — power button (pantalla on/off) + volume (PipeWire)
-   para modo juego.
-6. **OLED care** — pixel refresher nativo (C + SDL2) + automatización systemd
-   (solo en modo juego, cada 4h).
-7. **FEX fix** — `FEX_EARLY_LOG_DISABLE=1` para reducir crashes de
-   `steamwebhelper` (bug CEF + FEX, fix parcial upstream 2603).
-8. **Suspensión real (s2idle) + hook de pantalla** — el Odin 3 suspende de verdad
-   (`s2idle`) y al resumir la pantalla se reactiva sola. Incluye:
-   `mem_sleep_default=s2idle` en el cmdline, `pocknix-powerd` mirando el **DPMS del
-   conector** (no `bl_power`), y el hook `sleep.d/post/004-display`
-   (`gamescopectl drm_sleep_internal_screen 0` + desbloqueo de `bl_power`).
-   Ver `SUSPEND-ISSUE.md`. (El antiguo "fake-suspend" queda **obsoleto**.)
-9. **Bootanimation en fb0** — el patrón para splash de arranque en handhelds con
-   panel DSI sin EDID: **dibujar en `/dev/fb0`** desde un servicio systemd (como
-   `rocknix-splash`), no Plymouth. Incluye la extracción del bootanimation
-   desde los `super_*.img` fragmentados de la ROM Android.
-10. **Batería** — diagnóstico: el fuel gauge del Odin 3 corre en el firmware ADSP
-    y el percent llega directo del firmware (sin perfil cargado:
-    `MODEL_NAME=Debug_Board`). Útil para no perder tiempo "parcheando en el
-    kernel" algo que solo se arregla recalibrando en Android.
-11. **MangoHud SM8750 parcheado** — el MangoHud genérico no lee el GPU del SM8750
-    mainline (busca rutas kgsl que no existen). Los parches de ROCKNIX apuntan a
-    `gpuss0_thermal` y `/sys/class/devfreq/3d00000.gpu`. Compilación cruzada
-    aarch64 desde x86 (rootfs + qemu). Ojo: mangoapp es autocontenido → hay que
-    reemplazar su binario, no solo las libs.
-12. **Watchdog de UI para FEX/CEF** — steamwebhelper expone un puerto de debug
-    (`127.0.0.1:8080`); si deja de responder, la UI está congelada → reiniciarlo.
-    Healthcheck sencillo que complementa el fix parcial de FEX.
-13. **Pseudo-TDP en SM8750** — el SM8750 mainline **no expone nodo de TDP**; la
-    vía práctica es limitar frecuencias máx de CPU (`scaling_max_freq`) y GPU
-    (`devfreq max_freq`). Perfiles bajo/medio/alto con restauración del snapshot
-    original.
-14. **Patrón per-game con restauración por PID** — el wrapper de proton escribe
-    `/run/pocknix/game-mode` con `pid fan lavd governor profile`; los daemons
-    aplican el tweak mientras el PID vive y restauran el global al morir. Campos
-    **añadidos al final** para no romper a los lectores existentes
-    (`read -r pid fan _`). Reutilizable para cualquier tweak por juego.
-15. **Plugin Decky en la imagen** — PocknixControl vive en
-    `/usr/share/decky-plugins/` y Decky lo copia a `homebrew/` al arrancar:
-    los cambios al plugin hay que hacerlos en la **fuente** o se pierden.
+---
 
-## Notas
-- Basado en kernel 7.2.0 (sm8750), rebasado sobre el árbol de ROCKNIX.
-- El 7.1.0 funcionaba, pero el 7.2.0 no arrancaba salvo por 2 regresiones que se
-  corrigieron: (1) el DTS apuntaba el firmware ADSP/CDSP a los genéricos
-  `qcom/sm8750/*.mbn` y dejaba `remoteproc_cdsp` `disabled`; (2) el `.config` se
-  había regenerado perdiendo opciones. Con el DTS corregido + `.config` del 7.1,
-  el 7.2.0 arranca y **supera al 7.1.0** (CDSP activo, stack LPASS completo,
-  Bluetooth, gamepad).
-- Sin credenciales/secretos.
-- El trabajo se hizo en un fork local; estos artefactos están listos para
-  portar/mergear.
+## 🔧 Cómo se trabaja aquí
+
+### Reglas de oro
+
+1. **Se edita SIEMPRE en este repo.** `pocknix-os` es el árbol de compilación: se regenera con
+   `tools/sync-to-os.sh`.
+2. Tras editar: **`tools/sync-to-os.sh`** y **`tools/check-sync.sh`** (el build llama a este
+   último y **aborta si el árbol no coincide con el centro**).
+3. **`DEVICE=sm8750` es obligatorio** en `make build` / `make kernel` / `make packages`
+   (por defecto compilan `sm8550`).
+4. **Lo upstreamable** (kernel, DTS, BSP, fixes de arranque) se saca a la rama `odin3-pr` en
+   commits limpios. **Nuestro desarrollo** (DeckStation, MAKO…) se queda en `odin3-sm8750`.
+
+### ⚠️ La trampa del sync (nos ha mordido)
+
+El sync **copia del centro al árbol**, así que **si el centro está más viejo, REVIERTE**
+mejoras ya commiteadas. Ya pasó con el PKGBUILD del bootloader (volvía a 1.1.7) y con el parche
+`0010` de gamescope (se habría perdido la rotación por HW).
+
+> **Regla**: tras arreglar algo en el árbol, **copiarlo al centro y commitearlo en la misma
+> sesión**. Comprobar con `git diff HEAD -- <fichero>` después de cada sync.
+
+### Compilar
+
+```bash
+# En el árbol (pocknix-os), tras sincronizar:
+JOBS=14 DEVICE=sm8750 ./scripts/build-kernel.sh     # kernel
+sudo env DEVICE=sm8750 make packages PKG=gamescope  # paquetes (necesita root)
+```
+
+Guía completa: [`BUILD.md`](BUILD.md)
+
+---
+
+## 💡 Lo más valioso (candidato a upstream)
+
+1. **Rotación por hardware en paneles portrait del DPU** — parches de kernel `0013/0067/0068` +
+   el parche de gamescope `0010`. Aplica a cualquier SoC con rotador inline (no solo SM8750).
+2. **Fix de la BTF con GCC 16** — `DEBUG_INFO_DWARF4`; sin él el kernel rechaza todos los
+   módulos y el sistema arranca sin audio/mando/zram. Afecta a cualquier build con GCC ≥ 16.
+3. **Adreno a8xx GX-collapse fix** (`0051`) — resuelve el `VkDeviceLost` del compositor en
+   Adreno 830. **Complementario** al `0050` de ROCKNIX (los dos son necesarios).
+4. **DTS del Odin 3** — soporte SM8750 (panel, WiFi, mando) con firmware ADSP/CDSP en `ayn/odin3/`.
+5. **Driver gamepad `rsinput`** (backport) — sin él no se detecta el mando UART del Odin 3.
+6. **Suspensión s2idle real + hook de pantalla** — `mem_sleep_default=s2idle`, `pocknix-powerd`
+   mirando el **DPMS del conector** (no `bl_power`) y el hook `sleep.d/post/004-display`.
+   El bloqueo de `vhci_hcd` (InputPlumber) abortaba el suspend.
+7. **Firmware del Odin 3** — `linux-firmware` no trae los blobs (ath12k **WCN7860**,
+   `qcom/sm8750/ayn/odin3/`, `aw883xx_acf.bin`, `SM8750-AYN-tplg.bin`). Se bajan de
+   `ROCKNIX/extra-firmware` en `make sync`. Ver [`docs/FIRMWARE-ISSUE.md`](docs/FIRMWARE-ISSUE.md).
+8. **Carga de batería** — la clave era el `adsp_dtb.mbn` con la config de **autenticación de
+   batería** del ADSP. Sin él el firmware entraba en TEST MODE y no cargaba.
+9. **Arranque + OOBE** — `pocknix-diag` como timer, gate de gamescope vs panel DSI, marker de la
+   OOBE y el `steamos-update apply` que devuelve 0 (→ bucle de reinicio). Ver
+   [`docs/BOOT-OOBE-ISSUE.md`](docs/BOOT-OOBE-ISSUE.md).
+10. **Pseudo-TDP en SM8750** — el SoC no expone nodo de TDP; la vía práctica es limitar
+    `scaling_max_freq` (CPU) y `devfreq max_freq` (GPU), con perfiles bajo/medio/alto.
+11. **Patrón per-game con restauración por PID** — el wrapper de Proton escribe
+    `/run/pocknix/game-mode`; los daemons aplican el tweak mientras el PID vive y restauran al
+    morir. Campos **añadidos al final** para no romper lectores existentes.
+12. **MangoHud parcheado SM8750** — el genérico no lee el GPU del SM8750 mainline (busca rutas
+    kgsl que no existen); los parches de ROCKNIX apuntan a `gpuss0_thermal` y
+    `/sys/class/devfreq/3d00000.gpu`.
+13. **Watchdog de la UI de Steam** — `steamwebhelper` bajo FEX/CEF se congela; healthcheck al
+    puerto de debug (`127.0.0.1:8080`) para reiniciarlo.
+14. **Bootanimation en fb0** — el patrón para splash en handhelds con panel DSI sin EDID:
+    dibujar en `/dev/fb0` desde systemd, no Plymouth.
+15. **Plugin Decky en la imagen** — PocknixControl en `/usr/share/decky-plugins/`; Decky lo copia
+    a `homebrew/` al arrancar, así que los cambios van en la **fuente** o se pierden.
+
+---
+
+## 📚 Documentación
+
+| Doc | Qué cuenta |
+|---|---|
+| [`docs/ROTACION-HARDWARE.md`](docs/ROTACION-HARDWARE.md) | **Rotación por hardware**: las 2 trampas, la solución, cómo verificarla, y el fix de la BTF |
+| [`docs/PENDIENTE-2026-09-20.md`](docs/PENDIENTE-2026-09-20.md) | Última sesión: resultados, pendientes y notas de trabajo |
+| [`docs/BATTERY-ISSUE.md`](docs/BATTERY-ISSUE.md) | Batería: gauge en el firmware ADSP, autenticación, carga |
+| [`docs/SUSPEND-ISSUE.md`](docs/SUSPEND-ISSUE.md) | Suspensión s2idle: causa, bloqueos y hooks |
+| [`docs/KSCREEN-ISSUE.md`](docs/KSCREEN-ISSUE.md) | Escritorio: por qué Ajustes → Pantalla no veía el panel |
+| [`docs/FIRMWARE-ISSUE.md`](docs/FIRMWARE-ISSUE.md) | Imagen limpia sin WiFi/audio: blobs que faltaban |
+| [`docs/BOOT-OOBE-ISSUE.md`](docs/BOOT-OOBE-ISSUE.md) | Arranque lento + OOBE de Steam |
+| [`docs/IDEAS.md`](docs/IDEAS.md) | Ideas y análisis (ext4 vs F2FS en la UFS interna, etc.) |
+| [`docs/ARMADAOS-STUDY.md`](docs/ARMADAOS-STUDY.md) | Estudio de ArmadaOS (qué portamos y qué no) |
+| [`docs/MAKO-AARCH64.md`](docs/MAKO-AARCH64.md) | MAKO (frame gen): por qué no funciona en ARM todavía |
+| [`docs/session-fixes.md`](docs/session-fixes.md) | Recetario de la sesión de juego (gamescope/Steam) |
+| [`docs/PR-DESCRIPTION.md`](docs/PR-DESCRIPTION.md) | Texto del PR upstream #81 (aparcado) |
+| [`AGENTS.md`](AGENTS.md) | Contexto profundo del proyecto (para agentes/colaboradores) |
+
+---
+
+## 🤝 Upstream
+
+El **PR #81** ([shuuri-labs/pocknix-os](https://github.com/shuuri-labs/pocknix-os/pull/81)) lleva
+el soporte del Odin 3 en su forma "limpia" (rama `odin3-pr`). Está **aparcado** a la espera del
+mantenedor. Toda nuestra evolución del día a día vive en `odin3-sm8750`.
+
+## 📄 Notas
+
+- Sin credenciales ni binarios de terceros en el repo (los blobs de firmware se descargan).
+- Trabajo hecho en un fork; los artefactos están listos para portar/mergear.
