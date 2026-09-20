@@ -1,0 +1,68 @@
+# ======================================================================
+# Manifiesto de despliegue de configs — DeckStation
+# ======================================================================
+# Mapea cada config de fabrica (configs/) a su destino real dentro de
+# DeckStation, para que una instalacion nueva quede reproducible sin
+# depender de un payload externo.
+#
+# Formato:  <origen en configs/>|<destino relativo a la raiz de DeckStation>|<politica>
+#
+#   politica (opcional, por defecto "keep"):
+#     keep  -> solo se copia si el destino NO existe (respeta cambios del usuario)
+#     force -> siempre se sobrescribe (ficheros que son 100% nuestros)
+#
+#   Token {HOME:NombreApp} = el directorio *.AppImage.home de Apps/<NombreApp>.
+#   Si esa app no esta instalada, la entrada se omite sin error.
+#
+# El destino puede ser un fichero o un directorio (se copia su contenido).
+# ======================================================================
+
+# --- ES-DE (frontend) ---------------------------------------------------
+es-de/custom_systems/es_find_rules.xml|DeckStation.AppImage.home/ES-DE/custom_systems/es_find_rules.xml|keep
+es-de/custom_systems/es_systems.xml|DeckStation.AppImage.home/ES-DE/custom_systems/es_systems.xml|keep
+es-de/settings/es_settings.xml|DeckStation.AppImage.home/ES-DE/settings/es_settings.xml|keep
+es-de/scrapers|DeckStation.AppImage.home/ES-DE/scrapers|keep
+
+# --- RetroArch (emulador principal) -------------------------------------
+retroarch/retroarch.cfg|{HOME:RetroArch}/.config/retroarch/retroarch.cfg|keep
+retroarch/autoconfig|{HOME:RetroArch}/.config/retroarch/autoconfig|keep
+
+# --- DuckStation (PSX) --------------------------------------------------
+duckstation/settings.ini|{HOME:Duckstation}/.local/share/duckstation/settings.ini|keep
+duckstation/duckstation.ini|{HOME:Duckstation}/.local/share/duckstation/duckstation.ini|keep
+duckstation/qt.conf|Apps/Duckstation/qt.conf|keep
+
+# --- Azahar (3DS) -------------------------------------------------------
+azahar/qt-config.ini|{HOME:Azahar}/.config/azahar-emu/qt-config.ini|keep
+
+# --- Citron (Switch) ----------------------------------------------------
+citron/qt-config.ini|{HOME:Citron}/.config/citron/qt-config.ini|keep
+citron/custom|{HOME:Citron}/.config/citron/custom|keep
+
+# --- Dolphin (GameCube/Wii) ---------------------------------------------
+dolphin/dolphin.ini|{HOME:Dolphin}/.config/dolphin-emu/Dolphin.ini|keep
+
+# --- Flycast (Dreamcast) ------------------------------------------------
+flycast/emu.cfg|{HOME:Flycast}/.config/flycast/emu.cfg|keep
+
+# --- DOSBox Pure --------------------------------------------------------
+dosboxpure/DOSBoxPure.cfg|{HOME:DosBoxPure}/.config/DOSBoxPure/DOSBoxPure.cfg|keep
+
+# --- RMG (N64) ----------------------------------------------------------
+rmg/mupen64plus.cfg|{HOME:RMG}/.config/RMG/mupen64plus.cfg|keep
+
+# --- ZSNES (SNES) -------------------------------------------------------
+zsnes|{HOME:ZSNES}/.config/zsnes|keep
+
+# --- Supermodel (Model 3) -----------------------------------------------
+supermodel/Supermodel.ini|{HOME:Supermodel}/.config/supermodel/Config/Supermodel.ini|keep
+
+# --- AntiMicroX (mapeo de mandos) ---------------------------------------
+antimicrox/antimicrox_settings.ini|{HOME:Antimicrox}/.config/antimicrox/antimicrox_settings.ini|keep
+
+# --- Vita3K (PS Vita) ---------------------------------------------------
+vita3k|{HOME:Vita3K}/.config/Vita3K/config|keep
+
+# --- PCSX2 / PPSSPP (best-effort: hoy no hay build ARM en git.txt) ------
+pcsx2/pcsx2.ini|{HOME:Pcsx2}/.config/PCSX2/pcsx2.ini|keep
+ppsspp/ppsspp.ini|{HOME:PPSSPP}/.config/ppsspp/PSP/SYSTEM/ppsspp.ini|keep

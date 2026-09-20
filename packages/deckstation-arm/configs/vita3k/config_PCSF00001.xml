@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+	<core modules-mode="0">
+		<lle-modules />
+	</core>
+	<cpu cpu-backend="Dynarmic" cpu-opt="true" />
+	<gpu high-accuracy="true" resolution-multiplier="2" disable-surface-sync="true" screen-filter="Bilinear" v-sync="true" anisotropic-filtering="1" async-pipeline-compilation="true" import-textures="false" export-textures="false" export-as-png="true" fps-hack="false" />
+	<audio audio-volume="100" enable-ngs="true" />
+	<system pstv-mode="false" />
+	<emulator show-touchpad-cursor="true" file-loading-delay="0" />
+	<network psn-signed-in="true" />
+</config>

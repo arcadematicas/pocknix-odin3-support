@@ -99,10 +99,20 @@ if [ -x "$DECKSTATION_ROOT/scripts/deckstation-bios.sh" ]; then
     DECKSTATION_ROOT="$DECKSTATION_ROOT" "$DECKSTATION_ROOT/scripts/deckstation-bios.sh" 2>/dev/null || true
 fi
 
+# 8. FORZAR SDL AL COMPOSITOR (gamescope / Plasma)
+#    Sin esto, ES-DE puede quedarse en NEGRO al lanzarse desde el modo juego de
+#    Steam (gamescope "Device or resource busy" si hereda el driver equivocado).
+#    Misma logica que scripts/lanzar.sh para los emuladores.
+if [ -n "${WAYLAND_DISPLAY:-}" ] && [ -z "${SDL_VIDEODRIVER:-}" ]; then
+    export SDL_VIDEODRIVER=wayland
+elif [ -n "${DISPLAY:-}" ] && [ -z "${SDL_VIDEODRIVER:-}" ]; then
+    export SDL_VIDEODRIVER=x11
+fi
+
 echo ""
 echo "=============================================="
 echo "  ✅ Entorno listo. Lanzando DeckStation..."
 echo "=============================================="
 
-# 8. LANZAR ES-DE (el AppImage original)
+# 9. LANZAR ES-DE (el AppImage original)
 exec "$DECKSTATION_ROOT/DeckStation.AppImage" "$@"

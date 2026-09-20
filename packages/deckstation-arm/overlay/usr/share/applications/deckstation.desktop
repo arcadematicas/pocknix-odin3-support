@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=DeckStation
+Comment=Sistema de emulación portable (ES-DE)
+Exec=deckstation
+Icon=applications-games
+Categories=Game;Emulator;
+Terminal=false

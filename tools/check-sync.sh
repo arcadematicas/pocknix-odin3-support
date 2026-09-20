@@ -51,6 +51,14 @@ cmp_tree "${HERE}/kernel/patches/30-version"       "${OS}/kernel/sm8750/patches/
 cmp_tree "${HERE}/kernel/dts"                     "${OS}/kernel/sm8750/dts/qcom"
 cmp_tree "${HERE}/packages/gamescope"             "${OS}/packages/soc/gamescope"
 cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix-desktop"
+# La capa vendored: si NO se comprueba, puede quedarse atras EN SILENCIO (paso con
+# deckstation-arm: al launcher le faltaba el fix de SDL y al setup el de libXss, y
+# check-sync decia OK -> la imagen habria salido con ES-DE en negro desde Game Mode).
+cmp_tree "${HERE}/packages/deckstation-arm"   "${OS}/packages/shared/deckstation-arm"
+cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pygame-ce"
+cmp_tree "${HERE}/packages/suyu-libretro"     "${OS}/packages/shared/suyu-libretro"
+cmp_tree "${HERE}/packages/pocknix-steam"     "${OS}/packages/shared/pocknix-steam"
+cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-tools"
 if [ -d "${HERE}/packages/soc-overrides" ]; then
   for d in "${HERE}"/packages/soc-overrides/*/; do
     [ -d "${d}" ] || continue

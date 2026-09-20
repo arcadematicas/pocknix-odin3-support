@@ -1,0 +1,6 @@
+#!/bin/bash
+# DeckStation Launcher
+# Wrapper mínimo del sistema
+# Todo el contenido está en /opt/deckstation/
+
+exec /opt/deckstation/scripts/deckstation-launcher.sh "$@"
