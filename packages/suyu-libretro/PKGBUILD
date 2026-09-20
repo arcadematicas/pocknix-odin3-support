@@ -81,7 +81,7 @@ build() {
 }
 
 package() {
-    install -Dm755 "${srcdir}/suyu-v0.0.4/build/src/libretro_core/suyu_libretro.so" \
+    install -Dm755 "${srcdir}/build/src/libretro_core/suyu_libretro.so" \
         "${pkgdir}/usr/lib/libretro/suyu_libretro.so"
     install -Dm644 "${startdir}/suyu_libretro.info" \
         "${pkgdir}/usr/share/libretro/info/suyu_libretro.info"
