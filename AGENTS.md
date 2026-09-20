@@ -467,7 +467,46 @@ Se hizo todo lo pendiente del domingo y más. **Detalle completo de la rotación
 3. **Carga de batería** (`charge_enable`, opcode 0x16 vs 0x33) — no es nuevo.
 4. (Menor) Reiniciar para que la Mesa nueva entre en la sesión.
 
+## 📦 CÓMO SE AÑADEN PAQUETES (20/09/2026) — LEER ANTES DE TOCAR `config/packages/`
 
+La imagen va sobre un **snapshot CONGELADO de ALARM** (`[pocknix-base]`, generado por
+`make snapshot` desde `base.list` + `base-extras.list`) y debajo lleva el **ALARM en vivo**
+como fallback (`render_pacman_conf` añade `[core] [extra] [alarm] [aur]`).
 
+### Las dos listas
 
+| Lista | Qué hace |
+|---|---|
+| **`config/packages/base.list`** | **INSTALADO en la imagen** (y cosechado al snapshot). Para lo que la imagen ship pea. |
+| **`config/packages/base-extras.list`** | Solo **HOSPEDADO** en el snapshot: ningún imagen lo instala, pero un dispositivo puede hacer `pacman -S` y lo resuelve de `[pocknix-base]` (versión PINNEADA, no la del ALARM en vivo). Para opt-in (samba, tailscale, la capa de emulación de upstream…). |
 
+**Regla**: *"the harvest only sees what a build installed"* → `base.list` se cosecha
+automáticamente; para lo que NO se instala hay que listarlo a mano en `base-extras`.
+
+### ⚠️ Las tres trampas (todas vividas)
+
+1. **NUNCA** poner un paquete de ALARM como **`depends` de un paquete nuestro**.
+   El chroot de COMPILACIÓN (`build-packages.sh`) solo ve los repos de pocknix → `makepkg`
+   falla con `Missing dependencies` (pasó con `libxss` en `deckstation-arm`). El `depends`
+   solo es viable si el paquete está **hospedado en `[pocknix-base]`** (o sea, si está en
+   `base.list`/`base-extras` y el snapshot se ha regenerado).
+2. **`pacman -S <pkg>` sin `-y`** falla en imagen recién flasheada (`/var/lib/pacman/sync/`
+   vacío). Y **`-Syu` es un landmine** sobre base congelada: sube ~260 paquetes (systemd
+   incluido). Usar `pacman -Sy --needed <pkg>`.
+3. **Familias con epoch**: `samba` declara `smbclient>=4.24.7` sin epoch y el instalado es
+   `2:4.24.6` → pacman da la dep por satisfecha y NO lo actualiza → símbolos rotos
+   (`SAMBA_4.24.7_PRIVATE_SAMBA not found`). **Instalar la familia entera junta.**
+
+### Dónde va cada cosa (decidido 20/09)
+
+| Necesidad | Solución |
+|---|---|
+| Lo que la imagen ship pea (RetroArch de DeckStation → `libxss`) | **`base.list`** → `libxss` ✅ |
+| Opt-in del usuario (samba, tailscale) | `base-extras.list` ✅ + instalación robusta (`-Sy`, familia junta) ✅ |
+| Host sin el paquete y sin repos | provisioning en el propio tool (p. ej. `setup_libxss` en DeckStation) ✅ |
+
+### Y la trampa del veto: la capa vendored y `config/` NO están en el centro
+
+`tools/sync-to-os.sh` sincroniza paquetes/overlay/kernel, y `check-sync.sh` ya comprueba
+la capa vendored (deckstation-arm, pocknix-steam, tools, suyu…). **`config/` solo vive en
+el árbol** (nuestro fork lo commitea allí) → editarlo en el árbol y **commitearlo ahí**.
