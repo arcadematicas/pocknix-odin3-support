@@ -195,7 +195,10 @@ deploy_lanzar_sh() {
     for app_dir in "${APPS_DIR}"/*/; do
         [ -d "${app_dir}" ] || continue
         found="$(find "${app_dir}" -maxdepth 1 \( -iname "*.AppImage" -o -iname "*.appimage" \) 2>/dev/null | head -1)"
-        [ -n "${found}" ] || continue
+        # RetroArch no es un AppImage: es el binario nativo del buildbot junto a su
+        # .AppImage.home. Sin este caso se queda sin lanzar.sh y ES-DE no puede
+        # arrancarlo (es_find_rules apunta a ./Apps/RetroArch/lanzar.sh).
+        [ -n "${found}" ] || [ -x "${app_dir}retroarch" ] || continue
         install -m755 "${lanzar_src}" "${app_dir}lanzar.sh" 2>/dev/null \
             && log_ok "lanzar.sh -> $(basename "${app_dir}")" || true
     done
