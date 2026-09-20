@@ -51,7 +51,16 @@ case "${1:-status}" in
     # solo por instalar samba y desarmaria la combinacion probada. Y NO usar -S a
     # secas: en una imagen recien flasheada /var/lib/pacman/sync/ esta vacio y falla
     # con "database file for 'core' does not exist" (el fallo real reportado).
-    pacman -Sy --needed --noconfirm samba
+    # -Sy (refrescar indices) + instalar SOLO la familia samba. OJO: hay que pedir
+    # `smbclient` EXPLICITAMENTE. `samba` depende de `smbclient>=4.24.7`, pero el
+    # paquete trae epoch (`2:4.24.6-1`): pacman compara 2:4.24.6 > 4.24.7 (el epoch
+    # manda) y da la dependencia por satisfecha -> NO lo actualiza -> samba 4.24.7
+    # convive con las libs privadas de smbclient 4.24.6 y TODO falla con
+    # "version `SAMBA_4.24.7_PRIVATE_SAMBA' not found" (visto en la Odin).
+    #
+    # Tampoco usar -Syu: la imagen va sobre un snapshot CONGELADO de ALARM y un -Syu
+    # subiria ~260 paquetes (systemd incluido) solo por instalar samba.
+    pacman -Sy --needed --noconfirm samba smbclient
     echo "installed=yes"
     ;;
   on)
