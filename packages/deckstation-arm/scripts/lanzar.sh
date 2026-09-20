@@ -34,6 +34,11 @@ else
   CANDIDATE=$(find "$DIR/app/usr/bin" -maxdepth 1 -type f -executable 2>/dev/null | head -n 1)
   if [ -n "$CANDIDATE" ]; then
     EXEC_TARGET="$CANDIDATE"
+  elif [ -x "$DIR/retroarch" ]; then
+    # RetroArch NO es un AppImage en DeckStation: es el binario nativo del
+    # buildbot junto a su .AppImage.home (mismo layout). Sin este caso, un
+    # deploy de la plantilla dejaría a RetroArch sin lanzador.
+    EXEC_TARGET="$DIR/retroarch"
   fi
 fi
 if [ -z "$EXEC_TARGET" ]; then
@@ -45,6 +50,36 @@ fi
 HOME_DIR=$(find "$DIR" -maxdepth 3 -name "*.home" -type d | head -n 1)
 if [ -n "$HOME_DIR" ]; then
   export HOME="$HOME_DIR"
+fi
+
+# 3b. Libs que la imagen del host puede no traer.
+#
+#     RetroArch (binario nativo, no AppImage) enlaza contra libXss.so.1 y algunas
+#     imagenes minimalistas NO traen el paquete libxss -> "error while loading
+#     shared libraries: libXss.so.1: cannot open shared object file" y el emulador
+#     no arranca (DuckStation/Dolphin/Cemu no lo necesitan: son AppImages).
+#
+#     En vez de exigir un paquete, se cosecha la lib aarch64 del runtime de Steam
+#     (que siempre está) y se deja en <deckstation>/lib junto al resto, para no
+#     ensuciar /usr/lib. Sin binarios en git.
+DECKSTATION_LIB="$(cd "$DIR/../../lib" 2>/dev/null && pwd || echo "$DIR/../../lib")"
+if [ ! -e "$DECKSTATION_LIB/libXss.so.1" ]; then
+  REAL_HOME="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)"
+  SRC=""
+  for root in "$REAL_HOME" /home/deck /root; do
+    [ -n "$root" ] && [ -d "$root" ] || continue
+    SRC=$(find "$root/.local/share/Steam" \
+            -path "*aarch64-linux-gnu/libXss.so.1.0.0" 2>/dev/null | head -n 1)
+    [ -n "$SRC" ] && break
+  done
+  if [ -n "$SRC" ]; then
+    mkdir -p "$DECKSTATION_LIB" 2>/dev/null || true
+    cp "$SRC" "$DECKSTATION_LIB/libXss.so.1.0.0" 2>/dev/null || true
+    ln -sf libXss.so.1.0.0 "$DECKSTATION_LIB/libXss.so.1" 2>/dev/null || true
+  fi
+fi
+if [ -e "$DECKSTATION_LIB/libXss.so.1" ]; then
+  export LD_LIBRARY_PATH="$DECKSTATION_LIB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 fi
 
 # 4. Forzamos SDL al compositor existente (gamescope/Plasma)
