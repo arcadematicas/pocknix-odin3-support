@@ -1,0 +1,82 @@
+#!/bin/bash
+# pocknix-share - SMB share on/off. status stays unprivileged (the menu polls it every draw);
+# the rest arrives via pkexec under 55-pocknix-share.rules.
+set -euo pipefail
+
+# smb.service alone defines the state; the Decky plugin reads its enable symlink, so consulting
+# avahi here would split the two UIs whenever something else enables avahi.
+SHARE_UNIT=smb.service
+UNITS=(smb.service avahi-daemon.service)
+# Sockets move with their services or the next connection restarts them. smb.socket does not
+# exist in Arch's samba; listing it is harmless and survives it appearing.
+SOCKETS=(smb.socket avahi-daemon.socket)
+
+# guest_account in smb.conf; kept in sync by hand because smb.conf ships alongside this.
+SHARE_USER=deck
+
+# Samba is an opt-in base extra, not in any image (74.5 MB for devices that never share).
+is_installed() { command -v smbd >/dev/null 2>&1; }
+
+is_on() {
+  [ "$(systemctl is-enabled "${SHARE_UNIT}" 2>/dev/null || true)" = enabled ] && return 0
+  systemctl is-active --quiet "${SHARE_UNIT}"
+}
+
+need_root() { [ "$(id -u)" -eq 0 ] || { echo "pocknix-share: must run as root" >&2; exit 1; }; }
+
+# Guest-only, but deck must EXIST in passdb or every write is refused at smb2_create: the
+# guest token keeps the Guest SID and the synthesised ACL grants write to the owner SID only.
+# The password is random and discarded so nobody can authenticate AS deck over SMB.
+ensure_passdb() {
+  pdbedit -L 2>/dev/null | cut -d: -f1 | grep -qx "${SHARE_USER}" && return 0
+  local pw
+  pw="$(head -c 18 /dev/urandom | base64)"
+  printf '%s\n%s\n' "${pw}" "${pw}" | smbpasswd -a -s "${SHARE_USER}" >/dev/null
+}
+
+case "${1:-status}" in
+  status)
+    is_installed && echo "installed=yes" || echo "installed=no"
+    is_on && echo "state=on" || echo "state=off"
+    echo "active=$(systemctl is-active smb.service 2>/dev/null || true)"
+    ;;
+  install)
+    # Keep the install behind this program's polkit rule: a bare `pkexec pacman` lands in
+    # pkexec's text agent, broken on polkit 127 (polkit#686) - see dev/desktop.md.
+    need_root
+    is_installed && { echo "installed=yes"; exit 0; }
+    # -Sy (refrescar indices) + instalar SOLO samba: 1 paquete, sin arrastrar deps.
+    # OJO: NO usar -Syu. La imagen esta construida sobre un snapshot CONGELADO de
+    # ALARM; un -Syu en el dispositivo subiria ~260 paquetes (systemd, glasma...)
+    # solo por instalar samba y desarmaria la combinacion probada. Y NO usar -S a
+    # secas: en una imagen recien flasheada /var/lib/pacman/sync/ esta vacio y falla
+    # con "database file for 'core' does not exist" (el fallo real reportado).
+    pacman -Sy --needed --noconfirm samba
+    echo "installed=yes"
+    ;;
+  on)
+    need_root
+    is_installed || { echo "pocknix-share: samba is not installed" >&2; exit 3; }
+    ensure_passdb
+    systemctl enable --now "${UNITS[@]}" >/dev/null
+    echo "state=on"
+    ;;
+  off)
+    need_root
+    # Disable all first, then stop services before sockets, or a surviving socket restarts the
+    # service on the next connection. One unit per call: systemctl aborts on an unknown unit.
+    for u in "${SOCKETS[@]}" "${UNITS[@]}"; do
+      systemctl disable "${u}" >/dev/null 2>&1 || true
+    done
+    for u in "${UNITS[@]}" "${SOCKETS[@]}"; do
+      systemctl stop "${u}" >/dev/null 2>&1 || true
+    done
+    # a unit bounced mid-teardown lands in failed and would lie to the next status read
+    systemctl reset-failed "${UNITS[@]}" >/dev/null 2>&1 || true
+    echo "state=off"
+    ;;
+  *)
+    echo "usage: pocknix-share {status|install|on|off}" >&2
+    exit 2
+    ;;
+esac
