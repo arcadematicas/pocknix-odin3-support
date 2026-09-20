@@ -1,13 +1,15 @@
 # gamescope (pocknix) — patched build for rotated msm/DPU panels.
 # Vanilla gamescope cannot drive them: it asks for a DRM plane rotation the msm DPU rejects,
-# so every flip fails ("Failed to prepare 1-layer flip"). 0007/0008 rotate in the composite
-# pass instead; pocknix-steam forces it and passes logical LANDSCAPE -W/-H.
+# so every flip fails ("Failed to prepare 1-layer flip"). 0007/0008 add a composite-pass
+# rotation as the fallback; 0010 adds --rotated-output-max-height so the DPU's inline rotator
+# can rotate AT SCANOUT (free) even on panels past its pre-rotation source cap. pocknix-steam
+# passes logical LANDSCAPE -W/-H and lets gamescope pick scanout vs composite per plane.
 # epoch=1 outranks ALARM's gamescope. The pkgver segment after "rocknix." must vercmp higher
 # on every bump, hence commit date then sha — a bare sha is non-monotonic.
 pkgname=gamescope
 epoch=1
 pkgver=3.16.0.rocknix.20260802.6644cc9
-pkgrel=4
+pkgrel=5
 _commit=6644cc9a07d8ba937003deae8bd7c28a490d0c64
 install=gamescope.install
 pkgdesc="SteamOS session compositing WM — patched (rotation-shader, for msm/rotated panels)"
@@ -33,8 +35,9 @@ source=("gamescope::git+https://github.com/ValveSoftware/gamescope.git#commit=${
         '0007-Add-composited-output-rotation-for-displays-that-can.patch'
         '0008-steamcompmgr-classify-the-interactive-overlay-by-out.patch'
         # NUESTRO: hace que el atom GAMESCOPE_FPS_LIMIT del QAM se quede (ver el parche)
-        '0009-fps-limit-atom-persist.patch')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+        '0009-fps-limit-atom-persist.patch'
+        '0010-DRMBackend-add-rotated-output-max-height.patch')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   cd gamescope
@@ -47,6 +50,7 @@ prepare() {
   patch -p1 < "${srcdir}/0008-steamcompmgr-classify-the-interactive-overlay-by-out.patch"
   # NUESTRO (pocknix-odin3-support): el QAM frame limiter no tenia efecto en HW.
   patch -p1 < "${srcdir}/0009-fps-limit-atom-persist.patch"
+  patch -p1 < "${srcdir}/0010-DRMBackend-add-rotated-output-max-height.patch"
 }
 
 build() {
