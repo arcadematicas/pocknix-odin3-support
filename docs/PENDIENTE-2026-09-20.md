@@ -86,3 +86,41 @@ Ver `AGENTS.md` (sección CARGA BATERIA). **No es nuevo de hoy**, sigue abierto.
 - **`blkid -t PARTLABEL=...` necesita root** para encontrar los slots ABL.
 - **Verificar parches de kernel**: mirar el **árbol de fuentes**, no la imagen
   comprimida; y ojo con las mayúsculas (`QSEED` ≠ `qseed`).
+
+---
+
+## 🔁 Deriva entre la Odin y el git (a tener en cuenta)
+
+Tras cerrar la rotación, la Odin quedó con el lanzador **editado a mano** para no
+depender de un rebuild en caliente. Situación:
+
+| En la Odin | En el git (fuente) |
+|---|---|
+| `pocknix-steam 0.1.0-61` + edición manual (`--rotated-output-max-height 1088` fijo) | `pocknix-steam 0.1.0-63` (lee `POCKNIX_PANEL_ROTATE_MAX_H`) |
+| `odin3.conf` sin `POCKNIX_PANEL_ROTATE_MAX_H` | `odin3.conf` con la variable (1088) |
+
+**El comportamiento es equivalente** (el flag está activo en ambos), así que la Odin
+funciona. **NO se instaló el paquete 63 a propósito**: además del flag trae el
+**splash** de gamescope (del merge del 17/09) que esta unidad nunca tuvo — meterlo
+sin probarlo era un cambio de riesgo innecesario.
+
+**Convergerá solo** al flashear una imagen nueva (que ya lleva la versión de la
+fuente). Si se quiere converger antes: rebuilding `pocknix-steam` +
+`pocknix-bsp-sm8750` e instalarlos, y **probar el splash** a conciencia.
+
+### ⚠️ Dos bugs de sync encontrados (y arreglados en este commit)
+
+El **centro** (`pocknix-odin3-support`) es la fuente de verdad y `tools/sync-to-os.sh`
+copia de ahí al árbol. Si el centro está **más viejo** que el árbol, el sync
+**REVIERTE** mejoras ya commiteadas:
+
+1. **`pocknix-bootloader-sm8750/PKGBUILD`**: el centro seguía en `_ablver=1.1.7`
+   mientras el árbol/commit ya tenía **1.1.8** → cada sync devolvía el árbol a 1.1.7
+   (y por eso el paquete compilado salía 1.1.7). **Arreglado en el centro.**
+2. **`packages/gamescope/`**: el centro tenía el PKGBUILD **sin el parche 0010** y en
+   `pkgrel=4` → un sync habría **borrado la rotación por hardware**. **Arreglado**
+   (PKGBUILD + el parche 0010 copiados al centro).
+
+**Lección**: después de arreglar algo en el árbol de compilación, **copiarlo al centro
+(y commitearlo) en la misma sesión**, o el siguiente sync lo revierte. Comprobar con
+`git diff HEAD -- <fichero>` tras un sync.
