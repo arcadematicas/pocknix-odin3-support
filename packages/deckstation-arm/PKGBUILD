@@ -12,6 +12,10 @@ depends=(
     'python'
     'python-requests'
     'python-pygame'
+    # RetroArch en DeckStation es el binario nativo del buildbot (no un AppImage) y
+    # enlaza contra libXss.so.1: sin este paquete, ES-DE no lanza ningun emulador de
+    # RetroArch. Antes no estaba declarado y en hosts minimalistas fallaba.
+    'libxss'
 )
 makedepends=()
 optdepends=(
