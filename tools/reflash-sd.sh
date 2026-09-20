@@ -137,8 +137,17 @@ fi
 echo ""
 echo "=== 6/6: depmod + ajustes ==="
 sudo depmod -b /mnt/odin-root -a 7.2.4 2>/dev/null && echo "  depmod ok"
-# El home debe ser del usuario deck (1000)
-sudo chown -R 1000:1000 /mnt/odin-root/home/deck 2>/dev/null || true
+# El home y /opt deben ser del usuario deck. ⚠️ NO hardcodear el uid: en la Odin
+# deck es 1001, no 1000 (chown a 1000 deja los ficheros de UNKNOWN y DeckStation/
+# el lanzador dejan de poder escribir -> "ln: failed to create symbolic link").
+DECK_UID="$(awk -F: '$1=="deck"{print $3":"$4}' /mnt/odin-root/etc/passwd 2>/dev/null)"
+[ -n "${DECK_UID}" ] || { echo "  ⚠️ no encuentro el uid de deck; usando 1001:1001"; DECK_UID=1001:1001; }
+echo "  usuario deck = ${DECK_UID}"
+sudo chown -R "${DECK_UID}" /mnt/odin-root/home/deck 2>/dev/null || true
+# /opt: build-sd-image.sh hace chown deck de deckstation + wproton
+for d in opt/deckstation opt/wproton; do
+  [ -d "/mnt/odin-root/${d}" ] && sudo chown -R "${DECK_UID}" "/mnt/odin-root/${d}" 2>/dev/null && echo "  ✅ /${d} -> deck"
+done
 sync
 
 echo ""
