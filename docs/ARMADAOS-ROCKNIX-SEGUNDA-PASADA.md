@@ -92,17 +92,11 @@ frame pacing en vez de mejorarlo. **Primero medir, luego decidir.**
 
 ---
 
-## ⚠️ Contradicción detectada en nuestro propio código
+## ✅ `--mangoapp`: aclarado — es correcto, no tocar
 
-`pocknix-steam` lanza gamescope con **`--mangoapp`** (línea ~182):
+`pocknix-steam` lanza gamescope con **`--mangoapp`** (línea ~182) y **MangoHUD funciona
+perfectamente desde Steam** (confirmado por Fransis, 21/09/2026).
 
-```bash
-gamescope "${GS_OUTPUT[@]}" ... --xwayland-count 2 --mangoapp --backend drm \
-```
-
-Pero el `AGENTS.md` dice explícitamente:
-
-> **NO usar `--mangoapp` de gamescope** (modelo SteamOS: mangoapp como hermano).
-
-O el AGENTS.md está desactualizado, o el flag se coló. **Hay que aclararlo** (afecta al HUD y a
-cómo se lanza Steam).
+La nota del `AGENTS.md` que decía *"NO usar `--mangoapp` (modelo SteamOS: mangoapp como
+hermano)"* era **obsoleta** (de un modelo de sesión anterior) y contradecía al código.
+**Corregida en los dos `AGENTS.md`.** No quitar el flag.

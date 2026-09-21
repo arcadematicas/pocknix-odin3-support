@@ -23,7 +23,10 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 ## Estados CRÍTICOS y lecciones (NO repetir errores)
 - **NUNCA reiniciar Decky Loader en caliente** mientras Steam corre en modo juego → crash loop de steamwebhelper (NameError exit en main.py:118). Reiniciar solo desde Plasma o antes de entrar a Game Mode.
 - **NUNCA reemplazar el kernel 7.2 por 7.1** (7.1 no arranca en la Odin 3).
-- **NO usar `--mangoapp` de gamescope** (modelo SteamOS: mangoapp como hermano).
+- **MangoHUD / `--mangoapp`: NO TOCAR.** `pocknix-steam` lanza gamescope **con `--mangoapp`** y
+  **MangoHUD funciona perfectamente desde Steam** (confirmado por Fransis, 21/09/2026). La nota
+  vieja *"NO usar `--mangoapp` (modelo SteamOS: mangoapp como hermano)"* está **OBSOLETA** —
+  quedó de un modelo anterior y llegó a contradecir al código. **No quitar el flag.**
 - **NO desocultar /dev/input/event6** (el mando real está oculto por InputPlumber a propósito; el virtual event10 es el que usan las apps).
 - Paneles negros de Steam = bug de FEX (steamwebhelper x86 bajo FEX/CEF). Upstream, sin fix completo.
 - `pocknix-decky-sync` re-siembra Decky desde el bundle del OS en cada arranque si `sort -V` lo considera más nuevo. Para instalar Decky persistente: reemplazar `/usr/share/decky-loader/PluginLoader` + borrar el de homebrew.
