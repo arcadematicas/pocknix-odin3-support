@@ -96,7 +96,7 @@ def _load_theme_name():
 def _apply_theme(name):
     """Aplica un tema al instante (colores y radios globales)."""
     global ACTIVE_THEME, TH, BG_COLOR, HUB_BG, PANEL_COLOR, TEXT_COLOR
-    global ACCENT_COLOR, SEL_FG_COLOR, DIM_COLOR, GREEN_COLOR, ERROR_COLOR, RADIUS
+    global ACCENT_COLOR, SEL_FG_COLOR, DIM_COLOR, GREEN_COLOR, ERROR_COLOR, RADIUS, WARN_COLOR
     ACTIVE_THEME = name
     TH = THEMES[name]
     BG_COLOR = TH['bg']
@@ -108,6 +108,7 @@ def _apply_theme(name):
     DIM_COLOR = TH['dim']
     GREEN_COLOR = TH.get('ok', TH['acc'])
     ERROR_COLOR = TH.get('error', TH['warn'])
+    WARN_COLOR = TH.get('warn', (235, 180, 70))
     RADIUS = TH['radius']
 
 
@@ -378,6 +379,12 @@ class UpdaterEngine:
         self.headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
         self.apps = self.scan_apps()
 
+        # Cola de "instalacion completa inicial"
+        self._install_queue = []
+        self._install_total = 0
+        self._install_done = 0
+        self._auto_pick_latest = False
+
         self.state = "HUB"
         self.hub_idx = 0
         self.theme_idx = 0
@@ -481,6 +488,48 @@ class UpdaterEngine:
         self._updates_checked = True
         self._update_scan_active = False
 
+    def _activate_current(self):
+        """Activa la entrada seleccionada (instalar todo o gestionar un emulador)."""
+        if not self.apps:
+            return
+        app = self.apps[self.current_app_idx]
+        if app.get("special") == "install_all":
+            self._start_install_all()
+            return
+        self._start_fetch_latest(self.current_app_idx)
+
+    def _start_install_all(self):
+        """Encola TODOS los emuladores que falten, en orden."""
+        faltan = [a["name"] for a in self.apps
+                  if not a.get("installed") and not a.get("special")]
+        if not faltan:
+            self.status_msg = "Ya estan instalados todos los emuladores"
+            return
+        self._install_queue = faltan
+        self._install_total = len(faltan)
+        self._install_done = 0
+        self._next_queued_install()
+
+    def _next_queued_install(self):
+        """Instala el siguiente de la cola, o termina."""
+        if not self._install_queue:
+            self._auto_pick_latest = False
+            self.status_msg = (f"Instalacion completa terminada "
+                               f"({self._install_done} emuladores)")
+            self.state = "HUB"
+            return
+        nombre = self._install_queue.pop(0)
+        idx = next((i for i, a in enumerate(self.apps) if a["name"] == nombre), None)
+        if idx is None:
+            self._next_queued_install()
+            return
+        self.current_app_idx = idx
+        self.state = "EMU_MENU"
+        self.status_msg = (f"Instalando {self._install_done + 1}/{self._install_total}"
+                           f": {nombre}")
+        self._auto_pick_latest = True
+        self._start_fetch_latest(idx)
+
     def _start_fetch_latest(self, app_idx):
         """Fetch la última versión de un emulador en segundo plano (sin bloquear UI)."""
         self._fetch_loading = True
@@ -538,40 +587,114 @@ class UpdaterEngine:
         except Exception:
             pass
 
-    def scan_apps(self):
-        apps = []
-        if not os.path.exists(APPS_DIR):
-            return apps
-        for name in sorted(os.listdir(APPS_DIR)):
-            app_path = os.path.join(APPS_DIR, name)
-            if name == "Updater" or not os.path.isdir(app_path):
-                continue
-            # Look for AppImage
-            files = os.listdir(app_path)
-            appimage = None
-            for fname in files:
-                if fname.lower().endswith(".appimage"):
-                    appimage = fname
-                    break
-            if not appimage:
-                continue
-            # Read version if cached
-            version_file = os.path.join(app_path, ".version")
+    def _app_entry(self, nombre, instalado):
+        """Entrada de la lista para un emulador, este instalado o no.
+
+        instalado = (nombre_real, ruta, appimage) o None.
+        """
+        if instalado:
+            _n, app_path, appimage = instalado
             version = "Desconocida (Caché vacía)"
-            if os.path.exists(version_file):
-                with open(version_file, 'r') as f:
-                    v = f.read().strip()
+            version_file = os.path.join(app_path, ".version")
+            try:
+                if os.path.exists(version_file):
+                    v = open(version_file, 'r').read().strip()
                     if v:
                         version = v
-            apps.append({
-                "name": name,
+            except Exception:
+                pass
+            return {
+                "name": nombre,
                 "path": app_path,
                 "file": appimage,
                 "filename": appimage,
                 "version": version,
+                "installed": True,
                 "has_update": False,
                 "latest_version": "",
-            })
+            }
+        # No instalado: entra igual en la lista para poder INSTALARLO.
+        return {
+            "name": nombre,
+            "path": os.path.join(APPS_DIR, nombre),
+            "file": "",
+            "filename": "",
+            "version": "No instalado",
+            "installed": False,
+            "has_update": False,
+            "latest_version": "",
+        }
+
+    def scan_apps(self):
+        """Lista TODOS los emuladores de git.txt, instalados o no.
+
+        Antes solo devolvia los que YA tenian un .AppImage, asi que en un sistema
+        recien instalado la lista salia VACIA y el Updater no servia como
+        instalador inicial (el usuario no tenia forma de bajar nada).
+        """
+        apps = []
+        try:
+            if not os.path.exists(APPS_DIR):
+                os.makedirs(APPS_DIR, exist_ok=True)
+        except Exception:
+            return apps
+
+        # 1) Nombres "bonitos" y en el orden de git.txt (EXTERNAL_REPOS usa claves
+        #    normalizadas: 'duckstation' en vez de 'Duckstation').
+        orden = []
+        try:
+            with open(GIT_TXT_PATH, 'r', encoding='utf-8') as f:
+                lineas = [l.strip() for l in f
+                          if l.strip() and not l.strip().startswith('#')]
+            it = iter(lineas)
+            for nombre, _url in zip(it, it):
+                orden.append(nombre)
+        except Exception:
+            pass
+
+        # 2) Lo que hay de verdad en Apps/
+        instalados = {}
+        for name in sorted(os.listdir(APPS_DIR)):
+            app_path = os.path.join(APPS_DIR, name)
+            if name == "Updater" or not os.path.isdir(app_path):
+                continue
+            appimage = None
+            try:
+                for fname in os.listdir(app_path):
+                    if fname.lower().endswith(".appimage"):
+                        appimage = fname
+                        break
+            except Exception:
+                continue
+            if appimage:
+                instalados[name.lower()] = (name, app_path, appimage)
+
+        # 3) Union: primero los de git.txt (con su estado), luego lo instalado
+        #    que no aparezca en la lista (por si hay algo de fuera).
+        vistos = set()
+        for nombre in orden:
+            clave = nombre.lower()
+            vistos.add(clave)
+            apps.append(self._app_entry(nombre, instalados.get(clave)))
+        for clave in sorted(instalados):
+            if clave in vistos:
+                continue
+            apps.append(self._app_entry(instalados[clave][0], instalados[clave]))
+
+        # Entrada destacada: instala de golpe todo lo que falte (primer arranque).
+        pendientes = len([a for a in apps if not a.get("installed")])
+        apps.insert(0, {
+            "name": "Instalacion completa inicial",
+            "path": "",
+            "file": "",
+            "filename": "",
+            "version": (f"{pendientes} emuladores por instalar" if pendientes
+                        else "todo instalado"),
+            "installed": True,
+            "special": "install_all",
+            "has_update": False,
+            "latest_version": "",
+        })
         return apps
 
     def fetch_github_releases(self, app_name):
@@ -783,7 +906,24 @@ class UpdaterEngine:
             best_url = url
 
         temp_file = os.path.join(app["path"], "temp_update.archive")
-        appimage_path = os.path.join(app["path"], app["file"])
+        # Emulador NUEVO: app["file"] esta vacio, asi que no se puede componer la
+        # ruta final todavia. Si la URL es ya un .AppImage usamos su nombre; si es
+        # un comprimido, se resuelve al extraer (basename del .AppImage hallado).
+        # Sin esto, os.path.join(path, "") devolvia el DIRECTORIO y el rename final
+        # fallaba con "Directory not empty" (no se podia instalar nada nuevo).
+        _fichero_final = app.get("file") or ""
+        if not _fichero_final:
+            _base_url = best_url.split("?")[0].rstrip("/")
+            _fichero_final = (os.path.basename(_base_url)
+                              if _base_url.lower().endswith(".appimage") else None)
+        appimage_path = (os.path.join(app["path"], _fichero_final)
+                         if _fichero_final else None)
+
+        # Asegurar que existe la carpeta del emulador (los nuevos no la tienen)
+        try:
+            os.makedirs(app["path"], exist_ok=True)
+        except Exception:
+            pass
         is_archive_url = any(best_url.lower().endswith(ext) for ext in [".7z", ".zip", ".tar.gz", ".tar.xz"])
 
         # Disk space check
@@ -901,8 +1041,8 @@ class UpdaterEngine:
             return
 
         # Backup existing AppImage
-        backup_path = appimage_path + ".bak"
-        if os.path.exists(appimage_path):
+        backup_path = (appimage_path + ".bak") if appimage_path else None
+        if appimage_path and os.path.exists(appimage_path):
             try:
                 if os.path.exists(backup_path):
                     os.remove(backup_path)
@@ -923,14 +1063,14 @@ class UpdaterEngine:
                     self.state = "EMU_MENU"
                     self.status_msg = "❌ '7z' no instalado. Ejecuta: sudo pacman -S p7zip"
                     self._cleanup_temp(app, temp_file)
-                    if os.path.exists(backup_path):
+                    if backup_path and os.path.exists(backup_path):
                         shutil.move(backup_path, appimage_path)
                     return
                 except subprocess.CalledProcessError:
                     self.state = "EMU_MENU"
                     self.status_msg = "❌ Error al descomprimir. El archivo puede estar corrupto."
                     self._cleanup_temp(app, temp_file)
-                    if os.path.exists(backup_path):
+                    if backup_path and os.path.exists(backup_path):
                         shutil.move(backup_path, appimage_path)
                     return
 
@@ -948,11 +1088,16 @@ class UpdaterEngine:
                     self.state = "EMU_MENU"
                     self.status_msg = "❌ No se encontró ningún archivo .AppImage dentro del comprimido."
                     self._cleanup_temp(app, temp_file)
-                    if os.path.exists(backup_path):
+                    if backup_path and os.path.exists(backup_path):
                         shutil.move(backup_path, appimage_path)
                     return
 
                 # Move to final location
+                if appimage_path is None:
+                    appimage_path = os.path.join(app["path"],
+                                                 os.path.basename(extracted_appimage))
+                    app["file"] = os.path.basename(extracted_appimage)
+                    app["filename"] = app["file"]
                 os.rename(extracted_appimage, appimage_path)
                 os.chmod(appimage_path, 0o755)
                 # Cleanup temp
@@ -960,13 +1105,18 @@ class UpdaterEngine:
                     shutil.rmtree(temp_extract_dir, ignore_errors=True)
             else:
                 # Direct AppImage download, just move
+                if appimage_path is None:
+                    appimage_path = os.path.join(
+                        app["path"], os.path.basename(best_url.split("?")[0]))
+                    app["file"] = os.path.basename(appimage_path)
+                    app["filename"] = app["file"]
                 os.rename(temp_file, appimage_path)
                 os.chmod(appimage_path, 0o755)
         except Exception as e:
             self.state = "EMU_MENU"
             self.status_msg = f"❌ Error crítico: {e} (restaurado desde backup)"
             self._cleanup_temp(app, temp_file)
-            if os.path.exists(backup_path):
+            if backup_path and os.path.exists(backup_path):
                 shutil.move(backup_path, appimage_path)
             return
 
@@ -977,16 +1127,27 @@ class UpdaterEngine:
         except Exception:
             pass
 
-        self.state = "SUCCESS"
-        self.status_msg = f"¡{app['name']} actualizado con éxito!"
         app["version"] = tag.lstrip("v")
         app["has_update"] = False
+        app["installed"] = True
+        if self._install_queue:
+            # Venimos de "instalacion completa inicial": seguimos con el siguiente
+            self._install_done += 1
+            self.cancel_requested = False
+            self.download_progress = 0.0
+            self.download_speed = "0.0 MB/s"
+            self.status_msg = (f"OK {app['name']} "
+                               f"({self._install_done}/{self._install_total})")
+            self._next_queued_install()
+            return
+        self.state = "SUCCESS"
+        self.status_msg = f"¡{app['name']} actualizado con éxito!"
         self.cancel_requested = False
         self.download_progress = 0.0
         self.download_speed = "0.0 MB/s"
 
         # Remove backup on success
-        if os.path.exists(backup_path):
+        if backup_path and os.path.exists(backup_path):
             try:
                 os.remove(backup_path)
             except Exception:
@@ -1264,7 +1425,14 @@ class UpdaterEngine:
                     screen.blit(name_surf, (panel_x + 80, y_pos + 8))
 
                     # Version
-                    ver_surf = font_small.render(f"v{app['version']}", True, txt_color if is_selected else DIM_COLOR)
+                    # Version / estado: instalado o pendiente de instalar
+                    if app.get("installed"):
+                        ver_txt = f"v{app['version']}"
+                        ver_col = txt_color if is_selected else DIM_COLOR
+                    else:
+                        ver_txt = f"{app['version']}  -  A para instalar"
+                        ver_col = SEL_FG_COLOR if is_selected else WARN_COLOR
+                    ver_surf = font_small.render(ver_txt, True, ver_col)
                     screen.blit(ver_surf, (panel_x + 80, y_pos + 44))
 
                     # Update indicator
@@ -1373,8 +1541,25 @@ class UpdaterEngine:
                         self.available_tags = real_versions[:10]
                         self.selected_tag_idx = 0  # última versión pre-seleccionada
                         self.current_app_idx = app_idx  # asegurar que muestra el emulador correcto
-                        self.state = "SELECT_VERSION"
-                        self.status_msg = f"Mostrando las {len(self.available_tags)} últimas versiones"
+                        if self._auto_pick_latest:
+                            # Viene de "instalacion completa": no preguntar, la ultima
+                            self._auto_pick_latest = False
+                            _app = self.apps[app_idx]
+                            _repo = None
+                            _clave = _app["name"].lower().replace(" ", "").replace("-", "_")
+                            for _k, _rd in EXTERNAL_REPOS.items():
+                                if _k == _clave or _k == _app["name"].lower():
+                                    _repo = _rd
+                                    break
+                            if _repo:
+                                self.start_download(_app, _repo,
+                                                    self.available_tags[0]["version"])
+                            else:
+                                self.status_msg = "❌ No se encontró repo para este emulador."
+                                self.state = "SELECT_VERSION"
+                        else:
+                            self.state = "SELECT_VERSION"
+                            self.status_msg = f"Mostrando las {len(self.available_tags)} últimas versiones"
                     elif len(result) == 1 and result[0]["name"] == "Nightly Oficial (.7z)":
                         # Solo hay nightly, auto-descargar (no hay que elegir)
                         app = self.apps[app_idx]
@@ -1481,17 +1666,12 @@ class UpdaterEngine:
                         elif event.key == pygame.K_DOWN:
                             self.current_app_idx = min(len(self.apps) - 1, self.current_app_idx + 1)
                         elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                            if not self.apps:
-                                continue
-                            # Usar fetch asíncrono para no bloquear la UI
-                            self._start_fetch_latest(self.current_app_idx)
+                            self._activate_current()
                         elif event.key == pygame.K_ESCAPE or event.key == pygame.K_BACKSPACE:
                             self.state = "HUB"
                     elif event.type == pygame.JOYBUTTONDOWN:
                         if event.button == 0:  # A
-                            if not self.apps:
-                                continue
-                            self._start_fetch_latest(self.current_app_idx)
+                            self._activate_current()
                         elif event.button == 1:  # B
                             self.state = "HUB"
                         elif event.button == 11 or event.button == 13:  # DPAD up
