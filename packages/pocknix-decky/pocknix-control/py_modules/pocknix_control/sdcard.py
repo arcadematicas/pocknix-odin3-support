@@ -1,0 +1,100 @@
+import json
+import re
+import threading
+from pathlib import Path
+
+from .system import run_cmd
+
+# The microSD slot is mmcblk0, the internal OS disk sda. This constant is UI convenience only:
+# the formatter is the safety boundary (mmcblk-only, refuses the disk backing /).
+SD_DISK = "/dev/mmcblk0"
+SD_PART = "/dev/mmcblk0p1"
+FORMATTER = "/usr/lib/hwsupport/format-device.sh"
+
+LABEL_RE = re.compile(r"^[A-Za-z0-9_-]{1,16}$")  # ext4 volume labels cap at 16 bytes
+
+_format_lock = threading.Lock()  # one format at a time; a second RPC fails fast
+
+
+def _init_ns_mountpoint(part):
+    # The loader lives in a private mount namespace (pocknix-decky-run), so our own
+    # mountinfo misses automounts that happened after loader start; ask for PID 1's view.
+    proc = run_cmd(["findmnt", "-N", "1", "-fno", "TARGET", part], timeout=10)
+    if proc is None or proc.returncode != 0:
+        return ""
+    return (proc.stdout or "").strip()
+
+
+def _boots_from(disk):
+    # PID 1's view again (private namespace), and btrfs SOURCE carries a [/subvol] suffix
+    # lsblk cannot resolve. /flash counts: a card can hold boot without hosting /.
+    for target in ("/", "/flash"):
+        proc = run_cmd(["findmnt", "-N", "1", "-fno", "SOURCE", target], timeout=10)
+        if proc is None or proc.returncode != 0:
+            continue
+        src = (proc.stdout or "").strip().split("[")[0]
+        if not src.startswith("/dev/"):
+            continue
+        parent = run_cmd(["lsblk", "-no", "PKNAME", src], timeout=10)
+        name = (parent.stdout or "").strip().splitlines() if parent and parent.returncode == 0 else []
+        node = f"/dev/{name[0].strip()}" if name and name[0].strip() else src
+        if node == disk:
+            return True
+    return False
+
+
+def detect_sdcard():
+    absent = {"present": False}
+    if not Path(SD_DISK).exists():
+        return absent
+    # FSTYPE/LABEL come from the udev db on the shared /run tmpfs, so they stay current
+    # inside the namespace even though the mount table doesn't.
+    proc = run_cmd(["lsblk", "-J", "-b", "-o", "NAME,SIZE,FSTYPE,LABEL", SD_DISK], timeout=10)
+    if proc is None or proc.returncode != 0:
+        return absent
+    try:
+        disk = json.loads(proc.stdout)["blockdevices"][0]
+    except (ValueError, LookupError):
+        return absent
+    # A partitioned card carries fs info on p1; a superfloppy carries it on the disk node.
+    children = disk.get("children") or []
+    fs_node = children[0] if children else disk
+    part = f"/dev/{fs_node['name']}" if fs_node.get("name") else SD_PART
+    return {
+        "present": True,
+        "device": SD_DISK,
+        "sizeBytes": disk.get("size") or 0,
+        "fstype": fs_node.get("fstype") or "",
+        "label": fs_node.get("label") or "",
+        "mountpoint": _init_ns_mountpoint(part),
+        "bootDisk": _boots_from(SD_DISK),
+    }
+
+
+def format_sdcard(label):
+    label = (label or "").strip() or "SDCARD"
+    if not LABEL_RE.match(label):
+        raise ValueError("Label must be 1-16 characters: letters, digits, - or _")
+    if not Path(SD_DISK).exists():
+        raise RuntimeError("No microSD card detected")
+    if _boots_from(SD_DISK):
+        raise RuntimeError("This device booted from the SD card; it cannot be formatted")
+    if not _format_lock.acquire(blocking=False):
+        raise RuntimeError("A format is already in progress")
+    try:
+        # systemd-run, not a direct call: run in our private mount namespace the formatter's
+        # umount detaches the card only locally, leaving the init-ns mount live under mkfs.
+        # PID 1 also gives it a clean env, free of the PyInstaller LD_LIBRARY_PATH poisoning.
+        proc = run_cmd(
+            ["systemd-run", "--quiet", "--collect", "--wait", "--pipe",
+             FORMATTER, "--device", SD_DISK, "--label", label, "--force"],
+            timeout=600,
+        )
+    finally:
+        _format_lock.release()
+    if proc is None:
+        raise RuntimeError("Formatter failed to spawn")
+    if proc.returncode != 0:
+        detail = ((proc.stderr or "") + (proc.stdout or "")).strip()[-300:]
+        raise RuntimeError(f"Format failed (rc={proc.returncode}): {detail}")
+    return detect_sdcard()

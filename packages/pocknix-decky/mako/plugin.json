@@ -1,0 +1,11 @@
+{
+  "name": "MAKO - Frame Generation",
+  "author": "Eugenio Segala",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["installer", "vulkan", "mako", "framegen", "lossless-scaling", "scaling", "steam-machine"],
+    "description": "MAKO brings Lossless Scaling frame generation and Vulkan-powered spatial scaling to Steam Deck, Steam Machine, and SteamOS gaming.",
+    "image": "https://raw.githubusercontent.com/eugeniosegala/MAKO/refs/heads/main/plugin/assets/mako-logo.webp"
+  }
+}

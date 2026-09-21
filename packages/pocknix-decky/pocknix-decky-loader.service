@@ -1,0 +1,28 @@
+[Unit]
+Description=Decky Loader (via FEX)
+# ExecStart must stay pocknix-decky-run: it supplies the private binfmt_misc namespace the
+# x86_64 loader needs. Rationale in that script.
+After=network-online.target pocknix-decky-sync.service
+Wants=network-online.target pocknix-decky-sync.service
+
+[Service]
+Type=simple
+User=root
+Restart=always
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=15
+WorkingDirectory=/home/deck/homebrew/services
+ExecStart=/usr/lib/pocknix/pocknix-decky-run
+Environment=PATH=/usr/lib/pocknix/decky-bin:/usr/local/sbin:/usr/local/bin:/usr/bin
+Environment=UNPRIVILEGED_PATH=/home/deck/homebrew
+Environment=PRIVILEGED_PATH=/home/deck/homebrew
+Environment=PLUGIN_PATH=/home/deck/homebrew/plugins
+Environment=UNPRIVILEGED_USER=deck
+Environment=KEEP_SYSTEMD_SERVICE=1
+Environment=USE_CEF_CLOSE_WORKAROUND=0
+Environment=LOG_LEVEL=INFO
+Environment=FEX_APP_CONFIG=/usr/share/fex-emu/AppConfig/PluginLoader.json
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,109 @@
+{
+  "name": "mako-plugin",
+  "version": "3.2.0",
+  "description": "MAKO Decky controls for frame generation and spatial scaling on Steam Deck and compatible Linux systems",
+  "type": "module",
+  "packageManager": "pnpm@11.17.0",
+  "scripts": {
+    "check:generated-config": "python3 scripts/check_generated_config.py",
+    "generate:i18n": "node scripts/manage-i18n.mjs --generate",
+    "check:i18n": "node scripts/manage-i18n.mjs --check",
+    "build": "npm run check:generated-config && npm run check:i18n && node scripts/build-frontend.mjs",
+    "watch": "npm run check:generated-config && npm run generate:i18n && rollup -c -w",
+    "package:local": "./scripts/package-local.sh --local-engine-repo ../engine",
+    "package:local-engine": "./scripts/package-local.sh --local-engine-repo ../engine",
+    "package:local-engine-fast": "./scripts/package-local.sh --local-engine-repo ../engine --native-only --64-bit-only",
+    "dev:deploy": "./scripts/deploy-dev.sh",
+    "dev:reload": "node scripts/reload-decky-plugin.mjs",
+    "dev:frontend": "./scripts/deploy-dev.sh --frontend",
+    "dev:backend": "./scripts/deploy-dev.sh --backend",
+    "dev:backend:reload": "./scripts/deploy-dev.sh --backend --reload",
+    "dev:engine": "./scripts/deploy-dev.sh --engine",
+    "dev:all": "./scripts/deploy-dev.sh --all",
+    "dev:host": "./scripts/deploy-dev.sh --host",
+    "dev:flatpaks": "./scripts/deploy-dev.sh --flatpaks",
+    "dev:e2e": "./scripts/deploy-dev.sh --e2e",
+    "dev:prune-build-cache": "../engine/scripts/prune-build-cache.sh",
+    "dev:prune-flatpak-cache": "../engine/scripts/prune-steamos-flatpak-cache.sh",
+    "format:markdown": "prettier --write --config ../.prettierrc.json --ignore-path ../.prettierignore \"../**/*.md\"",
+    "format:markdown:check": "prettier --check --config ../.prettierrc.json --ignore-path ../.prettierignore \"../**/*.md\"",
+    "format:staged": "lint-staged --cwd .. --config ../lint-staged.config.mjs",
+    "hooks:install": "../scripts/install-git-hooks.sh",
+    "package:publish": "./scripts/publish-package.sh",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "npm run check:generated-config && python3 -m unittest discover -s tests -p 'test_*.py'",
+    "test:i18n": "npm run check:i18n && node --test tests/i18n-contract.test.mjs",
+    "test:frontend": "npm run test:i18n && vitest run",
+    "test:frontend:coverage": "npm run test:i18n && vitest run --coverage",
+    "test:frontend:typecheck": "npm run check:i18n && tsc --noEmit -p tsconfig.test.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eugeniosegala/MAKO.git"
+  },
+  "keywords": [
+    "decky",
+    "plugin",
+    "steam-deck",
+    "steam-machine",
+    "deck",
+    "lossless-scaling",
+    "spatial-scaling",
+    "frame-generation",
+    "framegen"
+  ],
+  "author": "Eugenio Segala",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/eugeniosegala/MAKO/issues"
+  },
+  "homepage": "https://github.com/eugeniosegala/MAKO#readme",
+  "devDependencies": {
+    "@decky/rollup": "^1.0.1",
+    "@decky/ui": "^4.7.2",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "24.13.3",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@types/webpack": "^5.28.5",
+    "@vitest/coverage-v8": "^4.1.11",
+    "jsdom": "^30.0.1",
+    "lint-staged": "17.3.0",
+    "prettier": "3.9.6",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "rollup": "^4.22.5",
+    "typescript": "^5.6.2",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "@decky/api": "^1.1.2",
+    "react-icons": "^5.3.0",
+    "tslib": "^2.7.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.22.5",
+    "@rollup/rollup-linux-x64-musl": "4.22.5"
+  },
+  "remote_binary_bundling": true,
+  "remote_binary": [
+    {
+      "name": "MAKO-Renderer-v3.2.0-linux.tar.xz",
+      "version": "3.2.0",
+      "lineage_version": "3.2.0",
+      "source_repository": "https://github.com/eugeniosegala/MAKO",
+      "release_tag": "render-v3.2.0",
+      "source_commit": "ebab0aa2172dcac7bea6201e0b9e91cc1ee492f7",
+      "url": "https://github.com/eugeniosegala/MAKO/releases/download/render-v3.2.0/MAKO-Renderer-v3.2.0-linux.tar.xz",
+      "sha256hash": "d8e3b4a6d81ad2c5dc65911105747eb9f64d89b7b466ea706af2d68bbb0db018",
+      "host_architectures": [
+        "x86_64"
+      ],
+      "flatpak_bundle": {
+        "name": "MAKO-Renderer-v3.2.0-flatpaks.tar.xz",
+        "url": "https://github.com/eugeniosegala/MAKO/releases/download/render-v3.2.0/MAKO-Renderer-v3.2.0-flatpaks.tar.xz",
+        "sha256hash": "5cf61b0538cb0e062215675a7090efb96d322938fa3fcc8dda9d26189367248e"
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+diff -Nur mako-orig/package.json mako-patched/package.json
+--- mako-orig/package.json	2026-09-08 16:33:05.000000000 +0200
++++ mako-patched/package.json	2026-09-15 00:52:24.430730423 +0200
+@@ -97,7 +97,8 @@
+       "url": "https://github.com/eugeniosegala/MAKO/releases/download/render-v3.2.0/MAKO-Renderer-v3.2.0-linux.tar.xz",
+       "sha256hash": "d8e3b4a6d81ad2c5dc65911105747eb9f64d89b7b466ea706af2d68bbb0db018",
+       "host_architectures": [
+-        "x86_64"
++        "x86_64",
++        "aarch64"
+       ],
+       "flatpak_bundle": {
+         "name": "MAKO-Renderer-v3.2.0-flatpaks.tar.xz",
+diff -Nur mako-orig/py_modules/mako_plugin/wrapper_generation.py mako-patched/py_modules/mako_plugin/wrapper_generation.py
+--- mako-orig/py_modules/mako_plugin/wrapper_generation.py	2026-09-08 16:33:05.000000000 +0200
++++ mako-patched/py_modules/mako_plugin/wrapper_generation.py	2026-09-15 00:52:24.441539012 +0200
+@@ -235,7 +235,7 @@
+     return [
+         compatibility_marker,
+         'mako_native_arch="$(uname -m 2>/dev/null || true)"',
+-        f'if [ -f "{device_env}" ] || [ "$mako_native_arch" = "aarch64" ] || [ "$mako_native_arch" = "arm64" ]; then',
++        f'if [ -f "{device_env}" ]; then',
+         "    # This release has no validated native AArch64 Renderer.",
+         *(
+             passthrough_lines

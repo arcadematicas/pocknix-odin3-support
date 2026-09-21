@@ -139,6 +139,7 @@ overlay "packages/pocknix-tools" "packages/shared/pocknix-tools"
 # /usr/lib/libretro/; la integracion con el RetroArch portable de DeckStation
 # (copia al dir de cores) es un pendiente aparte.
 overlay "packages/suyu-libretro" "packages/shared/suyu-libretro"
+overlay "packages/pocknix-decky"   "packages/shared/pocknix-decky"
 
 # --- NOT synced (needs manual work — see the note below) ---------------------
 # kernel/patches is an OVERLAY: a patch we REMOVE from the centre is NOT removed from the build.

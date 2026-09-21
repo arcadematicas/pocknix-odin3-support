@@ -59,6 +59,7 @@ cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pyga
 cmp_tree "${HERE}/packages/suyu-libretro"     "${OS}/packages/shared/suyu-libretro"
 cmp_tree "${HERE}/packages/pocknix-steam"     "${OS}/packages/shared/pocknix-steam"
 cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-tools"
+  cmp_tree "${HERE}/packages/pocknix-decky"   "${OS}/packages/shared/pocknix-decky"
 if [ -d "${HERE}/packages/soc-overrides" ]; then
   for d in "${HERE}"/packages/soc-overrides/*/; do
     [ -d "${d}" ] || continue

@@ -1,0 +1,58 @@
+# pocknix-decky — Decky Loader (QAM plugin framework) + the Pocknix Control plugin.
+# Everything ships under /usr/share; pocknix-decky-sync.service seeds deck's ~/homebrew at boot,
+# version-compared so Decky's own self-updates are never downgraded.
+# The plugin frontend (dist/index.js) is prebuilt and committed — no node at package build time.
+pkgname=pocknix-decky
+pkgver=0.1.0
+pkgrel=39
+pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control QAM plugin"
+arch=('any')
+url="https://github.com/shuuri-labs/pocknix-os"
+license=('GPL2')
+depends=('fex-emu' 'fex-rootfs')
+_loaderver=v3.2.9
+source=('pocknix-decky-run' 'pocknix-decky-sync' 'pocknix-decky-killall' 'pocknix-decky-sync.service'
+        'pocknix-decky-loader.service' 'PluginLoader.json'
+        "PluginLoader-${_loaderver}::https://github.com/SteamDeckHomebrew/decky-loader/releases/download/${_loaderver}/PluginLoader")
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            '0a5246db98f2df93a6685ac8230e0acfbfa6e91d99b41b8dbbf1f94c308dedce')
+
+package() {
+  install -Dm755 "${srcdir}/PluginLoader-${_loaderver}" "${pkgdir}/usr/share/decky-loader/PluginLoader"
+  printf '%s\n' "${_loaderver}" > "${srcdir}/loader.version"
+  install -Dm644 "${srcdir}/loader.version"          "${pkgdir}/usr/share/decky-loader/.loader.version"
+
+  install -Dm755 "${srcdir}/pocknix-decky-run"       "${pkgdir}/usr/lib/pocknix/pocknix-decky-run"
+  install -Dm755 "${srcdir}/pocknix-decky-sync"      "${pkgdir}/usr/lib/pocknix/pocknix-decky-sync"
+  install -Dm755 "${srcdir}/pocknix-decky-killall"   "${pkgdir}/usr/lib/pocknix/decky-bin/killall"
+  install -Dm644 "${srcdir}/pocknix-decky-sync.service"   "${pkgdir}/usr/lib/systemd/system/pocknix-decky-sync.service"
+  install -Dm644 "${srcdir}/pocknix-decky-loader.service" "${pkgdir}/usr/lib/systemd/system/pocknix-decky-loader.service"
+  # Decky's self-updater restarts plugin_loader.service; the symlink aliases it to ours.
+  ln -s pocknix-decky-loader.service "${pkgdir}/usr/lib/systemd/system/plugin_loader.service"
+  install -Dm644 "${srcdir}/PluginLoader.json"       "${pkgdir}/usr/share/fex-emu/AppConfig/PluginLoader.json"
+
+
+  local plug="${startdir}/pocknix-control" dest="${pkgdir}/usr/share/decky-plugins/PocknixControl"
+  install -d -m755 "${dest}"
+  cp -a "${plug}/plugin.json" "${plug}/package.json" "${plug}/main.py" "${plug}/fex-profiles.json" "${dest}/"
+  cp -a "${plug}/py_modules" "${plug}/dist" "${dest}/"
+  rm -f "${dest}/dist"/*.map
+  find "${dest}" -name __pycache__ -type d -prune -exec rm -rf {} +
+
+  local mako="${startdir}/mako" dest_mako="${pkgdir}/usr/share/decky-plugins/Mako"
+  install -d -m755 "${dest_mako}"
+  cp -a "${mako}/plugin.json" "${mako}/package.json" "${mako}/main.py" "${mako}/shared_config.py" "${dest_mako}/"
+  cp -a "${mako}/py_modules" "${mako}/dist" "${dest_mako}/"
+  cp -a "${mako}/bin" "${dest_mako}/"
+  rm -f "${dest_mako}/dist"/*.map
+  find "${dest_mako}" -name __pycache__ -type d -prune -exec rm -rf {} +
+
+  # LOCAL PATCH (pocknix, TEMPORARY): MAKO ships an x86_64-only Renderer and refuses
+  # to run on native AArch64 hosts (see plugin/docs/ARMADA.md). The Odin 3 runs x86_64
+  # games through FEX, so we force-enable MAKO there until an official AArch64 Renderer
+  # ships. Two edits: declare aarch64 as a supported host (install gate) and drop the
+  # runtime `uname -m` aarch64 guard from the generated wrapper (keeping the Armada
+  # marker so existing wrappers are still recognised as current). REVERT when MAKO
+  # supports aarch64 natively (a fresh re-vendor + dropping this patch does it).
+  patch -p1 -d "${dest_mako}" < "${startdir}/mako-aarch64.patch"
+}

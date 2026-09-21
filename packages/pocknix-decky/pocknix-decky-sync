@@ -1,0 +1,60 @@
+#!/bin/bash
+# pocknix-decky-sync — seed Decky Loader + OS-shipped plugins into deck's homebrew dir.
+# Decky self-updates inside ~/homebrew, so the loader is replaced only when the OS bundles a
+# strictly newer version; a user's self-updated loader must never be downgraded. OS-shipped
+# plugins are system UI and get re-copied every boot; other plugin dirs are left alone.
+set -euo pipefail
+
+user_name=deck
+homebrew="/home/${user_name}/homebrew"
+loader_src=/usr/share/decky-loader/PluginLoader
+loader_version_src=/usr/share/decky-loader/.loader.version
+src=/usr/share/decky-plugins
+
+loader_needs_seed() {
+    [[ ! -x "${homebrew}/services/PluginLoader" ]] && return 0
+    [[ -f "${loader_version_src}" ]] || return 1
+    [[ -f "${homebrew}/services/.loader.version" ]] || return 0
+
+    # sort -V ranks -pre1 above the release; ~pre1 sorts below it.
+    local bundled current newest
+    bundled=$(<"${loader_version_src}"); bundled=${bundled//-/\~}
+    current=$(<"${homebrew}/services/.loader.version"); current=${current//-/\~}
+    newest=$(printf '%s\n%s\n' "${current}" "${bundled}" | sort -V | tail -n1)
+    [[ "${newest}" == "${bundled}" && "${bundled}" != "${current}" ]]
+}
+
+install -d -m 0755 "${homebrew}/services"
+install -d -m 0755 "${homebrew}/plugins"
+install -d -m 0755 "${homebrew}/settings"
+
+# A regular file here is Decky's own installer unit: it shadows our alias and races the loader.
+foreign_unit=/etc/systemd/system/plugin_loader.service
+if [[ -f "${foreign_unit}" && ! -L "${foreign_unit}" ]]; then
+    systemctl disable --now plugin_loader.service >/dev/null 2>&1 || true
+    rm -f "${foreign_unit}"
+fi
+
+if loader_needs_seed && [[ -x "${loader_src}" ]]; then
+    install -Dpm 0755 "${loader_src}" "${homebrew}/services/PluginLoader"
+    [[ ! -f "${loader_version_src}" ]] || install -Dpm 0644 "${loader_version_src}" "${homebrew}/services/.loader.version"
+fi
+
+if [[ ! -f "${homebrew}/settings/loader.json" ]]; then
+    # Default new installs to Decky's prerelease channel for current Steam-on-ARM fixes.
+    printf '{\n  "branch": 1\n}\n' >"${homebrew}/settings/loader.json"
+fi
+
+if [[ -d "$src" ]]; then
+    for plugin in "$src"/*/; do
+        [[ -d "$plugin" ]] || continue
+        name=$(basename "$plugin")
+        rm -rf "${homebrew}/plugins/${name}"
+        cp -a "$plugin" "${homebrew}/plugins/${name}"
+    done
+fi
+
+chown "${user_name}:${user_name}" "${homebrew}"
+chown -R "${user_name}:${user_name}" "${homebrew}/services"
+chown -R "${user_name}:${user_name}" "${homebrew}/plugins"
+[[ ! -d "${homebrew}/settings" ]] || chown -R "${user_name}:${user_name}" "${homebrew}/settings"
