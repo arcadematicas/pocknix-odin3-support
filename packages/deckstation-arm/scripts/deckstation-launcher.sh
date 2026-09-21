@@ -88,7 +88,15 @@ redirect_to_centralized "$PCSX2_CONFIG_DIR/sstates"  "$DECKSTATION_ROOT/saves/pc
 redirect_to_centralized "$PCSX2_CONFIG_DIR/snaps"    "$DECKSTATION_ROOT/saves/pcsx2/snaps"
 redirect_to_centralized "$PCSX2_CONFIG_DIR/logs"     "$DECKSTATION_ROOT/logs/pcsx2"
 
-# 7. CONFIGS BASE + BIOS + CORES (auto-reparacion barata: solo lo que falte)
+# 7. CONFIGS BASE + BIOS + CORES + LANZAR.SH (auto-reparacion barata: solo lo que falte)
+#
+# deploy-lanzar-sh.sh es imprescindible aqui: el es_find_rules.xml de ES-DE
+# apunta a ./Apps/<Emulador>/lanzar.sh, y el Updater instala emuladores en
+# cualquier momento. Sin esto, un emulador recien instalado desde ES-DE no se
+# puede lanzar hasta volver a pasar por el setup.
+if [ -x "$DECKSTATION_ROOT/scripts/deploy-lanzar-sh.sh" ]; then
+    DECKSTATION_ROOT="$DECKSTATION_ROOT" "$DECKSTATION_ROOT/scripts/deploy-lanzar-sh.sh" >/dev/null 2>&1 || true
+fi
 if [ -x "$DECKSTATION_ROOT/scripts/deckstation-cores.sh" ]; then
     DECKSTATION_ROOT="$DECKSTATION_ROOT" "$DECKSTATION_ROOT/scripts/deckstation-cores.sh" 2>/dev/null || true
 fi

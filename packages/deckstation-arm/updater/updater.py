@@ -488,6 +488,31 @@ class UpdaterEngine:
         self._updates_checked = True
         self._update_scan_active = False
 
+    def _preparar_portable(self, app):
+        """Deja el emulador listo para lanzar: wrapper lanzar.sh + configs.
+
+        El es_find_rules.xml de ES-DE apunta a Apps/<Emulador>/lanzar.sh, no al
+        AppImage. El setup despliega esos wrappers ANTES de que el Updater
+        descargue nada, asi que un emulador recien instalado se quedaba sin
+        lanzar.sh y ES-DE no podia arrancarlo. Aqui se completa al instante.
+        """
+        raiz = os.path.dirname(os.path.dirname(DIR))  # /opt/deckstation
+        env = dict(os.environ, DECKSTATION_ROOT=raiz)
+        helper = os.path.join(raiz, "scripts", "deploy-lanzar-sh.sh")
+        try:
+            if os.path.isfile(helper):
+                subprocess.run([helper, app.get("name", "")], env=env,
+                               timeout=60, capture_output=True)
+        except Exception:
+            pass
+        # Configs de fabrica: el script omite solo las apps que no existen.
+        try:
+            confs = os.path.join(raiz, "scripts", "deckstation-configs.sh")
+            if os.path.isfile(confs):
+                subprocess.run([confs], env=env, timeout=120, capture_output=True)
+        except Exception:
+            pass
+
     def _activate_current(self):
         """Activa la entrada seleccionada (instalar todo o gestionar un emulador)."""
         if not self.apps:
@@ -1130,6 +1155,8 @@ class UpdaterEngine:
         app["version"] = tag.lstrip("v")
         app["has_update"] = False
         app["installed"] = True
+        # Dejarlo lanzable (lanzar.sh + configs) antes de seguir
+        self._preparar_portable(app)
         if self._install_queue:
             # Venimos de "instalacion completa inicial": seguimos con el siguiente
             self._install_done += 1

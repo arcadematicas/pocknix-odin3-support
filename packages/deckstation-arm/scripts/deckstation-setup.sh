@@ -183,24 +183,18 @@ deploy_system_cores() {
 # AppImage directo, así que el wrapper debe existir para que el lanzamiento sea
 # portable (HOME redirigido al .home, SDL fijado al compositor).
 deploy_lanzar_sh() {
-    local lanzar_src="${SCRIPTS_DIR}/lanzar.sh"
-    local app_dir found
+    local helper="${SCRIPTS_DIR}/deploy-lanzar-sh.sh"
 
-    [ -f "${lanzar_src}" ] || {
-        log_warn "Plantilla lanzar.sh no encontrada (${lanzar_src}); se omite"
+    # La logica vive en deploy-lanzar-sh.sh porque la necesitan tambien el
+    # launcher (auto-reparacion) y el Updater (tras instalar un emulador).
+    if [ ! -x "$helper" ]; then
+        log_warn "No encuentro ${helper}; se omite el despliegue de lanzar.sh"
         return 0
-    }
+    fi
 
     log "Desplegando lanzar.sh a los emuladores..."
-    for app_dir in "${APPS_DIR}"/*/; do
-        [ -d "${app_dir}" ] || continue
-        found="$(find "${app_dir}" -maxdepth 1 \( -iname "*.AppImage" -o -iname "*.appimage" \) 2>/dev/null | head -1)"
-        # RetroArch no es un AppImage: es el binario nativo del buildbot junto a su
-        # .AppImage.home. Sin este caso se queda sin lanzar.sh y ES-DE no puede
-        # arrancarlo (es_find_rules apunta a ./Apps/RetroArch/lanzar.sh).
-        [ -n "${found}" ] || [ -x "${app_dir}retroarch" ] || continue
-        install -m755 "${lanzar_src}" "${app_dir}lanzar.sh" 2>/dev/null \
-            && log_ok "lanzar.sh -> $(basename "${app_dir}")" || true
+    DECKSTATION_ROOT="$DECKSTATION_ROOT" "$helper" | while read -r linea; do
+        log_ok "${linea#  }"
     done
 }
 
@@ -342,6 +336,16 @@ main() {
     echo ""
     log "Emuladores..."
     install_emulators
+
+    # install_emulators ESPERA a que el Updater cierre, y es el Updater quien
+    # descarga los emuladores: los que acaban de instalarse no existian cuando
+    # se desplego lanzar.sh mas arriba. Sin esta segunda pasada se quedaban sin
+    # wrapper y sin configs, y ES-DE (que apunta a Apps/<Emu>/lanzar.sh) no
+    # podia lanzarlos.
+    echo ""
+    log "Aplicando lanzar.sh y configs a los emuladores recien instalados..."
+    deploy_lanzar_sh
+    deploy_configs_and_bios
 
     echo ""
     echo "=========================================="
