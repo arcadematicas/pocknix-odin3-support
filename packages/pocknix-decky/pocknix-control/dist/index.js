@@ -37,6 +37,9 @@ const setLedSideEnabled = (side, enabled) => call("set_led_side_enabled", side, 
 const setLedLinked = (linked) => call("set_led_linked", linked);
 const setLedEnabled = (enabled) => call("set_led_enabled", enabled);
 const setLedSides = (sides) => call("set_led_sides", sides);
+const cleanupScan = () => call("cleanup_scan");
+const cleanupRun = (ids) => call("cleanup_run", ids);
+const cleanupBiggest = () => call("cleanup_biggest");
 const oledCareStatus = () => call("oled_care_status");
 const runOledRefresher = (duration, passes) => call("run_oled_refresher", duration, passes);
 const detectSdcard = () => call("detect_sdcard");
@@ -104,6 +107,8 @@ const tabIcons = {
     Library: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("rect", { width: "18", height: "18", x: "3", y: "3", rx: "2" }), SP_JSX.jsx("path", { d: "M8 12h8" }), SP_JSX.jsx("path", { d: "M12 8v8" })] }) })),
     Updater: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }), SP_JSX.jsx("polyline", { points: "7 10 12 15 17 10" }), SP_JSX.jsx("line", { x1: "12", x2: "12", y1: "15", y2: "3" })] }) })),
     Lighting: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("path", { d: "M9 18h6" }), SP_JSX.jsx("path", { d: "M10 22h4" }), SP_JSX.jsx("path", { d: "M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" })] }) })),
+    // Escoba: limpieza de cachés
+    Cleanup: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("path", { d: "M3 21h18" }), SP_JSX.jsx("path", { d: "M12 3v8" }), SP_JSX.jsx("path", { d: "M8 11h8l1.5 6h-11z" })] }) })),
 };
 
 function gameDisplayName(game) {
@@ -234,6 +239,79 @@ const styles = `
         align-self: stretch;
       }
     `;
+
+// Bytes -> texto corto (MB o GB), que es como se lee bien en el QAM.
+const human = (bytes) => {
+    if (bytes >= 1024 ** 3)
+        return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+    if (bytes >= 1024 ** 2)
+        return `${(bytes / 1024 ** 2).toFixed(0)} MB`;
+    if (bytes >= 1024)
+        return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${bytes} B`;
+};
+function Cleanup() {
+    const [data, setData] = SP_REACT.useState(null);
+    const [selected, setSelected] = SP_REACT.useState({});
+    const [biggest, setBiggest] = SP_REACT.useState([]);
+    const [showAdvanced, setShowAdvanced] = SP_REACT.useState(false);
+    const [busy, setBusy] = SP_REACT.useState(false);
+    const [message, setMessage] = SP_REACT.useState("");
+    const [error, setError] = SP_REACT.useState("");
+    const refresh = () => {
+        cleanupScan()
+            .then((next) => {
+            setData(next);
+            // Por defecto marcamos todo lo NO avanzado: es lo que se puede borrar sin
+            // pensar. Lo avanzado (p.ej. la caché de pacman) se deja sin marcar.
+            setSelected((current) => {
+                const out = {};
+                for (const item of next.items)
+                    out[item.id] = current[item.id] ?? !item.advanced;
+                return out;
+            });
+        })
+            .catch((err) => setError(String(err)));
+    };
+    SP_REACT.useEffect(() => {
+        refresh();
+        cleanupBiggest().then(setBiggest).catch(() => { });
+    }, []);
+    const selectedIds = data ? data.items.filter((i) => selected[i.id]).map((i) => i.id) : [];
+    const selectedSize = data ? data.items.filter((i) => selected[i.id]).reduce((a, i) => a + i.size, 0) : 0;
+    const run = () => {
+        if (!selectedIds.length)
+            return;
+        DFL.showModal(SP_JSX.jsx(DFL.ConfirmModal, { strTitle: "Limpiar cach\u00E9s", strDescription: `Se borrarán ${selectedIds.length} categoría(s), unos ${human(selectedSize)}. Solo son cachés y logs: se regeneran solos. No se tocan partidas ni configuraciones.`, strOKButtonText: "Limpiar", strCancelButtonText: "Cancelar", onOK: async () => {
+                setBusy(true);
+                setError("");
+                setMessage("");
+                try {
+                    const result = await cleanupRun(selectedIds);
+                    setMessage(result.errors.length
+                        ? `Liberado ${human(result.freed)}. ${result.errors.length} aviso(s): ${result.errors.slice(0, 2).join(" · ")}`
+                        : `Liberado ${human(result.freed)}.`);
+                    refresh();
+                    cleanupBiggest().then(setBiggest).catch(() => { });
+                }
+                catch (err) {
+                    setError(String(err));
+                }
+                finally {
+                    setBusy(false);
+                }
+            } }));
+    };
+    const items = data?.items ?? [];
+    const shown = items.filter((i) => showAdvanced || !i.advanced);
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSection, { title: "ESPACIO", children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Libre", description: data
+                            ? `${human(data.free)} libres de ${human(data.diskTotal)}${data.total ? ` · ${human(data.total)} en cachés` : ""}`
+                            : "…" }) }) }), SP_JSX.jsxs(DFL.PanelSection, { title: "CACH\u00C9S Y LOGS", children: [shown.map((item) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: `${item.label} — ${human(item.size)}`, description: item.description, checked: !!selected[item.id], disabled: busy || item.size === 0, onChange: (value) => setSelected((cur) => ({ ...cur, [item.id]: value })) }) }, item.id))), items.some((i) => i.advanced) && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Mostrar opciones avanzadas", description: "Categor\u00EDas que conviene borrar con cuidado (p. ej. la cach\u00E9 de paquetes).", checked: showAdvanced, onChange: setShowAdvanced }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: busy || !selectedIds.length, description: busy
+                                ? "Limpiando…"
+                                : selectedIds.length
+                                    ? `Borrar ${selectedIds.length} categoría(s) · ${human(selectedSize)}`
+                                    : "Marca alguna categoría", onClick: run, children: "Limpiar seleccionadas" }) }), message ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: message }) })) : null, error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }), biggest.length > 0 && (SP_JSX.jsx(DFL.PanelSection, { title: "QU\u00C9 OCUPA M\u00C1S", children: biggest.map((entry) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: human(entry.size), description: entry.path.replace(/^\/home\/[^/]+/, "~") }) }, entry.path))) }))] }));
+}
 
 // Drives the same state as Steam's own per-game compatibility dropdown (SpecifyCompatTool +
 // app details), so never store a shadow copy: the two UIs stay in sync by construction.
@@ -1373,6 +1451,7 @@ function Content() {
         ...(config.led.available
             ? [{ id: "Lighting", title: tabIcons.Lighting, content: tabContent(SP_JSX.jsx(Lighting, { config: config, setConfig: setConfig, reload: load })) }]
             : []),
+        { id: "Cleanup", title: tabIcons.Cleanup, content: tabContent(SP_JSX.jsx(Cleanup, {})) },
         { id: "Updater", title: tabIcons.Updater, content: tabContent(SP_JSX.jsx(Updater, {})) },
     ];
     return (SP_JSX.jsxs("div", { className: "pocknix-control-tabs", children: [SP_JSX.jsx("style", { children: styles }), SP_JSX.jsx(DFL.Tabs, { activeTab: tab, onShowTab: setTab, tabs: tabs })] }));

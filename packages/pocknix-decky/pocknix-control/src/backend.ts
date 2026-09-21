@@ -18,6 +18,15 @@ export const setLedSideEnabled = (side: "left" | "right", enabled: boolean) =>
 export const setLedLinked = (linked: boolean) => call<[boolean], LedConfig>("set_led_linked", linked);
 export const setLedEnabled = (enabled: boolean) => call<[boolean], LedConfig>("set_led_enabled", enabled);
 export const setLedSides = (sides: boolean) => call<[boolean], LedConfig>("set_led_sides", sides);
+export interface CleanupItem { id: string; label: string; description: string; size: number; advanced: boolean }
+export interface CleanupScan { items: CleanupItem[]; total: number; free: number; diskTotal: number }
+export interface CleanupResult { freed: number; errors: string[] }
+export interface BiggestEntry { path: string; size: number }
+
+export const cleanupScan = () => call<[], CleanupScan>("cleanup_scan");
+export const cleanupRun = (ids: string[]) => call<[string[]], CleanupResult>("cleanup_run", ids);
+export const cleanupBiggest = () => call<[], BiggestEntry[]>("cleanup_biggest");
+
 export const oledCareStatus = () => call<[], OledCareStatus>("oled_care_status");
 export const runOledRefresher = (duration?: number, passes?: number) => call<[number | undefined, number | undefined], OledCareStatus>("run_oled_refresher", duration, passes);
 export const detectSdcard = () => call<[], SdcardInfo>("detect_sdcard");

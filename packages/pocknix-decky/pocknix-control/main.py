@@ -12,6 +12,7 @@ from pocknix_control.led import (restore_led, set_led, set_led_enabled, set_led_
                                  set_led_side_enabled, set_led_sides)
 from pocknix_control.mako import mako_status
 from pocknix_control.modes import set_fan_mode, set_lavd_mode
+from pocknix_control.cleanup import clean, scan, biggest
 from pocknix_control.oled_care import oled_care_status, run_refresher
 from pocknix_control.sdcard import detect_sdcard, format_sdcard
 from pocknix_control.sharing import install_samba, set_share, share_status
@@ -83,6 +84,15 @@ class Plugin:
 
     async def set_led_sides(self, sides):
         return await asyncio.to_thread(set_led_sides, sides)
+
+    async def cleanup_scan(self):
+        return await asyncio.to_thread(scan)
+
+    async def cleanup_run(self, ids):
+        return await asyncio.to_thread(clean, ids)
+
+    async def cleanup_biggest(self):
+        return await asyncio.to_thread(biggest)
 
     async def oled_care_status(self):
         return await asyncio.to_thread(oled_care_status)

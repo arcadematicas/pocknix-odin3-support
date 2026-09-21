@@ -65,4 +65,16 @@ export const tabIcons = {
       }
     />
   ),
+  // Escoba: limpieza de cachés
+  Cleanup: (
+    <Icon
+      path={
+        <>
+          <path d="M3 21h18" />
+          <path d="M12 3v8" />
+          <path d="M8 11h8l1.5 6h-11z" />
+        </>
+      }
+    />
+  ),
 };

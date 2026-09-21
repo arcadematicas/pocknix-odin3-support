@@ -6,6 +6,7 @@ import { useDebouncedSave } from "./hooks/useDebouncedSave";
 import { tabIcons } from "./icons";
 import { currentGame } from "./lib/games";
 import { styles } from "./styles";
+import { Cleanup } from "./tabs/Cleanup";
 import { Games } from "./tabs/Games";
 import { Library } from "./tabs/Library";
 import { Lighting } from "./tabs/Lighting";
@@ -67,6 +68,7 @@ export function Content() {
     ...(config.led.available
       ? [{ id: "Lighting", title: tabIcons.Lighting, content: tabContent(<Lighting config={config} setConfig={setConfig} reload={load} />) }]
       : []),
+    { id: "Cleanup", title: tabIcons.Cleanup, content: tabContent(<Cleanup />) },
     { id: "Updater", title: tabIcons.Updater, content: tabContent(<Updater />) },
   ];
   return (
