@@ -18,6 +18,7 @@ Python (os.walk/rmtree), que no tienen ese problema. Para `journalctl` y
 `pacman` si hace falta pasar por systemd-run.
 """
 
+import glob
 import os
 import shutil
 import threading
@@ -54,6 +55,18 @@ def _steam_roots():
         HOME / ".steam" / "steam",
         HOME / ".local" / "share" / "Steam",
     ]
+
+
+def _expand(cat):
+    """Rutas de una categoria, expandiendo los globs (para los emuladores, cuyas
+    cachés viven dentro de carpetas con nombre variable: <Emu>.AppImage.home)."""
+    paths = list(cat.get("paths", []))
+    for patron in cat.get("globs", []):
+        try:
+            paths.extend(Path(p) for p in glob.glob(patron))
+        except OSError:
+            pass
+    return paths
 
 
 def _categories():
@@ -97,6 +110,48 @@ def _categories():
                 HOME / ".cache" / "yuzu",
                 HOME / ".cache" / "citron",
             ],
+        },
+        {
+            "id": "deckstation_caches",
+            "label": "Caché de emuladores (DeckStation)",
+            "description": "Cachés de shaders y temporales de los emuladores (DuckStation, Dolphin, Suyu…). Se regeneran al jugar.",
+            # Globs porque cada emulador vive en <Nombre>.AppImage.home, que cambia
+            # de nombre segun la version. Solo se tocan .cache y .../cache: NUNCA
+            # los .config ni los saves.
+            "globs": [
+                "/opt/deckstation/Apps/*/*.AppImage.home/.cache",
+                "/opt/deckstation/Apps/*/*.AppImage.home/.local/share/*/cache",
+                "/opt/deckstation/Apps/*/*.AppImage.home/.local/share/*/Cache",
+                "/opt/deckstation/Apps/*/*.AppImage.home/.local/share/*/shader_cache",
+                "/opt/deckstation/Apps/*/*.AppImage.home/.local/share/*/ShaderCache",
+                "/opt/deckstation/Apps/*/*.AppImage.home/.local/share/*/shaders",
+                "/opt/deckstation/Apps/*/*.AppImage.home/.config/*/cache",
+                "/opt/deckstation/Apps/*/*.AppImage.home/.config/*/Cache",
+                # PSP/Switch guardan ahi sus caches compiladas
+                "/opt/deckstation/Apps/*/*.AppImage.home/.config/*/SYSTEM/CACHE",
+                "/opt/deckstation/Apps/*/*.AppImage.home/.local/share/*/dump",
+            ],
+        },
+        {
+            "id": "wproton_cache",
+            "label": "Caché de WProton",
+            "description": "Caché de WProton (Proton ARM). Se regenera sola.",
+            "paths": [Path("/opt/wproton/cache")],
+        },
+        {
+            "id": "wproton_logs",
+            "label": "Logs de WProton",
+            "description": "Registros de WProton. No afecta a nada.",
+            "paths": [Path("/opt/wproton/logs")],
+        },
+        {
+            "id": "wproton_prefixes",
+            "label": "Prefijos de WProton",
+            "description": "⚠️ Los prefijos de Wine llevan PARTIDAS y ajustes de los juegos. Libera mucho, pero se pierde todo lo guardado y habrá que reinstalar el prefijo.",
+            "paths": [Path("/opt/wproton/prefixes")],
+            # Va como avanzada A PROPOSITO: es lo unico de esta pestaña que puede
+            # destruir datos del usuario. No se marca por defecto.
+            "advanced": True,
         },
         {
             "id": "deckstation_logs",
@@ -186,9 +241,10 @@ def scan():
     items = []
     total = 0
     for cat in _categories():
-        size = sum(_size_of(p) for p in cat["paths"])
+        rutas = _expand(cat)
+        size = sum(_size_of(p) for p in rutas)
         # Solo se muestran las que existen: menos ruido y mas claro.
-        exists = any(p.exists() for p in cat["paths"])
+        exists = any(p.exists() for p in rutas)
         if not exists:
             continue
         total += size
@@ -219,7 +275,7 @@ def clean(ids):
         for cat in _categories():
             if cat["id"] not in wanted:
                 continue
-            for path in cat["paths"]:
+            for path in _expand(cat):
                 if not path.exists():
                     continue
                 if not _allowed(path):

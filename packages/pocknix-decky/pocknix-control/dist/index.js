@@ -37,6 +37,9 @@ const setLedSideEnabled = (side, enabled) => call("set_led_side_enabled", side, 
 const setLedLinked = (linked) => call("set_led_linked", linked);
 const setLedEnabled = (enabled) => call("set_led_enabled", enabled);
 const setLedSides = (sides) => call("set_led_sides", sides);
+const systemStatus = () => call("system_status");
+const systemSetProfile = (profile) => call("set_power_profile", profile);
+const systemSetBacklight = (percent) => call("set_backlight", percent);
 const cleanupScan = () => call("cleanup_scan");
 const cleanupRun = (ids) => call("cleanup_run", ids);
 const cleanupBiggest = () => call("cleanup_biggest");
@@ -107,6 +110,8 @@ const tabIcons = {
     Library: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("rect", { width: "18", height: "18", x: "3", y: "3", rx: "2" }), SP_JSX.jsx("path", { d: "M8 12h8" }), SP_JSX.jsx("path", { d: "M12 8v8" })] }) })),
     Updater: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }), SP_JSX.jsx("polyline", { points: "7 10 12 15 17 10" }), SP_JSX.jsx("line", { x1: "12", x2: "12", y1: "15", y2: "3" })] }) })),
     Lighting: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("path", { d: "M9 18h6" }), SP_JSX.jsx("path", { d: "M10 22h4" }), SP_JSX.jsx("path", { d: "M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" })] }) })),
+    // Chip/ajustes: sistema (potencia, batería, brillo)
+    System: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("rect", { width: "16", height: "16", x: "4", y: "4", rx: "2" }), SP_JSX.jsx("rect", { width: "6", height: "6", x: "9", y: "9", rx: "1" }), SP_JSX.jsx("path", { d: "M9 2v2" }), SP_JSX.jsx("path", { d: "M15 2v2" }), SP_JSX.jsx("path", { d: "M9 20v2" }), SP_JSX.jsx("path", { d: "M15 20v2" }), SP_JSX.jsx("path", { d: "M2 9h2" }), SP_JSX.jsx("path", { d: "M2 15h2" }), SP_JSX.jsx("path", { d: "M20 9h2" }), SP_JSX.jsx("path", { d: "M20 15h2" })] }) })),
     // Escoba: limpieza de cachés
     Cleanup: (SP_JSX.jsx(Icon, { path: SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("path", { d: "M3 21h18" }), SP_JSX.jsx("path", { d: "M12 3v8" }), SP_JSX.jsx("path", { d: "M8 11h8l1.5 6h-11z" })] }) })),
 };
@@ -311,6 +316,50 @@ function Cleanup() {
                                 : selectedIds.length
                                     ? `Borrar ${selectedIds.length} categoría(s) · ${human(selectedSize)}`
                                     : "Marca alguna categoría", onClick: run, children: "Limpiar seleccionadas" }) }), message ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: message }) })) : null, error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }), biggest.length > 0 && (SP_JSX.jsx(DFL.PanelSection, { title: "QU\u00C9 OCUPA M\u00C1S", children: biggest.map((entry) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: human(entry.size), description: entry.path.replace(/^\/home\/[^/]+/, "~") }) }, entry.path))) }))] }));
+}
+
+const voltios = (uv) => (uv == null ? "-" : `${(uv / 1000000).toFixed(2)} V`);
+const amperios = (ua) => (ua == null ? "-" : `${(ua / 1000000).toFixed(2)} A`);
+// La salud que da el driver viene como texto ("Good", "Normal"...); si ademas
+// tenemos capacidad real y de diseno, el backend calcula un %.
+const salud = (status) => {
+    const b = status.battery;
+    if (!b.available)
+        return "no disponible";
+    const partes = [b.health, b.cycles != null ? `${b.cycles} ciclos` : null].filter(Boolean);
+    return partes.length ? partes.join(" · ") : "-";
+};
+function System() {
+    const [status, setStatus] = SP_REACT.useState(null);
+    const [busy, setBusy] = SP_REACT.useState(false);
+    const [message] = SP_REACT.useState("");
+    const [error, setError] = SP_REACT.useState("");
+    const refresh = () => {
+        systemStatus()
+            .then(setStatus)
+            .catch((err) => setError(String(err)));
+    };
+    SP_REACT.useEffect(refresh, []);
+    const pick = (id) => {
+        setBusy(true);
+        setError("");
+        systemSetProfile(id)
+            .then((next) => setStatus((cur) => (cur ? { ...cur, profile: next.profile } : cur)))
+            .catch((err) => setError(String(err)))
+            .finally(() => setBusy(false));
+    };
+    const setBrightness = (percent) => {
+        systemSetBacklight(percent)
+            .then((bl) => setStatus((cur) => (cur ? { ...cur, backlight: bl } : cur)))
+            .catch((err) => setError(String(err)));
+    };
+    const b = status?.battery;
+    const bl = status?.backlight;
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "PERFIL DE POTENCIA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Actual", description: "Limita la frecuencia m\u00E1xima de CPU y GPU. 'Bajo' alarga mucho la bater\u00EDa; 'Alto' no pone l\u00EDmites." }) }), status?.profiles.map((p) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: busy || status.profile === p.id, description: status.profile === p.id ? "En uso" : undefined, onClick: () => pick(p.id), children: p.label }) }, p.id))), message ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: message }) })) : null] }), SP_JSX.jsx(DFL.PanelSection, { title: "BATER\u00CDA", children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: b?.available
+                            ? [b.status, salud(status), amperios(b.currentNow), voltios(b.voltageNow)]
+                                .filter((x) => x && x !== "-")
+                                .join(" · ")
+                            : "no disponible en este equipo" }) }) }), bl?.available && (SP_JSX.jsx(DFL.PanelSection, { title: "BRILLO", children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.SliderField, { label: `${bl.percent}%`, value: bl.percent ?? 0, min: 1, max: 100, step: 5, showValue: false, onChange: setBrightness }) }) })), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }));
 }
 
 // Drives the same state as Steam's own per-game compatibility dropdown (SpecifyCompatTool +
@@ -1451,6 +1500,7 @@ function Content() {
         ...(config.led.available
             ? [{ id: "Lighting", title: tabIcons.Lighting, content: tabContent(SP_JSX.jsx(Lighting, { config: config, setConfig: setConfig, reload: load })) }]
             : []),
+        { id: "System", title: tabIcons.System, content: tabContent(SP_JSX.jsx(System, {})) },
         { id: "Cleanup", title: tabIcons.Cleanup, content: tabContent(SP_JSX.jsx(Cleanup, {})) },
         { id: "Updater", title: tabIcons.Updater, content: tabContent(SP_JSX.jsx(Updater, {})) },
     ];
