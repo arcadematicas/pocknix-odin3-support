@@ -272,19 +272,51 @@ tiene completo en `packages/shared/deckstation-arm/`.
 
 - **Documentación autoritativa**: `stshunz/deckstation-arm` →
   `CAMBIOS-REALIZADOS.md` (secciones 8-11), `configs/README.md`, `bios/README.md`,
-  `docs/INSTALACION.md`. Y la sección "DeckStation" de
+  `docs/INSTALACION.md`, `updater/README.md`. Y la sección "DeckStation" de
   `/home/fransis/pocknix-odin3-project/AGENTS.md`.
+
+### 🔑 ARQUITECTURA DE INSTALACIÓN (21/09/2026) — "dos puertas, un motor"
+
+> **El motor vive en los scripts; la GUI va encima.** Así una avería de pygame no deja
+> al usuario sin poder instalar (ya pasó: `SDL_VIDEODRIVER=x11` forzado → ventana
+> invisible, y el Updater no se podía usar).
+
+| | Quién | Qué hace |
+|---|---|---|
+| **INSTALAR** (una vez) | Pocknix Tools → `deckstation-setup.sh` | entorno + **los 30 emuladores** (`updater.py --install-all`, headless) + `lanzar.sh` + configs + BIOS |
+| **GESTIONAR** (siempre) | Updater GUI (ES-DE → Updater) | actualizar / instalar sueltos / **estado de BIOS** |
+
+- **`updater.py --install-all`** (headless): instala todos los que falten, con progreso y
+  **resumen de fallos**. Fuerza `SDL_VIDEODRIVER=dummy` **antes de importar pygame** (el
+  módulo hace `display.set_mode()` al cargarse → si no, `No available video device`).
+  Devuelve 0/1. Reutiliza el MISMO motor que la GUI (no hay dos lógicas de descarga).
+- **Tolerancia a fallos**: `_download_worker` es un **envoltorio** de `_descargar()`.
+  Dentro hay **13 `return` de error** que abortaban la cola entera; ahora se detectan con
+  `_descarga_correcta`, se apuntan en `_install_fallidos` y **se sigue con el siguiente**.
+  El éxito avanza la cola dentro de `_descargar` (no hay doble avance).
 - **Config base reproducible**: `scripts/deckstation-configs.sh` +
   `configs/deploy-manifest.txt` despliegan la config en cada emulador (lo llaman el setup
   y el launcher). Ya **no** hace falta el payload de MediaFire del Updater (era x86_64).
-- **BIOS**: solución externa en `bios/` + `scripts/deckstation-bios.sh` (copyright: el
-  usuario pone sus ficheros y el script los reparte).
+- **⚠️ Los emuladores instalados por el Updater quedaban INLANZABLES** (arreglado
+  21/09): `es_find_rules.xml` apunta a `Apps/<Emulador>/lanzar.sh` (34 sitios), y el setup
+  desplegaba esos wrappers **antes** de que el Updater descargara nada → sin `lanzar.sh`
+  ni `.home`/configs. Ahora `scripts/deploy-lanzar-sh.sh` (idempotente) lo despliega desde
+  **tres** sitios: el setup (2ª pasada tras cerrar el Updater), el launcher (auto-reparación
+  en cada arranque) y el propio Updater (`_preparar_portable`, tras cada instalación).
+- **BIOS**: solución externa en `bios/` (copyright: el usuario pone sus ficheros).
+  - `bios/required.txt` = qué fichero espera cada sistema (+ **alternativas**: cualquier
+    BIOS de PSX vale) y `bios/deploy-bios.txt` = a dónde va cada sistema.
+  - `deckstation-bios.sh --check` → **informe**: cuántas tienes, cuáles faltan y el destino
+    de cada una. También en la GUI (Updater → **BIOS / Firmware**) y en Pocknix Tools
+    (**DeckStation BIOS**).
 - **Cores**: Suyu (Switch) necesita las claves en `<retroarch>/system/suyu/keys/`, y tanto
   Suyu como GooseStation (PSX) necesitan su `<command>` en `es_systems.xml`.
 - **⚠️ Gap**: el paquete `suyu-libretro` **no está en `devices/sm8750/packages.list`** →
   el core de Switch no entra en la imagen. Pendiente.
 - **Ojo con el sync**: `tools/sync-to-os.sh` usa `rsync` **sin `--delete`** → los ficheros
   editados a mano en el árbol sobreviven; los ficheros nuevos del centro se añaden.
+- **⚠️ Al copiar el `PKGBUILD` de `stshunz` al centro, comprobar `pkgrel`**: divergen (el
+  21/09 se revirtió un `pkgrel=4` que solo existía en el centro).
 
 ## 💾 ALMACENAMIENTO: ext4 vs F2FS en la UFS interna — PENDIENTE DE REVISAR (18/09/2026)
 
