@@ -56,7 +56,8 @@ cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix
 # check-sync decia OK -> la imagen habria salido con ES-DE en negro desde Game Mode).
 cmp_tree "${HERE}/packages/deckstation-arm"   "${OS}/packages/shared/deckstation-arm"
 cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pygame-ce"
-cmp_tree "${HERE}/packages/suyu-libretro"     "${OS}/packages/shared/suyu-libretro"
+  cmp_tree "${HERE}/packages/suyu-libretro"     "${OS}/packages/shared/suyu-libretro"
+  cmp_tree "${HERE}/packages/libretro-cores-pocknix" "${OS}/packages/shared/libretro-cores-pocknix"
 cmp_tree "${HERE}/packages/pocknix-steam"     "${OS}/packages/shared/pocknix-steam"
 cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-tools"
   cmp_tree "${HERE}/packages/pocknix-decky"   "${OS}/packages/shared/pocknix-decky"
