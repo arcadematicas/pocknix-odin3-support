@@ -6,6 +6,7 @@
         <fullname>3DO Interactive Multiplayer</fullname>
         <path>%ROMPATH%/3do</path>
         <extension>.bin .BIN .chd .CHD .cue .CUE .iso .ISO .7z .7Z .zip .ZIP</extension>
+        <command label="Dolphin (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_DOLPHIN% -b -e %ROM%</command>
         <command label="Opera">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/opera_libretro.so %ROM%</command>
         <platform>3do</platform>
         <theme>3do</theme>
@@ -870,8 +871,8 @@
         <fullname>Nintendo GameCube</fullname>
         <path>%ROMPATH%/gc</path>
         <extension>.ciso .CISO .dff .DFF .dol .DOL .elf .ELF .gcm .GCM .gcz .GCZ .iso .ISO .json .JSON .m3u .M3U .rvz .RVZ .tgc .TGC .wad .WAD .wbfs .WBFS .wia .WIA .7z .7Z .zip .ZIP</extension>
-        <command label="Dolphin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dolphin_libretro.so %ROM%</command>
         <command label="Dolphin (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_DOLPHIN% -b -e %ROM%</command>
+        <command label="Dolphin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dolphin_libretro.so %ROM%</command>
         <command label="PrimeHack (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_PRIMEHACK% -b -e %ROM%</command>
         <command label="Triforce (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_TRIFORCE% -b -e %ROM%</command>
         <platform>gc</platform>
@@ -931,8 +932,8 @@
         <fullname>Java 2 Micro Edition (J2ME)</fullname>
         <path>%ROMPATH%/j2me</path>
         <extension>.jar .JAR .7z .7Z .zip .ZIP</extension>
-        <command label="SquirrelJME">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/squirreljme_libretro.so %ROM%</command>
         <command label="FreeJ2ME">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/freej2me_libretro.so %ROM%</command>
+        <command label="SquirrelJME">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/squirreljme_libretro.so %ROM%</command>
         <command label="FreeJ2ME (Standalone)">/bin/bash ./j2me.sh ../../../%ROM%</command>
         <platform>android</platform>
         <theme>j2me</theme>
@@ -1168,10 +1169,10 @@
         <path>%ROMPATH%/model3</path>
         <extension>.7z .7Z .zip .ZIP</extension>
         <command label="Supermodel (Standalone)">%EMULATOR_SUPERMODEL% ../../../../../%ROM%</command>
+    <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="Supermodel">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/supermodel_libretro.so %ROM%</command>
         <platform>arcade</platform>
         <theme>model3</theme>
-    <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/model3 %BASENAME%</command>
         </system>
     <system>
@@ -1257,13 +1258,13 @@
         <fullname>Nintendo 3DS</fullname>
         <path>%ROMPATH%/n3ds</path>
         <extension>.3ds .3DS .3dsx .3DSX .app .APP .axf .AXF .cci .CCI .cxi .CXI .elf .ELF .7z .7Z .zip .ZIP .sh .zcci .ZCCI</extension>
+        <command label="Azahar (Standalone)">%EMULATOR_AZAHAR% -f %ROM%</command>
         <command label="Citra">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/citra_libretro.so %ROM%</command>
         <command label="Citra 2018">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/citra2018_libretro.so %ROM%</command>
         <command label="Citra (Standalone)">%EMULATOR_CITRA% %ROM%</command>
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
 
         <command label="Lime3ds (Standalone)">./Apps/lime3ds/lime3ds.AppImage -f %ROM%</command>
-        <command label="Azahar (Standalone)">%EMULATOR_AZAHAR% -f %ROM%</command>
         <command label="Azahar">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/azahar_libretro.so %ROM%</command>
         <platform>n3ds</platform>
         <theme>n3ds</theme>
@@ -1337,8 +1338,8 @@
         <fullname>Nintendo DS</fullname>
         <path>%ROMPATH%/nds</path>
         <extension>.app .APP .bin .BIN .nds .NDS .7z .7Z .zip .ZIP</extension>
-        <command label="melonDS DS">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/melondsds_libretro.so %ROM%</command>
         <command label="melonDS">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/melonds_libretro.so %ROM%</command>
+        <command label="melonDS DS">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/melondsds_libretro.so %ROM%</command>
         <command label="melonDS (Standalone)">%EMULATOR_MELONDS% %ROM%</command>
         <command label="DeSmuME">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/desmume_libretro.so %ROM%</command>
         <command label="DeSmuME 2015">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/desmume2015_libretro.so %ROM%</command>
@@ -1563,8 +1564,8 @@
         <fullname>NEC PC Engine</fullname>
         <path>%ROMPATH%/pcengine</path>
         <extension>.ccd .CCD .chd .CHD .cue .CUE .img .IMG .iso .ISO .m3u .M3U .pce .PCE .sgx .SGX .toc .TOC .7z .7Z .zip .ZIP</extension>
-        <command label="Beetle PCE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_libretro.so %ROM%</command>
         <command label="Beetle PCE FAST">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_fast_libretro.so %ROM%</command>
+        <command label="Beetle PCE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module pce %ROM%</command>
         <command label="Mesen (Standalone)">%EMULATOR_MESEN% --fullscreen %ROM%</command>
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "PC Engine" %ROM%</command>
@@ -1578,8 +1579,8 @@
         <fullname>NEC PC Engine CD</fullname>
         <path>%ROMPATH%/pcenginecd</path>
         <extension>.ccd .CCD .chd .CHD .cue .CUE .img .IMG .iso .ISO .m3u .M3U .pce .PCE .sgx .SGX .toc .TOC .7z .7Z .zip .ZIP</extension>
-        <command label="Beetle PCE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_libretro.so %ROM%</command>
         <command label="Beetle PCE FAST">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_fast_libretro.so %ROM%</command>
+        <command label="Beetle PCE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module pce %ROM%</command>
         <command label="Mesen (Standalone)">%EMULATOR_MESEN% --fullscreen %ROM%</command>
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "PC Engine CD" %ROM%</command>
@@ -1755,9 +1756,9 @@
         <fullname>Sony PlayStation</fullname>
         <path>%ROMPATH%/psx</path>
         <extension>.bin .BIN .cbn .CBN .ccd .CCD .chd .CHD .cue .CUE .ecm .ECM .exe .EXE .img .IMG .iso .ISO .m3u .M3U .mdf .MDF .mds .MDS .minipsf .MINIPSF .pbp .PBP .psexe .PSEXE .psf .PSF .toc .TOC .z .Z .znx .ZNX .7z .7Z .zip .ZIP</extension>
+        <command label="Beetle PSX HW">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_psx_hw_libretro.so %ROM%</command>
         <command label="GooseStation">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/goosestation_libretro.so %ROM%</command>
         <command label="Beetle PSX">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_psx_libretro.so %ROM%</command>
-        <command label="Beetle PSX HW">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_psx_hw_libretro.so %ROM%</command>
         <command label="PCSX ReARMed">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx_rearmed_libretro.so %ROM%</command>
         <command label="SwanStation">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/swanstation_libretro.so %ROM%</command>
         <command label="DuckStation (Standalone)">%EMULATOR_DUCKSTATION% -batch %ROM%</command>
@@ -1826,9 +1827,9 @@
         <fullname>Sega Saturn</fullname>
         <path>%ROMPATH%/saturn</path>
         <extension>.bin .BIN .ccd .CCD .chd .CHD .cue .CUE .iso .ISO .m3u .M3U .mds .MDS .toc .TOC .7z .7Z .zip .ZIP</extension>
+        <command label="YabaSanshiro">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabasanshiro_libretro.so %ROM%</command>
         <command label="Beetle Saturn">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_saturn_libretro.so %ROM%</command>
         <command label="Kronos">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/kronos_libretro.so %ROM%</command>
-        <command label="YabaSanshiro">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabasanshiro_libretro.so %ROM%</command>
         <command label="Yabause">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabause_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module ss %ROM%</command>
         <command label="Ymir (Standalone)">%EMULATOR_YMIR% ../../../../../../../%ROM%</command>
@@ -1841,9 +1842,9 @@
         <fullname>Sega Saturn</fullname>
         <path>%ROMPATH%/saturnjp</path>
         <extension>.bin .BIN .ccd .CCD .chd .CHD .cue .CUE .iso .ISO .m3u .M3U .mds .MDS .toc .TOC .7z .7Z .zip .ZIP</extension>
+        <command label="YabaSanshiro">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabasanshiro_libretro.so %ROM%</command>
         <command label="Beetle Saturn">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_saturn_libretro.so %ROM%</command>
         <command label="Kronos">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/kronos_libretro.so %ROM%</command>
-        <command label="YabaSanshiro">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabasanshiro_libretro.so %ROM%</command>
         <command label="Yabause">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabause_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module ss %ROM%</command>
         <command label="Ymir (Standalone)">%EMULATOR_YMIR% ../../../../../../../%ROM%</command>
@@ -2082,8 +2083,8 @@
         <fullname>Sega Titan Video Game System</fullname>
         <path>%ROMPATH%/stv</path>
         <extension>.7z .7Z .zip .ZIP</extension>
-        <command label="Kronos">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/kronos_libretro.so %ROM%</command>
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
+        <command label="Kronos">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/kronos_libretro.so %ROM%</command>
         <command label="MAME (Standalone)">./Apps/Mame/MAME-x86_64.AppImage -rompath %GAMEDIR%\;%ROMPATH%/stv %BASENAME%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module ss %ROM%</command>
         <platform>arcade</platform>
@@ -2183,8 +2184,8 @@
         <fullname>NEC TurboGrafx-16</fullname>
         <path>%ROMPATH%/tg16</path>
         <extension>.ccd .CCD .chd .CHD .cue .CUE .img .IMG .iso .ISO .m3u .M3U .pce .PCE .sgx .SGX .toc .TOC .7z .7Z .zip .ZIP</extension>
-        <command label="Beetle PCE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_libretro.so %ROM%</command>
         <command label="Beetle PCE FAST">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_fast_libretro.so %ROM%</command>
+        <command label="Beetle PCE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module pce %ROM%</command>
         <command label="Mesen (Standalone)">%EMULATOR_MESEN% --fullscreen %ROM%</command>
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "PC Engine" %ROM%</command>
@@ -2198,8 +2199,8 @@
         <fullname>NEC TurboGrafx-CD</fullname>
         <path>%ROMPATH%/tg-cd</path>
         <extension>.ccd .CCD .chd .CHD .cue .CUE .img .IMG .iso .ISO .m3u .M3U .pce .PCE .sgx .SGX .toc .TOC .7z .7Z .zip .ZIP</extension>
-        <command label="Beetle PCE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_libretro.so %ROM%</command>
         <command label="Beetle PCE FAST">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_fast_libretro.so %ROM%</command>
+        <command label="Beetle PCE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_pce_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module pce %ROM%</command>
         <command label="Mesen (Standalone)">%EMULATOR_MESEN% --fullscreen %ROM%</command>
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "PC Engine CD" %ROM%</command>
@@ -2352,8 +2353,8 @@
         <fullname>Nintendo Wii</fullname>
         <path>%ROMPATH%/wii</path>
         <extension>.ciso .CISO .dff .DFF .dol .DOL .elf .ELF .gcm .GCM .gcz .GCZ .iso .ISO .json .JSON .m3u .M3U .rvz .RVZ .tgc .TGC .wad .WAD .wbfs .WBFS .wia .WIA .7z .7Z .zip .ZIP</extension>
-        <command label="Dolphin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dolphin_libretro.so %ROM%</command>
         <command label="Dolphin (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_DOLPHIN% -b -e %ROM%</command>
+        <command label="Dolphin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dolphin_libretro.so %ROM%</command>
         <command label="PrimeHack (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_PRIMEHACK% -b -e %ROM%</command>
         <platform>wii</platform>
         <theme>wii</theme>
@@ -2363,8 +2364,8 @@
         <fullname>Nintendo Wii</fullname>
         <path>%ROMPATH%/wiiware</path>
         <extension>.ciso .CISO .dff .DFF .dol .DOL .elf .ELF .gcm .GCM .gcz .GCZ .iso .ISO .json .JSON .m3u .M3U .rvz .RVZ .tgc .TGC .wad .WAD .wbfs .WBFS .wia .WIA .7z .7Z .zip .ZIP</extension>
-        <command label="Dolphin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dolphin_libretro.so %ROM%</command>
         <command label="Dolphin (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_DOLPHIN% -b -e %ROM%</command>
+        <command label="Dolphin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dolphin_libretro.so %ROM%</command>
         <command label="PrimeHack (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_PRIMEHACK% -b -e %ROM%</command>
         <platform>wii</platform>
         <theme>wiiware</theme>
