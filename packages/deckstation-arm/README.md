@@ -91,6 +91,10 @@ deckstation-arm/
 ├── DeckStation.AppImage        # La AppImage principal (ES-DE)
 ├── DeckStation.sh              # Script de lanzamiento
 ├── Apps/                       # Emuladores descargados (ARM64)
+│   └── <Emulador>/
+│       ├── <Nombre>.AppImage
+│       ├── <Nombre>.AppImage.home/   # HOME portable del emulador (ver nota)
+│       └── lanzar.sh                 # wrapper: limpia el entorno y fija HOME
 ├── saves/                      # Saves del usuario
 ├── logs/                       # Logs de ejecución
 ├── Media/                      # Assets multimedia
@@ -98,6 +102,17 @@ deckstation-arm/
 ├── scripts/                    # Scripts de gestión
 └── configs/                    # Configs del sistema
 ```
+
+> **Nota sobre las carpetas `.home`** — el `.home` de cada emulador **es su `$HOME`**: `lanzar.sh`
+> hace `export HOME=<Emulador>.AppImage.home`, de modo que todo lo que el emulador escriba queda
+> dentro de `/opt/deckstation` y la instalación es portable.
+>
+> Por eso **la carpeta parece vacía al mirarla**: las apps guardan en `.config/`, `.local/` y
+> `.cache/`, que empiezan por punto y **Dolphin oculta por defecto**. Pulsa **`Ctrl+H`** para
+> verlas.
+>
+> Y **los emuladores sin config de fábrica tienen el `.home` vacío a propósito**: es donde
+> escribirán su configuración la primera vez que los abras. Que esté vacío no es un fallo.
 
 ## Cómo funciona
 
