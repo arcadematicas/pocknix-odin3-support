@@ -248,6 +248,12 @@ GITHUB_ORG = 'pkgforge-dev'
 _MACHINE = platform.machine().lower()
 IS_AARCH64 = _MACHINE in ('aarch64', 'arm64', 'armv8', 'armv8l')
 # Etiquetas que identifican nuestra arquitectura / la contraria en el nombre del asset
+# Emuladores que NO son un AppImage: su payload es un binario nativo suelto.
+# El lanzar.sh ya los soporta (busca el ejecutable en la carpeta del emulador:
+# `[ -x "$DIR/retroarch" ]`). Sin esto RetroArch --el emulador BASE-- no se
+# podia instalar: se extraia el .7z y no habia ningun .AppImage dentro.
+NATIVOS = {'retroarch', 'snowboardkids2recompiled'}
+
 ARCH_OK   = ('aarch64', 'arm64', 'armv8') if IS_AARCH64 else ('x86_64', 'amd64', 'x64')
 ARCH_BAD  = ('x86_64', 'amd64', 'x64')    if IS_AARCH64 else ('aarch64', 'arm64', 'armv8')
 # Etiquetas de sistemas que NO son Linux (un .zip de macOS no nos vale)
@@ -733,7 +739,14 @@ class UpdaterEngine:
             appimage = None
             try:
                 for fname in os.listdir(app_path):
-                    if fname.lower().endswith(".appimage"):
+                    low = fname.lower()
+                    if low.endswith(".appimage"):
+                        appimage = fname
+                        break
+                    # Emulador NATIVO (RetroArch): no hay AppImage, pero si el
+                    # binario. Sin esto saldria como "No instalado" para siempre
+                    # y el Updater lo volveria a bajar en cada pasada.
+                    if low in NATIVOS:
                         appimage = fname
                         break
             except Exception:
@@ -939,11 +952,23 @@ class UpdaterEngine:
                     self.status_msg = f"Error HTTP {res.status_code} al consultar release"
                     return
                 data = res.json()
+                # Gitea devuelve la LISTA de releases (GitHub, un release suelto):
+                # hay que quedarse con el que corresponde al tag elegido. Sin esto
+                # el Eden fallaba con "'list' object has no attribute 'get'".
+                if repo_type == "gitea" and isinstance(data, list):
+                    elegido = None
+                    for rel in data:
+                        if not isinstance(rel, dict):
+                            continue
+                        if rel.get("tag_name") == tag or rel.get("name") == tag:
+                            elegido = rel
+                            break
+                    data = elegido if elegido else (data[0] if data else {})
                 # Find asset
                 best_url = None
                 best_score = -1
                 fallback_url = None
-                for asset in data.get("assets", []):
+                for asset in (data.get("assets", []) if isinstance(data, dict) else []):
                     asset_name = asset.get("name", "")
                     score = 0
                     is_archive = False
@@ -1165,12 +1190,40 @@ class UpdaterEngine:
                         shutil.move(backup_path, appimage_path)
                     return
 
-                # Find extracted AppImage
+                # Los .tar.gz/.tar.xz necesitan DOS pasadas: `7z x` sobre ellos solo
+                # saca el tar de dentro, no su contenido.
+                # OJO: 7z nombra la salida con el nombre del archivo SIN extension
+                # (temp_update.archive -> "temp_update"), asi que buscarla por ".tar"
+                # NO vale. Criterio robusto: si la 1a pasada dejo UN unico fichero y
+                # ese no es instalable (AppImage o binario nativo), es el tar -> se
+                # extrae tambien.
+                internos = []
+                for root, dirs, files in os.walk(temp_extract_dir):
+                    for file in files:
+                        internos.append(os.path.join(root, file))
+                if len(internos) == 1:
+                    unico = internos[0]
+                    if (not unico.lower().endswith(".appimage")
+                            and os.path.basename(unico).lower() not in NATIVOS):
+                        try:
+                            subprocess.run(["7z", "x", unico, "-y",
+                                            f"-o{temp_extract_dir}"],
+                                           check=True, capture_output=True, timeout=180)
+                            os.remove(unico)
+                        except Exception:
+                            pass
+
+                # Find extracted AppImage (o binario nativo, ver NATIVOS)
                 extracted_appimage = None
+                es_nativo = False
                 for root, dirs, files in os.walk(temp_extract_dir):
                     for file in files:
                         if file.lower().endswith(".appimage"):
                             extracted_appimage = os.path.join(root, file)
+                            break
+                        if file.lower() in NATIVOS:
+                            extracted_appimage = os.path.join(root, file)
+                            es_nativo = True
                             break
                     if extracted_appimage:
                         break
@@ -1184,7 +1237,21 @@ class UpdaterEngine:
                     return
 
                 # Move to final location
-                if appimage_path is None:
+                if es_nativo:
+                    # Nativo: copiar el arbol extraido ENTERO a la carpeta del
+                    # emulador (RetroArch trae el binario y sus ficheros al lado).
+                    for item in os.listdir(temp_extract_dir):
+                        src = os.path.join(temp_extract_dir, item)
+                        dst = os.path.join(app["path"], item)
+                        if os.path.isdir(src):
+                            shutil.copytree(src, dst, dirs_exist_ok=True)
+                        else:
+                            shutil.copy2(src, dst)
+                    appimage_path = os.path.join(app["path"],
+                                                 os.path.basename(extracted_appimage))
+                    app["file"] = os.path.basename(extracted_appimage)
+                    app["filename"] = app["file"]
+                elif appimage_path is None:
                     appimage_path = os.path.join(app["path"],
                                                  os.path.basename(extracted_appimage))
                     app["file"] = os.path.basename(extracted_appimage)
@@ -1194,6 +1261,14 @@ class UpdaterEngine:
                 # Cleanup temp
                 if os.path.exists(temp_extract_dir):
                     shutil.rmtree(temp_extract_dir, ignore_errors=True)
+                # El archivo descargado tambien se borra: en el camino de AppImage
+                # se consume con el rename, pero en el de archivo/nativo se quedaba
+                # ahi ocupando sitio (RetroArch dejaba 5 MB por instalacion).
+                if os.path.exists(temp_file):
+                    try:
+                        os.remove(temp_file)
+                    except Exception:
+                        pass
             else:
                 # Direct AppImage download, just move
                 if appimage_path is None:
@@ -1935,6 +2010,10 @@ def run_install_all():
     fallidos = []
     for n, app in enumerate(pendientes, 1):
         nombre = app["name"]
+        # _cleanup_temp() deja cancel_requested=True tras un fallo, y en modo
+        # headless NO hay cola que lo reinicie -> todos los siguientes salian
+        # como "Descarga cancelada". Se limpia antes de cada emulador.
+        eng.cancel_requested = False
         print(f"\n[{n}/{len(pendientes)}] {nombre}")
         try:
             repo = _repo_de(app)

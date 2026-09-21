@@ -130,6 +130,40 @@ En el hub del Updater hay una entrada **"BIOS / Firmware"** que muestra el infor
 dónde va cada una) y con **A/Enter** las reparte. DeckStation **no incluye ni descarga
 BIOS** (tienen copyright): ver `bios/README.md`.
 
+### Casos especiales de emulador (aprendidos a golpes)
+
+La instalación de los 30 destapó cuatro cosas que **no** son un AppImage corriente.
+Todas arregladas el 21/09:
+
+1. **RetroArch no es un AppImage**: el buildbot sirve un `.7z` con el binario `retroarch`
+   suelto. Antes se extraía buscando un `.AppImage`, no lo encontraba y **el emulador base
+   no se instalaba**. Ahora `NATIVOS = {'retroarch', 'snowboardkids2recompiled'}`: si no
+   hay AppImage pero sí uno de esos binarios, se copia **el árbol extraído entero** a la
+   carpeta del emulador (el `lanzar.sh` ya lo soporta: `[ -x "$DIR/retroarch" ]`).
+   `scan_apps()` también los reconoce como instalados (si no, saldrían como "No instalado"
+   para siempre y se rebajarían en cada pasada).
+2. **`.tar.gz`/`.tar.xz` necesitan DOS pasadas de `7z`**: la primera solo saca el `.tar` de
+   dentro. **Ojo al detalle**: 7z nombra la salida con el nombre del archivo **sin
+   extensión** (`temp_update.archive` → `temp_update`), así que buscarla por `.tar` **no
+   vale**. Criterio: si la primera pasada deja **un único** fichero y ese no es instalable,
+   es el tar → se extrae otra vez.
+3. **Gitea devuelve la LISTA de releases** (GitHub, un release suelto). El Eden fallaba con
+   `'list' object has no attribute 'get'`. Ahora se busca el release del tag elegido.
+4. **`_cleanup_temp()` deja `cancel_requested=True`** tras un fallo, y en modo headless no
+   hay cola que lo reinicie → **todos los siguientes salían como "Descarga cancelada"**.
+   Se limpia antes de cada emulador.
+5. **El archivo descargado no se borraba** en el camino de archivo/nativo (solo se consumía
+   con el `rename` en el de AppImage) → dejaba temporales (RetroArch: 5 MB por instalación).
+
+> **⚠️ Rate limit de GitHub**: sin token son **60 peticiones/hora por IP**. Al instalar 30
+> emuladores seguidos se agota y sale `Error HTTP 403 al consultar release`. El Updater
+> acepta un token en `github_token.txt` (sube a 5000/h). No es un fallo de la instalación:
+> se reintenta desde el Updater y listo.
+
+> **⚠️ SnowboardKids2 es un caso aparte**: está en `git.txt` y se instala, pero **ES-DE no
+> tiene regla para él** (`es_find_rules.xml` / `es_systems.xml`): es la recompilación de un
+> juego suelto, no un sistema. Para lanzarlo desde ES-DE habría que añadirle su sistema.
+
 ## Cómo se lanza
 
 ```bash
