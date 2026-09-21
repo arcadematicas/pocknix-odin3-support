@@ -1,4 +1,16 @@
-"""system_info.py — Pestaña "Sistema": perfil de potencia, batería y brillo.
+"""system_info.py — Pestaña "Sistema": informacion de la bateria.
+
+QUE SE PORTA AQUI (de Panel de Control, Hooandee)
+  Lo unico que Steam NO ensena: salud y ciclos de la bateria, y el voltaje y la
+  corriente reales. Es todo LECTURA.
+
+LO QUE NO SE PONE A PROPOSITO (avisado por Fransis)
+  - Selector de perfil de potencia: REDUNDANTE. El QAM nativo de Steam ya lo
+    tiene, y su shim (pocknix-steamos-manager) traduce
+    low-power/balanced/performance a nuestro `pocknix-power-profile`. Duplicarlo
+    solo confundia.
+  - Control de brillo: redundante, Steam lo controla de forma nativa.
+
 
 QUE SE PORTA AQUI (de Panel de Control, Hooandee)
   De su plugin nos interesaban tres cosas que NO teniamos expuestas en el QAM:
@@ -16,21 +28,6 @@ igual que hacen sharing.py y updates.py.
 """
 
 from pathlib import Path
-
-from .system import run_cmd
-
-POWER_PROFILE = "/usr/local/bin/pocknix-power-profile"
-PROFILES = ("bajo", "medio", "alto")
-PROFILE_LABELS = {
-    "bajo": "Bajo — batería",
-    "medio": "Medio — equilibrado",
-    "alto": "Alto — máximo rendimiento",
-}
-
-# El nodo de la bateria no tiene un nombre fijo entre kernels/drivers.
-BATTERY_GLOBS = (
-    "/sys/class/power_supply/*/capacity",
-)
 
 
 def _read(path):
@@ -58,26 +55,8 @@ def _battery_dir():
     return None
 
 
-def power_profile():
-    """Perfil de potencia actual (bajo|medio|alto)."""
-    out = run_cmd(["systemd-run", "--quiet", "--collect", "--wait", "--pipe", POWER_PROFILE], timeout=15)
-    if out is None or out.returncode != 0:
-        return None
-    valor = (out.stdout or "").strip().splitlines()
-    actual = valor[0].strip() if valor else ""
-    return actual if actual in PROFILES else None
 
 
-def set_power_profile(profile):
-    if profile not in PROFILES:
-        raise ValueError(f"perfil desconocido: {profile!r}")
-    out = run_cmd(
-        ["systemd-run", "--quiet", "--collect", "--wait", "--pipe", POWER_PROFILE, profile],
-        timeout=30,
-    )
-    if out is None or out.returncode != 0:
-        raise RuntimeError("no se pudo aplicar el perfil")
-    return {"profile": power_profile()}
 
 
 def battery():
@@ -106,47 +85,11 @@ def battery():
     return datos
 
 
-def backlight():
-    """Brillo actual y maximo del panel principal."""
-    import glob
-
-    for patron in ("/sys/class/backlight/*/brightness",):
-        for node in glob.glob(patron):
-            path = Path(node)
-            actual = _read_int(path)
-            maximo = _read_int(path.parent / "max_brightness")
-            if actual is None or not maximo:
-                continue
-            return {"available": True, "value": actual, "max": maximo,
-                    "percent": round(100 * actual / maximo)}
-    return {"available": False}
 
 
-def set_backlight(percent):
-    """Fija el brillo en % (0-100)."""
-    import glob
-
-    try:
-        percent = max(1, min(100, int(percent)))     # 0 dejaria la pantalla negra
-    except (TypeError, ValueError):
-        raise ValueError("porcentaje invalido")
-    for node in glob.glob("/sys/class/backlight/*/brightness"):
-        path = Path(node)
-        maximo = _read_int(path.parent / "max_brightness")
-        if not maximo:
-            continue
-        try:
-            path.write_text(str(round(maximo * percent / 100)), encoding="utf-8")
-        except OSError as exc:
-            raise RuntimeError(f"no se pudo cambiar el brillo: {exc.strerror or exc}")
-        return backlight()
-    raise RuntimeError("no hay backlight")
 
 
 def system_status():
-    return {
-        "profile": power_profile(),
-        "profiles": [{"id": p, "label": PROFILE_LABELS[p]} for p in PROFILES],
-        "battery": battery(),
-        "backlight": backlight(),
-    }
+    """Lo que consume la pestaña: solo la bateria (el perfil y el brillo ya los
+    controla Steam de forma nativa)."""
+    return {"battery": battery()}

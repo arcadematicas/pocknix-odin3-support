@@ -28,8 +28,6 @@ export interface SystemBacklight { available: boolean; value?: number; max?: num
 export interface SystemStatus { profile: string | null; profiles: { id: string; label: string }[]; battery: SystemBattery; backlight: SystemBacklight }
 
 export const systemStatus = () => call<[], SystemStatus>("system_status");
-export const systemSetProfile = (profile: string) => call<[string], { profile: string | null }>("set_power_profile", profile);
-export const systemSetBacklight = (percent: number) => call<[number], SystemBacklight>("set_backlight", percent);
 
 export const cleanupScan = () => call<[], CleanupScan>("cleanup_scan");
 export const cleanupRun = (ids: string[]) => call<[string[]], CleanupResult>("cleanup_run", ids);

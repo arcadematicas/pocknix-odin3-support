@@ -13,7 +13,7 @@ from pocknix_control.led import (restore_led, set_led, set_led_enabled, set_led_
 from pocknix_control.mako import mako_status
 from pocknix_control.modes import set_fan_mode, set_lavd_mode
 from pocknix_control.cleanup import clean, scan, biggest
-from pocknix_control.system_info import set_backlight, set_power_profile, system_status
+from pocknix_control.system_info import system_status
 from pocknix_control.oled_care import oled_care_status, run_refresher
 from pocknix_control.sdcard import detect_sdcard, format_sdcard
 from pocknix_control.sharing import install_samba, set_share, share_status
@@ -88,12 +88,6 @@ class Plugin:
 
     async def system_status(self):
         return await asyncio.to_thread(system_status)
-
-    async def set_power_profile(self, profile):
-        return await asyncio.to_thread(set_power_profile, profile)
-
-    async def set_backlight(self, percent):
-        return await asyncio.to_thread(set_backlight, percent)
 
     async def cleanup_scan(self):
         return await asyncio.to_thread(scan)

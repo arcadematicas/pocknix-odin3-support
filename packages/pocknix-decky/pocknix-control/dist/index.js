@@ -38,8 +38,6 @@ const setLedLinked = (linked) => call("set_led_linked", linked);
 const setLedEnabled = (enabled) => call("set_led_enabled", enabled);
 const setLedSides = (sides) => call("set_led_sides", sides);
 const systemStatus = () => call("system_status");
-const systemSetProfile = (profile) => call("set_power_profile", profile);
-const systemSetBacklight = (percent) => call("set_backlight", percent);
 const cleanupScan = () => call("cleanup_scan");
 const cleanupRun = (ids) => call("cleanup_run", ids);
 const cleanupBiggest = () => call("cleanup_biggest");
@@ -318,48 +316,30 @@ function Cleanup() {
                                     : "Marca alguna categoría", onClick: run, children: "Limpiar seleccionadas" }) }), message ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: message }) })) : null, error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }), biggest.length > 0 && (SP_JSX.jsx(DFL.PanelSection, { title: "QU\u00C9 OCUPA M\u00C1S", children: biggest.map((entry) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: human(entry.size), description: entry.path.replace(/^\/home\/[^/]+/, "~") }) }, entry.path))) }))] }));
 }
 
-const voltios = (uv) => (uv == null ? "-" : `${(uv / 1000000).toFixed(2)} V`);
-const amperios = (ua) => (ua == null ? "-" : `${(ua / 1000000).toFixed(2)} A`);
-// La salud que da el driver viene como texto ("Good", "Normal"...); si ademas
-// tenemos capacidad real y de diseno, el backend calcula un %.
-const salud = (status) => {
-    const b = status.battery;
-    if (!b.available)
-        return "no disponible";
-    const partes = [b.health, b.cycles != null ? `${b.cycles} ciclos` : null].filter(Boolean);
-    return partes.length ? partes.join(" · ") : "-";
-};
+const voltios = (uv) => (uv == null ? null : `${(uv / 1000000).toFixed(2)} V`);
+const amperios = (ua) => (ua == null ? null : `${(ua / 1000000).toFixed(2)} A`);
+// NOTA: aqui NO hay selector de perfil de potencia ni control de brillo A PROPOSITO.
+//   - El perfil de potencia ya esta en el QAM NATIVO de Steam: su shim
+//     (pocknix-steamos-manager) traduce low-power/balanced/performance a nuestro
+//     `pocknix-power-profile`. Duplicarlo aqui solo confundia (avisado por Fransis).
+//   - El brillo ya lo controla Steam de forma nativa.
+// Esta pestaña es solo LECTURA: lo que Steam no enseña (salud y ciclos de la
+// bateria, voltaje y corriente reales).
 function System() {
     const [status, setStatus] = SP_REACT.useState(null);
-    const [busy, setBusy] = SP_REACT.useState(false);
-    const [message] = SP_REACT.useState("");
     const [error, setError] = SP_REACT.useState("");
-    const refresh = () => {
+    SP_REACT.useEffect(() => {
         systemStatus()
             .then(setStatus)
             .catch((err) => setError(String(err)));
-    };
-    SP_REACT.useEffect(refresh, []);
-    const pick = (id) => {
-        setBusy(true);
-        setError("");
-        systemSetProfile(id)
-            .then((next) => setStatus((cur) => (cur ? { ...cur, profile: next.profile } : cur)))
-            .catch((err) => setError(String(err)))
-            .finally(() => setBusy(false));
-    };
-    const setBrightness = (percent) => {
-        systemSetBacklight(percent)
-            .then((bl) => setStatus((cur) => (cur ? { ...cur, backlight: bl } : cur)))
-            .catch((err) => setError(String(err)));
-    };
+    }, []);
     const b = status?.battery;
-    const bl = status?.backlight;
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "PERFIL DE POTENCIA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Actual", description: "Limita la frecuencia m\u00E1xima de CPU y GPU. 'Bajo' alarga mucho la bater\u00EDa; 'Alto' no pone l\u00EDmites." }) }), status?.profiles.map((p) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: busy || status.profile === p.id, description: status.profile === p.id ? "En uso" : undefined, onClick: () => pick(p.id), children: p.label }) }, p.id))), message ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: message }) })) : null] }), SP_JSX.jsx(DFL.PanelSection, { title: "BATER\u00CDA", children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: b?.available
-                            ? [b.status, salud(status), amperios(b.currentNow), voltios(b.voltageNow)]
-                                .filter((x) => x && x !== "-")
-                                .join(" · ")
-                            : "no disponible en este equipo" }) }) }), bl?.available && (SP_JSX.jsx(DFL.PanelSection, { title: "BRILLO", children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.SliderField, { label: `${bl.percent}%`, value: bl.percent ?? 0, min: 1, max: 100, step: 5, showValue: false, onChange: setBrightness }) }) })), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }));
+    const detalle = b?.available
+        ? [b.status, b.health, b.cycles != null ? `${b.cycles} ciclos` : null, amperios(b.currentNow), voltios(b.voltageNow)]
+            .filter(Boolean)
+            .join(" · ")
+        : "no disponible en este equipo";
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }));
 }
 
 // Drives the same state as Steam's own per-game compatibility dropdown (SpecifyCompatTool +

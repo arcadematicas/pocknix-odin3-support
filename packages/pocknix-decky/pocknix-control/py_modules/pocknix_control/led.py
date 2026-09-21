@@ -187,9 +187,13 @@ def _apply_config(data):
 
 
 def _with_available(data):
-    data["available"] = _available()
-    data["sidesAvailable"] = _sides_available()
-    return data
+    # Se sanea SIEMPRE al devolver: asi ningun setter puede colar un dict
+    # incompleto (sin "enabled", sin algun canal...) que la UI interpretaria
+    # como apagado. Es la red que evita que el bug de arriba vuelva por otra via.
+    clean = _sanitize(data)
+    clean["available"] = _available()
+    clean["sidesAvailable"] = _sides_available()
+    return clean
 
 
 def led_config():
@@ -202,11 +206,15 @@ def set_led(side, r, g, b, brightness):
     rgb = {"r": _clamp_byte(r), "g": _clamp_byte(g), "b": _clamp_byte(b), "brightness": _clamp_byte(brightness)}
     with _LOCK:
         data = _load()
+        # OJO: se ACTUALIZA el dict del stick, no se reemplaza. Reemplazarlo
+        # borraba "enabled" -> el frontend recibia enabled=undefined y el toggle
+        # de encendido se dibujaba APAGADO mientras se arrastraba la barra de
+        # color o brillo (bug reportado por Fransis).
         if side == "both":
-            data["left"] = copy.deepcopy(rgb)
-            data["right"] = copy.deepcopy(rgb)
+            data["left"].update(rgb)
+            data["right"].update(rgb)
         else:
-            data[side] = rgb
+            data[side].update(rgb)
         _save(data)
         _apply_config(data)
         return _with_available(data)
