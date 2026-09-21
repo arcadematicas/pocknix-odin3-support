@@ -26,6 +26,12 @@ es-de/scrapers|DeckStation.AppImage.home/ES-DE/scrapers|keep
 # --- RetroArch (emulador principal) -------------------------------------
 retroarch/retroarch.cfg|{HOME:RetroArch}/.config/retroarch/retroarch.cfg|keep
 retroarch/autoconfig|{HOME:RetroArch}/.config/retroarch/autoconfig|keep
+# Shaders (Mega Bezel, CRT, handheld). "keep" hace mezcla POR FICHERO: se anaden
+# los nuestros y NO se tocan los que el usuario haya puesto por su cuenta.
+# OJO: Mega Bezel es GPLv3 (lo dice su README, que viaja en la carpeta). Los packs
+# crt/ y handheld/ vienen del repo oficial libretro/slang-shaders, donde cada
+# shader lleva su licencia; van con sus LICENSE cuando lo tienen.
+retroarch/shaders|{HOME:RetroArch}/.config/retroarch/shaders|keep
 
 # --- DuckStation (PSX) --------------------------------------------------
 duckstation/settings.ini|{HOME:Duckstation}/.local/share/duckstation/settings.ini|keep
