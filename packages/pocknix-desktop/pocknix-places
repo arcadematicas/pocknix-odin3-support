@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""pocknix-places — Anade DeckStation y WProton a los marcadores de Dolphin.
+
+POR QUE HACE FALTA
+  Las dos carpetas viven en /opt, fuera del home, asi que Dolphin no las muestra
+  en su panel lateral: para copiar una BIOS, un core o un juego hay que navegar a
+  mano cada vez. Con esto aparecen como "Sitios", igual que el home o el escritorio.
+
+COMO LO HACE (y por que asi)
+  - Idempotente: si el marcador ya existe, no toca nada.
+  - NUNCA reescribe el fichero: solo INSERTA las entradas que falten antes de
+    </xbel>. Asi no se pierden los marcadores ni la configuracion propia del
+    usuario (orden, grupos, elementos ocultos...).
+  - Si el fichero no existe, crea uno minimo valido en vez de fallar.
+  - No usa un parser XML porque el .xbel lleva DOCTYPE y ademas queremos conservar
+    el texto original byte a byte.
+
+Lo lanza el autostart del escritorio (pocknix-places.desktop), una vez por sesion.
+Se puede ejecutar a mano sin miedo: repetirlo no hace nada.
+"""
+
+import os
+import sys
+from pathlib import Path
+
+PLACES = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "user-places.xbel"
+
+# (ruta, titulo, icono). El icono es un nombre del tema de iconos de KDE.
+LUGARES = (
+    ("/opt/deckstation", "DeckStation", "applications-games"),
+    ("/opt/wproton", "WProton", "applications-games"),
+)
+
+PLANTILLA = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xbel>
+<xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" xmlns:kdepriv="http://www.kde.org/kdepriv" xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info">
+ <info>
+  <metadata owner="http://www.kde.org">
+   <kde_places_version>4</kde_places_version>
+  </metadata>
+ </info>
+</xbel>
+"""
+
+ENTRADA = """ <bookmark href="file://{ruta}">
+  <title>{titulo}</title>
+  <info>
+   <metadata owner="http://www.freedesktop.org">
+    <bookmark:icon name="{icono}"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <isSystemItem>true</isSystemItem>
+   </metadata>
+  </info>
+ </bookmark>
+"""
+
+
+def main():
+    try:
+        if PLACES.exists():
+            texto = PLACES.read_text(encoding="utf-8")
+        else:
+            PLACES.parent.mkdir(parents=True, exist_ok=True)
+            texto = PLANTILLA
+    except OSError as exc:
+        print(f"pocknix-places: no se pudo leer {PLACES}: {exc}", file=sys.stderr)
+        return 1
+
+    anadidos = []
+    for ruta, titulo, icono in LUGARES:
+        if not Path(ruta).exists():
+            continue                      # no se marca una carpeta que no existe
+        if f'href="file://{ruta}"' in texto:
+            continue
+        anadidos.append(ENTRADA.format(ruta=ruta, titulo=titulo, icono=icono))
+
+    if not anadidos:
+        return 0
+
+    if "</xbel>" not in texto:
+        print(f"pocknix-places: {PLACES} no parece un .xbel valido", file=sys.stderr)
+        return 1
+
+    texto = texto.replace("</xbel>", "".join(anadidos) + "</xbel>", 1)
+    try:
+        PLACES.write_text(texto, encoding="utf-8")
+    except OSError as exc:
+        print(f"pocknix-places: no se pudo escribir {PLACES}: {exc}", file=sys.stderr)
+        return 1
+    print(f"pocknix-places: anadidos {len(anadidos)} marcador(es)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
