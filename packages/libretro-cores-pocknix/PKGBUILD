@@ -5,7 +5,7 @@
 # ALARM's libretro-* packages use, so a vendored core can be replaced transparently.
 pkgname=libretro-cores-pocknix
 pkgver=0.1.0
-pkgrel=4
+pkgrel=5
 pkgdesc="Prebuilt aarch64 libretro cores (vendored, christianhaitian/ArkOS set)"
 arch=('aarch64')
 url="https://github.com/christianhaitian/retroarch-cores"
@@ -15,8 +15,32 @@ makedepends=('unzip')
 
 # Pinned: upstream force-updates the files in place, so a floating ref is not reproducible.
 _commit=913e84e8371aa252e1c520729fba04bb6a8bc1f1
+_buildbot="https://buildbot.libretro.com/nightly/linux/aarch64/latest"
 _base="https://raw.githubusercontent.com/christianhaitian/retroarch-cores/${_commit}/aarch64"
 
+_cores_extra=(
+    3dengine amiarcadia amiberry anarch armsx2
+    bbkemu blastem boom3 bsnes-jg bsnes2014_accuracy
+    bsnes2014_balanced bsnes2014_performance bsnes_cplusplus98 bsnes_mercury_accuracy bsnes_mercury_balanced
+    bsnes_mercury_performance cdi2015 cemu citra citra2018
+    clownmdemu desmume dice dingooemu dirksimple
+    dolphin dosbox_core fixgb fixnes frodo
+    fsuae galaksija gam4980 geargrafx gearlynx
+    gong hatari2014 hbmame holani irogb
+    jaxe jollycv jumpnbump kronos mame2003_midway
+    mame2016 mednafen_gba mednafen_pce mednafen_psx mednafen_saturn
+    mednafen_snes melondsds mesen-s mesen2 mojozork
+    native32emu nicaiemu nside_sfc_balanced nuance oberon
+    omicron openlara pcee2 pcsx2 pd777
+    play pocketcdg pokketstation radio remotejoy
+    rustynes skyemu spmp8000emu stella2023 superbroswar
+    supermodel tamalibretro thepowdertoy tia uw8
+    vaporspec video_processor virtualxt vitaquake2 vitaquake2-rogue
+    vitaquake2-xatrix vitaquake2-zaero vitaquake3 wqxemu
+)
+
+# Solo estan en el buildbot oficial (no en el set de ArkOS): amiberry, citra, cemu...
+# Se baja de ahi porque ES-DE los pide para algunos sistemas.
 _cores=(
     2048 81 DoubleCherryGB a5200 applewin
     ardens arduous atari800 b2 bk
@@ -56,14 +80,20 @@ _cores=(
 source=()
 sha256sums=()
 for _c in "${_cores[@]}"; do
-  source+=("${_c}_libretro.so.zip::${_base}/${_c}_libretro.so.zip")
-  sha256sums+=('SKIP')
+    source+=("${_c}_libretro.so.zip::${_base}/${_c}_libretro.so.zip")
+    sha256sums+=('SKIP')
+done
+# Los extra, del buildbot oficial (aarch64). OJO: el buildbot sirve "lo de hoy",
+# asi que estos NO estan pinnados como el set de ArkOS.
+for _c in "${_cores_extra[@]}"; do
+    source+=("${_c}_libretro.so.zip::${_buildbot}/${_c}_libretro.so.zip")
+    sha256sums+=('SKIP')
 done
 
 package() {
   local c
   install -dm755 "${pkgdir}/usr/lib/libretro"
-  for c in "${_cores[@]}"; do
+  for c in "${_cores[@]}" "${_cores_extra[@]}"; do
     unzip -o "${srcdir}/${c}_libretro.so.zip" -d "${pkgdir}/usr/lib/libretro/" >/dev/null
   done
   chmod 644 "${pkgdir}/usr/lib/libretro/"*.so
