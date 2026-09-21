@@ -1177,7 +1177,8 @@ class UpdaterEngine:
                     subprocess.run(extract_cmd, check=True, capture_output=True, timeout=120)
                 except FileNotFoundError:
                     self.state = "EMU_MENU"
-                    self.status_msg = "❌ '7z' no instalado. Ejecuta: sudo pacman -S p7zip"
+                    self.status_msg = ("❌ '7z' no instalado. "
+                                       "Ejecuta: sudo pacman -S 7zip (o p7zip)")
                     self._cleanup_temp(app, temp_file)
                     if backup_path and os.path.exists(backup_path):
                         shutil.move(backup_path, appimage_path)

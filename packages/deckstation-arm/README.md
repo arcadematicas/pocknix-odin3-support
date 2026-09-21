@@ -116,6 +116,18 @@ deckstation-arm/
 
 ## Instalación
 
+### Requisitos
+
+| | |
+|---|---|
+| **Sistema** | **ARM Linux con base Arch** (ALARM, ROCKNIX, ArkOS…). El paquete es un PKGBUILD y las dependencias usan nombres de pacman |
+| **Arquitectura** | aarch64 (o armv7h) |
+| **Paquetes** | `python`, `python-requests`, `python-pygame` (los trae el paquete) y **`7zip`** ⚠️ — **sin `7z` el Updater no extrae NINGÚN emulador**. Va en `optdepends`, así que instálalo a mano: `sudo pacman -S 7zip` |
+| **Red** | Sí: se descargan ES-DE (~127 MB) y los emuladores (~1,5 GB) |
+| **RetroArch + cores** | Los aporta el sistema. El setup enlaza los cores que encuentre; sin ellos RetroArch no arranca juegos |
+| **Mando** | El mapeo lo pone tu sistema (InputPlumber o el suyo). DeckStation no lo toca |
+| **BIOS** | Las tuyas (DeckStation **no** las incluye ni las descarga: tienen copyright) |
+
 ### Arch Linux ARM
 ```bash
 # Compilar e instalar
@@ -127,7 +139,7 @@ sudo pacman -U deckstation-arm-*.pkg.tar.zst
 
 ### Post-instalación
 ```bash
-# Instalación inicial completa (los 30 emuladores + configs + BIOS)
+# Instalación inicial completa: ES-DE + los 29 emuladores + configs + BIOS
 deckstation-setup
 
 # Estado de tus BIOS (que falta y donde va cada una)
@@ -136,6 +148,21 @@ deckstation-bios.sh --check
 # Lanzar
 deckstation
 ```
+
+### Otras distros ARM (Ubuntu, Fedora…)
+
+Funciona **a medias y de forma honesta**: los pasos específicos de Arch **avisan y se omiten**
+en vez de romper.
+
+- El setup no puede auto-instalar dependencias (usa `pacman`) → **avisa** y sigue. Instala a
+  mano `python3`, `python3-requests`, `python3-pygame` y `7z`.
+- El aprovisionamiento de `libXss` baja de un mirror de ALARM → **avisa** y sigue; `lanzar.sh`
+  tiene un respaldo en tiempo de ejecución (toma la lib del runtime de Steam).
+- El resto (ES-DE, emuladores, configs, wrappers, BIOS) es **independiente de la distro**.
+
+Lo que **no** es portable hoy es el empaquetado: el paquete y el comando `deckstation`
+(`/usr/bin` + entrada de escritorio) son de Arch. En otra distro habría que copiar el árbol a
+`/opt/deckstation` y lanzar `scripts/deckstation-launcher.sh` a mano.
 
 ## Actualización
 ```bash

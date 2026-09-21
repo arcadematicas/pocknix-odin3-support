@@ -68,10 +68,17 @@ log_error() {
 
 check_dependencies() {
     log "Verificando dependencias..."
+    # Lo que el setup Y el Updater necesitan de verdad. El Updater es pygame y
+    # extrae con 7z: sin ellos la instalacion de emuladores falla (antes solo se
+    # comprobaban curl y unzip, asi que en un sistema limpio todo parecia bien
+    # hasta que el Updater no arrancaba o no extraia nada).
     local missing=()
-    for cmd in curl unzip; do
+    for cmd in curl unzip 7z python3; do
         command -v "$cmd" &>/dev/null || missing+=("$cmd")
     done
+    # python-requests / pygame no son comandos: se comprueban como modulos.
+    python3 -c "import requests" 2>/dev/null || missing+=("python-requests")
+    python3 -c "import pygame"   2>/dev/null || missing+=("python-pygame")
     if [[ ${#missing[@]} -gt 0 ]]; then
         log_warn "Faltan dependencias: ${missing[*]}"
         if command -v pacman &>/dev/null; then

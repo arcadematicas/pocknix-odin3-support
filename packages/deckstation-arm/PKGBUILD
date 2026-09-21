@@ -15,6 +15,11 @@ depends=(
 )
 makedepends=()
 optdepends=(
+    # El Updater extrae TODOS los emuladores con `7z`. Va en optdepends (y no en
+    # depends) a proposito: un paquete de ALARM como `depends` rompe el build
+    # (el chroot de compilacion solo ve los repos de pocknix -> "Missing
+    # dependencies", nos paso con libxss). El setup lo comprueba e instala.
+    '7zip: extraer los emuladores (el Updater NO funciona sin esto)'
     'lib32-mesa: soporte OpenGL 32-bit'
     'vulkan-icd-loader: soporte Vulkan'
     'pulseaudio: audio del sistema'
