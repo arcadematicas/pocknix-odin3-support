@@ -33,7 +33,16 @@ SHARED_REPO_DB="pocknix-shared.db.tar.gz"
 # rpcs3-bin / vita3k-bin / xemu-bin reference sources that are not in the repo — which costs
 # ~1 h per image build for packages the image never installs. Skipped unless requested; see the
 # guard in the package loop below.
-POCKNIX_EMULATION_PKGS="armsx2-bin azahar cemu dolphin-emu eden-bin es-de libretro-cores-pocknix pocknix-emulation pocknix-emulation-full retroarch-autoconfig-pocknix retroarch-shaders-pocknix rpcs3-bin vita3k-bin wxwidgets-pocknix xemu-bin"
+
+# libretro-cores-pocknix va APARTE a proposito: NO es un build pesado (solo baja
+# cores aarch64 ya compilados del set de ArkOS) y DeckStation lo necesita SIEMPRE
+# (deckstation-cores.sh solo ENLAZA lo que encuentre en /usr/lib/libretro). Estaba
+# en la lista de arriba, asi que ni se compilaba ni entraba en la imagen, y
+# RetroArch se quedaba sin ningun core. Mismo criterio que suyu-libretro.
+#
+# OJO: este fichero vive en el CENTRO y se sincroniza al arbol con sync-to-os.sh.
+# Editarlo en el ARBOL no sirve: el siguiente sync lo revierte.
+POCKNIX_EMULATION_PKGS="armsx2-bin azahar cemu dolphin-emu eden-bin es-de pocknix-emulation pocknix-emulation-full retroarch-autoconfig-pocknix retroarch-shaders-pocknix rpcs3-bin vita3k-bin wxwidgets-pocknix xemu-bin"
 
 cleanup() { chroot_umount "${BROOT}" 2>/dev/null || true
             mountpoint -q "${BROOT}/localrepo" && umount "${BROOT}/localrepo" 2>/dev/null || true
