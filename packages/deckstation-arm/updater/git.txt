@@ -69,8 +69,6 @@ https://git.eden-emu.dev/eden-emu/eden/releases
 # --- Releases oficiales con build Linux aarch64/arm64 ---
 Vita3K
 https://github.com/Vita3K/Vita3K-builds/releases
-SnowboardKids2
-https://github.com/cdlewis/snowboardkids2-recomp/releases
 # PPSSPP publica anylinux-aarch64.AppImage en su propio repo (v1.20.4+).
 # El sistema psp de ES-DE ya tiene el core de RetroArch como opcion 1 y este
 # standalone como opcion 2 (es_find_rules -> ./Apps/PPSSPP/lanzar.sh).

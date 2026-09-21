@@ -32,7 +32,7 @@ Se rescató a `reference/deckstation-updater-x86/` del centro y se portó aquí.
 
 ## `git.txt`: las fuentes aarch64
 
-Se investigaron los releases reales de los emuladores. **30 tienen build Linux aarch64**
+Se investigaron los releases reales de los emuladores. **29 tienen build Linux aarch64**
 (los activos):
 
 - **AppImages `anylinux-aarch64` de PkgForge**: Amiberry, ares, Azahar, BigPEmu, Cemu,
@@ -40,7 +40,7 @@ Se investigaron los releases reales de los emuladores. **30 tienen build Linux a
   MelonDS, mGBA, OpenMSX, PCSX-Redux, RMG, Ruffle, ScummVM, SkyEmu, Supermodel, Xemu,
   Ymir, ZSNES
 - **Gitea (build propio ARM)**: Eden
-- **Releases oficiales**: Vita3K, SnowboardKids2, PPSSPP (`anylinux-aarch64.AppImage`)
+- **Releases oficiales**: Vita3K, PPSSPP (`anylinux-aarch64.AppImage`)
 - **URL directa**: RetroArch (`buildbot.libretro.com/nightly/linux/aarch64/RetroArch.7z`)
 
 **Los 16 que solo publican x86_64/macOS/Windows** quedan **comentados** en el `git.txt`
@@ -137,7 +137,7 @@ Todas arregladas el 21/09:
 
 1. **RetroArch no es un AppImage**: el buildbot sirve un `.7z` con el binario `retroarch`
    suelto. Antes se extraía buscando un `.AppImage`, no lo encontraba y **el emulador base
-   no se instalaba**. Ahora `NATIVOS = {'retroarch', 'snowboardkids2recompiled'}`: si no
+   no se instalaba**. Ahora `NATIVOS = {'retroarch'}`: si no
    hay AppImage pero sí uno de esos binarios, se copia **el árbol extraído entero** a la
    carpeta del emulador (el `lanzar.sh` ya lo soporta: `[ -x "$DIR/retroarch" ]`).
    `scan_apps()` también los reconoce como instalados (si no, saldrían como "No instalado"
@@ -159,10 +159,6 @@ Todas arregladas el 21/09:
 > emuladores seguidos se agota y sale `Error HTTP 403 al consultar release`. El Updater
 > acepta un token en `github_token.txt` (sube a 5000/h). No es un fallo de la instalación:
 > se reintenta desde el Updater y listo.
-
-> **⚠️ SnowboardKids2 es un caso aparte**: está en `git.txt` y se instala, pero **ES-DE no
-> tiene regla para él** (`es_find_rules.xml` / `es_systems.xml`): es la recompilación de un
-> juego suelto, no un sistema. Para lanzarlo desde ES-DE habría que añadirle su sistema.
 
 ## Cómo se lanza
 

@@ -252,7 +252,7 @@ IS_AARCH64 = _MACHINE in ('aarch64', 'arm64', 'armv8', 'armv8l')
 # El lanzar.sh ya los soporta (busca el ejecutable en la carpeta del emulador:
 # `[ -x "$DIR/retroarch" ]`). Sin esto RetroArch --el emulador BASE-- no se
 # podia instalar: se extraia el .7z y no habia ningun .AppImage dentro.
-NATIVOS = {'retroarch', 'snowboardkids2recompiled'}
+NATIVOS = {'retroarch'}
 
 ARCH_OK   = ('aarch64', 'arm64', 'armv8') if IS_AARCH64 else ('x86_64', 'amd64', 'x64')
 ARCH_BAD  = ('x86_64', 'amd64', 'x64')    if IS_AARCH64 else ('aarch64', 'arm64', 'armv8')
