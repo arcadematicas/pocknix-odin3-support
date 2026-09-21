@@ -54,12 +54,15 @@ echo "== contenedor: ${IMAGE} ($(${ENGINE} --version | head -1)) =="
 echo "   objetivo: glibc 2.36 (Debian bookworm) -> SteamOS 3.3+ / Ubuntu 22.04+"
 echo ""
 
-# El build corre DENTRO del contenedor. Se monta solo el parche (lectura) y el
-# directorio de salida: la fuente se clona dentro, para no arrastrar objetos
-# compilados en el host (que envenenarian el enlazado con la glibc nueva).
+# El build corre DENTRO del contenedor. Se monta el parche (lectura), el
+# directorio de salida y un /build PERSISTENTE: la fuente trae 28 submodulos
+# anidados y clonarlos tarda mucho, asi que no puede perderse en cada reintento
+# (el contenedor va con --rm).
+mkdir -p "${WORK}/container-build"
 "$ENGINE" run --rm \
     -v "${PKG}/suyu-language.patch:/in/suyu-language.patch:ro" \
     -v "${OUT}:/out" \
+    -v "${WORK}/container-build:/build" \
     -w / \
     "$IMAGE" \
     bash -euo pipefail -c '
@@ -69,17 +72,92 @@ echo ""
         # OJO: NADA de `ldd --version | head -1` — con `set -o pipefail`, head
         # cierra el pipe, ldd muere con SIGPIPE (141) y `set -e` mata el script
         # en silencio justo aqui. `sed -n 1p` lee todo y no rompe.
-        ldd --version 2>&1 | sed -n '1p'
+        ldd --version 2>&1 | sed -n 1p
 
         echo "== dependencias =="
         apt-get update -qq
         DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-            build-essential cmake ninja-build git ca-certificates \
-            libboost-all-dev libssl-dev libusb-1.0-0-dev \
-            libvulkan-dev libsdl2-dev libenet-dev libfmt-dev \
+            build-essential cmake ninja-build git ca-certificates curl \
+            libssl-dev libusb-1.0-0-dev \
+            libvulkan-dev libsdl2-dev libenet-dev \
             zlib1g-dev libzstd-dev liblz4-dev glslang-dev catch2 \
             pkg-config python3 >/dev/null
+        # SDL3 (submodulo) se configura SIEMPRE y exige las cabeceras X11/Wayland;
+        # sin ellas falla con "dependency package for XTEST".
+        # OJO: NADA de apostrofos en los comentarios de este bloque — todo esto va
+        # dentro de un bash -c entre comillas simples y un apostrofo suelto lo
+        # cerraria antes de tiempo (las comillas de sed -n 1p si son seguras:
+        # se concatenan y el contenido queda igual).
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev \
+            libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libdrm-dev libgbm-dev libgl1-mesa-dev libegl1-mesa-dev \
+            libgles2-mesa-dev libasound2-dev libpulse-dev libdbus-1-dev \
+            libudev-dev libwayland-dev libdecor-0-dev >/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            libavcodec-dev libavformat-dev libavutil-dev libswscale-dev \
+            libavfilter-dev libswresample-dev libinih-dev \
+            nlohmann-json3-dev libzip-dev >/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            glslang-tools spirv-tools >/dev/null
         echo "  listo"
+
+        # Boost: bookworm trae 1.74 y suyu incluye boost/regex/v5/... (existe
+        # desde 1.78). Se compilan SOLO las libs que usa, a /usr/local.
+        # Junto con CMake y fmt, esto es lo que permite tener GLIBC VIEJA con
+        # HERRAMIENTAS NUEVAS: es exactamente el compromiso que exige SteamOS
+        # (glibc 2.36..2.41, pero Boost 1.8x, GCC 12+ y CMake 3.31+).
+        echo "== Boost >=1.78 (bookworm trae 1.74; suyu usa boost/regex/v5) =="
+        BOOST_VER="${BOOST_VER:-1.86.0}"
+        BOOST_U="${BOOST_VER//./_}"
+        if [ ! -d /usr/local/include/boost ]; then
+            curl -fsSL -o /tmp/boost.tar.gz \
+                "https://archives.boost.io/release/${BOOST_VER}/source/boost_${BOOST_U}.tar.gz"
+            tar -xzf /tmp/boost.tar.gz -C /tmp
+            cd "/tmp/boost_${BOOST_U}"
+            ./bootstrap.sh --prefix=/usr/local \
+                --with-libraries=regex,filesystem,system,context,thread,program_options
+            ./b2 -j"$(nproc)" variant=release link=shared \
+                --with-regex --with-filesystem --with-system --with-context \
+                --with-thread --with-program_options install >/dev/null
+            cd /build
+            rm -rf /tmp/boost.tar.gz "/tmp/boost_${BOOST_U}"
+        fi
+        ls /usr/local/lib/libboost_regex.so* 2>/dev/null | sed -n 1p
+
+        # fmt: bookworm trae fmt 9 y suyu necesita >=10 (usa format_string::get,
+        # que no existe en 9). Por eso el build ARM si funciona: Arch trae fmt 11.
+        # Se compila fmt 10 a /usr/local y NO se instala libfmt-dev, para que no
+        # haya dos fmt y CMake coja el bueno sin ambiguedad.
+        echo "== fmt 10 (bookworm trae 9; suyu necesita >=10) =="
+        FMT_VER="${FMT_VER:-10.2.1}"
+        if [ ! -f /usr/local/lib/cmake/fmt/fmt-config.cmake ]; then
+            curl -fsSL -o /tmp/fmt.tar.gz \
+                "https://github.com/fmtlib/fmt/archive/refs/tags/${FMT_VER}.tar.gz"
+            tar -xzf /tmp/fmt.tar.gz -C /tmp
+            cmake -S "/tmp/fmt-${FMT_VER}" -B /tmp/fmt-build \
+                -DCMAKE_BUILD_TYPE=Release -DFMT_TEST=OFF -DFMT_DOC=OFF \
+                -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON -GNinja
+            cmake --build /tmp/fmt-build
+            cmake --install /tmp/fmt-build
+            rm -rf /tmp/fmt.tar.gz "/tmp/fmt-${FMT_VER}" /tmp/fmt-build
+        fi
+        sed -n 1p /usr/local/include/fmt/base.h 2>/dev/null || true
+
+        # suyu exige CMake >= 3.31 y bookworm trae 3.25 -> se trae uno moderno
+        # APARTE. CMake es una herramienta de BUILD: no cambia la glibc contra la
+        # que se enlaza el resultado, que es lo que nos importa (seguimos en 2.36).
+        echo "== CMake moderno (bookworm trae 3.25, suyu pide >=3.31) =="
+        CMAKE_VER="${CMAKE_VER:-3.31.6}"
+        if [ ! -x /opt/cmake/bin/cmake ]; then
+            curl -fsSL -o /tmp/cmake.tar.gz \
+                "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-x86_64.tar.gz"
+            mkdir -p /opt/cmake
+            tar -xzf /tmp/cmake.tar.gz -C /opt/cmake --strip-components=1
+            rm -f /tmp/cmake.tar.gz
+        fi
+        export PATH="/opt/cmake/bin:$PATH"
+        cmake --version | sed -n 1p
 
         echo "== clonando suyu v0.0.4 =="
         if [ ! -d /build/suyu/.git ]; then
@@ -100,6 +178,20 @@ echo ""
             echo "  ERROR: el parche no aplica" >&2; exit 1
         fi
 
+        # x86_64: boost::crc_optimal<32>::value_type es `unsigned long` (64 bits),
+        # porque en x86_64 Linux uint_fast32_t ES de 64 bits. suyu compila con
+        # -Werror=conversion -> "conversion ... may change value" y no compila.
+        # En ARM no pasa (alli uint_fast32_t es de 32). Se hace el cast explicito.
+        # Ojo: hay que tocarlo EN LA FUENTE, porque el -Werror lo anade el propio
+        # proyecto DESPUES de nuestros CMAKE_CXX_FLAGS (asi que anadirlo a mano no
+        # ganaria la pelea).
+        echo "== parche x86_64: cast del crc de Boost =="
+        sed -i \
+            "s|message.header.crc = crc.checksum();|message.header.crc = static_cast<u32>(crc.checksum());|" \
+            /build/suyu/src/input_common/helpers/udp_protocol.h
+        grep -n "static_cast<u32>(crc.checksum())" \
+            /build/suyu/src/input_common/helpers/udp_protocol.h | sed -n 1p
+
         echo "== configurando =="
         cmake -B /build/suyu/build -S /build/suyu \
             -DCMAKE_BUILD_TYPE=Release \
@@ -107,6 +199,7 @@ echo ""
             -DENABLE_QT=OFF \
             -DVulkanHeaders_FORCE_BUNDLED=ON \
             -DCMAKE_CXX_FLAGS="-Wno-maybe-uninitialized" \
+            -DCMAKE_PREFIX_PATH=/usr/local \
             -GNinja
 
         echo "== compilando (esto es lo largo) =="
