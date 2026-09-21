@@ -23,7 +23,7 @@
 # session-manager shim, no Steam UI watchdog). They are packaged here so pacman tracks them.
 pkgname=pocknix-bsp-sm8750
 pkgver=0.2.0
-pkgrel=1
+pkgrel=2
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
