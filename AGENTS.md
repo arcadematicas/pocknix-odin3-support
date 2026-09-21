@@ -350,6 +350,15 @@ tiene completo en `packages/shared/deckstation-arm/`.
   el core de Switch no entra en la imagen. Pendiente.
 - **Ojo con el sync**: `tools/sync-to-os.sh` usa `rsync` **sin `--delete`** → los ficheros
   editados a mano en el árbol sobreviven; los ficheros nuevos del centro se añaden.
+- **📋 PORTABILIDAD A OTRAS DISTROS: analizado, documentado y NO implementado** (decidido el
+  21/09/2026). Ver **`stshunz/deckstation-arm` → `docs/PORTABILIDAD-DISTROS.md`** (sincronizado
+  al centro en `packages/deckstation-arm/docs/`). Resumen: el **motor ya es portable** (ES-DE se
+  baja de ES-DE oficial, los emuladores de upstream, **libXss se cosecha del runtime de Steam**,
+  `$HOME` con `getent`); lo que ata a Arch son **4 puntos** con fichero y línea (el `pacman` de
+  `check_dependencies`, las rutas de cores, el empaquetado y un mensaje). Se haría con un
+  `pkg_install()` que abstraiga el gestor + un `install.sh` portable (~1 día). **No se hace hasta
+  que alguien lo pida**: no hay demanda y no se puede probar sin una Ubuntu/Fedora ARM reales.
+  Lo barato y sin riesgo, si se toca: las rutas de cores y el mensaje.
 - **⚠️ Al copiar el `PKGBUILD` de `stshunz` al centro, comprobar `pkgrel`**: divergen (el
   21/09 se revirtió un `pkgrel=4` que solo existía en el centro).
 

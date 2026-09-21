@@ -164,6 +164,11 @@ Lo que **no** es portable hoy es el empaquetado: el paquete y el comando `deckst
 (`/usr/bin` + entrada de escritorio) son de Arch. En otra distro habría que copiar el árbol a
 `/opt/deckstation` y lanzar `scripts/deckstation-launcher.sh` a mano.
 
+> 📋 **Soportar otras distros de verdad está analizado y documentado, pero NO implementado**:
+> ver **`docs/PORTABILIDAD-DISTROS.md`**. Resume qué ya es portable (casi todo), los 4 puntos que
+> atan a Arch (con fichero y línea) y cómo se haría (abstraer el gestor de paquetes + un
+> `install.sh`). Son ~1 día de trabajo, pendiente de que alguien lo pida.
+
 ## Actualización
 ```bash
 deckstation-update
