@@ -7,10 +7,42 @@ legalmente de tus propias consolas (o de alternativas libres cuando existen).
 Deja tus ficheros en la subcarpeta del sistema correspondiente y ejecuta:
 
 ```bash
-deckstation-bios.sh          # distribuye a cada emulador
+deckstation-bios.sh --check     # INFORME: que falta y donde va cada una
+deckstation-bios.sh             # distribuye a cada emulador
 deckstation-bios.sh --dry-run   # ver que haria, sin tocar nada
 deckstation-bios.sh --force     # sobrescribir lo que ya exista
 ```
+
+### El informe (`--check`)
+
+```
+SISTEMA    TIENES  FALTAN                           DESTINO
+psx        1/3     scph5501.bin, scph5502.bin       RetroArch system + Duckstation bios
+dreamcast  2/2     —                               RetroArch system/dc
+saturn     0/2     sega_101.bin, mpr-17933.bin      RetroArch system
+3ds        0/2     aes_keys.txt, seeddb.bin         Azahar sysdata
+```
+
+- **De dónde salen los datos**: `required.txt` (qué fichero espera cada sistema) y
+  `deploy-bios.txt` (a dónde va cada sistema). Los ficheros reales no van en git.
+- **Alternativas**: en `required.txt` una fila puede listar variantes y vale cualquiera
+  de ellas. Por ejemplo, para PSX sirve `scph1001.bin`, `ps1_rom.bin`, `psxonpsp660.bin`,
+  `scph5500.bin`… así que con **una** BIOS de PSX la fila queda cubierta.
+- La comparación es **sin distinguir mayúsculas** (los emuladores no se ponen de acuerdo:
+  `MSX.ROM` vs `msx.rom`).
+- El mismo informe se ve **desde el salón**: ES-DE → Updater → **BIOS / Firmware**
+  (con A/Enter para repartirlas). Y desde **Pocknix Tools → DeckStation BIOS**.
+
+### `required.txt`
+
+Una línea por fichero esperado:
+
+```
+<sistema>|<fichero>|<nota>|<alternativas separadas por comas>
+```
+
+Al añadir un sistema nuevo hay que tocar **los dos** ficheros: `required.txt` (qué
+ficheros) y `deploy-bios.txt` (a dónde van).
 
 El script **no es destructivo**: por defecto solo copia lo que falta, así que
 puedes volver a ejecutarlo cuando añadas ficheros nuevos. Es reejecutable.

@@ -32,17 +32,21 @@ Se rescató a `reference/deckstation-updater-x86/` del centro y se portó aquí.
 
 ## `git.txt`: las fuentes aarch64
 
-Se investigaron los releases reales de ~30 emuladores. **17 tienen build Linux aarch64**:
+Se investigaron los releases reales de los emuladores. **30 tienen build Linux aarch64**
+(los activos):
 
-- **AppImages `anylinux-aarch64` de PkgForge**: Dolphin, Flycast, MAME, Supermodel,
-  Cemu, DOSBox-Pure
-- **Releases oficiales**: DuckStation (`DuckStation-arm64.AppImage`), PPSSPP, mGBA,
-  Mesen (`Linux_ARM64.zip`), Xemu, Vita3K, melonDS, Ruffle, Amiberry, SnowboardKids2
-- **URL directa**: RetroArch (`buildbot.libretro.com/nightly/linux/aarch64/`)
+- **AppImages `anylinux-aarch64` de PkgForge**: Amiberry, ares, Azahar, BigPEmu, Cemu,
+  ClownMDEmu, Dolphin, DosBoxPure, DOSBox-X, Dreamm, Duckstation, Flycast, MAME,
+  MelonDS, mGBA, OpenMSX, PCSX-Redux, RMG, Ruffle, ScummVM, SkyEmu, Supermodel, Xemu,
+  Ymir, ZSNES
+- **Gitea (build propio ARM)**: Eden
+- **Releases oficiales**: Vita3K, SnowboardKids2, PPSSPP (`anylinux-aarch64.AppImage`)
+- **URL directa**: RetroArch (`buildbot.libretro.com/nightly/linux/aarch64/RetroArch.7z`)
 
-**Los 14 que solo publican x86_64/macOS/Windows** quedan **comentados** en el `git.txt`
-(listos para activar el día que publiquen aarch64): RPCS3, Citron, shadPS4, Xenia Edge,
-PCSX2, OpenMSX, RMG, PrimeHack, Hypseus Singe, UZDoom, GZDoom, OpenBOR, Redream.
+**Los 16 que solo publican x86_64/macOS/Windows** quedan **comentados** en el `git.txt`
+(listos para activar el día que publiquen aarch64): PCSX2, SUPER-ZSNES, RPCS3, Citron
+(bloqueado por DMCA de Nintendo), Ryujinx, shadPS4, Xenia Edge, PrimeHack, Hypseus Singe,
+UZDoom, GZDoom, OpenBor, Redream.
 
 > **Ojo al investigar**: varios repos publican assets con `arm64` en el nombre que son
 > **de macOS** (`MacOS-…-ARM64.dmg`). El updater los descarta por `OS_BAD`, pero al
@@ -78,6 +82,53 @@ Por eso en este port:
 De paso, el dibujado del menú se cambió de **índices fijos** (`idx == 1`) a **nombre de
 acción**, porque al ocultar una opción los índices se desplazan y el badge/el tema
 habrían aparecido en la fila equivocada.
+
+## Dos papeles: INSTALADOR (headless) y CENTRO DE GESTIÓN (GUI)
+
+El mismo motor sirve a dos puertas de entrada. La regla del proyecto es **el motor vive
+en el script, la GUI va encima** — así una avería de pygame no te deja sin poder instalar
+(y ya pasó: `SDL_VIDEODRIVER=x11` forzado dejaba la ventana invisible).
+
+| | Quién | Qué hace |
+|---|---|---|
+| **INSTALAR** (una vez) | Pocknix Tools → `deckstation-setup.sh` | entorno + **los 30 emuladores** + configs + `lanzar.sh` + BIOS. Headless. |
+| **GESTIONAR** (siempre) | Updater GUI (ES-DE → Updater) | actualizar, añadir/quitar emuladores sueltos, **estado de BIOS** |
+
+### `updater.py --install-all` (modo headless)
+
+Instala **todos** los emuladores que falten sin abrir ventana:
+
+```bash
+python3 /opt/deckstation/Apps/Updater/updater.py --install-all
+```
+
+- **`SDL_VIDEODRIVER=dummy` antes de importar pygame**: este módulo hace
+  `pygame.display.set_mode()` al cargarse, así que sin driver válido falla con
+  `pygame.error: No available video device`. Se fuerza solo en modo headless.
+- **Reutiliza el mismo motor que la GUI** (`fetch_github_releases`, elección del asset
+  aarch64, extracción, `_preparar_portable`): no hay dos lógicas de descarga que puedan
+  separarse.
+- Imprime progreso por emulador y un **resumen final** con los que fallaron.
+- Devuelve **0** si todo fue bien y **1** si algo falló (lo usa el setup).
+- Es **reejecutable**: lo que ya está instalado se salta (`scan_apps()`).
+
+### Tolerancia a fallos de la cola
+
+`_download_worker` es un **envoltorio** de `_descargar()`. Dentro de `_descargar()` hay
+**13 salidas de error** que hacen `return` sin avisar a nadie; con 30 emuladores, uno que
+fallara (repo parado, sin asset aarch64, 404…) **abortaba la cola entera**.
+
+Ahora el envoltorio mira `self._descarga_correcta`: si el intento no la marcó, apunta el
+nombre en `_install_fallidos`, suma el contador y **sigue con el siguiente**. El camino de
+éxito avanza la cola por su cuenta (dentro de `_descargar`), así que no hay doble avance.
+Al vaciarse la cola, el mensaje final dice cuántos entraron y cuáles fallaron.
+
+### Pantalla BIOS (gestión)
+
+En el hub del Updater hay una entrada **"BIOS / Firmware"** que muestra el informe de
+`deckstation-bios.sh --check` (una fila por sistema: cuántas tienes, cuáles faltan y a
+dónde va cada una) y con **A/Enter** las reparte. DeckStation **no incluye ni descarga
+BIOS** (tienen copyright): ver `bios/README.md`.
 
 ## Cómo se lanza
 

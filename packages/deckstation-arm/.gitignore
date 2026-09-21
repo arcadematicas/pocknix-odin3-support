@@ -1,0 +1,63 @@
+# AppImages (se descargan, no se suben)
+*.AppImage
+*.AppImage.home
+
+# Saves del usuario (privados)
+saves/
+Saves/
+
+# Logs (generados en runtime)
+logs/
+Logs/
+
+# ROMs (contenido del usuario)
+ROMs/
+ROMS/
+*.rom
+*.iso
+*.bin
+*.chd
+*.cso
+
+# Archivos temporales
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+tmp/
+
+# Sistema
+*.pid
+*.lock
+*.pid.lock
+
+# Emuladores descargados (se generan post-install)
+Apps/
+Paks/
+
+# Build artifacts
+*.pkg.tar.*
+src/
+pkg/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Screenshots (del usuario)
+ScreenShots/
+Screenshots/
+
+# Updater: cache de releases, bytecode y token (nunca al repo)
+updater/cache/
+updater/__pycache__/
+updater/github_token.txt
+__pycache__/
+*.pyc
+
+# BIOS/firmware del usuario (copyright): solo se versionan README y manifiesto
+bios/*/*
+!bios/*/.gitkeep
