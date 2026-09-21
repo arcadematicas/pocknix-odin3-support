@@ -139,6 +139,7 @@ overlay "packages/pocknix-tools" "packages/shared/pocknix-tools"
 # /usr/lib/libretro/; la integracion con el RetroArch portable de DeckStation
 # (copia al dir de cores) es un pendiente aparte.
 overlay "packages/suyu-libretro" "packages/shared/suyu-libretro"
+overlay "packages/libretro-cores-pocknix" "packages/shared/libretro-cores-pocknix"
 overlay "packages/pocknix-decky"   "packages/shared/pocknix-decky"
 
 # --- NOT synced (needs manual work — see the note below) ---------------------

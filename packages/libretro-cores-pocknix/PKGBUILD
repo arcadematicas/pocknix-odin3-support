@@ -1,0 +1,43 @@
+# libretro-cores-pocknix — a curated aarch64 libretro core set, vendored prebuilt from
+# christianhaitian/retroarch-cores (the ArkOS/TheRA set).
+# Vendored because RetroArch's in-app Core Updater serves no arm64 cores: a core absent at
+# image time cannot be fetched on device. They install to /usr/lib/libretro, the same path
+# ALARM's libretro-* packages use, so a vendored core can be replaced transparently.
+pkgname=libretro-cores-pocknix
+pkgver=0.1.0
+pkgrel=3
+pkgdesc="Curated prebuilt aarch64 libretro cores for the RP6 (vendored, ArkOS/TheRA set)"
+arch=('aarch64')
+url="https://github.com/christianhaitian/retroarch-cores"
+license=('GPL2')  # umbrella only; per-core licenses vary, some arcade cores non-commercial
+depends=()
+makedepends=('unzip')
+
+# Pinned: upstream force-updates the files in place, so a floating ref is not reproducible.
+_commit=913e84e8371aa252e1c520729fba04bb6a8bc1f1
+_base="https://raw.githubusercontent.com/christianhaitian/retroarch-cores/${_commit}/aarch64"
+
+_cores=(
+  fceumm nestopia snes9x mupen64plus_next gambatte mgba melonds
+  genesis_plus_gx picodrive yabasanshiro flycast
+  duckstation pcsx_rearmed ppsspp
+  mednafen_pce_fast mednafen_supergrafx fbneo mame2003_plus
+  stella prosystem handy virtualjaguar
+  mednafen_wswan mednafen_ngp mednafen_vb
+)
+
+source=()
+sha256sums=()
+for _c in "${_cores[@]}"; do
+  source+=("${_c}_libretro.so.zip::${_base}/${_c}_libretro.so.zip")
+  sha256sums+=('SKIP')
+done
+
+package() {
+  local c
+  install -dm755 "${pkgdir}/usr/lib/libretro"
+  for c in "${_cores[@]}"; do
+    unzip -o "${srcdir}/${c}_libretro.so.zip" -d "${pkgdir}/usr/lib/libretro/" >/dev/null
+  done
+  chmod 644 "${pkgdir}/usr/lib/libretro/"*.so
+}
