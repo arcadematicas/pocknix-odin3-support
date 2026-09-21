@@ -177,6 +177,13 @@ setup_retroarch_assets() {
         case "$pack" in
             database-rdb)     destino="${assets_dir}/database/rdb" ;;
             database-cursors) destino="${assets_dir}/database/cursors" ;;
+            # Los .info van a CORES, no a info/: nuestra retroarch.cfg fija
+            # libretro_info_path="~/.config/retroarch/cores". Si se dejan en info/
+            # RetroArch no los ve y el menu muestra los cores sin nombre ni
+            # descripcion (parece que faltan cosas). Se copian a los dos sitios:
+            # cores/ es donde mira, e info/ es la ubicacion estandar por si algun
+            # dia se cambia la ruta.
+            info)             destino="${assets_dir}/cores" ;;
             *)                destino="${assets_dir}/${pack}" ;;
         esac
 
@@ -201,6 +208,11 @@ setup_retroarch_assets() {
         # reportaria un fallo inexistente.
         unzip -qo "$tmp" -d "$destino" 2>/dev/null
         rc=$?
+        if [ "$pack" = "info" ] && [ "$rc" -le 1 ]; then
+            # Copia tambien a la ubicacion estandar (ver comentario de arriba).
+            mkdir -p "${assets_dir}/info"
+            cp -an "${destino}"/*.info "${assets_dir}/info/" 2>/dev/null
+        fi
         if [ "$rc" -le 1 ]; then
             bajados=$((bajados + 1))
         else
