@@ -22,7 +22,11 @@
         <rule type="corepath">
             <!-- Non-portable AppImage and compiled from source -->
             <entry>~/.config/retroarch/cores</entry>
-            <!-- Portable AppImage -->
+            <!-- Portable, binario suelto (RetroArch del buildbot: <binario>.AppImage.home).
+                 ESTA es la ruta real de DeckStation: sin ella %CORE_RETROARCH% queda
+                 sin resolver y ES-DE no puede lanzar ningun juego con RetroArch. -->
+            <entry>./Apps/RetroArch/retroarch.AppImage.home/.config/retroarch/cores</entry>
+            <!-- Portable AppImage (layouts antiguos, se conservan por compatibilidad) -->
             <entry>./Apps/RetroArch/RetroArch-Linux-aarch64/RetroArch-Linux-aarch64.AppImage.home/.config/retroarch/cores</entry>
 
         </rule>
