@@ -62,10 +62,42 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 - `pocknix-fancontrol`, `pocknix-pergame-power`, `pocknix-cpu-governor`, `oled-care-daemon`, `pocknix-decky-loader`, `mangohud-toggle-daemon`, `odin3-splash`, `pocknix-steamos-manager` (user).
 - Ojo: algunos tardan en activarse tras boot (After=multi-user.target, sistema en "starting" 1-2 min).
 
-## Plugin Decky (PocknixControl)
-- Código en repo `config/pocknix-control-plugin/`. Frontend TS (Lighting.tsx, etc.) + backend Python `pocknix_control/` (power.py, oled_care.py, main.py).
-- Reiniciar backend: `sudo systemctl restart pocknix-decky-loader.service` (SOLO sin Steam en modo juego).
+## Plugin Decky (PocknixControl) — ACTUALIZADO 21/09/2026
+- **Dónde vive**: `packages/pocknix-decky/pocknix-control/` — frontend TS (`src/tabs/Lighting.tsx`,
+  `src/components/`) + backend Python (`py_modules/pocknix_control/`: power.py, **led.py**,
+  **oled_care.py**, main.py) + **`dist/index.js` COMPILADO Y COMMITEADO** (no hay node en el
+  build del paquete).
+  - ⚠️ **La ruta `config/pocknix-control-plugin/` ya NO existe** (el AGENTS.md lo decía mal).
+  - ✅ **En el centro desde el 21/09** + registrado en `tools/sync-to-os.sh` y
+    `tools/check-sync.sh`. Antes vivía **solo en el árbol** → cualquier cambio se perdía en
+    silencio (era el mismo caso que la capa vendored).
+  - `node_modules/` (95 MB) está gitignored y **solo existe en el árbol**.
+- **Cambiar el frontend**: editar en el centro → `sync-to-os.sh` → compilar EN EL ÁRBOL
+  (`cd packages/shared/pocknix-decky/pocknix-control && npx rollup -c`) → **copiar
+  `dist/index.js` de vuelta al centro** (sin el `.map`, el PKGBUILD lo borra) → bump `pkgrel`.
+- Reiniciar backend: `sudo systemctl restart pocknix-decky-loader.service` (**SOLO sin Steam
+  en modo juego**, o crashea steamwebhelper).
 - El PluginLoader corre como root sin entorno gráfico; extraer env de sesión vía `pgrep -x` (no -f).
+  ⚠️ **Y PipeWire es de `deck`**: para verlo desde root hace falta `XDG_RUNTIME_DIR=/run/user/1001`
+  (sin eso `pw-dump` no ve nada — le pasó al daemon del OLED care).
+
+### RGB de los sticks (led.py)
+- Odin 3: **un nodo LED-class por CANAL y segmento** (`l:r1`/`l:g1`/`l:b1` … 4 segmentos por
+  stick) → `_segments()` solo devuelve los rojos y `_write_segment()` deriva g/b del nombre.
+- ⚠️ **Apagar = pintar el trío entero a 0**, no solo bajar `brightness` del rojo (si no, el
+  verde y el azul siguen encendidos y parece que "no se apaga").
+- **`enabled` POR STICK** (21/09): se puede apagar solo el izquierdo o solo el derecho
+  conservando color y brillo (`set_led_side_enabled`). Enlazado copia también el `enabled`.
+
+### OLED care (oled-care-daemon.py + oled_care.py)
+- Refresca a los **10 min de inactividad** (el tiempo es correcto por decisión de Fransis).
+- **NO debe dispararse mientras el usuario hace algo**: mira input, procesos de juego/frontend
+  (es-de/retroarch/steam/gamescope) **y reproducción de medios** (21/09). Para los medios:
+  audio sonando vía `pw-dump` (¡con `XDG_RUNTIME_DIR`!) o reproductor abierto. Se ignora el
+  ruido (`pocknix`/`oled-refresher`/`python`): su stream queda `running` para siempre.
+- Deja estado en **`/run/pocknix/oled-care.json`** (`lastRefresh`, `lastSkip`, `count`,
+  `idleSeconds`) → lo expone `oled_care_status()` y lo muestra la pestaña Lighting.
+  Antes la UI **no tenía ningún feedback** y por eso parecía que no funcionaba.
 
 ## Referencias útiles
 - `POCKNIX-EXPERIENCE.md`, `RESEARCH-ARM-DISTROS.md`, `BATTERY-ISSUE.md`, `IDEAS.md` en el repo.
