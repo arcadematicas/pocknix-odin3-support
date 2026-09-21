@@ -27,9 +27,16 @@ if ! "$PY" -c "import pygame, requests" 2>/dev/null; then
     exit 1
 fi
 
-# Igual que el lanzador original: la capa grafica nativa del Game Mode
-# o del escritorio, y ALSA para el audio.
-export SDL_VIDEODRIVER="${SDL_VIDEODRIVER:-x11}"
+# Capa grafica: ELEGIR la del compositor que hay, no forzar X11.
+# En una sesion Wayland (Plasma/gamescope) pygame con SDL_VIDEODRIVER=x11 falla:
+#   pygame.error: x11 not available  /  "Authorization required, but no
+#   authorization protocol specified" (XWayland sin permisos)
+# y el Updater se queda sin ventana. Misma logica que scripts/lanzar.sh.
+if [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    export SDL_VIDEODRIVER="${SDL_VIDEODRIVER:-wayland}"
+elif [ -n "${DISPLAY:-}" ]; then
+    export SDL_VIDEODRIVER="${SDL_VIDEODRIVER:-x11}"
+fi
 export SDL_AUDIODRIVER="${SDL_AUDIODRIVER:-alsa}"
 
 # El updater deriva sus rutas de la ubicacion del script, pero por si acaso
