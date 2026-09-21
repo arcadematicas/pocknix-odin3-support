@@ -3,7 +3,7 @@
 # Proyecto independiente. Versión original (x86_64): deckstation-x86_64.
 pkgname=deckstation-arm
 pkgver=1.0.0
-pkgrel=6
+pkgrel=7
 pkgdesc="Sistema de emulación portable para ARM (aarch64/armv7h)"
 arch=('aarch64' 'armv7h')
 url="https://github.com/stshunz/deckstation-arm"
@@ -64,6 +64,9 @@ package() {
     install -dm755 "${pkgdir}/opt/deckstation/bios"
     install -Dm644 "${sd}/bios/README.md" "${pkgdir}/opt/deckstation/bios/README.md"
     install -Dm644 "${sd}/bios/deploy-bios.txt" "${pkgdir}/opt/deckstation/bios/deploy-bios.txt"
+    # required.txt: que fichero espera cada sistema (+ alternativas). Lo usa
+    # deckstation-bios.sh --check para el informe de lo que falta.
+    install -Dm644 "${sd}/bios/required.txt" "${pkgdir}/opt/deckstation/bios/required.txt"
     for s in psx ps2 dreamcast saturn segacd pcecd 3do neogeo msx switch 3ds misc; do
         install -dm755 "${pkgdir}/opt/deckstation/bios/${s}"
     done
