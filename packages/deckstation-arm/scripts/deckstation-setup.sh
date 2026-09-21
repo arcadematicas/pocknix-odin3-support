@@ -146,34 +146,75 @@ find_app_home() {
 # Assets de RetroArch: iconos del menu XMB (ozone/xmb/glui...). ~75 MB.
 # Sin ellos, `menu_driver = "xmb"` se ve sin iconos.
 setup_retroarch_assets() {
-    local ra_home assets_dir url tmp
+    local ra_home assets_dir tmp
+
     ra_home="$(find_app_home retroarch)" || {
         log_warn "RetroArch no instalado todavia; se omiten los assets"
         return 0
     }
-    assets_dir="${ra_home}/.config/retroarch/assets"
+    assets_dir="${ra_home}/.config/retroarch"
 
-    if [ -d "${assets_dir}/xmb" ] && [ "$FORCE_DOWNLOAD" != true ]; then
-        log_ok "Assets de RetroArch ya instalados"
-        return 0
-    fi
+    # Todo lo que se baja del buildbot para que RetroArch quede COMPLETO de una
+    # vez, sin que el usuario tenga que ir al menu de descargas. Cada pack se
+    # comprueba por separado y, si uno falla, los demas siguen.
+    #
+    #   assets    iconos del menu (sin esto el XMB sale SIN ICONOS)
+    #   info      ficha de cada core (el menu la muestra)
+    #   database  base de datos para el escaneo de ROMs
+    #   cheats    trucos
+    #   overlays  marcos/teclados en pantalla del pack oficial
+    #
+    # NO se baja nada de la categoria "cores": los del buildbot son x86_64 y en la
+    # Odin no sirven. Los cores aarch64 los pone el sistema.
+    local packs="assets info database-rdb database-cursors cheats overlays"
+    local base="https://buildbot.libretro.com/assets/frontend"
+    local bajados=0 fallos=0 pack url destino
 
-    url="https://buildbot.libretro.com/assets/frontend/assets.zip"
-    tmp="${LOG_DIR}/assets.zip"
-    log "Descargando assets de RetroArch (~75 MB, iconos del menu)..."
-    if ! curl -L --progress-bar -o "$tmp" "$url"; then
-        rm -f "$tmp"
-        log_warn "No se pudieron descargar los assets: el menu XMB se vera sin iconos"
-        return 0
-    fi
+    log "Preparando RetroArch (assets e datos oficiales, ~180 MB)..."
 
-    mkdir -p "$assets_dir"
-    if unzip -q -o "$tmp" -d "$assets_dir"; then
-        log_ok "Assets de RetroArch instalados"
-    else
-        log_warn "No se pudieron descomprimir los assets"
+    for pack in $packs; do
+        # El nombre del zip no siempre coincide con la carpeta de destino.
+        case "$pack" in
+            database-rdb)     destino="${assets_dir}/database/rdb" ;;
+            database-cursors) destino="${assets_dir}/database/cursors" ;;
+            *)                destino="${assets_dir}/${pack}" ;;
+        esac
+
+        if [ -d "$destino" ] && [ "$FORCE_DOWNLOAD" != true ]; then
+            continue
+        fi
+
+        url="${base}/${pack}.zip"
+        tmp="${LOG_DIR}/${pack}.zip"
+        rm -f "$tmp" 2>/dev/null
+        if ! curl -fL --retry 2 --connect-timeout 20 -s -o "$tmp" "$url"; then
+            log_warn "No se pudo descargar ${pack}; RetroArch funcionara sin el"
+            fallos=$((fallos + 1))
+            rm -f "$tmp" 2>/dev/null
+            continue
+        fi
+        mkdir -p "$destino"
+        # OJO con el codigo de salida de unzip: 0 = bien, 1 = AVISOS, 2+ = error.
+        # Los avisos son normales aqui (los .cht llevan nombres con acentos y
+        # japones y el zip mezcla codificaciones: "mismatching local filename"),
+        # pero descomprime todo perfectamente. Si solo se aceptara el 0, se
+        # reportaria un fallo inexistente.
+        unzip -qo "$tmp" -d "$destino" 2>/dev/null
+        rc=$?
+        if [ "$rc" -le 1 ]; then
+            bajados=$((bajados + 1))
+        else
+            log_warn "No se pudo descomprimir ${pack} (codigo ${rc})"
+            fallos=$((fallos + 1))
+        fi
+        rm -f "$tmp" 2>/dev/null
+    done
+
+    if [ "$bajados" -gt 0 ]; then
+        log_ok "RetroArch preparado (${bajados} paquete(s) descargado(s))"
     fi
-    rm -f "$tmp"
+    [ "$fallos" -gt 0 ] && log_warn "${fallos} paquete(s) fallaron; se puede reintentar reejecutando el setup"
+    return 0
 }
 
 # Cores instalados como paquetes del sistema (p. ej. suyu-libretro) ->
@@ -411,6 +452,13 @@ main() {
     log "Aplicando lanzar.sh y configs a los emuladores recien instalados..."
     deploy_lanzar_sh
     deploy_configs_and_bios
+
+    # Los ASSETS de RetroArch se descargaban al principio, cuando RetroArch aun
+    # no estaba instalado -> "[WARN] RetroArch no instalado todavia; se omiten los
+    # assets" y el menu XMB salia SIN ICONOS. Es el mismo problema de orden que
+    # lanzar.sh y las configs: el setup prepara el entorno ANTES de que el Updater
+    # descargue nada. Se repite aqui, ya con RetroArch en su sitio.
+    setup_retroarch_assets
 
     echo ""
     echo "=========================================="
