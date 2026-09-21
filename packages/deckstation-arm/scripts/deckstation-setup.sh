@@ -209,6 +209,55 @@ deploy_lanzar_sh() {
 # desde el paquete oficial de ALARM, sin exigir que el host lo tenga ni
 # ensuciar /usr/lib. Si el host ya lo tiene, no se hace nada.
 # ----------------------------------------------------------------------
+# ES-DE (el front-end) — se baja de la fuente OFICIAL, no de un build sin publicar.
+#
+# DeckStation ES el AppImage oficial de ES-DE renombrado: el
+# `DeckStation.AppImage` que traia el proyecto es **byte a byte identico** al
+# `ES-DE_aarch64.AppImage` de la release 3.4.1 de ES-DE (mismo md5
+# 9e459692ebd86dc5f0524f4c2bbad3b3). ES-DE empezo a publicar ARM64 justo en la
+# 3.4.1, y por eso antes no habia de donde bajarlo.
+#
+# Bajarlo de la fuente oficial evita depender de un binario que no esta publicado
+# en ningun sitio (el repo de DeckStation no tiene releases): sin este paso, una
+# instalacion limpia se queda SIN front-end y `deckstation` no arranca.
+ESDE_VERSION="${ESDE_VERSION:-3.4.1}"
+ESDE_URL="${ESDE_URL:-https://gitlab.com/es-de/emulationstation-de/-/package_files/326321114/download}"
+ESDE_MD5="${ESDE_MD5:-9e459692ebd86dc5f0524f4c2bbad3b3}"
+
+setup_esde() {
+    local destino="${DECKSTATION_ROOT}/DeckStation.AppImage"
+    local tmp="${DECKSTATION_ROOT}/.DeckStation.AppImage.part"
+
+    if [ -x "$destino" ]; then
+        log_ok "ES-DE ya esta instalado"
+        return 0
+    fi
+
+    log "Descargando ES-DE ${ESDE_VERSION} (AppImage oficial ARM64, ~127 MB)..."
+    rm -f "$tmp" 2>/dev/null
+    if ! curl -fL --retry 3 --connect-timeout 20 -o "$tmp" "$ESDE_URL"; then
+        log_error "No se pudo descargar ES-DE. Sin el, 'deckstation' no arranca."
+        rm -f "$tmp" 2>/dev/null
+        return 1
+    fi
+
+    # Comprobar que es el fichero correcto antes de dejarlo en su sitio
+    local md5_real
+    md5_real="$(md5sum "$tmp" 2>/dev/null | cut -d" " -f1)"
+    if [ -n "$ESDE_MD5" ] && [ "$md5_real" != "$ESDE_MD5" ]; then
+        log_error "El AppImage descargado no coincide (md5 ${md5_real:-?}). Se descarta."
+        rm -f "$tmp" 2>/dev/null
+        return 1
+    fi
+
+    chmod 755 "$tmp" 2>/dev/null
+    mv -f "$tmp" "$destino" 2>/dev/null || {
+        log_error "No se pudo colocar ES-DE en ${destino}"
+        return 1
+    }
+    log_ok "ES-DE ${ESDE_VERSION} instalado (md5 verificado)"
+}
+
 setup_libxss() {
     local lib_dir="${DECKSTATION_ROOT}/lib"
     local arch pkg base url tmp
@@ -338,6 +387,9 @@ main() {
     deploy_system_cores
     deploy_lanzar_sh
     deploy_configs_and_bios
+
+    echo ""
+    setup_esde || log_warn "Sigue sin ES-DE: 'deckstation' no arrancara hasta tenerlo"
 
     echo ""
     log "Emuladores..."
