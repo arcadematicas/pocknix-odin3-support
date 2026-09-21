@@ -266,22 +266,28 @@ deploy_configs_and_bios() {
 # ============================================================================
 
 install_emulators() {
-    local launcher="${APPS_DIR}/Updater/launcher.sh"
+    local updater="${APPS_DIR}/Updater/updater.py"
 
-    if [ ! -x "$launcher" ]; then
-        log_warn "No encuentro el Updater (${launcher})"
+    if [ ! -f "$updater" ]; then
+        log_warn "No encuentro el Updater (${updater})"
         log "Instala los emuladores desde ES-DE -> Updater."
         return 0
     fi
 
-    if [ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then
-        log "Los emuladores los instala el Updater."
-        log "Abrelo desde ES-DE (o ejecuta ${launcher} en una sesion grafica)."
-        return 0
+    # INSTALACION INICIAL COMPLETA: los 30 emuladores de git.txt, en modo
+    # headless (no necesita escritorio, asi que funciona tambien por SSH).
+    # El Updater GRAFICO queda para GESTIONAR despues: actualizar o anadir
+    # emuladores sueltos desde ES-DE. Mismo motor en ambos casos, para que no
+    # haya dos logicas de descarga que puedan separarse.
+    log "Instalando los emuladores (son ~1,5 GB; puede tardar)..."
+    echo ""
+    if python3 "$updater" --install-all; then
+        log_ok "Emuladores instalados"
+    else
+        log_warn "Algun emulador fallo; se puede reintentar desde el Updater"
     fi
-
-    log "Abriendo el Updater para instalar/actualizar los emuladores..."
-    "$launcher" || log_warn "El Updater termino con un error"
+    echo ""
+    log "Para gestionar/actualizar despues: ES-DE -> Updater"
 }
 
 # ============================================================================

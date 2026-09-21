@@ -4,6 +4,13 @@
 import os, sys, subprocess, requests, threading, traceback, shutil, re, platform
 from os.path import dirname, abspath, join, exists
 
+# Modo headless: lo usa deckstation-setup.sh desde un terminal SIN escritorio
+# (Pocknix Tools -> instalar DeckStation). Este modulo abre una ventana al
+# cargarse, asi que SDL necesita un driver valido igualmente: se fuerza "dummy"
+# ANTES de importar pygame. Sin esto: "pygame.error: No available video device".
+if any(a in sys.argv for a in ("--install-all", "--bios-check")):
+    os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+
 DIR = dirname(abspath(__file__))
 sys.path.insert(0, os.path.join(DIR, 'libs'))
 py_ver = f"py{sys.version_info.major}.{sys.version_info.minor}"
@@ -383,7 +390,10 @@ class UpdaterEngine:
         self._install_queue = []
         self._install_total = 0
         self._install_done = 0
+        self._install_fallidos = []
         self._auto_pick_latest = False
+        self._descarga_correcta = False
+        self._bios_cache = None
 
         self.state = "HUB"
         self.hub_idx = 0
@@ -513,6 +523,34 @@ class UpdaterEngine:
         except Exception:
             pass
 
+    def _raiz_deckstation(self):
+        """Raiz de DeckStation (/opt/deckstation) vista desde Apps/Updater/."""
+        return os.path.dirname(os.path.dirname(DIR))
+
+    def _bios_lineas(self):
+        """Salida de `deckstation-bios.sh --check`, cacheada hasta repartir."""
+        if self._bios_cache is None:
+            script = os.path.join(self._raiz_deckstation(), "scripts", "deckstation-bios.sh")
+            try:
+                r = subprocess.run([script, "--check"], capture_output=True,
+                                   text=True, timeout=60)
+                self._bios_cache = (r.stdout or r.stderr or "(sin salida)").split("\n")
+            except Exception as e:
+                self._bios_cache = [f"No se pudo consultar las BIOS: {e}"]
+        return self._bios_cache
+
+    def _bios_repartir(self):
+        """Copia las BIOS de bios/ a donde cada emulador las espera."""
+        script = os.path.join(self._raiz_deckstation(), "scripts", "deckstation-bios.sh")
+        try:
+            r = subprocess.run([script], capture_output=True, text=True, timeout=300)
+            lineas = ((r.stdout or "") + (r.stderr or "")).split("\n")
+            resumen = [l.strip() for l in lineas if "desplegad" in l or "ya presentes" in l]
+            self.status_msg = resumen[-1] if resumen else "BIOS repartidas"
+        except Exception as e:
+            self.status_msg = f"No se pudieron repartir: {e}"
+        self._bios_cache = None      # refrescar el informe
+
     def _activate_current(self):
         """Activa la entrada seleccionada (instalar todo o gestionar un emulador)."""
         if not self.apps:
@@ -533,14 +571,23 @@ class UpdaterEngine:
         self._install_queue = faltan
         self._install_total = len(faltan)
         self._install_done = 0
+        self._install_fallidos = []
         self._next_queued_install()
 
     def _next_queued_install(self):
         """Instala el siguiente de la cola, o termina."""
         if not self._install_queue:
             self._auto_pick_latest = False
-            self.status_msg = (f"Instalacion completa terminada "
-                               f"({self._install_done} emuladores)")
+            ok_n = self._install_done - len(self._install_fallidos)
+            if self._install_fallidos:
+                muestra = ", ".join(self._install_fallidos[:6])
+                if len(self._install_fallidos) > 6:
+                    muestra += f" y {len(self._install_fallidos) - 6} mas"
+                self.status_msg = (f"Instalacion terminada: {ok_n}/{self._install_total} OK. "
+                                   f"Fallaron: {muestra}")
+            else:
+                self.status_msg = (f"Instalacion completa terminada "
+                                   f"({ok_n} emuladores)")
             self.state = "HUB"
             return
         nombre = self._install_queue.pop(0)
@@ -855,6 +902,25 @@ class UpdaterEngine:
         t.start()
 
     def _download_worker(self, app, repo_info, tag):
+        """Envoltorio de _descargar(): evita que un fallo corte la instalacion masiva.
+
+        _descargar() tiene 13 salidas de error que hacen "return" sin avisar a
+        nadie. En una instalacion de 30 emuladores, uno que falle (repo parado,
+        sin asset aarch64, 404...) abortaba la cola entera. Aqui se detecta el
+        fallo y se sigue con el siguiente, anotandolo para el resumen final.
+        """
+        self._descarga_correcta = False
+        self._descargar(app, repo_info, tag)
+        if not self._descarga_correcta and self._install_queue:
+            # El camino de exito avanza la cola por su cuenta; este es el de fallo.
+            self._install_fallidos.append(app.get("name", "?"))
+            self._install_done += 1
+            self.cancel_requested = False
+            self.download_progress = 0.0
+            self.download_speed = "0.0 MB/s"
+            self._next_queued_install()
+
+    def _descargar(self, app, repo_info, tag):
         repo_type, repo_path = repo_info
         req_headers = dict(self.headers) if self.headers else {}
 
@@ -1152,6 +1218,7 @@ class UpdaterEngine:
         except Exception:
             pass
 
+        self._descarga_correcta = True
         app["version"] = tag.lstrip("v")
         app["has_update"] = False
         app["installed"] = True
@@ -1326,6 +1393,7 @@ class UpdaterEngine:
         running = True
         hub_options = [
             ("Actualizar Emuladores", "EMU_MENU"),
+            ("BIOS / Firmware", "BIOS_MENU"),
             ("Apariencia", "THEME_MENU"),
         ]
         # La opción de actualizar DeckStation (payload de MediaFire) solo se ofrece
@@ -1475,6 +1543,36 @@ class UpdaterEngine:
                 if self.top_visible_idx + self.max_visible < len(self.apps):
                     down_surf = font_small.render("▼ Usa la cruceta para bajar", True, DIM_COLOR)
                     screen.blit(down_surf, (40, SCREEN_HEIGHT - 70))
+
+            elif self.state == "BIOS_MENU":
+                # Estado de las BIOS del usuario: que falta y donde va cada una.
+                # El informe lo genera deckstation-bios.sh --check (mismo script
+                # que usa Pocknix Tools, para no tener dos logicas).
+                title = font_title.render(" BIOS / FIRMWARE", True, ACCENT_COLOR)
+                screen.blit(title, (40, 20))
+                hint = font_small.render("A/Enter=Repartir   |   Esc/B=Volver", True, DIM_COLOR)
+                screen.blit(hint, (40, 58))
+
+                y = 96
+                for linea in self._bios_lineas():
+                    if not linea.strip():
+                        continue
+                    if "FALTA" in linea:
+                        col = ERROR_COLOR
+                    elif " OK" in linea or linea.strip().startswith("SISTEMA"):
+                        col = GREEN_COLOR if " OK" in linea else DIM_COLOR
+                    elif "parcial" in linea:
+                        col = WARN_COLOR
+                    else:
+                        col = TEXT_COLOR
+                    screen.blit(font_small.render(linea[:150], True, col), (40, y))
+                    y += 25
+                    if y > SCREEN_HEIGHT - 70:
+                        break
+
+                if self.status_msg:
+                    screen.blit(font_small.render(self.status_msg[:120], True, GREEN_COLOR),
+                                (40, SCREEN_HEIGHT - 40))
 
             elif self.state == "SELECT_VERSION":
                 # Version selection screen
@@ -1711,6 +1809,18 @@ class UpdaterEngine:
                         elif event.value[1] < 0:
                             self.current_app_idx = min(len(self.apps) - 1, self.current_app_idx + 1)
 
+                elif self.state == "BIOS_MENU":
+                    if event.type == pygame.KEYDOWN:
+                        if event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                            self._bios_repartir()
+                        elif event.key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
+                            self.state = "HUB"
+                    elif event.type == pygame.JOYBUTTONDOWN:
+                        if event.button == 0:      # A
+                            self._bios_repartir()
+                        elif event.button == 1:    # B
+                            self.state = "HUB"
+
                 elif self.state == "SELECT_VERSION":
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_UP:
@@ -1782,6 +1892,94 @@ class UpdaterEngine:
             clock.tick(30)
 
 
+# ============================================================================
+# Modo headless (--install-all): instalacion inicial completa sin interfaz
+# ============================================================================
+
+def _repo_de(app):
+    """Repo (tipo, ruta) de una app segun git.txt, o None si no esta."""
+    clave = app["name"].lower().replace(" ", "").replace("-", "_")
+    for k, rd in EXTERNAL_REPOS.items():
+        if k == clave or k == app["name"].lower():
+            return rd
+    return None
+
+
+def _vigilar_progreso(eng, parar):
+    """Refresca en la misma linea el estado de la descarga en curso."""
+    ultimo = ""
+    while not parar.wait(1.0):
+        msg = (eng.status_msg or "").strip()
+        if msg and msg != ultimo:
+            print(f"      \r      {msg[:78]}", end="", flush=True)
+            ultimo = msg
+
+
+def run_install_all():
+    """Instala TODOS los emuladores que falten, SIN interfaz grafica.
+
+    La llama deckstation-setup.sh para la instalacion inicial completa.
+    Reutiliza el MISMO motor que la GUI (fetch de releases, eleccion del asset
+    aarch64, extraccion, wrapper lanzar.sh y configs), asi no hay dos logicas
+    que puedan separarse y una quedarse rota.
+    Devuelve 0 si todo fue bien y 1 si algo fallo.
+    """
+    eng = UpdaterEngine()
+    todos = [a for a in eng.apps if not a.get("special")]
+    pendientes = [a for a in todos if not a.get("installed")]
+    print(f"DeckStation: {len(pendientes)} por instalar de {len(todos)} emuladores.")
+    if not pendientes:
+        print("DeckStation: ya esta todo instalado, nada que hacer.")
+        return 0
+
+    fallidos = []
+    for n, app in enumerate(pendientes, 1):
+        nombre = app["name"]
+        print(f"\n[{n}/{len(pendientes)}] {nombre}")
+        try:
+            repo = _repo_de(app)
+            if repo is None:
+                print("      sin repo en git.txt -> se omite")
+                fallidos.append(nombre)
+                continue
+            versiones = eng.fetch_github_releases(nombre)
+            if not versiones:
+                print("      no se encontraron versiones -> se omite")
+                fallidos.append(nombre)
+                continue
+            tag = versiones[0]["version"]
+            print(f"      version: {str(versiones[0].get('name'))[:70]}")
+            parar = threading.Event()
+            threading.Thread(target=_vigilar_progreso, args=(eng, parar),
+                             daemon=True).start()
+            eng._download_worker(app, repo, tag)      # sincrono
+            parar.set()
+            print("")
+            if eng._descarga_correcta:
+                print("      instalado OK")
+            else:
+                print(f"      FALLO: {(eng.status_msg or '')[:70]}")
+                fallidos.append(nombre)
+        except KeyboardInterrupt:
+            parar.set()
+            print("\n      cancelado por el usuario")
+            fallidos.append(nombre)
+            break
+        except Exception as e:
+            print(f"      error inesperado: {type(e).__name__}: {str(e)[:60]}")
+            fallidos.append(nombre)
+
+    ok_n = len(pendientes) - len(fallidos)
+    print("")
+    print("=" * 62)
+    print(f"  DeckStation: {ok_n}/{len(pendientes)} emuladores instalados")
+    if fallidos:
+        print(f"  Fallaron ({len(fallidos)}): {', '.join(fallidos)}")
+        print("  Reintentalos desde el Updater (ES-DE -> Updater).")
+    print("=" * 62)
+    return 0 if not fallidos else 1
+
+
 def main():
     pygame.key.set_repeat(200, 100)
     eng = UpdaterEngine()
@@ -1789,6 +1987,12 @@ def main():
 
 
 if __name__ == "__main__":
+    if "--install-all" in sys.argv:
+        try:
+            sys.exit(run_install_all())
+        except KeyboardInterrupt:
+            print("\nInterrumpido.")
+            sys.exit(130)
     error_path = os.path.join(DIR, "error_log.txt")
     try:
         main()

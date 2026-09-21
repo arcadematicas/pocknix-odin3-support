@@ -1,0 +1,66 @@
+# ======================================================================
+# Ficheros de BIOS/firmware que espera cada emulador — DeckStation
+# ======================================================================
+# Lo usa `deckstation-bios.sh --check` para decirte QUE TE FALTA y DONDE va.
+# Los ficheros reales NO van en git (copyright): este fichero es solo la lista.
+# Ver bios/README.md para la version larga y como conseguirlas legalmente.
+#
+# Formato:  <sistema>|<fichero>|<nota>|<alternativas separadas por comas>
+#
+#   - El fichero va en bios/<sistema>/ (esa es la carpeta que se reparte).
+#   - "alternativas": cualquiera de ellos vale para dar la fila por cubierta
+#     (p. ej. cualquier BIOS de PSX sirve). Se comparan sin distinguir
+#     mayusculas/minusculas.
+#   - El DESTINO de cada sistema lo define bios/deploy-bios.txt.
+#
+# Ojo: no todos son obligatorios. Muchos cores de RetroArch funcionan sin BIOS
+# (o con HLE). Si un sistema no arranca, el log del emulador dira el fichero.
+# ======================================================================
+
+# --- PlayStation 1 -----------------------------------------------------
+psx|scph5501.bin|PS1 US|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5500.bin,scph5502.bin
+psx|scph5502.bin|PS1 EU|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5500.bin,scph5501.bin
+psx|scph5500.bin|PS1 JP|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5501.bin,scph5502.bin
+
+# --- PlayStation 2 -----------------------------------------------------
+ps2|scph10000.bin|PS2 (v1)|scph39001.bin,scph30004r.bin
+ps2|scph39001.bin|PS2 (v7)|scph10000.bin,scph30004r.bin
+
+# --- Dreamcast (Flycast: dc_boot.bin + dc_flash.bin) -------------------
+dreamcast|dc_boot.bin|Dreamcast BIOS|
+dreamcast|dc_flash.bin|Dreamcast flash|
+
+# --- Sega Saturn -------------------------------------------------------
+saturn|sega_101.bin|Saturn JP|mpr-17933.bin
+saturn|mpr-17933.bin|Saturn US/EU|sega_101.bin
+
+# --- Sega CD / Mega CD -------------------------------------------------
+segacd|bios_CD_U.bin|Sega CD US|
+segacd|bios_CD_E.bin|Sega CD EU|
+segacd|bios_CD_J.bin|Sega CD JP|
+
+# --- PC Engine CD / TurboGrafx-CD --------------------------------------
+pcecd|syscard3.pce|Super CD-ROM2|syscard2.pce,syscard1.pce
+pcecd|syscard2.pce|CD-ROM2|syscard3.pce,syscard1.pce
+
+# --- 3DO ---------------------------------------------------------------
+3do|panafz1.bin|3DO FZ-1|panafz10.bin,panafz10e-anvil.bin
+3do|panafz10.bin|3DO FZ-10|panafz1.bin,panafz10e-anvil.bin
+
+# --- Neo Geo (BIOS + ROMs del sistema, tal cual) -----------------------
+neogeo|neogeo.zip|BIOS + ROMs del sistema|
+
+# --- MSX / MSX2 --------------------------------------------------------
+msx|MSX.ROM|MSX1|
+msx|MSX2.ROM|MSX2|
+msx|MSX2EXT.ROM|MSX2 extension|
+msx|MSX2P.ROM|MSX2+|
+msx|MSX2PEXT.ROM|MSX2+ extension|
+
+# --- Nintendo Switch (claves; van al core Suyu de RetroArch) -----------
+switch|prod.keys|claves de la consola|
+switch|title.keys|claves de titulos|
+
+# --- Nintendo 3DS (sysdata para Azahar) --------------------------------
+3ds|aes_keys.txt|3DS AES keys|
+3ds|seeddb.bin|3DS seed database|
