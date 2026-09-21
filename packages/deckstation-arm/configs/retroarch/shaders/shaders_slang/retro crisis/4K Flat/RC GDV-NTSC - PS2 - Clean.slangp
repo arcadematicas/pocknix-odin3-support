@@ -1,0 +1,6 @@
+#reference "RC GDV-NTSC - PS2.slangp"
+ntsc_scale = "2.500000"
+intres = "0.000000"
+scanline1 = "5.000000"
+scanline2 = "10.000000"
+beam_min = "1.000000"

@@ -1,0 +1,6 @@
+#reference "RC GDV-NTSC - GBA - Clean.slangp"
+cust_fringing = "1.000000"
+cust_artifacting = "1.000000"
+ntsc_scale = "1.000000"
+ntsc_cscale = "1.000000"
+beam_max = "0.999995"

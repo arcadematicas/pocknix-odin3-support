@@ -1,0 +1,6 @@
+#reference "RC GDV-NTSC - PlayStation - Clean.slangp"
+cust_fringing = "1.000000"
+scanline2 = "10.000000"
+maskstr = "0.900000"
+mask_gamma = "2.499999"
+slotmask = "0.750000"

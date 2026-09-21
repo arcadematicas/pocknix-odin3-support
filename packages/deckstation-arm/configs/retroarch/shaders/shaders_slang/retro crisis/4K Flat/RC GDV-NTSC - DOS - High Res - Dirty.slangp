@@ -1,0 +1,3 @@
+#reference "RC GDV-NTSC - DOS - High Res - Clean.slangp"
+ntsc_scale = "0.999999"
+ntsc_cscale = "1.500000"

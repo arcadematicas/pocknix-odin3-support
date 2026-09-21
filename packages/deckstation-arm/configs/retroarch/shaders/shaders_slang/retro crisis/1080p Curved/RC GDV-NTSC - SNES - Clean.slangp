@@ -1,0 +1,6 @@
+#reference "../1080p Flat/RC GDV-NTSC - SNES - Clean.slangp"
+bsize1 = "0.010000"
+warpX = "0.030000"
+warpY = "0.040000"
+c_shape = "0.600000"
+csize = "0.010000"

@@ -1,0 +1,7 @@
+#reference "../1080p Flat/RC GDV-NTSC - 2600.slangp"
+bsize1 = "0.010000"
+warpX = "0.030000"
+warpY = "0.040000"
+c_shape = "0.050000"
+csize = "0.010000"
+sborder = "0.250000"

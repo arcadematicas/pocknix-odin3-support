@@ -1,0 +1,8 @@
+#reference "RC GDV-NTSC - NES - Clean.slangp"
+cust_fringing = "0.200000"
+cust_artifacting = "0.200000"
+ntsc_phase = "2.000000"
+ntsc_scale = "0.999999"
+ntsc_cscale = "2.000000"
+gsl = "-1.000000"
+scanline1 = "0.000000"

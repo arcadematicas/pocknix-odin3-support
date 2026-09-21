@@ -1,0 +1,5 @@
+#reference "RC GDV-NTSC - MSX - Clean.slangp"
+cust_artifacting = "1.000000"
+cust_fringing = "1.000000"
+ntsc_phase = "2.000000"
+ntsc_scale = "0.999999"

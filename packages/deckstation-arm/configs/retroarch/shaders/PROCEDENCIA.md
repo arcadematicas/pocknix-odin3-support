@@ -9,6 +9,7 @@ Cada pack mantiene la licencia de su autor.
 | `shaders_slang/bezel/Mega_Bezel` | Mega Bezel (marcos, reflejos, CRT sobre bezel) | HyperspaceMadness y colaboradores | **GPLv3** (lo declara su `README.md`, incluido en la carpeta) |
 | `shaders_slang/crt` | Familia CRT (Guest Advanced, Royale, Beans, etc.) | guest.r, Themaister, TroggleMonkey y otros | **Por shader**: la mayoría GPL/CC. Van incluidos los `LICENSE` de los packs que lo traen (`crt-royale/LICENSE.TXT`, `crt-beans/LICENSE`) |
 | `shaders_slang/handheld` | Efectos de pantallas portátiles (LCD, Game Boy, etc.) | Varios | **Por shader**, igual que `crt` |
+| `shaders_slang/retro crisis` | Presets de **Retro Crisis** (`RC GDV-NTSC - ...`) en 720p/1080p/1440p/4K | Retro Crisis | **Compartidos gratuitamente por el autor** (confirmado por el usuario). Son ficheros `.slangp` que **solo referencian el pack `crt`**, así que no arrastran dependencias |
 
 Los packs `crt` y `handheld` proceden del repositorio oficial
 [`libretro/slang-shaders`](https://github.com/libretro/slang-shaders), que **no tiene

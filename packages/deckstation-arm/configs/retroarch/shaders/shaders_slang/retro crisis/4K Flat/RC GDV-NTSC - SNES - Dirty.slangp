@@ -1,0 +1,6 @@
+#reference "RC GDV-NTSC - SNES - Clean.slangp"
+cust_fringing = "2.000000"
+cust_artifacting = "2.000000"
+ntsc_scale = "1.000000"
+ntsc_cscale = "0.500000"
+ntsc_sat = "1.000000"

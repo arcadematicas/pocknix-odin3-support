@@ -1,0 +1,5 @@
+#reference "../4K Flat/RC GDV-NTSC - VHS 2160p.slangp"
+warpX = "0.030000"
+warpY = "0.040000"
+c_shape = "0.050000"
+csize = "0.050000"

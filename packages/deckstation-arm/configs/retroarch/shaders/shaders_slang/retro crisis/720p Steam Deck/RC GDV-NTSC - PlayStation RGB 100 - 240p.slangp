@@ -1,0 +1,3 @@
+#reference "../4K Flat/RC GDV-NTSC - PlayStation RGB 100 - 240p.slangp"
+maskstr = "-0.500000"
+shadowMask = "-1.000000"
