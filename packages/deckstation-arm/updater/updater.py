@@ -557,6 +557,46 @@ class UpdaterEngine:
             self.status_msg = f"No se pudieron repartir: {e}"
         self._bios_cache = None      # refrescar el informe
 
+    def _lanzar_bezel_master(self):
+        """Lanza BezelMaster (bezels de TheBezelProject) como proceso aparte.
+
+        BezelMaster es una app pygame independiente (bezel_master.py) con su
+        propio bucle y ventana. Para no mezclar dos estados de pygame en el
+        mismo proceso, cerramos el nuestro, lo lanzamos y al volver
+        re-inicializamos la ventana y las fuentes.
+        """
+        global screen, clock, font, font_title, font_small
+        bezel = os.path.join(DIR, "bezel_master.py")
+        if not os.path.exists(bezel):
+            self.status_msg = "No encuentro bezel_master.py"
+            return
+        pygame.quit()
+        try:
+            subprocess.run([sys.executable, bezel], cwd=DIR)
+        except Exception as e:
+            self.status_msg = f"BezelMaster falló: {e}"
+        # Re-inicializar pygame (el proceso hijo cerró la ventana)
+        pygame.init()
+        pygame.joystick.init()
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        try:
+            pygame.display.set_caption("Centro de Mando DeckStation v11.3 - Clean Sweeper")
+        except pygame.error:
+            pass
+        clock = pygame.time.Clock()
+        try:
+            if os.path.exists(FONT_PATH):
+                font = pygame.font.Font(FONT_PATH, 28)
+                font_title = pygame.font.Font(FONT_PATH, 44)
+                font_small = pygame.font.Font(FONT_PATH, 22)
+            else:
+                raise FileNotFoundError
+        except Exception:
+            font = pygame.font.SysFont("trebuchetms, arial, sans-serif", 28)
+            font_title = pygame.font.SysFont("trebuchetms, arial, sans-serif", 44, bold=True)
+            font_small = pygame.font.SysFont("trebuchetms, arial, sans-serif", 22)
+        self.state = "HUB"
+
     def _activate_current(self):
         """Activa la entrada seleccionada (instalar todo o gestionar un emulador)."""
         if not self.apps:
@@ -1470,6 +1510,7 @@ class UpdaterEngine:
         hub_options = [
             ("Actualizar Emuladores", "EMU_MENU"),
             ("BIOS / Firmware", "BIOS_MENU"),
+            ("Bezels / Overlays", "BEZELS"),
             ("Apariencia", "THEME_MENU"),
         ]
         # La opción de actualizar DeckStation (payload de MediaFire) solo se ofrece
@@ -1797,6 +1838,10 @@ class UpdaterEngine:
                                 self.current_app_idx = 0
                             elif sel == "SYSTEM_UPDATE":
                                 self.start_system_update()
+                            elif sel == "BIOS_MENU":
+                                self.state = "BIOS_MENU"
+                            elif sel == "BEZELS":
+                                self._lanzar_bezel_master()
                             elif sel == "THEME_MENU":
                                 for i, (tkey, _, _) in enumerate(THEME_ENTRIES):
                                     if tkey == ACTIVE_THEME:
@@ -1811,6 +1856,10 @@ class UpdaterEngine:
                                 self.current_app_idx = 0
                             elif sel == "SYSTEM_UPDATE":
                                 self.start_system_update()
+                            elif sel == "BIOS_MENU":
+                                self.state = "BIOS_MENU"
+                            elif sel == "BEZELS":
+                                self._lanzar_bezel_master()
                             elif sel == "THEME_MENU":
                                 for i, (tkey, _, _) in enumerate(THEME_ENTRIES):
                                     if tkey == ACTIVE_THEME:
