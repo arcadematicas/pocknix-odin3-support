@@ -1652,6 +1652,7 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
             ("Bezels / Overlays", "BEZELS"),
             ("OpenROM (convertir ROMs)", "OPENROM_MENU"),
             ("Apariencia", "THEME_MENU"),
+            ("Salir", "EXIT"),
         ]
         # La opción de actualizar DeckStation (payload de MediaFire) solo se ofrece
         # si hay un payload de NUESTRA arquitectura. Ver SYSTEM_UPDATE_ENABLED.
@@ -1694,6 +1695,10 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                             opt_text = f"{opt_text} · {ACTIVE_THEME.capitalize()}"
                         txt_surf = font.render(opt_text, True, txt_color)
                     screen.blit(txt_surf, (icon_x + 20, y_pos + 20))
+
+                hint = font_small.render("A/Enter=Seleccionar  |  Esc/B=Salir  |  ↑↓=Navegar", True, DIM_COLOR)
+                hint_rect = hint.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 40))
+                screen.blit(hint, hint_rect)
 
             elif self.state == "THEME_MENU":
                 title = font_title.render(" APARIENCIA", True, ACCENT_COLOR)
@@ -1997,6 +2002,9 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                             self.hub_idx = (self.hub_idx - 1) % len(hub_options)
                         elif event.key == pygame.K_DOWN:
                             self.hub_idx = (self.hub_idx + 1) % len(hub_options)
+                        elif event.key == pygame.K_ESCAPE:
+                            running = False
+                            return
                         elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                             sel = hub_options[self.hub_idx][1]
                             if sel == "EMU_MENU":
@@ -2017,6 +2025,9 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                                         self.theme_idx = i
                                         break
                                 self.state = "THEME_MENU"
+                            elif sel == "EXIT":
+                                running = False
+                                return
                     elif event.type == pygame.JOYBUTTONDOWN:
                         if event.button == 0:  # A
                             sel = hub_options[self.hub_idx][1]
@@ -2038,8 +2049,12 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                                         self.theme_idx = i
                                         break
                                 self.state = "THEME_MENU"
-                        elif event.button == 1:  # B
-                            pass
+                            elif sel == "EXIT":
+                                running = False
+                                return
+                        elif event.button == 1:  # B -> salir
+                            running = False
+                            return
                         elif event.button == 11 or event.button == 13:  # DPAD up
                             self.hub_idx = (self.hub_idx - 1) % len(hub_options)
                         elif event.button == 12 or event.button == 14:  # DPAD down
