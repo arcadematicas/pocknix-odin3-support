@@ -77,8 +77,26 @@ for i in range(pygame.joystick.get_count()):
         continue
 
 # ─── Constantes de DeckStation ─────────────────────────────
-DECK_ROOT   = "/run/media/fransis/8TB/DeckStation"
-ROMS_ROOT   = f"{DECK_ROOT}/ROMS"
+# DECK_ROOT se detecta solo: primero la variable de entorno (por si alguien
+# tiene DeckStation en otra ruta), luego la instalacion estandar de la Odin
+# (/opt/deckstation) y por ultimo la ruta del PC de desarrollo. Antes estaba
+# hardcodeada a la del PC, asi que en la Odin BezelMaster no encontraba las
+# ROMs y no lanzaba nada.
+DECK_ROOT = os.environ.get("DECK_ROOT", "")
+if not DECK_ROOT or not os.path.isdir(DECK_ROOT):
+    for _cand in ("/opt/deckstation", "/run/media/fransis/8TB/DeckStation"):
+        if os.path.isdir(_cand):
+            DECK_ROOT = _cand
+            break
+# La carpeta de ROMs se llama "ROMs" en la Odin y "ROMS" en el PC: se aceptan
+# las dos (Linux distingue mayusculas).
+ROMS_ROOT = ""
+for _cand in (f"{DECK_ROOT}/ROMs", f"{DECK_ROOT}/ROMS"):
+    if os.path.isdir(_cand):
+        ROMS_ROOT = _cand
+        break
+if not ROMS_ROOT:
+    ROMS_ROOT = f"{DECK_ROOT}/ROMs"
 BEZEL_ROOT  = f"{DECK_ROOT}/bezels/arcadematicas/games"
 SIMILARITY_THRESHOLD = 0.70
 
