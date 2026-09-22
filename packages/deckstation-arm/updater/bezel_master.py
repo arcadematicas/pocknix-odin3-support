@@ -36,6 +36,9 @@ pygame.joystick.init()
 
 # ─── Constantes de pantalla ────────────────────────────────
 # GUI: pantalla completa (usa la resolucion actual del compositor, ya rotada).
+# SCREEN_WIDTH/HEIGHT se usan en todo el dibujado -> definir SIEMPRE.
+_info = pygame.display.Info()
+SCREEN_WIDTH, SCREEN_HEIGHT = _info.current_w, _info.current_h
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 try:
     pygame.display.set_caption("BezelMaster para DeckStation")

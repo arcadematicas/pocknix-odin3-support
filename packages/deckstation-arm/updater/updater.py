@@ -31,10 +31,13 @@ pygame.init()
 pygame.joystick.init()
 # GUI: pantalla completa (usa la resolucion actual del compositor, ya rotada).
 # Headless (--install-all/--bios-check): ventana virtual con dummy.
+# SCREEN_WIDTH/HEIGHT se usan en todo el dibujado -> definir SIEMPRE.
 if _HEADLESS:
     SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 800
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 else:
+    _info = pygame.display.Info()
+    SCREEN_WIDTH, SCREEN_HEIGHT = _info.current_w, _info.current_h
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 try:
     pygame.display.set_caption("Centro de Mando DeckStation v11.3 - Clean Sweeper")
