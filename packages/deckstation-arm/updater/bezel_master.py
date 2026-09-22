@@ -11,7 +11,7 @@
 ╚═══════════════════════════════════════════════════════════════╝
 """
 
-import os, sys, re, json, shutil, zipfile, time, threading, difflib
+import os, sys, re, json, shutil, zipfile, time, threading, difflib, glob
 from pathlib import Path
 from datetime import datetime, timedelta
 import requests
@@ -544,6 +544,145 @@ def encontrar_carpeta_roms(sistema):
     return None
 
 
+def _retroarch_config_dir():
+    """Devuelve la ruta del config dir de RetroArch o None."""
+    if not DECK_ROOT:
+        return None
+    pattern = os.path.join(DECK_ROOT, "Apps", "RetroArch", "*.home")
+    for home_dir in glob.glob(pattern):
+        cfg_dir = os.path.join(home_dir, ".config", "retroarch")
+        if os.path.isdir(cfg_dir):
+            return cfg_dir
+    return None
+
+
+def _cores_del_repo(repo):
+    """Devuelve una lista con los nombres de las carpetas de core que trae el zip cacheado."""
+    zip_path = Path.home() / ".cache" / "bezelmaster" / f"{repo}.zip"
+    if not zip_path.exists():
+        return []
+    cores = set()
+    try:
+        with zipfile.ZipFile(zip_path, "r") as z:
+            for member in z.namelist():
+                if "/retroarch/config/" in member:
+                    parts = member.split("/retroarch/config/")
+                    if len(parts) > 1:
+                        subparts = parts[1].split("/")
+                        if subparts and subparts[0]:
+                            cores.add(subparts[0])
+    except Exception:
+        pass
+    return sorted(cores)
+
+
+def _activar_overlay(ra):
+    """Asegura que input_overlay_enable = "true" en retroarch.cfg."""
+    cfg_path = os.path.join(ra, "retroarch.cfg")
+    if not os.path.exists(cfg_path):
+        return
+    try:
+        with open(cfg_path, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+
+        encontrado = False
+        nuevas_lineas = []
+        for line in lines:
+            clave = line.split("=", 1)[0].strip() if "=" in line else ""
+            if clave == "input_overlay_enable":
+                nuevas_lineas.append('input_overlay_enable = "true"\n')
+                encontrado = True
+            else:
+                nuevas_lineas.append(line)
+
+        if not encontrado:
+            nuevas_lineas.append('input_overlay_enable = "true"\n')
+
+        with open(cfg_path, "w", encoding="utf-8") as f:
+            f.writelines(nuevas_lineas)
+    except Exception:
+        pass
+
+
+def instalar_en_retroarch(roms_dir, bezel_dir, repo, sistema, progress_callback=None):
+    """Instala bezels y configs generadas en RetroArch."""
+    ra = _retroarch_config_dir()
+    if not ra:
+        return 0, 0
+    cores = _cores_del_repo(repo)
+    if not cores:
+        return 0, 0
+
+    ov_dir = os.path.join(ra, "overlays", "GameBezels", sistema)
+    os.makedirs(ov_dir, exist_ok=True)
+
+    roms_dir = Path(roms_dir)
+    bezel_dir = Path(bezel_dir)
+
+    roms = set()
+    for f in roms_dir.rglob("*"):
+        if f.suffix.lower() in EXTENSIONES_ROM and f.is_file():
+            roms.add(f.stem)
+
+    if not roms:
+        return 0, 0
+
+    roms_sorted = sorted(roms)
+    total_roms = len(roms_sorted)
+    n_overlays = 0
+    n_configs = 0
+
+    if progress_callback:
+        progress_callback(0, f"Instalando en RetroArch ({total_roms} ROMs)...")
+
+    for idx, rom in enumerate(roms_sorted):
+        png_src = bezel_dir / f"{rom}.png"
+        if png_src.exists():
+            try:
+                # Copiar PNG
+                png_dst = os.path.join(ov_dir, f"{rom}.png")
+                shutil.copy2(png_src, png_dst)
+
+                # Escribir cfg de overlay
+                cfg_ov_path = os.path.join(ov_dir, f"{rom}.cfg")
+                cfg_ov_content = (
+                    f"overlays = 1\n\n"
+                    f'overlay0_overlay = "{rom}.png"\n\n'
+                    f"overlay0_full_screen = true\n\n"
+                    f"overlay0_descs = 0\n"
+                )
+                with open(cfg_ov_path, "w", encoding="utf-8") as f:
+                    f.write(cfg_ov_content)
+                n_overlays += 1
+
+                # Escribir cfg por core
+                overlay_ref_path = f"~/.config/retroarch/overlays/GameBezels/{sistema}/{rom}.cfg"
+                for core in cores:
+                    core_config_dir = os.path.join(ra, "config", core)
+                    os.makedirs(core_config_dir, exist_ok=True)
+                    core_cfg_path = os.path.join(core_config_dir, f"{rom}.cfg")
+                    core_cfg_content = (
+                        f'input_overlay = "{overlay_ref_path}"\n'
+                        f'input_overlay_enable = "true"\n'
+                    )
+                    with open(core_cfg_path, "w", encoding="utf-8") as f:
+                        f.write(core_cfg_content)
+                    n_configs += 1
+            except Exception:
+                pass
+
+        if progress_callback and (idx % 25 == 0 or idx == total_roms - 1):
+            pct = int(100 * (idx + 1) / total_roms)
+            progress_callback(pct, f"RetroArch: {n_overlays} overlays instalados...")
+
+    _activar_overlay(ra)
+
+    if progress_callback:
+        progress_callback(100, f"RetroArch: {n_overlays} overlays, {n_configs} configs instalados ✓")
+
+    return n_overlays, n_configs
+
+
 # =====================================================================
 #  UI PYGAME
 # =====================================================================
@@ -556,6 +695,7 @@ class BezelMasterApp:
         self.selected_idx = 0
         self.top_visible = 0
         self.max_visible = 8
+        self.overlays_instalados = (0, 0)
 
         # Sistema + variante seleccionados
         self.selected_sistema = None
@@ -633,6 +773,14 @@ class BezelMasterApp:
             result = f"✔ {asignadas}/{total} ROMs con bezel perfecto"
         else:
             result = f"✔ {asignadas}/{total} ROMs con bezel ({total - asignadas} sin coincidencia)"
+
+        n_ov, n_cfg = instalar_en_retroarch(roms_dir, bezel_dir, repo, clean, on_progress)
+        self.overlays_instalados = (n_ov, n_cfg)
+
+        if n_ov > 0:
+            result += f" · RetroArch: {n_ov} overlays, {n_cfg} configs"
+        else:
+            result += " · ⚠ RetroArch no encontrado"
 
         self.result_msg = result
         self.state = "DONE"
