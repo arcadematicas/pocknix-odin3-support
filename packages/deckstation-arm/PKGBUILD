@@ -3,7 +3,7 @@
 # Proyecto independiente. Versión original (x86_64): deckstation-x86_64.
 pkgname=deckstation-arm
 pkgver=1.0.0
-pkgrel=8
+pkgrel=9
 pkgdesc="Sistema de emulación portable para ARM (aarch64/armv7h)"
 arch=('aarch64' 'armv7h')
 url="https://github.com/stshunz/deckstation-arm"
@@ -55,6 +55,8 @@ package() {
         "${pkgdir}/opt/deckstation/scripts/deckstation-bios.sh"
     install -Dm755 "${sd}/scripts/deckstation-cores.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-cores.sh"
+    install -Dm755 "${sd}/scripts/deckstation-cores-sync.sh" \
+        "${pkgdir}/opt/deckstation/scripts/deckstation-cores-sync.sh"
     install -Dm755 "${sd}/scripts/deckstation-steam.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-steam.sh"
 

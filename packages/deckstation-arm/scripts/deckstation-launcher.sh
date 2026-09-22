@@ -106,6 +106,12 @@ fi
 if [ -x "$DECKSTATION_ROOT/scripts/deckstation-bios.sh" ]; then
     DECKSTATION_ROOT="$DECKSTATION_ROOT" "$DECKSTATION_ROOT/scripts/deckstation-bios.sh" 2>/dev/null || true
 fi
+# ES-DE: dejar solo los cores de RetroArch realmente instalados (regenera el
+# es_systems.xml activo desde el source filtrando los .so que faltan). Va al
+# FINAL: necesita los cores ya enlazados y el es_systems.xml ya desplegado.
+if [ -x "$DECKSTATION_ROOT/scripts/deckstation-cores-sync.sh" ]; then
+    DECKSTATION_ROOT="$DECKSTATION_ROOT" "$DECKSTATION_ROOT/scripts/deckstation-cores-sync.sh" >/dev/null 2>&1 || true
+fi
 
 # 8. FORZAR SDL AL COMPOSITOR (gamescope / Plasma)
 #    Sin esto, ES-DE puede quedarse en NEGRO al lanzarse desde el modo juego de

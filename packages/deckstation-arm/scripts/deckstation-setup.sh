@@ -238,6 +238,17 @@ deploy_system_cores() {
     fi
 }
 
+# ES-DE: dejar solo los cores de RetroArch realmente instalados. Regenera el
+# es_systems.xml activo desde el source quitando los <command> cuyo .so falta.
+# Debe ir DESPUES de desplegar las configs (que crean el es_systems.xml) y de
+# enlazar los cores, y con RetroArch ya instalado.
+deploy_cores_sync() {
+    if [ -x "${SCRIPTS_DIR}/deckstation-cores-sync.sh" ]; then
+        log "Filtrando en ES-DE los cores no instalados..."
+        "${SCRIPTS_DIR}/deckstation-cores-sync.sh" || log_warn "Fallo al filtrar los cores de ES-DE"
+    fi
+}
+
 # Despliega el wrapper portable lanzar.sh a cada carpeta de emulador que contenga
 # un AppImage. ES-DE (es_find_rules.xml) apunta a ./Apps/*/lanzar.sh en vez del
 # AppImage directo, así que el wrapper debe existir para que el lanzamiento sea
@@ -493,6 +504,11 @@ main() {
     # lanzar.sh y las configs: el setup prepara el entorno ANTES de que el Updater
     # descargue nada. Se repite aqui, ya con RetroArch en su sitio.
     setup_retroarch_assets
+
+    # ES-DE: quitar del selector los cores que no estan instalados. Va al final,
+    # con RetroArch ya instalado y las configs desplegadas (es cuando el
+    # es_systems.xml activo existe y la carpeta de cores tiene su contenido).
+    deploy_cores_sync
 
     # Transparente: añadir DeckStation a Steam con sus imágenes, sin preguntar.
     # Solo funciona desde el modo Escritorio; si no, avisa y sigue.
