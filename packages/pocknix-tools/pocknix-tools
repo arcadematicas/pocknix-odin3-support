@@ -272,22 +272,6 @@ do_wproton() {
   konsole -e /bin/bash -c "${wp}; echo; read -rp 'Press Enter to close... '"
 }
 
-# DeckStation -> Steam: añade DeckStation a la biblioteca de Steam como juego
-# NO-Steam (con sus imágenes de grid: portada, cabecera, hero y logo), igual
-# que WProton. Solo desde el modo Escritorio (el script lo comprueba: en el
-# modo Juego la sesión ES Steam). Cierra y reabre Steam si hace falta.
-do_steam() {
-  local steam="/opt/deckstation/scripts/deckstation-steam.sh"
-  if [ ! -x "${steam}" ]; then
-    gui_err "deckstation-steam.sh not found (${steam}).\n\nIs the deckstation-arm package installed?"
-    return 0
-  fi
-  kdialog --title "$TITLE" --warningcontinuecancel \
-    "Add DeckStation to Steam?\n\nThis adds DeckStation to your Steam library as a NON-Steam game, with its artwork (portrait, header, hero and logo), so you can open it from Game Mode without leaving to the desktop.\n\nOnly works from Desktop mode (in Game Mode the session IS Steam). Steam will be closed and reopened if it is running." \
-    || return 0
-  konsole -e /bin/bash -c "${steam}; echo; read -rp 'Press Enter to close... '"
-}
-
 # MAKO Decky (Lossless Scaling frame generation) reads Lossless.dll at runtime from a
 # *lawful, user-supplied* Lossless Scaling install. MAKO never ships the DLL and neither
 # do we: it is paid, proprietary software, so it must NOT go into a public repo. This
@@ -326,7 +310,6 @@ while :; do
   items+=(installer "Install or remove internal Pocknix...")
   items+=(deckstation "Install DeckStation (emulators)...")
   items+=(bios "DeckStation BIOS: what is missing / distribute...")
-  items+=(steam "Add DeckStation to Steam (with artwork)...")
   items+=(wproton "Set up WProton (Windows games)...")
   items+=(mako-dll "Install Lossless Scaling DLL (MAKO)...")
   abl_label="$(abl_item_label "$(abl_status)")" && items+=(abl "${abl_label}")
@@ -345,7 +328,6 @@ while :; do
     installer)         /usr/bin/pocknix-installer-gui || true ;;
     deckstation)       do_deckstation ;;
   bios)              do_bios ;;
-    steam)             do_steam ;;
     wproton)           do_wproton ;;
     mako-dll)          do_mako_dll ;;
     abl)               do_abl ;;

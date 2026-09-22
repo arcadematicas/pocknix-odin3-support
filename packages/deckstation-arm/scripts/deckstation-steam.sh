@@ -268,10 +268,9 @@ main() {
 
     local reabrir=0
     if steam_esta_abierto; then
-        say "Steam está abierto y hay que cerrarlo para añadir DeckStation."
-        printf '¿Cerrar Steam, añadirlo y volver a abrirlo? [s/N]: ' >&2
-        read -r r
-        [ "$r" = "s" ] || [ "$r" = "S" ] || { say "Cancelado."; exit 0; }
+        # Transparente: se cierra Steam solo (Steam reescribe shortcuts.vdf al
+        # salir, así que hay que tocarlo con Steam cerrado) y se reabre al final.
+        say "Steam está abierto: se cierra para añadir DeckStation y se reabre después."
         steam_cerrar || { say "ERROR: no se pudo cerrar Steam"; exit 1; }
         reabrir=1
     fi

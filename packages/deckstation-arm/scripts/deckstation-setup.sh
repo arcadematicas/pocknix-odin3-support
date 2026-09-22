@@ -400,8 +400,11 @@ install_emulators() {
 }
 
 # ============================================================================
-# Steam (opcional): añadir DeckStation a la biblioteca con sus imágenes.
-# Solo desde el modo Escritorio (el script lo comprueba).
+# Steam (transparente): añade DeckStation a la biblioteca de Steam con sus
+# imágenes (portada, cabecera, hero y logo) en la PRIMERA instalación, sin
+# que el usuario tenga que hacer nada. Solo funciona desde el modo Escritorio
+# (el script lo comprueba); si se está en modo Juego o no hay Steam, avisa y
+# sigue — no es un fallo del setup.
 # ============================================================================
 
 setup_steam() {
@@ -429,27 +432,21 @@ main() {
     echo "=========================================="
     echo ""
 
-    local do_steam=false
     while [[ $# -gt 0 ]]; do
         case $1 in
             --force)
                 FORCE_DOWNLOAD=true
                 shift
                 ;;
-            --steam)
-                do_steam=true
-                shift
-                ;;
             --help|-h)
-                echo "Uso: deckstation-setup [--force] [--steam]"
+                echo "Uso: deckstation-setup [--force]"
                 echo ""
                 echo "Prepara el entorno portable de DeckStation (assets, cores,"
-                echo "lanzar.sh, configs y BIOS) y abre el Updater para instalar"
-                echo "los emuladores."
+                echo "lanzar.sh, configs y BIOS), añade DeckStation a Steam con"
+                echo "sus imágenes y abre el Updater para instalar los emuladores."
                 echo ""
                 echo "Opciones:"
                 echo "  --force   Re-descargar tambien lo que ya existe"
-                echo "  --steam   Ademas, anadir DeckStation a Steam (modo Escritorio)"
                 echo "  --help    Mostrar esta ayuda"
                 exit 0
                 ;;
@@ -497,10 +494,10 @@ main() {
     # descargue nada. Se repite aqui, ya con RetroArch en su sitio.
     setup_retroarch_assets
 
-    if [ "$do_steam" = true ]; then
-        echo ""
-        setup_steam
-    fi
+    # Transparente: añadir DeckStation a Steam con sus imágenes, sin preguntar.
+    # Solo funciona desde el modo Escritorio; si no, avisa y sigue.
+    echo ""
+    setup_steam
 
     echo ""
     echo "=========================================="
@@ -512,9 +509,6 @@ main() {
     echo ""
     echo "Para lanzar:"
     echo "  deckstation"
-    echo ""
-    echo "Para añadir DeckStation a Steam (con su imagen):"
-    echo "  deckstation-steam"
     echo ""
 }
 
