@@ -605,7 +605,7 @@ def _activar_overlay(ra):
 
 
 def instalar_en_retroarch(roms_dir, bezel_dir, repo, sistema, progress_callback=None):
-    """Instala bezels y configs generadas en RetroArch."""
+    """Mueve bezels emparejados desde el workspace a RetroArch y genera sus configs."""
     ra = _retroarch_config_dir()
     if not ra:
         return 0, 0
@@ -639,9 +639,10 @@ def instalar_en_retroarch(roms_dir, bezel_dir, repo, sistema, progress_callback=
         png_src = bezel_dir / f"{rom}.png"
         if png_src.exists():
             try:
-                # Copiar PNG
+                # Mover PNG (los ficheros finales viven en RetroArch, sin duplicar)
                 png_dst = os.path.join(ov_dir, f"{rom}.png")
-                shutil.copy2(png_src, png_dst)
+                if os.path.abspath(png_src) != os.path.abspath(png_dst):
+                    shutil.move(png_src, png_dst)
 
                 # Escribir cfg de overlay
                 cfg_ov_path = os.path.join(ov_dir, f"{rom}.cfg")
