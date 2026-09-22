@@ -2555,4 +2555,13 @@
         <platform>zxspectrum</platform>
         <theme>zxspectrum</theme>
     </system>
+    <system>
+        <name>openrom</name>
+        <fullname>OpenROM</fullname>
+        <path>%ROMPATH%/openrom</path>
+        <extension>.sh</extension>
+        <command label="OpenROM">%EMULATOR_OS-SHELL% %ROM%</command>
+        <platform>pc</platform>
+        <theme>ports</theme>
+    </system>
 </systemList>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os, sys, subprocess, requests, threading, traceback, shutil, re, platform
+import os, sys, subprocess, requests, threading, traceback, shutil, re, platform, zipfile
 from os.path import dirname, abspath, join, exists
 
 # Modo headless: lo usa deckstation-setup.sh desde un terminal SIN escritorio
@@ -404,6 +404,7 @@ class UpdaterEngine:
         self.state = "HUB"
         self.hub_idx = 0
         self.theme_idx = 0
+        self.openrom_idx = 0
 
         self.current_app_idx = 0
         self.available_tags = []
@@ -532,6 +533,146 @@ class UpdaterEngine:
     def _raiz_deckstation(self):
         """Raiz de DeckStation (/opt/deckstation) vista desde Apps/Updater/."""
         return os.path.dirname(os.path.dirname(DIR))
+
+    # ------------------------------------------------------------------
+    # OpenROM (suite de conversion de ROMs, M5Devs, GPL-3.0)
+    # Build ARM64 oficial: GUI Flutter (openrom_flutter) + CLI (openrom-core).
+    # Se instala como app en Apps/OpenROM/ (no es un emulador AppImage, por
+    # eso NO va en git.txt ni en el catalogo de emuladores).
+    # ------------------------------------------------------------------
+    OPENROM_URL = ("https://github.com/M5Devs/OpenROM/releases/download/v3.0.0/"
+                   "OpenROM-v3.0.0_Linux_arm64.zip")
+    OPENROM_DIR = os.path.join(APPS_DIR, "OpenROM")
+
+    def _openrom_instalado(self):
+        return os.path.isfile(os.path.join(self.OPENROM_DIR, "openrom_flutter"))
+
+    def _openrom_opciones(self):
+        """Opciones del menu OPENROM_MENU segun el estado de instalacion."""
+        if self._openrom_instalado():
+            return ["Abrir OpenROM (GUI)",
+                    "Convertir ROMs a CHD (lote)",
+                    "Reinstalar / actualizar"]
+        return ["Descargar e instalar OpenROM"]
+
+    def _openrom_descargar(self):
+        """Descarga el zip ARM64 y lo instala en Apps/OpenROM/ con sus wrappers."""
+        try:
+            os.makedirs(self.OPENROM_DIR, exist_ok=True)
+            tmp = os.path.join(self.OPENROM_DIR, "openrom.zip")
+            self.status_msg = "Descargando OpenROM..."
+            self._draw_and_flip()
+            req = requests.get(self.OPENROM_URL, stream=True, timeout=60)
+            req.raise_for_status()
+            total = int(req.headers.get("content-length", 0))
+            done = 0
+            with open(tmp, "wb") as f:
+                for chunk in req.iter_content(chunk_size=1 << 16):
+                    f.write(chunk)
+                    done += len(chunk)
+                    if total:
+                        self.status_msg = f"Descargando OpenROM... {done*100//total}%"
+                        self._draw_and_flip()
+            self.status_msg = "Extrayendo OpenROM..."
+            self._draw_and_flip()
+            with zipfile.ZipFile(tmp) as z:
+                z.extractall(self.OPENROM_DIR)
+            os.remove(tmp)
+            for b in ("openrom_flutter", "openrom-core"):
+                p = os.path.join(self.OPENROM_DIR, b)
+                if os.path.exists(p):
+                    os.chmod(p, 0o755)
+            self._openrom_escribir_wrappers()
+            # Enlace para ES-DE (sistema openrom -> ROMs/openrom/)
+            try:
+                roms_openrom = os.path.join(os.path.dirname(APPS_DIR), "ROMs", "openrom")
+                os.makedirs(roms_openrom, exist_ok=True)
+                link = os.path.join(roms_openrom, "OpenROM.sh")
+                if not os.path.exists(link):
+                    os.symlink(os.path.join(self.OPENROM_DIR, "OpenROM.sh"), link)
+            except Exception:
+                pass
+            self.status_msg = "OpenROM instalado."
+            return True
+        except Exception as e:
+            self.status_msg = f"Error descargando OpenROM: {e}"
+            return False
+
+    def _openrom_escribir_wrappers(self):
+        gui = os.path.join(self.OPENROM_DIR, "OpenROM.sh")
+        if not os.path.exists(gui):
+            with open(gui, "w") as f:
+                f.write("#!/bin/bash\n"
+                        "cd \"$(dirname \"$0\")\"\n"
+                        "export LANG=C.UTF-8 PYTHONIOENCODING=utf-8\n"
+                        "exec ./openrom_flutter \"$@\"\n")
+            os.chmod(gui, 0o755)
+        batch = os.path.join(self.OPENROM_DIR, "openrom-batch.sh")
+        if not os.path.exists(batch):
+            with open(batch, "w") as f:
+                f.write('''#!/bin/bash
+# openrom-batch.sh [carpeta] [formato]
+# Convierte por lotes las ROMs de una carpeta con openrom-core (CLI).
+# Uso: openrom-batch.sh [carpeta] [CHD|CSO|ECM|RVZ|XISO|...]
+set -u
+cd "$(dirname "$0")"
+export LANG=C.UTF-8 PYTHONIOENCODING=utf-8
+DIR="${1:-/opt/deckstation/ROMs}"
+FMT="${2:-CHD}"
+if [ ! -d "$DIR" ]; then
+    echo "La carpeta no existe: $DIR"
+    exit 1
+fi
+mapfile -t FILES < <(find "$DIR" -type f \\( -iname '*.iso' -o -iname '*.bin' -o -iname '*.cue' -o -iname '*.gdi' -o -iname '*.img' -o -iname '*.chd' -o -iname '*.cso' -o -iname '*.zso' -o -iname '*.ecm' \\) | sort)
+TOTAL=${#FILES[@]}
+if [ "$TOTAL" -eq 0 ]; then
+    echo "No hay ROMs convertibles en $DIR"
+    exit 0
+fi
+echo "Convirtiendo $TOTAL ROMs a $FMT en $DIR"
+OK=0; FAIL=0; N=0
+for f in "${FILES[@]}"; do
+    N=$((N+1))
+    echo "[$N/$TOTAL] $f"
+    if ./openrom-core --input "$f" --format "$FMT" >/dev/null 2>&1; then
+        OK=$((OK+1)); echo "  -> OK"
+    else
+        FAIL=$((FAIL+1)); echo "  -> FALLO"
+    fi
+done
+echo ""
+echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
+''')
+            os.chmod(batch, 0o755)
+
+    def _openrom_lanzar(self):
+        gui = os.path.join(self.OPENROM_DIR, "OpenROM.sh")
+        if os.path.exists(gui):
+            subprocess.Popen([gui], cwd=self.OPENROM_DIR,
+                             env={**os.environ, "LANG": "C.UTF-8",
+                                  "PYTHONIOENCODING": "utf-8"})
+
+    def _openrom_batch(self):
+        batch = os.path.join(self.OPENROM_DIR, "openrom-batch.sh")
+        if os.path.exists(batch):
+            subprocess.Popen(["konsole", "-e", "/bin/bash", batch],
+                             env={**os.environ, "LANG": "C.UTF-8",
+                                  "PYTHONIOENCODING": "utf-8"})
+
+    def _openrom_ejecutar(self, idx):
+        """Ejecuta la opcion idx del menu OPENROM_MENU."""
+        opciones = self._openrom_opciones()
+        if idx >= len(opciones):
+            return
+        accion = opciones[idx]
+        if accion == "Descargar e instalar OpenROM":
+            self._openrom_descargar()
+        elif accion == "Reinstalar / actualizar":
+            self._openrom_descargar()
+        elif accion == "Abrir OpenROM (GUI)":
+            self._openrom_lanzar()
+        elif accion == "Convertir ROMs a CHD (lote)":
+            self._openrom_batch()
 
     def _bios_lineas(self):
         """Salida de `deckstation-bios.sh --check`, cacheada hasta repartir."""
@@ -1511,6 +1652,7 @@ class UpdaterEngine:
             ("Actualizar Emuladores", "EMU_MENU"),
             ("BIOS / Firmware", "BIOS_MENU"),
             ("Bezels / Overlays", "BEZELS"),
+            ("OpenROM (convertir ROMs)", "OPENROM_MENU"),
             ("Apariencia", "THEME_MENU"),
         ]
         # La opción de actualizar DeckStation (payload de MediaFire) solo se ofrece
@@ -1691,6 +1833,32 @@ class UpdaterEngine:
                     screen.blit(font_small.render(self.status_msg[:120], True, GREEN_COLOR),
                                 (40, SCREEN_HEIGHT - 40))
 
+            elif self.state == "OPENROM_MENU":
+                # OpenROM: suite de conversion de ROMs (GUI Flutter + CLI).
+                title = font_title.render(" OPENROM", True, ACCENT_COLOR)
+                screen.blit(title, (40, 20))
+                hint = font_small.render("A/Enter=Seleccionar   |   Esc/B=Volver   |   ↑↓=Navegar", True, DIM_COLOR)
+                screen.blit(hint, (40, 58))
+
+                sub = font_small.render("Convierte ROMs a CHD/CSO/ECM/RVZ... (PS1, PS2, GC, Wii, DC)", True, DIM_COLOR)
+                screen.blit(sub, (40, 84))
+
+                y = 130
+                opciones = self._openrom_opciones()
+                for idx, opt in enumerate(opciones):
+                    is_sel = (idx == self.openrom_idx)
+                    bg = ACCENT_COLOR if is_sel else PANEL_COLOR
+                    txt_color = SEL_FG_COLOR if is_sel else TEXT_COLOR
+                    pygame.draw.rect(screen, bg, (40, y, 700, 56), border_radius=RADIUS)
+                    prefix = ">> " if is_sel else "   "
+                    txt_surf = font.render(f"{prefix}{opt}", True, txt_color)
+                    screen.blit(txt_surf, (60, y + 10))
+                    y += 72
+
+                if self.status_msg:
+                    screen.blit(font_small.render(self.status_msg[:120], True, GREEN_COLOR),
+                                (40, SCREEN_HEIGHT - 40))
+
             elif self.state == "SELECT_VERSION":
                 # Version selection screen
                 header = font_title.render(f"Versiones disponibles para {self.apps[self.current_app_idx]['name']}", True, ACCENT_COLOR)
@@ -1842,6 +2010,9 @@ class UpdaterEngine:
                                 self.state = "BIOS_MENU"
                             elif sel == "BEZELS":
                                 self._lanzar_bezel_master()
+                            elif sel == "OPENROM_MENU":
+                                self.state = "OPENROM_MENU"
+                                self.openrom_idx = 0
                             elif sel == "THEME_MENU":
                                 for i, (tkey, _, _) in enumerate(THEME_ENTRIES):
                                     if tkey == ACTIVE_THEME:
@@ -1860,6 +2031,9 @@ class UpdaterEngine:
                                 self.state = "BIOS_MENU"
                             elif sel == "BEZELS":
                                 self._lanzar_bezel_master()
+                            elif sel == "OPENROM_MENU":
+                                self.state = "OPENROM_MENU"
+                                self.openrom_idx = 0
                             elif sel == "THEME_MENU":
                                 for i, (tkey, _, _) in enumerate(THEME_ENTRIES):
                                     if tkey == ACTIVE_THEME:
@@ -1945,6 +2119,31 @@ class UpdaterEngine:
                             self._bios_repartir()
                         elif event.button == 1:    # B
                             self.state = "HUB"
+
+                elif self.state == "OPENROM_MENU":
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_UP:
+                            self.openrom_idx = (self.openrom_idx - 1) % len(self._openrom_opciones())
+                        elif event.key == pygame.K_DOWN:
+                            self.openrom_idx = (self.openrom_idx + 1) % len(self._openrom_opciones())
+                        elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                            self._openrom_ejecutar(self.openrom_idx)
+                        elif event.key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
+                            self.state = "HUB"
+                    elif event.type == pygame.JOYBUTTONDOWN:
+                        if event.button == 0:      # A
+                            self._openrom_ejecutar(self.openrom_idx)
+                        elif event.button == 1:    # B
+                            self.state = "HUB"
+                        elif event.button == 11 or event.button == 13:  # DPAD up
+                            self.openrom_idx = (self.openrom_idx - 1) % len(self._openrom_opciones())
+                        elif event.button == 12 or event.button == 14:  # DPAD down
+                            self.openrom_idx = (self.openrom_idx + 1) % len(self._openrom_opciones())
+                    elif event.type == pygame.JOYHATMOTION:
+                        if event.value[1] > 0:
+                            self.openrom_idx = (self.openrom_idx - 1) % len(self._openrom_opciones())
+                        elif event.value[1] < 0:
+                            self.openrom_idx = (self.openrom_idx + 1) % len(self._openrom_opciones())
 
                 elif self.state == "SELECT_VERSION":
                     if event.type == pygame.KEYDOWN:
