@@ -246,20 +246,8 @@ do_deckstation() {
 
 # WProton (Windows games: Proton/Wine). Su primer arranque lanza un asistente que
 # elige el runner, la config basica y lo anade al modo juego de Steam.
-# DeckStation BIOS: DeckStation does NOT ship or download BIOS/firmware (they are
-# copyrighted). The user drops their own (legally obtained) files into
-# /opt/deckstation/bios/<system>/ and this shows what is still missing, where each
-# one goes, and distributes them to every emulator. Runs as deck, same as
-# do_deckstation, so the copies end up owned by deck.
-do_bios() {
-  local bios="/opt/deckstation/scripts/deckstation-bios.sh"
-  if [ ! -x "${bios}" ]; then
-    gui_err "DeckStation not installed (${bios} missing).\n\nInstall DeckStation first."
-    return 0
-  fi
-  konsole -e /bin/bash -c \
-    "${bios} --check; echo; read -rp 'Press Enter to distribute your BIOS (or Ctrl+C to stop)... '; ${bios}; echo; read -rp 'Press Enter to close... '"
-}
+# (DeckStation BIOS ya no está aquí: el Updater de DeckStation tiene su propia
+# opción "BIOS / Firmware" — era redundante.)
 
 do_wproton() {
   local wp="/usr/bin/wproton"
@@ -309,7 +297,6 @@ while :; do
   esac
   items+=(installer "Install or remove internal Pocknix...")
   items+=(deckstation "Install DeckStation (emulators)...")
-  items+=(bios "DeckStation BIOS: what is missing / distribute...")
   items+=(wproton "Set up WProton (Windows games)...")
   items+=(mako-dll "Install Lossless Scaling DLL (MAKO)...")
   abl_label="$(abl_item_label "$(abl_status)")" && items+=(abl "${abl_label}")
@@ -327,7 +314,6 @@ while :; do
     mode)              do_mode ;;
     installer)         /usr/bin/pocknix-installer-gui || true ;;
     deckstation)       do_deckstation ;;
-  bios)              do_bios ;;
     wproton)           do_wproton ;;
     mako-dll)          do_mako_dll ;;
     abl)               do_abl ;;
