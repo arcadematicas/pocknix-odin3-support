@@ -27,12 +27,16 @@ if os.path.exists(local_libs):
 import pygame
 from pygame.locals import *
 
+# No pedir el teclado en pantalla al compositor (Plasma Mobile lo muestra si una
+# app activa el input method de Wayland; SDL lo activa al crear la ventana).
+os.environ.setdefault("SDL_HINT_IME_EMBEDDED_TEXT_INPUT", "0")
+
 pygame.init()
 pygame.joystick.init()
 
 # ─── Constantes de pantalla ────────────────────────────────
-SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 800
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+# GUI: pantalla completa (usa la resolucion actual del compositor, ya rotada).
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 try:
     pygame.display.set_caption("BezelMaster para DeckStation")
 except pygame.error:

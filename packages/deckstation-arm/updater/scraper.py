@@ -982,8 +982,13 @@ def ejecutar_ui(config):
         return
 
     pygame.init()
-    ANCHO, ALTO = 800, 600
-    pantalla = pygame.display.set_mode((ANCHO, ALTO))
+    # No pedir el teclado en pantalla al compositor (Plasma Mobile lo muestra si
+    # una app activa el input method de Wayland; SDL lo activa al crear la ventana).
+    os.environ.setdefault("SDL_HINT_IME_EMBEDDED_TEXT_INPUT", "0")
+    # Pantalla completa con la resolucion real (el layout se centra con ANCHO/ALTO).
+    info = pygame.display.Info()
+    ANCHO, ALTO = info.current_w, info.current_h
+    pantalla = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     pygame.display.set_caption("DeckStation - ScreenScraper")
     font_grande = pygame.font.Font(None, 36)
     font_media = pygame.font.Font(None, 28)

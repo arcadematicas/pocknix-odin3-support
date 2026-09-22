@@ -39,6 +39,11 @@ elif [ -n "${DISPLAY:-}" ]; then
 fi
 export SDL_AUDIODRIVER="${SDL_AUDIODRIVER:-alsa}"
 
+# No mostrar el teclado en pantalla (Plasma Mobile lo muestra cuando una app
+# activa el input method de Wayland; SDL/pygame lo activa al crear la ventana).
+# Con este hint SDL no pide el teclado virtual al compositor.
+export SDL_HINT_IME_EMBEDDED_TEXT_INPUT=0
+
 # El updater deriva sus rutas de la ubicacion del script, pero por si acaso
 export DECKSTATION_ROOT="${DECKSTATION_ROOT:-$(dirname "$UPDATER_DIR")/..}"
 

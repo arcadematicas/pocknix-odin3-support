@@ -8,8 +8,13 @@ from os.path import dirname, abspath, join, exists
 # (Pocknix Tools -> instalar DeckStation). Este modulo abre una ventana al
 # cargarse, asi que SDL necesita un driver valido igualmente: se fuerza "dummy"
 # ANTES de importar pygame. Sin esto: "pygame.error: No available video device".
-if any(a in sys.argv for a in ("--install-all", "--bios-check")):
+_HEADLESS = any(a in sys.argv for a in ("--install-all", "--bios-check"))
+if _HEADLESS:
     os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+
+# No pedir el teclado en pantalla al compositor (Plasma Mobile lo muestra si una
+# app activa el input method de Wayland; SDL lo activa al crear la ventana).
+os.environ.setdefault("SDL_HINT_IME_EMBEDDED_TEXT_INPUT", "0")
 
 DIR = dirname(abspath(__file__))
 sys.path.insert(0, os.path.join(DIR, 'libs'))
@@ -24,8 +29,13 @@ from pygame.locals import *
 
 pygame.init()
 pygame.joystick.init()
-SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 800
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+# GUI: pantalla completa (usa la resolucion actual del compositor, ya rotada).
+# Headless (--install-all/--bios-check): ventana virtual con dummy.
+if _HEADLESS:
+    SCREEN_WIDTH, SCREEN_HEIGHT = 1280, 800
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+else:
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 try:
     pygame.display.set_caption("Centro de Mando DeckStation v11.3 - Clean Sweeper")
 except pygame.error:
