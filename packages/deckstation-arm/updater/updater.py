@@ -405,6 +405,7 @@ class UpdaterEngine:
         self.hub_idx = 0
         self.theme_idx = 0
         self.openrom_idx = 0
+        self._bezel_proc = None
 
         self.current_app_idx = 0
         self.available_tags = []
@@ -701,42 +702,26 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
     def _lanzar_bezel_master(self):
         """Lanza BezelMaster (bezels de TheBezelProject) como proceso aparte.
 
-        BezelMaster es una app pygame independiente (bezel_master.py) con su
-        propio bucle y ventana. Para no mezclar dos estados de pygame en el
-        mismo proceso, cerramos el nuestro, lo lanzamos y al volver
-        re-inicializamos la ventana y las fuentes.
+        ANTES se hacía pygame.quit() + subprocess.run BLOQUEANTE + pygame.init()
+        al volver, y al salir de BezelMaster el Updater se quedaba colgado (la
+        reinicialización de pygame/joystick tras quit() no es fiable en la Odin).
+        AHORA BezelMaster corre en su propio proceso con su propia ventana y el
+        Updater sigue vivo en el hub sin tocar pygame. Al cerrar BezelMaster, el
+        Updater ya está listo.
         """
-        global screen, clock, font, font_title, font_small
         bezel = os.path.join(DIR, "bezel_master.py")
         if not os.path.exists(bezel):
             self.status_msg = "No encuentro bezel_master.py"
             return
-        pygame.quit()
+        # No lanzar dos instancias a la vez
+        if getattr(self, "_bezel_proc", None) is not None and self._bezel_proc.poll() is None:
+            self.status_msg = "BezelMaster ya está abierto"
+            return
         try:
-            subprocess.run([sys.executable, bezel], cwd=DIR)
+            self._bezel_proc = subprocess.Popen([sys.executable, bezel], cwd=DIR)
+            self.status_msg = "BezelMaster abierto (ciérralo para volver)"
         except Exception as e:
             self.status_msg = f"BezelMaster falló: {e}"
-        # Re-inicializar pygame (el proceso hijo cerró la ventana)
-        pygame.init()
-        pygame.joystick.init()
-        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        try:
-            pygame.display.set_caption("Centro de Mando DeckStation v11.3 - Clean Sweeper")
-        except pygame.error:
-            pass
-        clock = pygame.time.Clock()
-        try:
-            if os.path.exists(FONT_PATH):
-                font = pygame.font.Font(FONT_PATH, 28)
-                font_title = pygame.font.Font(FONT_PATH, 44)
-                font_small = pygame.font.Font(FONT_PATH, 22)
-            else:
-                raise FileNotFoundError
-        except Exception:
-            font = pygame.font.SysFont("trebuchetms, arial, sans-serif", 28)
-            font_title = pygame.font.SysFont("trebuchetms, arial, sans-serif", 44, bold=True)
-            font_small = pygame.font.SysFont("trebuchetms, arial, sans-serif", 22)
-        self.state = "HUB"
 
     def _activate_current(self):
         """Activa la entrada seleccionada (instalar todo o gestionar un emulador)."""
@@ -2179,6 +2164,11 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                         elif event.button == 11 or event.button == 13:  # DPAD up
                             self.selected_tag_idx = max(0, self.selected_tag_idx - 1)
                         elif event.button == 12 or event.button == 14:  # DPAD down
+                            self.selected_tag_idx = min(len(self.available_tags) - 1, self.selected_tag_idx + 1)
+                    elif event.type == pygame.JOYHATMOTION:
+                        if event.value[1] > 0:
+                            self.selected_tag_idx = max(0, self.selected_tag_idx - 1)
+                        elif event.value[1] < 0:
                             self.selected_tag_idx = min(len(self.available_tags) - 1, self.selected_tag_idx + 1)
 
                 elif self.state == "DOWNLOADING":
