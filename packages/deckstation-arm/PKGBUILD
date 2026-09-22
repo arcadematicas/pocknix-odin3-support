@@ -55,6 +55,14 @@ package() {
         "${pkgdir}/opt/deckstation/scripts/deckstation-bios.sh"
     install -Dm755 "${sd}/scripts/deckstation-cores.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-cores.sh"
+    install -Dm755 "${sd}/scripts/deckstation-steam.sh" \
+        "${pkgdir}/opt/deckstation/scripts/deckstation-steam.sh"
+
+    # Arte para la biblioteca de Steam (deckstation-steam.sh las copia al grid).
+    # Viajan DENTRO del paquete: sin red ni fallback dibujado.
+    install -dm755 "${pkgdir}/opt/deckstation/arte"
+    cp -r "${sd}/arte/"* "${pkgdir}/opt/deckstation/arte/"
+    chmod -R a+rX "${pkgdir}/opt/deckstation/arte"
 
     # Configs de emuladores (portables, rutas relativas)
     install -dm755 "${pkgdir}/opt/deckstation/configs"
