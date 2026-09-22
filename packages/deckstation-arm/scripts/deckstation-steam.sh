@@ -254,7 +254,10 @@ main() {
     done
 
     # Solo desde el modo Escritorio: en el modo Juego la sesión ES Steam.
-    if [ -n "${GAMESCOPE_WAYLAND_DISPLAY:-}" ] || [ "${XDG_CURRENT_DESKTOP:-}" = "gamescope" ]; then
+    # Se comprueba con las variables de la sesión gráfica Y con pgrep (por si
+    # se ejecuta por SSH, donde esas variables no existen).
+    if [ -n "${GAMESCOPE_WAYLAND_DISPLAY:-}" ] || [ "${XDG_CURRENT_DESKTOP:-}" = "gamescope" ] \
+       || pgrep -f gamescope >/dev/null 2>&1; then
         say "ERROR: esto solo se puede hacer desde el modo Escritorio."
         say "En el modo Juego, la sesión ES Steam y habría que cerrarlo."
         exit 1
