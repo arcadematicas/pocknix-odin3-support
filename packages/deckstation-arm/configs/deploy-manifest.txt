@@ -72,3 +72,12 @@ vita3k|{HOME:Vita3K}/.config/Vita3K/config|keep
 # --- PCSX2 / PPSSPP (best-effort: hoy no hay build ARM en git.txt) ------
 pcsx2/pcsx2.ini|{HOME:Pcsx2}/.config/PCSX2/pcsx2.ini|keep
 ppsspp/ppsspp.ini|{HOME:PPSSPP}/.config/ppsspp/PSP/SYSTEM/ppsspp.ini|keep
+
+# --- MAME (arcade) ------------------------------------------------------
+mame/mame.ini|{HOME:MAME}/.mame/mame.ini|keep
+
+# --- Xemu (Xbox) --------------------------------------------------------
+xemu/xemu.toml|{HOME:Xemu}/.local/share/xemu/xemu/xemu.toml|keep
+
+# --- MelonDS (Nintendo DS) ----------------------------------------------
+melonds/melonDS.ini|{HOME:MelonDS}/.config/melonDS/melonDS.ini|keep

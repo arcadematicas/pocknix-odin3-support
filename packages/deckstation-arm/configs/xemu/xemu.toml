@@ -1,0 +1,7 @@
+[display]
+renderer = "vulkan"
+
+[sys]
+boot_rom_path = "/opt/deckstation/bios/xbox/bootrom.bin"
+flash_path = "/opt/deckstation/bios/xbox/flash.bin"
+hdd_path = "/opt/deckstation/bios/xbox/xbox_hdd.qcow2"
