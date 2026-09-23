@@ -1002,7 +1002,7 @@
         <!-- Microsoft Xbox 360 emulator xenia -->
         <rule type="staticpath">
 
-            <entry>./Apps/xenia_edge/xenia_edge_linux.AppImage</entry>
+            <entry>./Apps/xenia_edge/xenia_edge_linux_aarch64.AppImage</entry>
 
         </rule>
     </emulator>

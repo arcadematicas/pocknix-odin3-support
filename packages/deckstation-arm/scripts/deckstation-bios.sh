@@ -74,6 +74,11 @@ tiene_fichero() {
     [ -d "$dir" ] || return 1
     for cand in "$fichero" $(printf '%s' "$alternativas" | tr ',' ' '); do
         [ -n "$cand" ] || continue
+        # Candidato con subcarpetas (p. ej. Sys/GC/USA/IPL.bin): comprobacion directa.
+        if [[ "$cand" == */* ]]; then
+            [ -f "$dir/$cand" ] && return 0
+            continue
+        fi
         if find "$dir" -maxdepth 1 -type f -iname "$cand" 2>/dev/null | grep -q .; then
             return 0
         fi

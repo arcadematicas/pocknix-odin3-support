@@ -55,3 +55,36 @@ switch|{HOME:RetroArch}/.config/retroarch/system/suyu/keys
 
 # --- Cualquier otra BIOS suelta -> system/ de RetroArch ---
 misc|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Xbox (Xemu: rutas absolutas en xemu.toml) -------------------------
+xbox|/opt/deckstation/bios/xbox
+
+# --- Nintendo DS (MelonDS: rutas absolutas en melonDS.ini) -------------
+nds|/opt/deckstation/bios/nds
+
+# --- PlayStation 3 (RPCS3: el PUP se importa desde la GUI) -------------
+ps3|/opt/deckstation/bios/ps3
+
+# --- Amiga (Amiberry) ---------------------------------------------------
+amiga|/opt/deckstation/bios/amiga
+
+# --- GameCube (Dolphin: Sys/GC) -----------------------------------------
+gc|/opt/deckstation/bios/gc
+
+# --- Wii U (Cemu: keys.txt) ---------------------------------------------
+cemu|/opt/deckstation/bios/cemu
+
+# --- PlayStation Vita (Vita3K) ------------------------------------------
+psvita|/opt/deckstation/bios/psvita
+
+# --- Sega CD / Mega CD (RetroArch) --------------------------------------
+segacd|{HOME:RetroArch}/.config/retroarch/system
+
+# --- MSX / MSX2 (RetroArch) ---------------------------------------------
+msx|{HOME:RetroArch}/.config/retroarch/system
+
+# --- PC Engine CD (RetroArch) -------------------------------------------
+pcecd|{HOME:RetroArch}/.config/retroarch/system
+
+# --- 3DO (RetroArch) ----------------------------------------------------
+3do|{HOME:RetroArch}/.config/retroarch/system

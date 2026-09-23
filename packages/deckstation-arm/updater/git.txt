@@ -86,16 +86,18 @@ https://buildbot.libretro.com/nightly/linux/aarch64/RetroArch.7z
 # https://github.com/pkgforge-dev/PCSX2-AppImage-Enhanced/releases
 # SUPER-ZSNES
 # https://github.com/pkgforge-dev/SUPER-ZSNES-AppImage/releases
-# RPCS3
-# https://github.com/RPCS3/rpcs3-binaries-linux/releases
+# RPCS3 (builds ARM64 oficiales: rpcs3-v*_linux_aarch64.AppImage)
+RPCS3
+https://github.com/RPCS3/rpcs3-binaries-linux-arm64/releases
 # Citron (bloqueado por DMCA de Nintendo, feb 2026)
 # https://github.com/citron-neo/CI/releases
 # Ryujinx (instancia gitea por confirmar)
 # https://git.ryujinx.app/ryujinx/ryujinx/releases
 # shadPS4
 # https://github.com/shadps4-emu/shadPS4/releases
-# Xenia Edge
-# https://github.com/xenia-canary/xenia-canary/releases
+# Xenia Edge (builds ARM64: xenia_edge_linux_aarch64.AppImage)
+Xenia_Edge
+https://github.com/mrcmunir/xenia-edge/releases
 # PrimeHack
 # https://github.com/wermipls/PrimeHack/releases
 # Hypseus Singe
