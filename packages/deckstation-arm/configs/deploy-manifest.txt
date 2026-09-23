@@ -81,3 +81,14 @@ xemu/xemu.toml|{HOME:Xemu}/.local/share/xemu/xemu/xemu.toml|keep
 
 # --- MelonDS (Nintendo DS) ----------------------------------------------
 melonds/melonDS.ini|{HOME:MelonDS}/.config/melonDS/melonDS.ini|keep
+
+# --- RPCS3 (PlayStation 3) ----------------------------------------------
+# Config base con Vulkan + FSR upscaling (720p -> 1080p). El firmware PUP se
+# importa desde la GUI (File > Install Firmware); la config del .home se
+# regenera al arrancar y este fichero solo siembra los ajustes de video.
+rpcs3/config.yml|{HOME:RPCS3}/.config/rpcs3/config.yml|keep
+
+# --- Xenia Edge (Xbox 360) ----------------------------------------------
+# portable.txt hace que Xenia use su config local (junto al AppImage) en vez
+# de ~/.config/xenia. Fuerza el marcador: es 100% nuestro.
+xenia/portable.txt|Apps/xenia_edge/portable.txt|force

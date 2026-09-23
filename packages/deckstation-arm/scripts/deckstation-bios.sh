@@ -18,7 +18,7 @@
 #   deckstation-bios.sh --force         sobrescribir lo que ya exista
 #
 # El informe (--check) se apoya en dos ficheros:
-#   bios/required.txt    -> que ficheros espera cada sistema (y alternativas)
+#   bios/required.txt    -> que ficheros espera cada sistema (alternativas y MD5 validos)
 #   bios/deploy-bios.txt -> a donde va cada sistema
 #
 # Lo usan el Updater (pantalla BIOS) y Pocknix Tools.
@@ -68,20 +68,33 @@ destino_de() {
 
 # ¿Esta cubierta una fila? Vale el fichero o cualquiera de sus alternativas.
 # Comparacion sin distinguir mayusculas (los emuladores no se ponen de acuerdo).
+# Devuelve:
+#   0 -> cubierta (existe, y si hay MD5 definidos el hash coincide)
+#   1 -> no existe nada
+#   2 -> existe pero el MD5 no coincide con ninguno de los validos (sospechosa)
 tiene_fichero() {
-    local sis="$1" fichero="$2" alternativas="${3:-}" dir cand
+    local sis="$1" fichero="$2" alternativas="${3:-}" md5s="${4:-}" dir cand encontrado md5_real m
     dir="${BIOS_DIR}/${sis}"
     [ -d "$dir" ] || return 1
     for cand in "$fichero" $(printf '%s' "$alternativas" | tr ',' ' '); do
         [ -n "$cand" ] || continue
+        encontrado=""
         # Candidato con subcarpetas (p. ej. Sys/GC/USA/IPL.bin): comprobacion directa.
         if [[ "$cand" == */* ]]; then
-            [ -f "$dir/$cand" ] && return 0
-            continue
+            [ -f "$dir/$cand" ] && encontrado="$dir/$cand"
+        else
+            encontrado=$(find "$dir" -maxdepth 1 -type f -iname "$cand" 2>/dev/null | head -1)
         fi
-        if find "$dir" -maxdepth 1 -type f -iname "$cand" 2>/dev/null | grep -q .; then
-            return 0
-        fi
+        [ -n "$encontrado" ] || continue
+        # Sin MD5 definidos: con que exista vale (comportamiento clasico).
+        [ -z "$md5s" ] && return 0
+        # Con MD5: validar el hash real del fichero.
+        md5_real=$(md5sum "$encontrado" | cut -d' ' -f1)
+        for m in $(printf '%s' "$md5s" | tr ',' ' '); do
+            [ "$md5_real" = "$m" ] && return 0
+        done
+        # Existe pero el hash no cuadra -> sospechosa.
+        return 2
     done
     return 1
 }
@@ -106,14 +119,15 @@ check_bios() {
 
     for sis in $sistemas; do
         total=0; tengo=0; faltan=""
-        while IFS='|' read -r _s fichero _nota alternativas; do
+        while IFS='|' read -r _s fichero _nota alternativas md5s; do
             [ "$_s" = "$sis" ] || continue
             total=$((total + 1))
-            if tiene_fichero "$sis" "$fichero" "${alternativas:-}"; then
-                tengo=$((tengo + 1))
-            else
-                faltan="${faltan}${faltan:+, }${fichero}"
-            fi
+            tiene_fichero "$sis" "$fichero" "${alternativas:-}" "${md5s:-}"
+            case $? in
+                0) tengo=$((tengo + 1)) ;;
+                2) faltan="${faltan}${faltan:+, }${fichero} (MD5 invalido)" ;;
+                *) faltan="${faltan}${faltan:+, }${fichero}" ;;
+            esac
         done < <(grep -vE '^[[:space:]]*#|^[[:space:]]*$' "$REQUIRED")
 
         tot_glob=$((tot_glob + 1))

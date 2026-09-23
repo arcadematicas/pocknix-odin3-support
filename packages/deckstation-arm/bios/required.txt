@@ -5,12 +5,16 @@
 # Los ficheros reales NO van en git (copyright): este fichero es solo la lista.
 # Ver bios/README.md para la version larga y como conseguirlas legalmente.
 #
-# Formato:  <sistema>|<fichero>|<nota>|<alternativas separadas por comas>
+# Formato:  <sistema>|<fichero>|<nota>|<alternativas separadas por comas>|<md5 validos>
 #
 #   - El fichero va en bios/<sistema>/ (esa es la carpeta que se reparte).
 #   - "alternativas": cualquiera de ellos vale para dar la fila por cubierta
 #     (p. ej. cualquier BIOS de PSX sirve). Se comparan sin distinguir
 #     mayusculas/minusculas.
+#   - "md5 validos": hashes MD5 del fichero (y alternativas si se conocen).
+#     Si la columna NO esta vacia, el --check valida el hash real del fichero:
+#     un fichero con el nombre correcto pero hash distinto se marca como
+#     "MD5 invalido" (BIOS corrupta/falsa). Si esta vacia, solo se mira el nombre.
 #   - El DESTINO de cada sistema lo define bios/deploy-bios.txt.
 #
 # Ojo: no todos son obligatorios. Muchos cores de RetroArch funcionan sin BIOS
@@ -18,98 +22,78 @@
 # ======================================================================
 
 # --- PlayStation 1 -----------------------------------------------------
-psx|scph5501.bin|PS1 US|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5500.bin,scph5502.bin
-psx|scph5502.bin|PS1 EU|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5500.bin,scph5501.bin
-psx|scph5500.bin|PS1 JP|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5501.bin,scph5502.bin
+psx|scph5501.bin|PS1 US|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5500.bin,scph5502.bin|490f666e1afb15b7362b406ed1cea246
+psx|scph5502.bin|PS1 EU|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5500.bin,scph5501.bin|32736f17079d0b2b7024407c39bd3050
+psx|scph5500.bin|PS1 JP|scph1001.bin,ps1_rom.bin,psxonpsp660.bin,scph5501.bin,scph5502.bin|8dd7d5296a650fac7319bce665a6a53c
 
 # --- PlayStation 2 -----------------------------------------------------
-ps2|scph10000.bin|PS2 (v1)|scph39001.bin,scph30004r.bin
-ps2|scph39001.bin|PS2 (v7)|scph10000.bin,scph30004r.bin
+ps2|scph10000.bin|PS2 (v1)|scph39001.bin,scph30004r.bin|
+ps2|scph39001.bin|PS2 (v7)|scph10000.bin,scph30004r.bin|d5ce2c7d119f563ce04bc04dbc3a323e
 
 # --- Dreamcast (Flycast: dc_boot.bin + dc_flash.bin) -------------------
-dreamcast|dc_boot.bin|Dreamcast BIOS|
-dreamcast|dc_flash.bin|Dreamcast flash|
+dreamcast|dc_boot.bin|Dreamcast BIOS||e10c53c2f8b90bab96ead2d368858623
+dreamcast|dc_flash.bin|Dreamcast flash||0a93f7940c455905bea6e392dfde92a4
 
 # --- Sega Saturn -------------------------------------------------------
-saturn|sega_101.bin|Saturn JP|mpr-17933.bin
-saturn|mpr-17933.bin|Saturn US/EU|sega_101.bin
+saturn|sega_101.bin|Saturn JP|mpr-17933.bin|85ec9ca47d8f6807718151cbcca8b964
+saturn|mpr-17933.bin|Saturn US/EU|sega_101.bin|3240872c70984b6cbfda1586cab68dbe
 
 # --- Sega CD / Mega CD -------------------------------------------------
-segacd|bios_CD_U.bin|Sega CD US|
-segacd|bios_CD_E.bin|Sega CD EU|
-segacd|bios_CD_J.bin|Sega CD JP|
+segacd|bios_CD_U.bin|Sega CD US||854b9150240a198070150e4566ae1290
+segacd|bios_CD_E.bin|Sega CD EU||e66fa1dc5820d254611fdcdba0662372
+segacd|bios_CD_J.bin|Sega CD JP||278a9397d192149e84e820ac621a8edd
 
 # --- PC Engine CD / TurboGrafx-CD --------------------------------------
-pcecd|syscard3.pce|Super CD-ROM2|syscard2.pce,syscard1.pce
-pcecd|syscard2.pce|CD-ROM2|syscard3.pce,syscard1.pce
+pcecd|syscard3.pce|Super CD-ROM2|syscard2.pce,syscard1.pce|38179df8f4ac870017db21ebcbf53114
+pcecd|syscard2.pce|CD-ROM2|syscard3.pce,syscard1.pce|424f1d6bf93259bf255afa7d1dc9f721
 
 # --- 3DO ---------------------------------------------------------------
-3do|panafz1.bin|3DO FZ-1|panafz10.bin,panafz10e-anvil.bin
-3do|panafz10.bin|3DO FZ-10|panafz1.bin,panafz10e-anvil.bin
+3do|panafz1.bin|3DO FZ-1|panafz10.bin,panafz10e-anvil.bin|f47264dd47fe30f73ab3c010015c155b
+3do|panafz10.bin|3DO FZ-10|panafz1.bin,panafz10e-anvil.bin|51f2f43ae2f3508a14d9f56597e2d3ce
 
 # --- Neo Geo (BIOS + ROMs del sistema, tal cual) -----------------------
-neogeo|neogeo.zip|BIOS + ROMs del sistema|
+neogeo|neogeo.zip|BIOS + ROMs del sistema||67682655fa5fb32831e28429643e26c7
 
 # --- MSX / MSX2 --------------------------------------------------------
-msx|MSX.ROM|MSX1|
-msx|MSX2.ROM|MSX2|
-msx|MSX2EXT.ROM|MSX2 extension|
-msx|MSX2P.ROM|MSX2+|
-msx|MSX2PEXT.ROM|MSX2+ extension|
+msx|MSX.ROM|MSX1||364a1a579fe5cb8dba54519bcfcdac0d
+msx|MSX2.ROM|MSX2||ec3a01c91f24fbddcbcab0ad301bc9ef
+msx|MSX2EXT.ROM|MSX2 extension||2183c2aff17cf4297bdb496de78c2e8a
+msx|MSX2P.ROM|MSX2+||847cc025ffae665487940ff2639540e5
+msx|MSX2PEXT.ROM|MSX2+ extension||7c8243c71d8f143b2531f01afa6a05dc
 
 # --- Nintendo Switch (claves; van al core Suyu de RetroArch) -----------
-switch|prod.keys|claves de la consola|
-switch|title.keys|claves de titulos|
+switch|prod.keys|claves de la consola||
+switch|title.keys|claves de titulos||
 
 # --- Nintendo 3DS (sysdata para Azahar) --------------------------------
-3ds|aes_keys.txt|3DS AES keys|
-3ds|seeddb.bin|3DS seed database|
+3ds|aes_keys.txt|3DS AES keys||
+3ds|seeddb.bin|3DS seed database||
 
 # --- Xbox (Xemu: bootrom.bin obligatorio; flash/hdd los genera Xemu) ---
-xbox|bootrom.bin|Xbox BIOS| xbox-5838.bin,xbox-4627_debug.bin
+xbox|bootrom.bin|Xbox BIOS|xbox-5838.bin,xbox-4627_debug.bin|c5907d241de37c22b083b6e30fa934b0
 
 # --- Nintendo DS (MelonDS: bios9 + bios7 + firmware) -------------------
-nds|bios9.bin|NDS ARM9 BIOS|dsi_bios9.bin
-nds|bios7.bin|NDS ARM7 BIOS|dsi_bios7.bin
-nds|firmware.bin|NDS firmware|dsi_firmware.bin
+nds|bios9.bin|NDS ARM9 BIOS|dsi_bios9.bin|87b665fce118f76251271c3732532777
+nds|bios7.bin|NDS ARM7 BIOS|dsi_bios7.bin|559dae4ea78eb9d67702c56c1d791e81
+nds|firmware.bin|NDS firmware|dsi_firmware.bin|74f23348012d7b3e1cc216c47192ffeb
 
 # --- PlayStation 3 (RPCS3: firmware PUP, se importa desde la GUI) ------
-ps3|PS3UPDAT.PUP|Firmware PS3 (importar en RPCS3: File > Install Firmware)|
+ps3|PS3UPDAT.PUP|Firmware PS3 (importar en RPCS3: File > Install Firmware)||3694eb3fb8d9915c112e6ab41a60c69f
 
 # --- Amiga (Amiberry: Kickstart) ---------------------------------------
-amiga|amiga-os-120.rom|Kickstart 1.2|
-amiga|amiga-os-130.rom|Kickstart 1.3|
-amiga|amiga-os-204.rom|Kickstart 2.04|
-amiga|amiga-os-310.rom|Kickstart 3.1|
+amiga|amiga-os-120.rom|Kickstart 1.2||85ad74194e87c08904327de1a9443b7a
+amiga|amiga-os-130.rom|Kickstart 1.3||82a21c1890cae844b3df741f2762d48d
+amiga|amiga-os-204.rom|Kickstart 2.04||dc10d7bdd1b6f450773dfb558477c230
+amiga|amiga-os-310.rom|Kickstart 3.1||730888fb1bd9a3606d51f772ed136528
 
 # --- GameCube (Dolphin: Sys/GC/<region>/IPL.bin) -----------------------
-gc|Sys/GC/USA/IPL.bin|GC IPL USA|
-gc|Sys/GC/EUR/IPL.bin|GC IPL EUR|
-gc|Sys/GC/JAP/IPL.bin|GC IPL JAP|
+gc|Sys/GC/USA/IPL.bin|GC IPL USA||b17148254a5799684c7d783206504926
+gc|Sys/GC/EUR/IPL.bin|GC IPL EUR||db92574caab77a7ec99d4605fd6f2450
+gc|Sys/GC/JAP/IPL.bin|GC IPL JAP||b17148254a5799684c7d783206504926
 
 # --- Wii U (Cemu: keys.txt) --------------------------------------------
-cemu|keys.txt|Wii U common key|
+cemu|keys.txt|Wii U common key||864ccdff0733bab1e52e5442d0a24b10
 
 # --- PlayStation Vita (Vita3K: firmware PUP) ---------------------------
-psvita|PSP2UPDAT.PUP|Firmware PS Vita (importar en Vita3K)|
-psvita|PSVUPDAT.PUP|Firmware PS Vita (alternativo)|
-
-# --- Sega CD / Mega CD (RetroArch cores) -------------------------------
-segacd|bios_CD_U.bin|Sega CD US|
-segacd|bios_CD_E.bin|Sega CD EU|
-segacd|bios_CD_J.bin|Sega CD JP|
-
-# --- MSX / MSX2 (RetroArch: bluemsx) -----------------------------------
-msx|MSX.ROM|MSX1|
-msx|MSX2.ROM|MSX2|
-msx|MSX2EXT.ROM|MSX2 extension|
-msx|MSX2P.ROM|MSX2+|
-msx|MSX2PEXT.ROM|MSX2+ extension|
-
-# --- PC Engine CD (RetroArch) ------------------------------------------
-pcecd|syscard3.pce|Super CD-ROM2|syscard2.pce,syscard1.pce
-pcecd|syscard2.pce|CD-ROM2|syscard3.pce,syscard1.pce
-
-# --- 3DO (RetroArch) ---------------------------------------------------
-3do|panafz1.bin|3DO FZ-1|panafz10.bin,panafz10e-anvil.bin
-3do|panafz10.bin|3DO FZ-10|panafz1.bin,panafz10e-anvil.bin
+psvita|PSP2UPDAT.PUP|Firmware PS Vita (importar en Vita3K)||59dcf059d3328fb67be7e51f8aa33418
+psvita|PSVUPDAT.PUP|Firmware PS Vita (alternativo)||f2c7b12fe85496ec88a0391b514d6e3b
