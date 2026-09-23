@@ -1,0 +1,61 @@
+diff --git a/drivers/power/supply/qcom_battmgr.c b/drivers/power/supply/qcom_battmgr.c
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -671,9 +671,23 @@
+ 		val->intval = battmgr->info.design_capacity;
+ 		break;
+ 	case POWER_SUPPLY_PROP_CHARGE_FULL:
+-		if (unit != QCOM_BATTMGR_UNIT_mAh)
++		if (unit == QCOM_BATTMGR_UNIT_mAh) {
++			val->intval = battmgr->info.last_full_capacity;
++			break;
++		}
++		/*
++		 * Firmware sin gauge (Debug_Board): reporta power_unit en mWh y
++		 * last_full_capacity = 0, asi que estas propiedades devolvian
++		 * -ENODATA y upower/MangoHUD no podian estimar el tiempo
++		 * restante. El coulomb counter (charge_counter) es la unica
++		 * carga real disponible; derivamos la capacidad total del
++		 * porcentaje estimado por OCV (qcom_battmgr_estimate_percent).
++		 */
++		if (!battmgr->info.charge_count || !battmgr->status.percent ||
++		    battmgr->status.percent > 100)
+ 			return -ENODATA;
+-		val->intval = battmgr->info.last_full_capacity;
++		val->intval = battmgr->info.charge_count * 100 /
++			      battmgr->status.percent;
+ 		break;
+ 	case POWER_SUPPLY_PROP_CHARGE_EMPTY:
+ 		if (unit != QCOM_BATTMGR_UNIT_mAh)
+@@ -681,9 +695,13 @@
+ 		val->intval = battmgr->info.capacity_low;
+ 		break;
+ 	case POWER_SUPPLY_PROP_CHARGE_NOW:
+-		if (unit != QCOM_BATTMGR_UNIT_mAh)
++		if (unit == QCOM_BATTMGR_UNIT_mAh) {
++			val->intval = battmgr->status.capacity;
++			break;
++		}
++		if (!battmgr->info.charge_count)
+ 			return -ENODATA;
+-		val->intval = battmgr->status.capacity;
++		val->intval = battmgr->info.charge_count;
+ 		break;
+ 	case POWER_SUPPLY_PROP_CHARGE_COUNTER:
+ 		val->intval = battmgr->info.charge_count;
+@@ -1019,6 +1037,7 @@
+ 	POWER_SUPPLY_PROP_CYCLE_COUNT,
+ 	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
+ 	POWER_SUPPLY_PROP_CHARGE_FULL,
++	POWER_SUPPLY_PROP_CHARGE_NOW,
+ 	POWER_SUPPLY_PROP_MODEL_NAME,
+ 	POWER_SUPPLY_PROP_TIME_TO_FULL_AVG,
+ 	POWER_SUPPLY_PROP_TIME_TO_EMPTY_AVG,
+@@ -1051,6 +1070,7 @@
+ 	POWER_SUPPLY_PROP_CYCLE_COUNT,
+ 	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
+ 	POWER_SUPPLY_PROP_CHARGE_FULL,
++	POWER_SUPPLY_PROP_CHARGE_NOW,
+ 	POWER_SUPPLY_PROP_MODEL_NAME,
+ 	POWER_SUPPLY_PROP_TIME_TO_FULL_AVG,
+ 	POWER_SUPPLY_PROP_TIME_TO_EMPTY_AVG,
