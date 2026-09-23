@@ -177,10 +177,17 @@ trap cleanup EXIT
 
 # Backgrounded (not exec'd) so the EXIT trap above can reap it; the comment at the top of the
 # launch explains why we must not exec gamescope.
+#
+# --force-composition (disable direct scan-out): en el MSM/Adreno de la Odin el direct scan-out
+# NO compone los planos overlay, así que la UI de gamescope (QAM, MangoHUD vía mangoapp) quedaba
+# DETRÁS del juego, que se veía por encima de todo. Es equivalente a la propiedad X11
+# GAMESCOPE_COMPOSITE_FORCE=1 del root window (NO una variable de entorno del juego — por eso
+# exportarla en el lanzador no servía). Se fuerza globalmente porque el scan-out roto afecta a
+# cualquier juego que presente en fullscreen con Gamescope WSI, no solo a WiiCompiled.
 env -u WAYLAND_DISPLAY \
   GAMESCOPE_FAKE_OUTPUT_MM="${PANEL_MM}" \
   gamescope "${GS_OUTPUT[@]}" -W "${GS_W}" -H "${GS_H}" -r "${REFRESH}" --xwayland-count 2 --mangoapp --backend drm \
-    --force-orientation "${ORIENT}" "${GS_ROTATE[@]}" -e -- \
+    --force-orientation "${ORIENT}" "${GS_ROTATE[@]}" --force-composition -e -- \
     /usr/lib/pocknix/pocknix-steam-splash "${GS_W}x${GS_H}" -- \
     env LD_LIBRARY_PATH="${LDLP}" "${CLIENT}" -gamepadui -steamos3 -steampal -steamdeck -noverifyfiles -noshaders \
   >"${GS_LOG}" 2>&1 &
