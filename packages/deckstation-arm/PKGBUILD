@@ -114,4 +114,12 @@ package() {
     install -dm755 "${pkgdir}/opt/deckstation/logs"
     install -dm755 "${pkgdir}/opt/deckstation/Media"
     install -dm755 "${pkgdir}/opt/deckstation/settings"
+
+    # Lanzadores de interfaces de emuladores para ES-DE (sistema "Emulators"):
+    # ROMs/emulators/*.sh se muestran como "juegos" en ES-DE y al pulsarlos abren
+    # la interfaz del emulador (vía su lanzar.sh portable). Rutas relativas a
+    # /opt/deckstation; cada script se ubica a sí mismo para no depender del cwd.
+    install -dm755 "${pkgdir}/opt/deckstation/ROMs/emulators"
+    cp -r "${sd}/emulators/"*.sh "${pkgdir}/opt/deckstation/ROMs/emulators/"
+    chmod -R a+rX "${pkgdir}/opt/deckstation/ROMs/emulators"
 }
