@@ -586,3 +586,15 @@ automáticamente; para lo que NO se instala hay que listarlo a mano en `base-ext
 `tools/sync-to-os.sh` sincroniza paquetes/overlay/kernel, y `check-sync.sh` ya comprueba
 la capa vendored (deckstation-arm, pocknix-steam, tools, suyu…). **`config/` solo vive en
 el árbol** (nuestro fork lo commitea allí) → editarlo en el árbol y **commitearlo ahí**.
+
+## ⏳ PENDIENTE PARA MAÑANA — SCHEDULERS CPU + I/O (23/09/2026)
+
+Análisis hecho, NO implementado. Detalle completo en `~/.opencode_memory.md` (sección
+"PENDIENTE PARA MAÑANA — SCHEDULERS"). Resumen:
+- **scx-scheds 1.1.2 YA instalado (15 schedulers)** — solo falta exponerlos en la UI.
+  Activo: `scx_lavd --autopilot` (pocknix-lavd.service).
+- **Plan**: (1) generalizar `pocknix-lavd-mode` → `pocknix-scx-mode` + exponer
+  bpfland/rusty/lavd en PocknixControl; (2) udev rule → `bfq` en la microSD (mmcblk0);
+  (3) opcional: scheduler por juego.
+- **NO tocar**: governor cpufreq (`schedutil` es el correcto con scx_lavd), read_ahead SD
+  (medido sin diferencia), UFS interna (dejar `none`).
