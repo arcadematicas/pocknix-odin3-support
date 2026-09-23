@@ -511,14 +511,14 @@ def emparejar(roms_dir, bezel_dir, progress_callback=None):
             pct = 25 + int(70 * (idx + 1) / max(total_por_hacer, 1))
             progress_callback(min(pct, 99), f"Fase 2: {len(asignadas)}/{total_roms}")
 
-    # Sin limpieza: los bezels no matcheados se conservan
+    # Los no matcheados se eliminan al instalar en RetroArch (no se conservan)
     total_bezels = sum(1 for _ in bezel_dir.glob("*.png"))
 
     if progress_callback:
         extras = total_bezels - len(asignadas)
         msg = f"✔ {len(asignadas)}/{total_roms} ROMs con bezel"
         if extras > 0:
-            msg += f"  (+{extras} bezels extra conservados)"
+            msg += f"  (+{extras} sin usar, se eliminarán)"
         progress_callback(100, msg)
 
     sin_coincidencia = [r for r in roms if r not in asignadas]
@@ -778,8 +778,15 @@ class BezelMasterApp:
         n_ov, n_cfg = instalar_en_retroarch(roms_dir, bezel_dir, repo, clean, on_progress)
         self.overlays_instalados = (n_ov, n_cfg)
 
+        # Limpieza: tras mover los emparejados a RetroArch, el workspace no debe quedar con nada
         if n_ov > 0:
-            result += f" · RetroArch: {n_ov} overlays, {n_cfg} configs"
+            try:
+                shutil.rmtree(bezel_dir, ignore_errors=True)
+            except Exception:
+                pass
+
+        if n_ov > 0:
+            result += f" · RetroArch: {n_ov} overlays, {n_cfg} configs · workspace limpio"
         else:
             result += " · ⚠ RetroArch no encontrado"
 
