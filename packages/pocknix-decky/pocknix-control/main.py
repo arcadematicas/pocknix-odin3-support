@@ -11,7 +11,7 @@ from pocknix_control.configio import apply_config, config_dir, export_config, re
 from pocknix_control.led import (restore_led, set_led, set_led_enabled, set_led_linked,
                                  set_led_side_enabled, set_led_sides)
 from pocknix_control.mako import mako_status
-from pocknix_control.modes import set_fan_mode, set_lavd_mode
+from pocknix_control.modes import set_fan_mode, set_lavd_mode, set_scx_mode, set_scx_scheduler
 from pocknix_control.cleanup import clean, scan, biggest
 from pocknix_control.system_info import system_status
 from pocknix_control.oled_care import oled_care_status, run_refresher
@@ -51,6 +51,14 @@ class Plugin:
 
     async def set_lavd_mode(self, mode):
         await asyncio.to_thread(set_lavd_mode, mode)
+        return await self.get_config()
+
+    async def set_scx_scheduler(self, scheduler):
+        await asyncio.to_thread(set_scx_scheduler, scheduler)
+        return await self.get_config()
+
+    async def set_scx_mode(self, mode):
+        await asyncio.to_thread(set_scx_mode, mode)
         return await self.get_config()
 
     async def save_tweaks(self, data):

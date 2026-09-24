@@ -1,0 +1,4 @@
+# The microSD is the I/O bottleneck on handhelds (~82 MB/s): BFQ keeps the UI and the
+# running game responsive under mixed reads. The UFS internal disk stays on the kernel
+# default (mq-deadline). mmcblk* is the SD on the Odin 3 (UFS shows up as sda).
+ACTION=="add|change", KERNEL=="mmcblk[0-9]", ATTR{queue/scheduler}="bfq"

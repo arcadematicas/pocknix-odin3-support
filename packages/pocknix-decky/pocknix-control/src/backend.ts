@@ -4,6 +4,8 @@ import type { Config, ConfigExportResult, ConfigImportResult, ConfigPreview, Led
 export const getConfig = () => call<[], Config>("get_config");
 export const setFanMode = (mode: string) => call<[string], Config>("set_fan_mode", mode);
 export const setLavdMode = (mode: string) => call<[string], Config>("set_lavd_mode", mode);
+export const setScxScheduler = (scheduler: string) => call<[string], Config>("set_scx_scheduler", scheduler);
+export const setScxMode = (mode: string) => call<[string], Config>("set_scx_mode", mode);
 export const saveTweaks = (data: Tweaks) => call<[Tweaks], Config>("save_tweaks", data);
 export const exportConfig = (appid: string, name: string, basename: string, allowOverwrite: boolean) =>
   call<[string, string, string, boolean], ConfigExportResult>("export_config", appid, name, basename, allowOverwrite);

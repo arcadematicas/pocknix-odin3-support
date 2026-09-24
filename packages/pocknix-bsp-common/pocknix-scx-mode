@@ -1,0 +1,132 @@
+#!/bin/sh
+# pocknix-scx-mode — get/set/toggle the sched_ext scheduler + mode, persisted in
+# /var/lib/pocknix/scx-mode. Switching mid-game is safe: sched_ext swaps schedulers live and
+# tasks fall back to EEVDF for the moment the scheduler is down. Setting a mode needs root.
+STATE_FILE=/var/lib/pocknix/scx-mode
+GAME_MODE_FILE=/run/pocknix/game-mode
+DEFAULT_SCHED=lavd
+DEFAULT_MODE=autopilot
+
+# scheduler:default-mode:allowed-modes (space separated)
+# NOTE: scx_rusty 1.1.2 fails to load on this kernel ("kptr already had cpumask",
+# main.bpf.c:119) so it is NOT offered. Re-add when upstream fixes it.
+SCHED_SPECS="lavd:autopilot:autopilot performance balanced powersave
+bpfland:default:default performance powersave"
+
+sched_spec() {
+  printf '%s\n' "$SCHED_SPECS" | awk -F: -v s="$1" '$1==s {print; exit}'
+}
+
+current() {
+  sched="$DEFAULT_SCHED"
+  mode="$DEFAULT_MODE"
+  read -r sched mode 2>/dev/null < "$STATE_FILE"
+  spec="$(sched_spec "$sched")"
+  if [ -z "$spec" ]; then
+    printf '%s %s\n' "$DEFAULT_SCHED" "$DEFAULT_MODE"
+    return
+  fi
+  allowed="$(printf '%s\n' "$spec" | cut -d: -f3-)"
+  case " $allowed " in
+    *" $mode "*) ;;
+    *) mode="$(printf '%s\n' "$spec" | cut -d: -f2)" ;;
+  esac
+  printf '%s %s\n' "$sched" "$mode"
+}
+
+# Per-game override (pid fan lavd), written by pocknix-proton-wrapper. Only the lavd
+# scheduler understands those modes, so the override applies only when lavd is active.
+effective() {
+  if read -r pid _ lavd 2>/dev/null < "$GAME_MODE_FILE"; then
+    case "$lavd" in
+      autopilot|performance|balanced|powersave)
+        if [ -n "$pid" ] && [ -d "/proc/${pid}" ]; then
+          printf 'lavd %s\n' "$lavd"
+          return
+        fi
+        ;;
+    esac
+  fi
+  current
+}
+
+launch() {
+  case "$1" in
+    lavd) /usr/bin/scx_lavd "--$2" ;;
+    bpfland)
+      if [ "$2" = performance ] || [ "$2" = powersave ]; then
+        /usr/bin/scx_bpfland --primary-domain "$2"
+      else
+        /usr/bin/scx_bpfland
+      fi
+      ;;
+  esac
+}
+
+do_set() {
+  sched="$1"
+  mode="$2"
+  allowed="$(sched_spec "$sched" | cut -d: -f3-)"
+  case " $allowed " in
+    *" $mode "*) ;;
+    *)
+      echo "pocknix-scx-mode: invalid mode '$mode' for $sched (allowed: $allowed)" >&2
+      exit 2
+      ;;
+  esac
+  mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null
+  if ! printf '%s %s\n' "$sched" "$mode" > "$STATE_FILE" 2>/dev/null; then
+    echo "pocknix-scx-mode: cannot write $STATE_FILE (run as root)" >&2
+    exit 1
+  fi
+  # The state is persisted before the restart, so a failed restart never loses the choice.
+  # If the unit hit its start limit (crash-looping scheduler), clear it and try again.
+  if ! systemctl restart pocknix-scx.service 2>/dev/null; then
+    systemctl reset-failed pocknix-scx.service 2>/dev/null || true
+    systemctl restart pocknix-scx.service 2>/dev/null || true
+  fi
+  echo "scx scheduler: $sched ($mode)"
+}
+
+case "${1:-}" in
+  "")
+    current
+    ;;
+  run)
+    child=""
+    trap 'kill "${child}" 2>/dev/null; exit 0' INT TERM
+    running=""
+    while :; do
+      want="$(effective)"
+      if [ "${want}" != "${running}" ] || ! kill -0 "${child}" 2>/dev/null; then
+        [ -n "${child}" ] && { kill "${child}" 2>/dev/null; wait "${child}" 2>/dev/null; }
+        launch ${want} &
+        child=$!
+        running="${want}"
+      fi
+      sleep 3
+    done
+    ;;
+  toggle)
+    cur="$(current)"
+    sched="${cur%% *}"
+    mode="${cur##* }"
+    if [ "${sched}" = lavd ]; then
+      if [ "${mode}" = performance ]; then mode=autopilot; else mode=performance; fi
+    fi
+    do_set "${sched}" "${mode}"
+    ;;
+  lavd|bpfland)
+    sched="$1"
+    if [ -n "${2:-}" ]; then
+      mode="$2"
+    else
+      mode="$(sched_spec "$sched" | cut -d: -f2)"
+    fi
+    do_set "$sched" "$mode"
+    ;;
+  *)
+    echo "usage: pocknix-scx-mode [lavd|bpfland [mode]|toggle|run]" >&2
+    exit 2
+    ;;
+esac

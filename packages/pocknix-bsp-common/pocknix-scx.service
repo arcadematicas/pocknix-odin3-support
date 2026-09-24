@@ -1,0 +1,26 @@
+[Unit]
+Description=pocknix sched_ext scheduler (scx_lavd / scx_bpfland / scx_rusty)
+Documentation=https://github.com/sched-ext/scx
+# Do NOT order after multi-user.target: it pulls in the Steam session bring-up, which can
+# settle late and leave this start job queued forever. The guards below hold from kernel init.
+After=basic.target
+# /sys/kernel/sched_ext needs CONFIG_SCHED_CLASS_EXT=y; /sys/kernel/btf/vmlinux needs
+# DEBUG_INFO_BTF=y + pahole at build time. Skip cleanly until such a kernel is deployed.
+ConditionPathExists=/sys/kernel/sched_ext
+ConditionPathExists=/sys/kernel/btf/vmlinux
+# A kernel without the tracing/BPF-events stack fails the BPF load every time; give up
+# rather than crash-loop the journal. The burst is generous: switching schedulers from the
+# QAM restarts this unit, and a burst of quick switches must not lock the user out.
+StartLimitIntervalSec=120
+StartLimitBurst=20
+
+[Service]
+Type=simple
+# The scheduler and mode are not hardcoded: `pocknix-scx-mode run` supervises the persisted
+# (or per-game) scheduler. Needs the schedutil governor for scx_bpf_cpuperf_set to take effect.
+ExecStart=/usr/bin/pocknix-scx-mode run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

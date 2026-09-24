@@ -1,0 +1,23 @@
+# Pre-0.1.0-5 the fan/scheduler daemons shipped as unowned overlay files. /etc units shadow
+# the packaged /usr/lib ones and the old enable symlinks point at /etc, so both must go.
+_migrate_fan_lavd() {
+  rm -f /usr/local/bin/pocknix-fancontrol /usr/local/bin/pocknix-fan-mode \
+        /usr/local/bin/pocknix-lavd-mode \
+        /etc/systemd/system/pocknix-fancontrol.service \
+        /etc/systemd/system/pocknix-lavd.service \
+        /etc/tmpfiles.d/pocknix-game-mode.conf
+  if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemd-tmpfiles --create /usr/lib/tmpfiles.d/pocknix-game-mode.conf 2>/dev/null || true
+    systemctl enable pocknix-fancontrol.service pocknix-lavd.service pocknix-scx.service 2>/dev/null || true
+    systemctl try-restart pocknix-fancontrol.service pocknix-lavd.service pocknix-scx.service 2>/dev/null || true
+  fi
+}
+
+post_install() {
+  _migrate_fan_lavd
+}
+
+post_upgrade() {
+  _migrate_fan_lavd
+}

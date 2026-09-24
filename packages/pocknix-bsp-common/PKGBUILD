@@ -1,0 +1,111 @@
+# pocknix-bsp-common — the device-NEUTRAL board support shared by every pocknix device.
+# Device-specific quirks (input maps, audio UCM, SoC suspend/cpuidle tweaks, device.conf)
+# live in devices/<name>/packages/pocknix-bsp-<name>, which depends on this package.
+pkgname=pocknix-bsp-common
+pkgver=0.1.0
+pkgrel=18
+pkgdesc="pocknix shared board support: sleep.d dispatcher, suspend hooks, power-key policy, session udev rules, wheel sudo, fan/scheduler daemons, ABL updater, second-screen touch policy, suspend display hook"
+arch=('any')
+url="https://github.com/shuuri-labs/pocknix-os"
+license=('GPL2')
+# pocknix-core rides along so a plain -Syu delivers the mandatory layer to devices that
+# predate it: a new package name only reaches installed devices via a dep edge.
+depends=('sudo' 'pocknix-core')
+optdepends=('inputplumber: the 001-inputplumber suspend hooks manage its USB/IP deck target'
+            'scx-scheds: scx_lavd / scx_bpfland / scx_rusty for pocknix-scx.service (unit self-skips without it)')
+install=pocknix-bsp-common.install
+source=('pocknix-sleep' 'sdam-debug-pre' 'sdam-debug-post'
+        'drain-log-pre' 'drain-log-post'
+        'inputplumber-sleep-pre' 'inputplumber-sleep-post'
+        'usb-role-sleep-pre' 'usb-role-sleep-post' 'display-sleep-post'
+        '20-pocknix-powerkey.conf'
+        '90-pocknix-backlight.rules' '60-pocknix-controllers.rules'
+        '60-pocknix-io-scheduler.rules'
+        '10-pocknix-wheel'
+        'pocknix-fancontrol' 'pocknix-fan-mode' 'pocknix-lavd-mode' 'pocknix-scx-mode'
+        'pocknix-fancontrol.service' 'pocknix-scx.service' 'pocknix-game-mode.conf'
+        'pocknix-update-abl' '52-pocknix-abl.rules' 'pocknix-gpt-abl'
+        'pocknix-refresh-abl-kit'
+        'pocknix-gamepad-target' 'pocknix-gamepad-target.service'
+        'pocknix-second-screen' 'pocknix-second-screen.service'
+        'iwd-wait-wlan0.conf')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/pocknix-sleep" \
+    "${pkgdir}/usr/lib/systemd/system-sleep/pocknix-sleep"
+
+  # sleep.d hooks run in name order; the numeric prefixes are that ordering.
+  install -Dm755 "${srcdir}/inputplumber-sleep-pre" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/pre/001-inputplumber"
+  install -Dm755 "${srcdir}/inputplumber-sleep-post" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/post/001-inputplumber"
+  install -Dm755 "${srcdir}/usb-role-sleep-pre" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/pre/002-usb-role"
+  install -Dm755 "${srcdir}/usb-role-sleep-post" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/post/002-usb-role"
+  install -Dm755 "${srcdir}/sdam-debug-pre" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/pre/003-sdam-debug"
+  install -Dm755 "${srcdir}/sdam-debug-post" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/post/003-sdam-debug"
+  install -Dm755 "${srcdir}/drain-log-pre" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/pre/004-drain-log"
+  install -Dm755 "${srcdir}/drain-log-post" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/post/004-drain-log"
+  # Runs last: the display comes back after InputPlumber has re-attached its virtual pad. 005 >
+  # upstream's 004-drain-log, so this stays at the end of the post chain.
+  install -Dm755 "${srcdir}/display-sleep-post" \
+    "${pkgdir}/usr/lib/pocknix/sleep.d/post/005-display"
+
+  install -Dm644 "${srcdir}/20-pocknix-powerkey.conf" \
+    "${pkgdir}/usr/lib/systemd/logind.conf.d/20-pocknix-powerkey.conf"
+
+  install -Dm644 "${srcdir}/90-pocknix-backlight.rules" \
+    "${pkgdir}/usr/lib/udev/rules.d/90-pocknix-backlight.rules"
+  install -Dm644 "${srcdir}/60-pocknix-controllers.rules" \
+    "${pkgdir}/usr/lib/udev/rules.d/60-pocknix-controllers.rules"
+  install -Dm644 "${srcdir}/60-pocknix-io-scheduler.rules" \
+    "${pkgdir}/usr/lib/udev/rules.d/60-pocknix-io-scheduler.rules"
+
+  # 0440 is a sudoers.d requirement: sudo skips group/world-writable files.
+  install -Dm440 "${srcdir}/10-pocknix-wheel" \
+    "${pkgdir}/etc/sudoers.d/10-pocknix-wheel"
+
+  install -Dm755 "${srcdir}/pocknix-fancontrol" "${pkgdir}/usr/bin/pocknix-fancontrol"
+  install -Dm755 "${srcdir}/pocknix-fan-mode"   "${pkgdir}/usr/bin/pocknix-fan-mode"
+  install -Dm755 "${srcdir}/pocknix-lavd-mode"  "${pkgdir}/usr/bin/pocknix-lavd-mode"
+  install -Dm755 "${srcdir}/pocknix-scx-mode"  "${pkgdir}/usr/bin/pocknix-scx-mode"
+  install -Dm644 "${srcdir}/pocknix-fancontrol.service" \
+    "${pkgdir}/usr/lib/systemd/system/pocknix-fancontrol.service"
+  install -Dm644 "${srcdir}/pocknix-scx.service" \
+    "${pkgdir}/usr/lib/systemd/system/pocknix-scx.service"
+  # Alias de compatibilidad: el enable historico de pocknix-lavd.service resuelve aqui.
+  ln -s pocknix-scx.service "${pkgdir}/usr/lib/systemd/system/pocknix-lavd.service"
+  install -Dm644 "${srcdir}/pocknix-game-mode.conf" \
+    "${pkgdir}/usr/lib/tmpfiles.d/pocknix-game-mode.conf"
+
+  install -Dm755 "${srcdir}/pocknix-update-abl" "${pkgdir}/usr/bin/pocknix-update-abl"
+  # Not in PATH: it writes a partition table, and has exactly one caller.
+  install -Dm755 "${srcdir}/pocknix-gpt-abl" "${pkgdir}/usr/lib/pocknix/pocknix-gpt-abl"
+  install -Dm755 "${srcdir}/pocknix-refresh-abl-kit" "${pkgdir}/usr/bin/pocknix-refresh-abl-kit"
+  install -Dm644 "${srcdir}/52-pocknix-abl.rules" \
+    "${pkgdir}/usr/share/polkit-1/rules.d/52-pocknix-abl.rules"
+
+  # Enabled by a wants symlink rather than an enable hook: it is pulled in by InputPlumber itself.
+  install -Dm755 "${srcdir}/pocknix-gamepad-target" "${pkgdir}/usr/bin/pocknix-gamepad-target"
+  install -Dm644 "${srcdir}/pocknix-gamepad-target.service" \
+    "${pkgdir}/usr/lib/systemd/system/pocknix-gamepad-target.service"
+  install -d "${pkgdir}/usr/lib/systemd/system/inputplumber.service.wants"
+  ln -sf "../pocknix-gamepad-target.service" \
+    "${pkgdir}/usr/lib/systemd/system/inputplumber.service.wants/pocknix-gamepad-target.service"
+
+  # Dual-screen boards (device.conf POCKNIX_TOUCH2_NAME): a no-op everywhere else.
+  install -Dm755 "${srcdir}/pocknix-second-screen" "${pkgdir}/usr/bin/pocknix-second-screen"
+  install -Dm644 "${srcdir}/pocknix-second-screen.service" \
+    "${pkgdir}/usr/lib/systemd/system/pocknix-second-screen.service"
+
+  install -Dm644 "${srcdir}/iwd-wait-wlan0.conf" \
+    "${pkgdir}/usr/lib/systemd/system/iwd.service.d/10-pocknix-wait-wlan0.conf"
+}

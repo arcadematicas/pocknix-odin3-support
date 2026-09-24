@@ -26,7 +26,8 @@ const definePlugin = (fn) => {
 
 const getConfig = () => call("get_config");
 const setFanMode = (mode) => call("set_fan_mode", mode);
-const setLavdMode = (mode) => call("set_lavd_mode", mode);
+const setScxScheduler = (scheduler) => call("set_scx_scheduler", scheduler);
+const setScxMode = (mode) => call("set_scx_mode", mode);
 const saveTweaks = (data) => call("save_tweaks", data);
 const exportConfig = (appid, name, basename, allowOverwrite) => call("export_config", appid, name, basename, allowOverwrite);
 const configDir = () => call("config_dir");
@@ -682,6 +683,24 @@ const lavdOptions = [
     { data: "autopilot", label: "Autopilot" },
     { data: "performance", label: "Performance" },
 ];
+const scxSchedulerOptions = [
+    { data: "auto", label: "Auto (perfil QAM)" },
+    { data: "lavd", label: "LAVD (Valve)" },
+    { data: "bpfland", label: "BPFLAND (handheld)" },
+];
+const scxModeOptions = {
+    lavd: [
+        { data: "autopilot", label: "Autopilot" },
+        { data: "performance", label: "Performance" },
+        { data: "balanced", label: "Balanced" },
+        { data: "powersave", label: "Powersave" },
+    ],
+    bpfland: [
+        { data: "default", label: "Default" },
+        { data: "performance", label: "Performance" },
+        { data: "powersave", label: "Powersave" },
+    ],
+};
 // The proton wrapper resolves "big" against the board's POCKNIX_BIG_CORES mask.
 const cpuPinOptions = [
     { data: "", label: "All cores" },
@@ -857,7 +876,7 @@ function Games({ config, setConfig, reload }) {
     const applyMode = async (setter, mode) => {
         try {
             const next = await setter(mode);
-            setConfig((current) => (current ? { ...current, fanMode: next.fanMode, lavdMode: next.lavdMode } : current));
+            setConfig((current) => (current ? { ...current, fanMode: next.fanMode, lavdMode: next.lavdMode, scxScheduler: next.scxScheduler, scxMode: next.scxMode } : current));
         }
         catch (error) {
             reload();
@@ -870,7 +889,7 @@ function Games({ config, setConfig, reload }) {
     const storedLatency = String(values.audioLatency ?? "");
     const audioValue = audioLatencyOptions.some((option) => option.data === storedLatency) ? storedLatency : "";
     const showFields = editingDefault || perGameEnabled;
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "PERFORMANCE & GAME TWEAKS", children: [SP_JSX.jsx(SelectEdit, { label: "Game", value: game?.appid || "", options: editTargetOptions(config), onChange: setSelectedGame }), !editingDefault ? SP_JSX.jsx(DFL.ToggleField, { label: "Use Per-Game Settings", checked: perGameEnabled, onChange: setPerGameEnabled }) : null, !editingDefault && game?.appid ? SP_JSX.jsx(MakoToggle, { appid: game.appid }) : null] }), showFields ? (SP_JSX.jsx(DFL.PanelSection, { title: "PERFORMANCE", children: editingDefault ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(SelectEdit, { label: "CPU Scheduler", value: config.lavdMode, options: lavdOptions, onChange: (mode) => applyMode(setLavdMode, mode) }), SP_JSX.jsx(SelectEdit, { label: "Fan Curve", value: config.fanMode, options: fanOptions, onChange: (mode) => applyMode(setFanMode, mode) })] })) : (SP_JSX.jsx(PerfFields, { values: values, patch: patchSettings })) })) : null, showFields ? (SP_JSX.jsxs(DFL.PanelSection, { title: "GAME TWEAKS", children: [SP_JSX.jsx("div", { className: "pocknix-note", children: "Changes apply on next game launch" }), editingDefault ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(SelectEdit, { label: "FEX Preset", value: fexValue, options: fexOptions, onChange: (id) => {
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "PERFORMANCE & GAME TWEAKS", children: [SP_JSX.jsx(SelectEdit, { label: "Game", value: game?.appid || "", options: editTargetOptions(config), onChange: setSelectedGame }), !editingDefault ? SP_JSX.jsx(DFL.ToggleField, { label: "Use Per-Game Settings", checked: perGameEnabled, onChange: setPerGameEnabled }) : null, !editingDefault && game?.appid ? SP_JSX.jsx(MakoToggle, { appid: game.appid }) : null] }), showFields ? (SP_JSX.jsx(DFL.PanelSection, { title: "PERFORMANCE", children: editingDefault ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(SelectEdit, { label: "Scheduler", value: config.scxScheduler, options: scxSchedulerOptions, onChange: (s) => applyMode(setScxScheduler, s) }), config.scxScheduler !== "auto" ? (SP_JSX.jsx(SelectEdit, { label: "Scheduler Mode", value: config.scxMode, options: scxModeOptions[config.scxScheduler] || scxModeOptions.lavd, onChange: (m) => applyMode(setScxMode, m) })) : null, SP_JSX.jsx(SelectEdit, { label: "Fan Curve", value: config.fanMode, options: fanOptions, onChange: (mode) => applyMode(setFanMode, mode) })] })) : (SP_JSX.jsx(PerfFields, { values: values, patch: patchSettings })) })) : null, showFields ? (SP_JSX.jsxs(DFL.PanelSection, { title: "GAME TWEAKS", children: [SP_JSX.jsx("div", { className: "pocknix-note", children: "Changes apply on next game launch" }), editingDefault ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(SelectEdit, { label: "FEX Preset", value: fexValue, options: fexOptions, onChange: (id) => {
                                     patchSettings({ fexProfile: id });
                                     // Enabled games without their own profile inherit this pick; resync their tokens.
                                     for (const [appid, entry] of Object.entries(tweaks.games)) {

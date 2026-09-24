@@ -1,0 +1,27 @@
+#!/bin/sh
+# pocknix-lavd-mode — compat wrapper over pocknix-scx-mode (lavd scheduler).
+# Kept for the pocknix-lavd.service alias, pocknix-proton-wrapper and older callers.
+case "${1:-}" in
+  "")
+    cur="$(/usr/bin/pocknix-scx-mode)"
+    sched="${cur%% *}"
+    if [ "$sched" = lavd ]; then
+      printf '%s\n' "${cur##* }"
+    else
+      printf 'autopilot\n'
+    fi
+    ;;
+  run)
+    exec /usr/bin/pocknix-scx-mode run
+    ;;
+  toggle)
+    exec /usr/bin/pocknix-scx-mode toggle
+    ;;
+  autopilot|performance|balanced|powersave)
+    exec /usr/bin/pocknix-scx-mode lavd "$1"
+    ;;
+  *)
+    echo "usage: pocknix-lavd-mode [autopilot|performance|balanced|powersave|toggle]" >&2
+    exit 2
+    ;;
+esac

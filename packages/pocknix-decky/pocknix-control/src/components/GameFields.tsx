@@ -24,6 +24,24 @@ export const lavdOptions = [
   { data: "autopilot", label: "Autopilot" },
   { data: "performance", label: "Performance" },
 ];
+export const scxSchedulerOptions = [
+  { data: "auto", label: "Auto (perfil QAM)" },
+  { data: "lavd", label: "LAVD (Valve)" },
+  { data: "bpfland", label: "BPFLAND (handheld)" },
+];
+export const scxModeOptions: Record<string, { data: string; label: string }[]> = {
+  lavd: [
+    { data: "autopilot", label: "Autopilot" },
+    { data: "performance", label: "Performance" },
+    { data: "balanced", label: "Balanced" },
+    { data: "powersave", label: "Powersave" },
+  ],
+  bpfland: [
+    { data: "default", label: "Default" },
+    { data: "performance", label: "Performance" },
+    { data: "powersave", label: "Powersave" },
+  ],
+};
 // The proton wrapper resolves "big" against the board's POCKNIX_BIG_CORES mask.
 export const cpuPinOptions = [
   { data: "", label: "All cores" },

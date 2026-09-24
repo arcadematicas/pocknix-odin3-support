@@ -112,6 +112,19 @@ apply_profile() {
   done
 }
 
+# Scheduler sched_ext recomendado por perfil. El usuario puede fijar uno a mano desde
+# PocknixControl (flag /var/lib/pocknix/scx-manual): mientras exista, el perfil no toca
+# el scheduler. El plugin borra el flag al volver a "auto" y re-aplica esto mismo.
+apply_scx() {
+  [ -x /usr/bin/pocknix-scx-mode ] || return 0
+  [ -f /var/lib/pocknix/scx-manual ] && return 0
+  case "${1}" in
+    bajo)  /usr/bin/pocknix-scx-mode bpfland powersave >/dev/null 2>&1 || true ;;
+    medio) /usr/bin/pocknix-scx-mode lavd autopilot >/dev/null 2>&1 || true ;;
+    alto)  /usr/bin/pocknix-scx-mode lavd performance >/dev/null 2>&1 || true ;;
+  esac
+}
+
 case "${1:-}" in
   "")
     saved
@@ -120,6 +133,7 @@ case "${1:-}" in
     # Nothing saved yet -> leave the boot defaults alone.
     [ -f "${PROFILE_FILE}" ] || exit 0
     apply_profile "$(saved)" || exit 1
+    apply_scx "$(saved)"
     ;;
   bajo|medio|alto)
     if [ "${1}" != alto ]; then
@@ -131,6 +145,7 @@ case "${1:-}" in
       exit 1
     fi
     apply_profile "${1}" || exit 1
+    apply_scx "${1}"
     echo "power profile: ${1}"
     ;;
   *)

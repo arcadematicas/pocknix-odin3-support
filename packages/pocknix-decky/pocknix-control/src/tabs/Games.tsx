@@ -1,8 +1,8 @@
 import { PanelSection, ToggleField } from "@decky/ui";
 import type { Dispatch, SetStateAction } from "react";
-import { setFanMode, setLavdMode } from "../backend";
+import { setFanMode, setLavdMode, setScxMode, setScxScheduler } from "../backend";
 import { ConfigSection } from "../components/ConfigSection";
-import { EnvVarsButton, PerfFields, TweakFields, audioLatencyOptions, fanOptions, lavdOptions } from "../components/GameFields";
+import { EnvVarsButton, PerfFields, TweakFields, audioLatencyOptions, fanOptions, lavdOptions, scxModeOptions, scxSchedulerOptions } from "../components/GameFields";
 import { MakoToggle } from "../components/MakoToggle";
 import { SelectEdit } from "../components/widgets";
 import { availableGames, editTargetOptions } from "../lib/games";
@@ -70,7 +70,7 @@ export function Games({ config, setConfig, reload }: {
   const applyMode = async (setter: (mode: string) => Promise<Config>, mode: string) => {
     try {
       const next = await setter(mode);
-      setConfig((current) => (current ? { ...current, fanMode: next.fanMode, lavdMode: next.lavdMode } : current));
+      setConfig((current) => (current ? { ...current, fanMode: next.fanMode, lavdMode: next.lavdMode, scxScheduler: next.scxScheduler, scxMode: next.scxMode } : current));
     } catch (error) {
       reload();
     }
@@ -96,7 +96,10 @@ export function Games({ config, setConfig, reload }: {
         <PanelSection title="PERFORMANCE">
           {editingDefault ? (
             <>
-              <SelectEdit label="CPU Scheduler" value={config.lavdMode} options={lavdOptions} onChange={(mode) => applyMode(setLavdMode, mode)} />
+              <SelectEdit label="Scheduler" value={config.scxScheduler} options={scxSchedulerOptions} onChange={(s) => applyMode(setScxScheduler, s)} />
+              {config.scxScheduler !== "auto" ? (
+                <SelectEdit label="Scheduler Mode" value={config.scxMode} options={scxModeOptions[config.scxScheduler] || scxModeOptions.lavd} onChange={(m) => applyMode(setScxMode, m)} />
+              ) : null}
               <SelectEdit label="Fan Curve" value={config.fanMode} options={fanOptions} onChange={(mode) => applyMode(setFanMode, mode)} />
             </>
           ) : (
