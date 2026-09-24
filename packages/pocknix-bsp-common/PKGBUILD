@@ -3,7 +3,7 @@
 # live in devices/<name>/packages/pocknix-bsp-<name>, which depends on this package.
 pkgname=pocknix-bsp-common
 pkgver=0.1.0
-pkgrel=18
+pkgrel=19
 pkgdesc="pocknix shared board support: sleep.d dispatcher, suspend hooks, power-key policy, session udev rules, wheel sudo, fan/scheduler daemons, ABL updater, second-screen touch policy, suspend display hook"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -23,6 +23,7 @@ source=('pocknix-sleep' 'sdam-debug-pre' 'sdam-debug-post'
         '60-pocknix-io-scheduler.rules'
         '10-pocknix-wheel'
         'pocknix-fancontrol' 'pocknix-fan-mode' 'pocknix-lavd-mode' 'pocknix-scx-mode'
+        'pocknix-scx-diag'
         'pocknix-fancontrol.service' 'pocknix-scx.service' 'pocknix-game-mode.conf'
         'pocknix-update-abl' '52-pocknix-abl.rules' 'pocknix-gpt-abl'
         'pocknix-refresh-abl-kit'
@@ -31,7 +32,7 @@ source=('pocknix-sleep' 'sdam-debug-pre' 'sdam-debug-post'
         'iwd-wait-wlan0.conf')
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
             'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   install -Dm755 "${srcdir}/pocknix-sleep" \
@@ -77,6 +78,7 @@ package() {
   install -Dm755 "${srcdir}/pocknix-fan-mode"   "${pkgdir}/usr/bin/pocknix-fan-mode"
   install -Dm755 "${srcdir}/pocknix-lavd-mode"  "${pkgdir}/usr/bin/pocknix-lavd-mode"
   install -Dm755 "${srcdir}/pocknix-scx-mode"  "${pkgdir}/usr/bin/pocknix-scx-mode"
+  install -Dm755 "${srcdir}/pocknix-scx-diag"  "${pkgdir}/usr/bin/pocknix-scx-diag"
   install -Dm644 "${srcdir}/pocknix-fancontrol.service" \
     "${pkgdir}/usr/lib/systemd/system/pocknix-fancontrol.service"
   install -Dm644 "${srcdir}/pocknix-scx.service" \

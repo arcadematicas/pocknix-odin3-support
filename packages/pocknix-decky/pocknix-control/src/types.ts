@@ -43,6 +43,12 @@ export interface GameRef {
 export interface Config {
   fanMode: string;
   lavdMode: string;
+  /** "auto" = the Steam QAM power profile drives the scheduler; else lavd|bpfland. */
+  scxScheduler?: string;
+  /** Mode of the manually-picked scheduler ("" when auto). */
+  scxMode?: string;
+  /** Scheduler actually running ("<sched> <mode>"), useful while in auto. */
+  scxEffective?: string;
   tweaks: Tweaks;
   fexProfiles: Record<string, FexProfile>;
   /** Turnip payload choices, one per series (data "25.2"). ARM Proton only. */

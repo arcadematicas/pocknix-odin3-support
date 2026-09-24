@@ -1,5 +1,5 @@
 from .led import led_config
-from .modes import fan_mode, lavd_mode, scx_mode, scx_scheduler
+from .modes import fan_mode, lavd_mode, scx_effective, scx_mode, scx_scheduler
 from .steam import installed_games
 from .tweaks import fex_profile_labels, load_fex_contract, load_tweaks, mesa_versions
 
@@ -11,6 +11,7 @@ def build_config():
         "lavdMode": lavd_mode(),
         "scxScheduler": scx_scheduler(),
         "scxMode": scx_mode(),
+        "scxEffective": " ".join(scx_effective()),
         "tweaks": load_tweaks(),
         "fexProfiles": fex_profile_labels(fex_contract),
         "mesaVersions": mesa_versions(),

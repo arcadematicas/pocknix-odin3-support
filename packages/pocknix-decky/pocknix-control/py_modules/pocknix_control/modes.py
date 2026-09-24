@@ -100,6 +100,12 @@ def scx_mode():
     return scx_state()[1]
 
 
+def scx_effective():
+    """(scheduler, mode) actually running, regardless of auto/manual — lets the UI show
+    what the QAM profile picked while the selector sits on "auto"."""
+    return _read_state()
+
+
 def _run_scx(args):
     proc = run_cmd(["/usr/bin/pocknix-scx-mode", *args], timeout=30)
     if proc is None:

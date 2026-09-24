@@ -1,0 +1,52 @@
+#!/bin/sh
+# pocknix-scx-diag — estado de un vistazo: scheduler sched_ext, perfil de potencia y
+# schedulers de bloques. Pensado para verificar el sistema tras un deploy o un cambio.
+# Uso: pocknix-scx-diag
+SCX_STATE=/var/lib/pocknix/scx-mode
+SCX_MANUAL=/var/lib/pocknix/scx-manual
+POWER_PROFILE=/var/lib/pocknix/power-profile
+GAME_MODE=/run/pocknix/game-mode
+
+echo "== sched_ext =="
+if [ -r /sys/kernel/sched_ext/root/ops ]; then
+  echo "activo:        $(cat /sys/kernel/sched_ext/root/ops)"
+else
+  echo "activo:        (sched_ext no disponible)"
+fi
+if [ -r "$SCX_STATE" ]; then
+  echo "state file:    $(cat "$SCX_STATE")"
+else
+  echo "state file:    (sin persistir — default lavd autopilot)"
+fi
+if [ -f "$SCX_MANUAL" ]; then
+  echo "manual:        SI (el perfil QAM no toca el scheduler)"
+else
+  echo "manual:        no (el perfil QAM controla el scheduler)"
+fi
+if [ -r "$GAME_MODE" ]; then
+  echo "per-game:      $(cat "$GAME_MODE")"
+fi
+if systemctl is-active pocknix-scx.service >/dev/null 2>&1; then
+  echo "servicio:      pocknix-scx.service activo"
+else
+  echo "servicio:      pocknix-scx.service INACTIVO"
+fi
+
+echo "== power profile =="
+if [ -r "$POWER_PROFILE" ]; then
+  echo "perfil:        $(cat "$POWER_PROFILE")"
+else
+  echo "perfil:        (sin guardar — default alto)"
+fi
+if systemctl is-active pocknix-power-profile.service >/dev/null 2>&1; then
+  echo "servicio:      pocknix-power-profile.service activo"
+else
+  echo "servicio:      pocknix-power-profile.service inactivo"
+fi
+
+echo "== block schedulers =="
+for dev in mmcblk0 sda; do
+  if [ -r "/sys/block/${dev}/queue/scheduler" ]; then
+    echo "${dev}:        $(cat "/sys/block/${dev}/queue/scheduler")"
+  fi
+done

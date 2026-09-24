@@ -587,14 +587,46 @@ automáticamente; para lo que NO se instala hay que listarlo a mano en `base-ext
 la capa vendored (deckstation-arm, pocknix-steam, tools, suyu…). **`config/` solo vive en
 el árbol** (nuestro fork lo commitea allí) → editarlo en el árbol y **commitearlo ahí**.
 
-## ⏳ PENDIENTE PARA MAÑANA — SCHEDULERS CPU + I/O (23/09/2026)
+## ✅ SCHEDULERS CPU + I/O — IMPLEMENTADO (24/09/2026)
 
-Análisis hecho, NO implementado. Detalle completo en `~/.opencode_memory.md` (sección
-"PENDIENTE PARA MAÑANA — SCHEDULERS"). Resumen:
-- **scx-scheds 1.1.2 YA instalado (15 schedulers)** — solo falta exponerlos en la UI.
-  Activo: `scx_lavd --autopilot` (pocknix-lavd.service).
-- **Plan**: (1) generalizar `pocknix-lavd-mode` → `pocknix-scx-mode` + exponer
-  bpfland/rusty/lavd en PocknixControl; (2) udev rule → `bfq` en la microSD (mmcblk0);
-  (3) opcional: scheduler por juego.
+**Estado**: Fase 1 (scheduler sched_ext) + Fase 2 (bfq microSD) **implementadas y verificadas
+en la Odin**. Perfiles QAM enlazados al scheduler: **implementado en el centro, pendiente de
+deploy + verificación en vivo** (commit `cb0ea84`).
+
+### Cómo funciona
+- **`/usr/bin/pocknix-scx-mode`** (paquete `pocknix-bsp-common`, pkgrel 19): get/set/toggle/run
+  del scheduler sched_ext. Schedulers ofrecidos: **lavd** (autopilot/performance/balanced/
+  powersave) y **bpfland** (default/performance/powersave). Estado persistido en
+  `/var/lib/pocknix/scx-mode` como `"<sched> <mode>"`. **rusty DESCARTADO**: scx_rusty 1.1.2 no
+  carga en kernel 7.2.4 (`kptr already had cpumask`, main.bpf.c:119).
+- **`pocknix-scx.service`** (daemon, alias `pocknix-lavd.service` por symlink): corre
+  `pocknix-scx-mode run`, que hace polling cada 3 s de `/var/lib/pocknix/scx-mode` + el
+  per-game `/run/pocknix/game-mode` (pid fan lavd — solo aplica si el scheduler efectivo es
+  lavd). `StartLimitBurst=20` + fallback `reset-failed` en `do_set` (con 5, 3 cambios rápidos
+  bloqueaban el servicio).
+- **bfq**: udev rule `60-pocknix-io-scheduler.rules` → `mmcblk[0-9]` = bfq. UFS `sda` intacta
+  en `mq-deadline`. NO tocar governor cpufreq (`schedutil`) ni read_ahead.
+- **Perfiles QAM → scheduler** (en `/usr/local/bin/pocknix-power-profile`, función
+  `apply_scx`): `bajo`→`bpfland powersave`, `medio`→`lavd autopilot`, `alto`→`lavd
+  performance`. Se aplica al set y al `restore` (boot). **Override manual**: si existe
+  `/var/lib/pocknix/scx-manual`, el perfil NO toca el scheduler.
+- **Plugin PocknixControl** (pkgrel 44): selector Scheduler con **"Auto (perfil QAM)"**
+  (default) + Scheduler Mode (oculto en auto). Elegir lavd/bpfland a mano crea el flag
+  manual; volver a "auto" lo borra y re-aplica el perfil actual (el mapeo vive SOLO en
+  power-profile). `scxEffective` en el config muestra el scheduler real en auto.
+- **Diagnóstico**: `/usr/bin/pocknix-scx-diag` (scheduler activo, state, flag manual, perfil,
+  servicios, block schedulers).
+- **Deploy rápido**: `tools/deploy-schedulers.sh [--bsp|--plugin]` (scp + `sudo -S pocknix`;
+  reinicia el loader de Decky solo si Steam NO está en modo juego).
+
+### Verificado en la Odin (Fase 1+2)
+lavd→bpfland→bpfland performance→lavd OK (`/sys/kernel/sched_ext/root/ops`); backend del
+plugin como root OK; 3 cambios rápidos ya no bloquean; estado final lavd autopilot activo;
+`mmcblk0=[bfq]`, `sda=[mq-deadline]`.
+
+### Pendiente
+- Deploy de perfiles QAM (power-profile + plugin) con `tools/deploy-schedulers.sh` y
+  verificación en vivo: cambiar perfil en el QAM → scheduler cambia; fijar manual → el perfil
+  no lo pisa; volver a Auto.
 - **NO tocar**: governor cpufreq (`schedutil` es el correcto con scx_lavd), read_ahead SD
   (medido sin diferencia), UFS interna (dejar `none`).

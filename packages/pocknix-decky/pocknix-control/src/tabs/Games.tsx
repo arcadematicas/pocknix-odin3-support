@@ -97,6 +97,9 @@ export function Games({ config, setConfig, reload }: {
           {editingDefault ? (
             <>
               <SelectEdit label="Scheduler" value={config.scxScheduler} options={scxSchedulerOptions} onChange={(s) => applyMode(setScxScheduler, s)} />
+              {config.scxScheduler === "auto" ? (
+                <div className="pocknix-note">Scheduler activo: {config.scxEffective || "—"}</div>
+              ) : null}
               {config.scxScheduler !== "auto" ? (
                 <SelectEdit label="Scheduler Mode" value={config.scxMode} options={scxModeOptions[config.scxScheduler] || scxModeOptions.lavd} onChange={(m) => applyMode(setScxMode, m)} />
               ) : null}
