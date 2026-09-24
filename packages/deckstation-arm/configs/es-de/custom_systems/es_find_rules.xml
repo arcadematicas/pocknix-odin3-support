@@ -7,6 +7,10 @@
             <entry>bash</entry>
             <entry>sh</entry>
         </rule>
+        <rule type="staticpath">
+            <entry>/usr/bin/bash</entry>
+            <entry>/bin/sh</entry>
+        </rule>
     </emulator>
     <emulator name="RETROARCH">
         <rule type="systempath">
@@ -294,7 +298,6 @@
             <entry>fbneo</entry>
         </rule>
         <rule type="staticpath">
-            <entry>./Apps/FBNeo/FBNeo-x86_64.AppImage</entry>
 
         </rule>
     </emulator>
@@ -373,10 +376,6 @@
     <emulator name="GOPHER2600">
         <!-- Atari 2600 emulator Gopher2600 -->
         <rule type="staticpath">
-            <entry>~/Applications/gopher2600/gopher2600_linux_amd64</entry>
-            <entry>~/.local/share/applications/gopher2600/gopher2600_linux_amd64</entry>
-            <entry>~/.local/bin/gopher2600/gopher2600_linux_amd64</entry>
-            <entry>~/bin/gopher2600/gopher2600_linux_amd64</entry>
         </rule>
     </emulator>
     <emulator name="HATARI">
@@ -830,7 +829,6 @@
             <entry>solarus.run</entry>
         </rule>
         <rule type="staticpath">
-            <entry>./Apps/Solarus/Solarus_RPG-x86_64.AppImage</entry>
 
         </rule>
     </emulator>
@@ -878,7 +876,7 @@
             <entry>dolphin-emu-triforce</entry>
         </rule>
         <rule type="staticpath">
-            <entry>./Apps/Dolphin-Portable-Complete/dolphin-portable.sh</entry>
+            <entry>./Apps/Dolphin/lanzar.sh</entry>
 
         </rule>
     </emulator>
@@ -935,7 +933,6 @@
             <entry>VPinballX_GL</entry>
         </rule>
         <rule type="staticpath">
-            <entry>./Apps/VisualPinball/VPinballXGL-x86_64.AppImage</entry>
 
         </rule>
     </emulator>
@@ -1002,7 +999,7 @@
         <!-- Microsoft Xbox 360 emulator xenia -->
         <rule type="staticpath">
 
-            <entry>./Apps/xenia_edge/xenia_edge_linux_aarch64.AppImage</entry>
+            <entry>./Apps/xenia_edge/xenia_edge_linux.AppImage</entry>
 
         </rule>
     </emulator>
@@ -1033,7 +1030,6 @@
             <entry>zesarux</entry>
         </rule>
         <rule type="staticpath">
-            <entry>./Apps/ZEsarUX/ZEsarUX-x86_64.AppImage</entry>
 
         </rule>
     </emulator>

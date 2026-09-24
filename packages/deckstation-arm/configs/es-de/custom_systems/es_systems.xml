@@ -6,8 +6,8 @@
         <fullname>3DO Interactive Multiplayer</fullname>
         <path>%ROMPATH%/3do</path>
         <extension>.bin .BIN .chd .CHD .cue .CUE .iso .ISO .7z .7Z .zip .ZIP</extension>
-        <command label="Dolphin (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_DOLPHIN% -b -e %ROM%</command>
         <command label="Opera">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/opera_libretro.so %ROM%</command>
+        <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <platform>3do</platform>
         <theme>3do</theme>
     </system>
@@ -109,10 +109,11 @@
         <fullname>Apple II</fullname>
         <path>%ROMPATH%/apple2</path>
         <extension>.do .DO .dsk .DSK .nib .NIB .po .PO .zip</extension>
-        <command label="LinApple (Standalone)">%EMULATOR_LINAPPLE% -f -b --d1 %ROM%</command>
-        <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module apple2 %ROM%</command>
+        <command label="Applewin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/applewin_libretro.so %ROM%</command>
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so "apple2e -flop1 %ROM%"</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %ROMPATH%/apple2 apple2e -gameio joy -flop1 %ROM%</command>
+        <command label="LinApple (Standalone)">%EMULATOR_LINAPPLE% -f -b --d1 %ROM%</command>
+        <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module apple2 %ROM%</command>
         <platform>apple2</platform>
         <theme>apple2</theme>
     <command label="Applewin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/applewin_libretro.so %ROM%</command>
@@ -318,8 +319,8 @@
         <fullname>Acorn Computers BBC Micro</fullname>
         <path>%ROMPATH%/bbcmicro</path>
         <extension>.dsd .DSD .img .IMG .ssd .SSD .7z .7Z .zip .ZIP</extension>
-        <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/bbcmicro bbcb -autoboot_delay "2" -autoboot_command "*cat\n\n*exec !boot\n" -flop1 %ROM%</command>
         <command label="B2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/b2_libretro.so %ROM%</command>
+        <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/bbcmicro bbcb -autoboot_delay "2" -autoboot_command "*cat\n\n*exec !boot\n" -flop1 %ROM%</command>
         <platform>bbcmicro</platform>
         <theme>bbcmicro</theme>
     <command label="b2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/b2_libretro.so %ROM%</command>
@@ -429,7 +430,7 @@
         <theme>consolearcade</theme>
     <command label="Play! Arcade (Standalone)">%EMULATOR_PLAY!% --fullscreen --arcade %GAMEDIR%/%BASENAME%</command>
         <command label="Play! Disc (Standalone)">%EMULATOR_PLAY!% --fullscreen --disc %ROM%</command>
-        <command label="RPCS3 Game Serial (Standalone)">./Apps/RPCS3/lanzar.sh --no-gui %RPCS3_GAMEID%:%INJECT%=%BASENAME%.ps3</command>
+        <command label="RPCS3 Game Serial (Standalone)">%EMULATOR_RPCS3% --no-gui %RPCS3_GAMEID%:%INJECT%=%BASENAME%.ps3</command>
         </system>
     <system>
         <name>cps</name>
@@ -525,7 +526,6 @@
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/daphne %BASENAME%</command>
         <command label="DirkSimple">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dirksimple_libretro.so %ROM%</command>
-        <command label="Space Ace">./Apps/hypseus-singe/Hypseus_Singe-x86_64.AppImage ace vldp -framefile $PWD/roms/daphne/ace.daphne/ace.txt</command>
         <platform>daphne, arcade</platform>
         <theme>daphne</theme>
     <command label="ares [Mega LD] (Standalone)">%EMULATOR_ARES% --fullscreen --system "Mega LD" %ROM%</command>
@@ -549,8 +549,8 @@
         <extension>.desktop .ipk3 .IPK3 .iwad .IWAD .pk3 .PK3 .pk4 .PK4 .pwad .PWAD .sh .wad .WAD .gzdoom</extension>
         <command label="PrBoom">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/prboom_libretro.so %ROM%</command>
         <command label="PrBoom+ (Standalone)">%EMULATOR_PRBOOM-PLUS% -iwad %ROM%</command>
-        <command label="GZDoom (Standalone)">./Apps/gzdoom/GZDoom-x86_64.AppImage %INJECT%=%BASENAME%.gzdoom</command>
         <command label="Boom 3">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/boom3_libretro.so %ROM%</command>
+        <command label="Boom 3 xp">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/boom3_xp_libretro.so %ROM%</command>
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
         <platform>pc, pcwindows</platform>
         <theme>doom</theme>
@@ -731,6 +731,7 @@
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so "fmtownshr -rompath \"%GAMEDIRRAW%;%ROMPATH%/fmtowns\" -cdrom \"%ROMRAW%\""</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/fmtowns fmtownshr -cdrom %ROM%</command>
         <command label="Tsugaru (Standalone)">%EMULATOR_TSUGARU% %EMUDIR%/roms -HOSTSHORTCUT ESC 0 0 FORCEQUIT -FULLSCREEN -CD %ROM% %INJECT%=%BASENAME%.cfg</command>
+        <command label="Tsugaru">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/tsugaru_libretro.so %ROM%</command>
         <platform>fmtowns</platform>
         <theme>fmtowns</theme>
     </system>
@@ -835,6 +836,7 @@
         <command label="SkyEmu (Standalone)">%EMULATOR_SKYEMU% %ROM%</command>
         <platform>gba</platform>
         <theme>gba</theme>
+    <command label="NooDS">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/noods_libretro.so %ROM%</command>
         <command label="NooDS (Standalone)">%EMULATOR_NOODS% %ROM%</command>
         </system>
     <system>
@@ -930,6 +932,7 @@
         <path>%ROMPATH%/j2me</path>
         <extension>.jar .JAR .7z .7Z .zip .ZIP</extension>
         <command label="FreeJ2ME">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/freej2me_libretro.so %ROM%</command>
+        <command label="SquirrelJME">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/squirreljme_libretro.so %ROM%</command>
         <command label="FreeJ2ME (Standalone)">/bin/bash ./j2me.sh ../../../%ROM%</command>
         <platform>android</platform>
         <theme>j2me</theme>
@@ -965,7 +968,7 @@
         <extension>.mgw .MGW .7z .7Z .zip .ZIP</extension>
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="MAME Local Artwork (Standalone)">%EMULATOR_MAME% -artpath %ROMPATH%/lcdgames/artwork -rompath %GAMEDIR%\;%ROMPATH%/lcdgames %BASENAME%</command>
-        <command label="MAME (Standalone)">./Apps/Mame/MAME-x86_64.AppImage -rompath %GAMEDIR%\;%ROMPATH%/lcdgames %BASENAME%</command>
+        <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/lcdgames %BASENAME%</command>
         <command label="Handheld Electronic (GW)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/gw_libretro.so %ROM%</command>
         <platform>lcdgames, gameandwatch</platform>
         <theme>lcdgames</theme>
@@ -1098,6 +1101,8 @@
         <path>%ROMPATH%/megadrive</path>
         <extension>.32x .32X .68k .68K .bin .BIN .bms .BMS .chd .CHD .cue .CUE .gen .GEN .gg .GG .iso .ISO .m3u .M3U .md .MD .mdx .MDX .sg .SG .sgd .SGD .smd .SMD .sms .SMS .7z .7Z .zip .ZIP</extension>
         <command label="Genesis Plus GX">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/genesis_plus_gx_libretro.so %ROM%</command>
+        <command label="Genesis Plus GX4">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/genesis_plus_gx4_libretro.so %ROM%</command>
+        <command label="Genesis Plus GX Paprium">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/genesis_plus_gx_paprium_libretro.so %ROM%</command>
         <command label="Genesis Plus GX Wide">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/genesis_plus_gx_wide_libretro.so %ROM%</command>
         <command label="PicoDrive">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/picodrive_libretro.so %ROM%</command>
         <command label="BlastEm">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/blastem_libretro.so %ROM%</command>
@@ -1114,6 +1119,7 @@
         <path>%ROMPATH%/megadrivejp</path>
         <extension>.32x .32X .68k .68K .bin .BIN .bms .BMS .chd .CHD .cue .CUE .gen .GEN .gg .GG .iso .ISO .m3u .M3U .md .MD .mdx .MDX .sg .SG .sgd .SGD .smd .SMD .sms .SMS .7z .7Z .zip .ZIP</extension>
         <command label="Genesis Plus GX">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/genesis_plus_gx_libretro.so %ROM%</command>
+        <command label="Genesis Plus GX 4">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/genesis_plus_gx4_libretro.so %ROM%</command>
         <command label="Genesis Plus GX Wide">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/genesis_plus_gx_wide_libretro.so %ROM%</command>
         <command label="PicoDrive">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/picodrive_libretro.so %ROM%</command>
         <command label="BlastEm">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/blastem_libretro.so %ROM%</command>
@@ -1161,7 +1167,7 @@
         <fullname>Sega Model 3</fullname>
         <path>%ROMPATH%/model3</path>
         <extension>.7z .7Z .zip .ZIP</extension>
-        <command label="Supermodel (Standalone)">%EMULATOR_SUPERMODEL% ../../../../../%ROM%</command>
+        <command label="Supermodel (Standalone)">%EMULATOR_SUPERMODEL% %ROM%</command>
     <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="Supermodel">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/supermodel_libretro.so %ROM%</command>
         <platform>arcade</platform>
@@ -1258,6 +1264,7 @@
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
 
         <command label="Lime3ds (Standalone)">./Apps/lime3ds/lime3ds.AppImage -f %ROM%</command>
+        <command label="Azahar">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/azahar_libretro.so %ROM%</command>
         <platform>n3ds</platform>
         <theme>n3ds</theme>
 
@@ -1339,6 +1346,7 @@
         <command label="SkyEmu (Standalone)">%EMULATOR_SKYEMU% %ROM%</command>
         <platform>nds</platform>
         <theme>nds</theme>
+    <command label="NooDS">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/noods_libretro.so %ROM%</command>
         <command label="NooDS (Standalone)">%EMULATOR_NOODS% %ROM%</command>
         </system>
     <system>
@@ -1471,16 +1479,6 @@
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/odyssey2 odyssey2 -cart %ROM%</command>
         <platform>odyssey2</platform>
         <theme>odyssey2</theme>
-    </system>
-    <system>
-        <name>openbor</name>
-        <fullname>OpenBOR Game Engine</fullname>
-        <path>%ROMPATH%/openbor/Paks</path>
-        <extension>.pak .PAK</extension>
-        <command label="OpenBOR (Standalone)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
-        <command label="OpenBOR2 (Standalone)">/bin/bash ./Apps/Openbor/Openbor.sh "./Paks/%BASENAME%.pak"</command>
-        <platform>openbor</platform>
-        <theme>openbor</theme>
     </system>
     <system>
         <name>oric</name>
@@ -1652,41 +1650,18 @@
         <theme>ps2</theme>
     <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
         </system>
-     <system>
-        <name>ps21</name>
-        <fullname>Sony PlayStation 2</fullname>
-        <path>%ROMPATH%/ps2</path>
-        <extension>.arcadedef .bin .BIN .chd .CHD .ciso .CISO .cso .CSO .dump .DUMP .elf .ELF .gz .GZ .m3u .M3U .mdf .MDF .img .IMG .iso .ISO .isz .ISZ .ngr .NRG .zso .ZSO</extension>
-        <command label="LRPS2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx2_libretro.so %ROM%</command>
-        <command label="PCSX2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx2_libretro.so %ROM%</command>
-        <command label="PCSX2 (Standalone)">./Apps/Pcsx2/pcsx2.AppImage -batch %ROM%</command>
-        <command label="PCSX2 Legacy (Standalone)">%EMULATOR_PCSX2-LEGACY% --nogui %ROM%</command>
-        <command label="Play! (Standalone)">%EMULATOR_PLAY!% --disc %ROM%</command>
-        <platform>ps2</platform>
-        <theme>ps2</theme>
-    </system>
     <system>
         <name>ps3</name>
         <fullname>Sony PlayStation 3</fullname>
         <path>%ROMPATH%/ps3</path>
         <extension>.desktop .ps3 .PS3 .ps3dir .PS3DIR .psn .PSN .iso .ISO</extension>
-        <command label="RPCS3 PSN (Standalone)">./Apps/RPCS3/lanzar.sh --no-gui ./ROMs/ps3/dev_hdd0/game/%INJECT%=%BASENAME%.psn</command>
-        <command label="RPCS3 Directory (Standalone)">./Apps/RPCS3/lanzar.sh --no-gui %ROM%</command>
+        <command label="RPCS3 PSN (Standalone)">%EMULATOR_RPCS3% --no-gui ./ROMs/ps3/dev_hdd0/game/%INJECT%=%BASENAME%.psn</command>
+        <command label="RPCS3 Directory (Standalone)">./Apps/RPCS3/rpcs3.AppImage --no-gui %ROM%</command>
         <platform>ps3</platform>
         <theme>ps3</theme>
     <command label="RPCS3 Shortcut (Standalone)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
-        <command label="RPCS3 Game Serial (Standalone)">./Apps/RPCS3/lanzar.sh --no-gui %RPCS3_GAMEID%:%INJECT%=%BASENAME%.ps3</command>
+        <command label="RPCS3 Game Serial (Standalone)">%EMULATOR_RPCS3% --no-gui %RPCS3_GAMEID%:%INJECT%=%BASENAME%.ps3</command>
         </system>
-    <system>
-        <name>ps31</name>
-        <fullname>Sony PlayStation 3</fullname>
-        <path>%ROMPATH%/ps3</path>
-        <extension>.desktop .ps3 .PS3 .ps3dir .PS3DIR .psn .PSN</extension>
-        <command label="RPCS3 PSN (Standalone)">%EMULATOR_RPCS3% --no-gui ./Apps/RPCS3/rpcs3.AppImage.home/.config/rpcs3/dev_hdd0/game/%INJECT%=%BASENAME%.psn</command>
-        <command label="RPCS3 Directory (Standalone)">./Apps/RPCS3/lanzar.sh --no-gui %ROM%</command>
-        <platform>ps3</platform>
-        <theme>ps3</theme>
-    </system>
     <system>
         <name>ps4</name>
         <fullname>Sony PlayStation 4</fullname>
@@ -1703,16 +1678,6 @@
         <command label="shadPS4 [GUI] Game Serial (Standalone)">%EMULATOR_SHADPS4-GUI% -d -g %INJECT%=%BASENAME%.ps4</command>
         <command label="shadPS4 [GUI] eboot.bin (Standalone)">%EMULATOR_SHADPS4-GUI% -d -g %ROM%</command>
         </system>
-    <system>
-        <name>ps41</name>
-        <fullname>Sony PlayStation 4</fullname>
-        <path>%ROMPATH%/ps4</path>
-        <extension>.ps4 .PS4 .zip .ZIP</extension>
-        <command label="shadPS4 (Standalone)">./Apps/ShadPS4/Shadps4-qt.AppImage -g %ROM%/eboot.bin</command>
-        <command label="shadPS4 Gravity Rush (Standalone)">./Apps/ShadPS4/Shadps4-qt_GR.AppImage -g %ROM%/eboot.bin</command>
-        <platform>ps4</platform>
-        <theme>ps4</theme>
-    </system>
     <system>
         <name>psp</name>
         <fullname>Sony PlayStation Portable</fullname>
@@ -1802,6 +1767,7 @@
         <command label="Snes9x 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2010_libretro.so %ROM%</command>
         <command label="Snes9x (Standalone)">%EMULATOR_SNES9X% %ROM%</command>
         <command label="bsnes">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_libretro.so %ROM%</command>
+        <command label="bsnes-hd">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_hd_beta_libretro.so %ROM%</command>
         <command label="bsnes-mercury Accuracy">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_mercury_accuracy_libretro.so %ROM%</command>
         <command label="bsnes (Standalone)">%EMULATOR_BSNES% --fullscreen %ROM%</command>
         <command label="Mesen-S">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mesen-s_libretro.so %ROM%</command>
@@ -1822,14 +1788,14 @@
         <command label="Kronos">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/kronos_libretro.so %ROM%</command>
         <command label="Yabause">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabause_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module ss %ROM%</command>
-        <command label="Ymir (Standalone)">%EMULATOR_YMIR% ../../../../../../../%ROM%</command>
+        <command label="Ymir (Standalone)">%EMULATOR_YMIR% %ROM%</command>
         <platform>saturn</platform>
         <theme>saturn</theme>
     <command label="Kronos (Standalone)">%EMULATOR_KRONOS% %ROM%</command>
         </system>
     <system>
         <name>saturnjp</name>
-        <fullname>Sega Saturn</fullname>
+        <fullname>Sega Saturn (Japan)</fullname>
         <path>%ROMPATH%/saturnjp</path>
         <extension>.bin .BIN .ccd .CCD .chd .CHD .cue .CUE .iso .ISO .m3u .M3U .mds .MDS .toc .TOC .7z .7Z .zip .ZIP</extension>
         <command label="YabaSanshiro">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabasanshiro_libretro.so %ROM%</command>
@@ -1837,7 +1803,7 @@
         <command label="Kronos">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/kronos_libretro.so %ROM%</command>
         <command label="Yabause">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/yabause_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module ss %ROM%</command>
-        <command label="Ymir (Standalone)">%EMULATOR_YMIR% ../../../../../../../%ROM%</command>
+        <command label="Ymir (Standalone)">%EMULATOR_YMIR% %ROM%</command>
         <platform>saturn</platform>
         <theme>saturnjp</theme>
     <command label="Kronos (Standalone)">%EMULATOR_KRONOS% %ROM%</command>
@@ -1916,6 +1882,7 @@
         <command label="Snes9x 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2010_libretro.so %ROM%</command>
         <command label="Snes9x (Standalone)">%EMULATOR_SNES9X% %ROM%</command>
         <command label="bsnes">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_libretro.so %ROM%</command>
+        <command label="bsnes-hd">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_hd_beta_libretro.so %ROM%</command>
         <command label="bsnes-mercury Accuracy">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_mercury_accuracy_libretro.so %ROM%</command>
         <command label="bsnes (Standalone)">%EMULATOR_BSNES% --fullscreen %ROM%</command>
         <command label="Beetle Supafaust">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_supafaust_libretro.so %ROM%</command>
@@ -1965,6 +1932,7 @@
         <command label="Snes9x 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2010_libretro.so %ROM%</command>
         <command label="Snes9x (Standalone)">%EMULATOR_SNES9X% %ROM%</command>
         <command label="bsnes">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_libretro.so %ROM%</command>
+        <command label="bsnes-hd">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_hd_beta_libretro.so %ROM%</command>
         <command label="bsnes-mercury Accuracy">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_mercury_accuracy_libretro.so %ROM%</command>
         <command label="bsnes (Standalone)">%EMULATOR_BSNES% --fullscreen %ROM%</command>
         <command label="Beetle Supafaust">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_supafaust_libretro.so %ROM%</command>
@@ -1978,13 +1946,14 @@
     </system>
      <system>
         <name>snesh</name>
-        <fullname>Nintendo SNES (Super Nintendo)</fullname>
+        <fullname>Super Nintendo (Hacks)</fullname>
         <path>%ROMPATH%/snesh</path>
         <extension>.bin .BIN .bml .BML .bs .BS .bsx .BSX .dx2 .DX2 .fig .FIG .gd3 .GD3 .gd7 .GD7 .mgd .MGD .sfc .SFC .smc .SMC .st .ST .swc .SWC .7z .7Z .zip .ZIP</extension>
         <command label="Snes9x - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x_libretro.so %ROM%</command>
         <command label="Snes9x 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2010_libretro.so %ROM%</command>
         <command label="Snes9x (Standalone)">%EMULATOR_SNES9X% %ROM%</command>
         <command label="bsnes">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_libretro.so %ROM%</command>
+        <command label="bsnes-hd">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_hd_beta_libretro.so %ROM%</command>
         <command label="bsnes-mercury Accuracy">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_mercury_accuracy_libretro.so %ROM%</command>
         <command label="bsnes (Standalone)">%EMULATOR_BSNES% --fullscreen %ROM%</command>
         <command label="Beetle Supafaust">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_supafaust_libretro.so %ROM%</command>
@@ -1997,13 +1966,14 @@
     </system>
     <system>
         <name>snes_msu1</name>
-        <fullname>Nintendo SNES MSU1(Super Nintendo)</fullname>
+        <fullname>SNES MSU-1</fullname>
         <path>%ROMPATH%/snes_msu1</path>
         <extension>.bin .BIN .bml .BML .bs .BS .bsx .BSX .dx2 .DX2 .fig .FIG .gd3 .GD3 .gd7 .GD7 .mgd .MGD .sfc .SFC .smc .SMC .st .ST .swc .SWC .7z .7Z .zip .ZIP</extension>
         <command label="Snes9x - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x_libretro.so %ROM%</command>
         <command label="Snes9x 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2010_libretro.so %ROM%</command>
         <command label="Snes9x (Standalone)">%EMULATOR_SNES9X% %ROM%</command>
         <command label="bsnes">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_libretro.so %ROM%</command>
+        <command label="bsnes-hd">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_hd_beta_libretro.so %ROM%</command>
         <command label="bsnes-mercury Accuracy">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_mercury_accuracy_libretro.so %ROM%</command>
         <command label="bsnes (Standalone)">%EMULATOR_BSNES% --fullscreen %ROM%</command>
         <command label="Beetle Supafaust">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_supafaust_libretro.so %ROM%</command>
@@ -2016,13 +1986,14 @@
     </system>
     <system>
         <name>snesna</name>
-        <fullname>Nintendo SNES (Super Nintendo)</fullname>
+        <fullname>Super Nintendo (USA)</fullname>
         <path>%ROMPATH%/snesna</path>
         <extension>.bin .BIN .bml .BML .bs .BS .bsx .BSX .dx2 .DX2 .fig .FIG .gd3 .GD3 .gd7 .GD7 .mgd .MGD .sfc .SFC .smc .SMC .st .ST .swc .SWC .7z .7Z .zip .ZIP</extension>
         <command label="Snes9x - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x_libretro.so %ROM%</command>
         <command label="Snes9x 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2010_libretro.so %ROM%</command>
         <command label="Snes9x (Standalone)">%EMULATOR_SNES9X% %ROM%</command>
         <command label="bsnes">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_libretro.so %ROM%</command>
+        <command label="bsnes-hd">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_hd_beta_libretro.so %ROM%</command>
         <command label="bsnes-mercury Accuracy">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_mercury_accuracy_libretro.so %ROM%</command>
         <command label="bsnes (Standalone)">%EMULATOR_BSNES% --fullscreen %ROM%</command>
         <command label="Beetle Supafaust">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_supafaust_libretro.so %ROM%</command>
@@ -2070,7 +2041,7 @@
         <extension>.7z .7Z .zip .ZIP</extension>
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="Kronos">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/kronos_libretro.so %ROM%</command>
-        <command label="MAME (Standalone)">./Apps/Mame/MAME-x86_64.AppImage -rompath %GAMEDIR%\;%ROMPATH%/stv %BASENAME%</command>
+        <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/stv %BASENAME%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module ss %ROM%</command>
         <platform>arcade</platform>
         <theme>stv</theme>
@@ -2084,6 +2055,7 @@
         <command label="Snes9x 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2010_libretro.so %ROM%</command>
         <command label="Snes9x (Standalone)">%EMULATOR_SNES9X% %ROM%</command>
         <command label="bsnes">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_libretro.so %ROM%</command>
+        <command label="bsnes-hd">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_hd_beta_libretro.so %ROM%</command>
         <command label="bsnes-mercury Accuracy">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes_mercury_accuracy_libretro.so %ROM%</command>
         <command label="bsnes (Standalone)">%EMULATOR_BSNES% --fullscreen %ROM%</command>
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Super Famicom" %ROM%</command>
@@ -2226,7 +2198,7 @@
         <fullname>Namco-Sega-Nintendo Triforce</fullname>
         <path>%ROMPATH%/triforce</path>
         <extension>.ciso .CISO .dff .DFF .dol .DOL .elf .ELF .gcm .GCM .gcz .GCZ .iso .ISO .json .JSON .m3u .M3U .rvz .RVZ .tgc .TGC .wad .WAD .wbfs .WBFS .wia .WIA .7z .7Z .zip .ZIP</extension>
-        <command label="Triforce (Standalone)">%EMULATOR_TRIFORCE% -b -e ../../%ROM%</command>
+        <command label="Triforce (Standalone)">%EMULATOR_TRIFORCE% -b -e %ROM%</command>
         <platform>arcade</platform>
         <theme>triforce</theme>
     </system>
@@ -2464,6 +2436,7 @@
         <path>%ROMPATH%/x68000</path>
         <extension>.2hd .2HD .88d .88D .cmd .CMD .d88 .D88 .dim .DIM .dup .DUP .hdf .HDF .hdm .HDM .img .IMG .m3u .M3U .xdf .XDF .7z .7Z .zip .ZIP</extension>
         <command label="PX68k">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/px68k_libretro.so %ROM%</command>
+        <command label="XM6">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/xm6_libretro.so %ROM%</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/x68000 x68000 -flop1 %ROM%</command>
         <platform>x68000</platform>
         <theme>x68000</theme>
@@ -2492,8 +2465,10 @@
         <fullname>Microsoft Xbox 360</fullname>
         <path>%ROMPATH%/xbox360</path>
         <extension>. .desktop .iso .ISO .sh .xex .XEX .zar .ZAR</extension>
-        <command label="Xenia Edge (Standalone)">./Apps/xenia_edge/lanzar.sh %ROM%</command>
+        <command label="xenia (Linux)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% ./Apps/xenia_canary/xenia.sh ../../%ROM%</command>
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
+        <command label="xenia (Standalone)">%STARTDIR%=%EMUDIR% %EMULATOR_XENIA% %INJECT%=%BASENAME%.commands %ROM%</command>
+        <command label="Xenia Edge (Standalone)">%EMULATOR_XENIA-EDGE% %INJECT%=%BASENAME%.commands %ROM%</command>
         <platform>xbox360</platform>
         <theme>xbox360</theme>
     </system>
@@ -2522,7 +2497,6 @@
         <path>%ROMPATH%/zxnext</path>
         <extension>.nex .NEX .sna .SNA .bas</extension>
         <command label="#CSpect (Standalone)">%STARTDIR%=%GAMEDIR% MONO_IOMAP=all mono %EMULATOR_CSPECT% -fullscreen -s28 -vsync -60 -analytics -tv -zxnext -mmc=./ %ROM%</command>
-        <command label="ZEsarUX (Standalone)">./Apps/ZEsarUX/ZEsarUX-x86_64.AppImage --machine tbblue --realvideo --enabletimexvideo --tbblue-fast-boot-mode --enable-esxdos-handler --esxdos-root-dir ./ROMs/zxnext/ %ROM%</command>
         <platform>zxnext</platform>
         <theme>zxnext</theme>
     </system>
@@ -2541,8 +2515,17 @@
         <fullname>OpenROM</fullname>
         <path>%ROMPATH%/openrom</path>
         <extension>.sh</extension>
-        <command label="OpenROM">%EMULATOR_OS-SHELL% %ROM%</command>
+<command label="OpenROM">%EMULATOR_OS-SHELL% %ROM%</command>
         <platform>pc</platform>
         <theme>ports</theme>
+    </system>
+    <system>
+        <name>os-shell</name>
+        <fullname>OS Shell (Scripts)</fullname>
+        <path>%ROMPATH%/os-shell</path>
+        <extension>.sh .SH .desktop .DESKTOP</extension>
+        <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
+        <platform>os-shell</platform>
+        <theme>os-shell</theme>
     </system>
 </systemList>

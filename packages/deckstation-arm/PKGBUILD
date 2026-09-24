@@ -3,7 +3,7 @@
 # Proyecto independiente. Versión original (x86_64): deckstation-x86_64.
 pkgname=deckstation-arm
 pkgver=1.0.0
-pkgrel=9
+pkgrel=10
 pkgdesc="Sistema de emulación portable para ARM (aarch64/armv7h)"
 arch=('aarch64' 'armv7h')
 url="https://github.com/stshunz/deckstation-arm"
@@ -24,6 +24,11 @@ optdepends=(
     'vulkan-icd-loader: soporte Vulkan'
     'pulseaudio: audio del sistema'
     'pipewire-pulse: audio moderno'
+    # BigPEmu (Jaguar) es el unico emulador que exige GLU y GLEW del sistema
+    # (su build aarch64 los deja indefinidos). Sin ellos aborta con
+    # "One or more vital systems failed to initialize. Make sure libsdl2 and libgl/libglu are accessible."
+    'glu: GLU para BigPEmu (libGLU.so.1)'
+    'glew: OpenGL Extension Wrangler para BigPEmu (glxewInit)'
 )
 source=()
 sha256sums=()
