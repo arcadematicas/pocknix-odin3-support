@@ -61,9 +61,14 @@ fi
 if [ "${DO_PLUGIN}" = 1 ]; then
   echo "### Plugin PocknixControl"
   push packages/pocknix-decky/pocknix-control/main.py /usr/share/decky-plugins/PocknixControl/main.py 755
+  # py_modules + dist: tar a un fichero temporal y extraer en remoto. (Un pipe directo no
+  # vale: `sudo -S` consume el stdin y tar se queda sin datos.)
   echo "==> py_modules + dist (arbol)"
-  tar -C "${HERE}/packages/pocknix-decky/pocknix-control" -cf - py_modules dist \
-    | ssh "${HOST}" "${SUDO} tar -C /usr/share/decky-plugins/PocknixControl -xf -"
+  local_tar="/tmp/pocknix-control-$$.tar"
+  tar -C "${HERE}/packages/pocknix-decky/pocknix-control" -cf "${local_tar}" py_modules dist
+  scp -q "${local_tar}" "${HOST}:/tmp/pocknix-control.tar"
+  rm -f "${local_tar}"
+  ssh "${HOST}" "${SUDO} tar -C /usr/share/decky-plugins/PocknixControl -xf /tmp/pocknix-control.tar && rm -f /tmp/pocknix-control.tar"
   SESSION="$(ssh "${HOST}" "cat /home/deck/.local/state/pocknix-session 2>/dev/null || echo plasma")"
   if [ "${SESSION}" = "gamescope" ]; then
     echo "⚠️  Steam en modo juego — NO reinicio pocknix-decky-loader (crash de steamwebhelper)."
