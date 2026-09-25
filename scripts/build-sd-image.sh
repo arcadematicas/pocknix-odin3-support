@@ -146,8 +146,9 @@ EOF
   chroot "${root}" systemctl enable pocknix-fancontrol.service pocknix-fex-binfmt.service \
         pocknix-volumed.service pocknix-gamescope-rt.service pocknix-powerd.service 2>/dev/null || true
   chroot "${root}" systemctl enable pocknix-decky-sync.service pocknix-decky-loader.service 2>/dev/null || true
-  # pocknix-flathub.service is deliberately absent: the NM dispatcher starts it once a link is
-  # up; at boot it always failed on DNS.
+  # pocknix-flathub.service is deliberately NOT enabled: the NM dispatcher starts it once a link
+  # is up; a boot-transaction start would stall multi-user.target for the >300 MB flatpak seed
+  # (and at boot it always failed on DNS anyway).
   chroot "${root}" systemctl enable pocknix-waydroid-tuning.service 2>/dev/null || true
 
   # Steam manages Wi-Fi only through NetworkManager; iwd is its backend and must not run its
