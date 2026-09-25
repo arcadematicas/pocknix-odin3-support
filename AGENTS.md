@@ -11,8 +11,141 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
 
 ## Estructura de repos
 - `/home/fransis/pocknix-odin3-project/pocknix-odin3-support/` — **NUESTRO repo** (git, remote = `arcadematicas/pocknix-odin3-support`). Todo el trabajo de la Odin 3 va aquí: `config/`, `kernel/` (parches), `RESEARCH-ARM-DISTROS.md`, `POCKNIX-EXPERIENCE.md`, `BATTERY-ISSUE.md`.
-- `/home/fransis/pocknix-odin3-project/pocknix-os/` — repo UPSTREAM de shuuri-labs (NO pushear a su remote; es clon de trabajo). El kernel se compila desde aquí.
+- `/home/fransis/pocknix-odin3-project/pocknix-os/` — clon de trabajo del repo UPSTREAM de shuuri-labs (NO pushear a su remote `origin`). El kernel se compila desde aquí.
+  - **Remotes**: `origin` = `shuuri-labs/pocknix-os` (upstream, solo fetch) · `arcadematicas` = **nuestro fork** (aquí sí se pushea).
+  - **`odin3-sm8750` es LA RAMA DEL PROYECTO** (ver "MODELO DE RAMAS" abajo): todas nuestras modificaciones + upstream mergeado encima.
+  - `odin3-pr` — rama limpia para el PR upstream (#81, **aparcado**). Solo lo que upstream puede aceptar.
+- **`stshunz/deckstation-arm`** — repo de **DeckStation ARM** (emulación portable para aarch64/armv7h). ⚠️ **DeckStation es un proyecto INDEPENDIENTE, de autoría de `stshunz`** (nuestro compañero, creador original). **NO está vinculado a Pocknix** (aunque en el futuro Fransis podrá integrarlo por su parte). Todo autocontenido en `/opt/deckstation/`: scripts de setup/launcher/update, configs de emuladores sanitizadas (rutas relativas), PKGBUILD (`deckstation-arm`). Los emuladores (AppImages) NO están en git: se descargan desde GitHub/PkgForge con `deckstation-setup`. Clon local: `/home/fransis/deckstation-arm/`. La versión x86_64 (original, más completa) está en `stshunz/deckstation-x86_64` — NO mezclar.
+- **`stshunz/deckstation-x86_64`** — repo de **DeckStation x86_64** (PC/Steam Deck, versión original). Misma autoría (`stshunz`) e independencia. Clon local: `/home/fransis/deckstation-x86_64/`.
 - **arcadematicas = nosotros** (confirmado). Todo commit a `pocknix-odin3-support` va a arcadematicas.
+
+## 🔀 MODELO DE RAMAS (15/09/2026) — LEER ANTES DE COMPILAR
+
+- **`odin3-sm8750` = LA RAMA DEL PROYECTO.** Todo nuestro trabajo vive aquí: DeckStation + WProton
+  (nuestra capa de emulación), MAKO, kernel 7.2.4 + parches, fixes de arranque/apagado/OOBE,
+  firmware ADSP… **y upstream mergeado encima**. Se sincroniza periódicamente con `origin/main`.
+- **`odin3-pr`** = rama limpia para el PR upstream (#81, aparcado).
+- **⚠️ REGLA DE ORO**: un fix hecho en una rama **NO** existe en la otra. Ya nos ha mordido 3 veces
+  (el marker OOBE, el `apply=7` y los sentinels de apagado/reinicio estaban en `odin3-pr` —o solo en
+  papel— y la imagen nueva salió sin ellos). **Antes de compilar una imagen: `git diff odin3-sm8750 odin3-pr`
+  y comprobar que los fixes están portados.**
+- **Sincronizar con upstream**: `git fetch origin` → mergear `origin/main` en una rama aparte
+  (`sync/upstream-<tag>`), resolver conflictos, **verificar el build**, y solo entonces mergear a
+  `odin3-sm8750`. **Merge, no rebase** (preserva nuestros commits como propios).
+  - Upstream v0.4 hizo la **capa de emulación OPCIONAL** (`POCKNIX_EMULATION=1` la mete en la imagen;
+    por defecto NO se instala). Nuestra **DeckStation/WProton** es una capa aparte y siempre va.
+    Los paquetes de emulación de upstream se conservan (opt-in) pero no se instalan.
+- **`DEVICE=sm8750` es OBLIGATORIO** en `make build` / `make kernel` (por defecto compilan sm8550).
+
+## 🏗️ ESTRUCTURA DEL PROYECTO (16/09/2026) — LEER SIEMPRE
+
+### Los cuatro repos y su papel
+
+| Repo / rama | Papel |
+|---|---|
+| **`arcadematicas/pocknix-os`** rama **`odin3-sm8750`** | **NUESTRO SISTEMA.** Fork de `shuuri-labs/pocknix-os`. Upstream mergeado + soporte del Odin 3 + nuestro desarrollo (DeckStation, MAKO, daemons, parches). **Aquí se compila.** Sigue recibiendo actualizaciones de pocknix. |
+| **`arcadematicas/pocknix-odin3-support`** (`master`) | **EL CENTRO.** Fuente de verdad de lo nuestro: parches de kernel/gamescope, paquetes propios, `overlay/`, `tools/`, docs. |
+| `shuuri-labs/pocknix-os` (remote `origin`) | **Upstream.** Solo `git fetch`. |
+| **`odin3-pr`** | 🔒 **CONGELADA.** Rama limpia del **PR upstream #81** (soporte del Odin 3). **NO se toca** salvo para rebasear/responder al mantenedor. **Nada de DeckStation/MAKO va aquí.** |
+
+**Directorio de trabajo** (donde se ejecuta el build):
+`/home/fransis/pocknix-odin3-project/pocknix-os/`
+
+### ⚠️ REGLAS DE ORO
+
+1. **Se edita SIEMPRE en `pocknix-odin3-support`.** `pocknix-os` es un árbol de compilación:
+   **NO se edita a mano** — así es como se han perdido fixes (OOBE, sentinels, daemons…).
+2. **Antes de compilar**: `tools/sync-to-os.sh` (aplica nuestro contenido). El build llama a
+   `tools/check-sync.sh`, que **aborta si el árbol no coincide con el centro**.
+3. **Lo upstreamable** (kernel, DTS, BSP, fixes de arranque) se saca del centro a `odin3-pr` en
+   commits limpios. **Nuestro desarrollo** (DeckStation, MAKO…) se queda en `odin3-sm8750`.
+4. **`DEVICE=sm8750` es OBLIGATORIO** en `make build` / `make kernel` (por defecto compilan sm8550).
+5. Los parches de kernel se aplican **siempre** (todo `kernel/sm8750/patches/*/` en orden numérico:
+   `05-speedup` → `10-mainline` → `20-sm8750` → `30-version`). `build-kernel.sh` **re-extrae el fuente**
+   en cada compilación, así que un parche añadido después de compilar NO está en el kernel hasta que
+   se recompile.
+
+### 🛡️ DETECTOR DE REGRESIONES DEL MERGE (obligatorio tras cada merge de upstream)
+El merge de upstream v0.4 **pisó 11 cambios nuestros** que vivían solo en `odin3-pr` (entre ellos
+`pocknix-oobe-marker.service` sin habilitar → bucle de reinicio del OOBE, y los `socs` de
+fex-emu/mangohud/mesa/turnip-arm sin `sm8750`). **Comprobar SIEMPRE después de mergear**:
+
+```bash
+cd pocknix-os
+BASE=$(git merge-base odin3-pr origin/main)
+# OJO: comparar contra el ARBOL DE TRABAJO, no contra HEAD. Nuestros cambios al arbol de
+# compilacion NO estan commiteados (los aplica sync-to-os.sh), asi que `git diff HEAD` da
+# falsos positivos en todo lo que el sync acaba de aplicar.
+git diff --name-only "$BASE" odin3-pr | while read f; do
+  git cat-file -e "origin/main:$f" 2>/dev/null || continue
+  git diff --quiet origin/main -- "$f" || continue     # el arbol difiere de upstream -> tenemos cambio -> ok
+  git diff --quiet odin3-pr origin/main -- "$f" || echo "⚠️ PERDIDO: $f"
+done
+```
+Los "perdidos" que suelen quedar son **cosméticos** (comentarios en `config/pocknix.conf`,
+`pocknix-diag`, `pocknix-flathub-dispatcher`, `devices/README.md`) o de **emulación**
+(`pocknix-emulation-full`), que no instalamos. Los que importan de verdad son los `socs`, los
+servicios de `pocknix-diag`/`pocknix-flathub` y el resto de la capa propia.
+
+### 📖 Guía de compilación para colaboradores
+**`pocknix-odin3-support/BUILD.md`** — requisitos, pasos desde un clon nuevo, qué hace cada fase,
+problemas conocidos y cómo sincronizar con upstream. **Verificado clonando desde cero (16/09).**
+
+### 📌 PR upstream #81 (soporte del Odin 3)
+Abierto, **CONFLICTING** desde v0.4 → habrá que rebasearlo. El mantenedor (`shuuri-labs`) dijo el
+15/09 que lo estaba revisando. **Plan**: esperar su respuesta y hacer un solo push (rebase + lo que
+pida). No moverle el suelo mientras revisa.
+
+### Estado de la reorganización (PENDIENTE)
+
+- [ ] Reorganizar el repo de soporte: `docs/`, `kernel/patches/`, `gamescope/patches/`, `overlay/`,
+      `packages/`, `devices/sm8750/`, `tools/`
+- [ ] Escribir `tools/sync-to-os.sh` + `tools/check-sync.sh`
+- [ ] **Portar la deuda**: 42 ficheros de `config/` + 3 parches que hoy están SOLO en soporte y por
+      tanto NO entran en la imagen (ver sección siguiente)
+
+### 🔴 DEUDA CONOCIDA (15/09/2026) — lo que NO está en el build
+
+**✅ RESUELTO en el repo de soporte (commit `31dc74d`)** — falta sincronizarlo cuando el build pare:
+
+| Qué | Estado |
+|---|---|
+| Daemons + servicios del Odin 3 (42 ficheros) | ✅ empaquetados en `packages/pocknix-bsp-sm8750/` |
+| `pocknix-bsp-sm8750` / `pocknix-device-sm8750` | ✅ creados (¡no existían y estaban referenciados!) |
+| `0001-adreno-…gx-collapse-before-cx.patch` | ✅ en `kernel/patches/` → se sincroniza |
+| `pocknix-fancontrol` / `pocknix-fan-mode` (más nuevos aquí) | ✅ en `packages/pocknix-bsp-common/` |
+| `0079` + DTS | ✅ traídas las versiones del build (eran las buenas) |
+| `0002-input-rsinput` | ✅ superado por `0031`+`1002`+`1004` → `reference/superseded-patches/` |
+| Duplicados (decky-plugin, pocknix-control-plugin, ayn_mcu, 01-ayn-controller) | ✅ eliminados |
+| `tools/sync-to-os.sh` + `tools/check-sync.sh` | ✅ escritos y probados |
+
+**⏳ PENDIENTE**
+
+| Qué | Nota |
+|---|---|
+| Sincronizar al build | `tools/sync-to-os.sh` — **cuando el build no esté corriendo** |
+| `gamescope/patches/0004-fps-limit-atom-persist.patch` | Copiar no basta: el PKGBUILD de gamescope debe referenciarlo en `source=()` |
+| 22 parches `05-speedup` | En el árbol, pero **no en el kernel grabado** → recompilar |
+| **Lanzador de sesión** | El build usa el modelo **embebido** (`gamescope -e -- steam`); `reference/launcher-variants/pocknix-steam.steamos-model` es el **modelo SteamOS** (gamescope standalone + Steam hermano). **DECISIÓN PENDIENTE** |
+| Verificar el PR #81 completo | `git diff odin3-sm8750 odin3-pr` |
+| Rebuild + reflasheo | Con todo lo anterior |
+
+## GitHub — usuarios y colaboradores
+- **`arcadematicas`** = nosotros (Fransis). Colaborador en los repos de DeckStation (que ya no aloja).
+- **`stshunz`** = **compañero y CREADOR ORIGINAL de DeckStation** (https://github.com/stshunz). **Toda la autoría de DeckStation es suya.** Es el **owner** de los repos de DeckStation. Tiene repos propios: `stshunz/WProton` y `stshunz/WProton_ARM`.
+- **DeckStation es un proyecto independiente**: no pertenece ni depende de Pocknix ni de ningún otro sistema operativo. Si en el futuro se vincula a Pocknix, será por iniciativa de Fransis y por separado.
+- **TRANSFERENCIA COMPLETADA (14/09/2026)**: los repos DeckStation están en la cuenta de su autor, **`stshunz`** (Opción A):
+  - `https://github.com/stshunz/deckstation-arm`
+  - `https://github.com/stshunz/deckstation-x86_64`
+  - Clones locales con remote actualizado. GitHub deja redirects de las URLs antiguas (`arcadematicas/...`).
+  - `arcadematicas` (Fransis) figura como colaborador (permiso write) en ambos.
+- **Flujo de trabajo git**: GitHub = fuente de verdad. `git pull` antes de trabajar → editar → `git add/commit` → `git push`. La Odin (`/opt/deckstation/`) NO es fuente de verdad: los cambios hechos allí hay que traerlos al clon local y commitear.
+- **⚠️ TODO cambio de DeckStation va TAMBIÉN a `stshunz/deckstation-arm`** (no solo a nuestro
+  centro). Nuestro `packages/deckstation-arm/` es la copia vendored para el build de la Odin; el
+  repo de stshunz es el original. **Antes de tocar nada: `diff` el clon con nuestro centro** (ya
+  hubo drift: dos arreglos del PKGBUILD estuvieron semanas sin subir).
+- **⚠️ El `.gitignore` de `deckstation-arm` tiene entradas críticas** (`Apps/`, `saves/`, `logs/`,
+  `*.AppImage`): al añadir reglas nuevas, **appendear**, nunca sobrescribir.
 
 ## Acceso a la Odin
 - SSH: alias `odin` (Tailscale IP cambia; config en `~/.ssh/config`). Usuario `deck`, contraseña sudo `pocknix`.
@@ -102,117 +235,147 @@ Decky, daemons, etc. **KERNEL BUENO = 7.2** (el 7.1 NO funciona en esta Odin).
   `idleSeconds`) → lo expone `oled_care_status()` y lo muestra la pestaña Lighting.
   Antes la UI **no tenía ningún feedback** y por eso parecía que no funcionaba.
 
-## Referencias útiles
-- `POCKNIX-EXPERIENCE.md`, `RESEARCH-ARM-DISTROS.md`, `BATTERY-ISSUE.md`, `IDEAS.md` en el repo.
-- Issues upstream relevantes: shuuri-labs/pocknix-os #54 (Odin 3), #65 (suspend drain Odin 2).
-- Proyectos ARM de referencia: ROCKNIX (PR #2840 charge bypass), ArmadaOS, SteamOS-Ubuntu, Nova-Deck.
+## 🧹 SISTEMA FINO + SENSORES (11/09/2026)
+- **`odin3-display.service` ARREGLADO**: fallaba (única unidad en `failed`). Causa:
+  `echo 3 > /sys/class/drm/card0-DSI-1/rotation` (ese sysfs ya no existe; la
+  rotación es propiedad DRM) y dos bucles `modprobe` rotos (`modprobe` sin
+  argumento, con `$mod` sin usar) de módulos que no existen. Corregido: solo
+  `echo on > status` + `brightness` + `true`. Backup:
+  `/etc/systemd/system/odin3-display.service.bak-20260911`. `systemctl --failed` = vacío.
+- **Bluetooth ACTIVADO**: `bluetooth.service` enabled+active (adaptador `hci0`,
+  no bloqueado). `bluedevil` ya es funcional.
+- **SENSORES / BRILLO ADAPTATIVO**: el brillo adaptativo usa el **sensor de luz
+  ambiental (ALS)**, NO el acelerómetro (el acelerómetro es para auto-rotación).
+  Ambos dependen del stack de sensores Qualcomm (SSC). Estado: `hexagonrpcd` está
+  instalado y su servicio `hexagonrpcd-adsp-sensorspd.service` está enabled, pero
+  **sale a los ~0.5s y no expone dispositivos IIO** (`/sys/bus/iio/devices/` vacío;
+  `pgrep hexagonrpcd` vacío). Log: `Unexpected buffer count: 1f050100` tras
+  `INIT_ATTACH_SNS`. Consecuencia: `kscreen-doctor` reporta
+  `Automatic brightness: unsupported` y no hay auto-rotación. **Es bring-up que
+  falta** (registry/`sns_reg` + ADSP sensor PD), no un simple paquete.
+  Ficheros de config reales de Android ya en `/usr/lib/firmware/sensors/`.
 
-## ESTADO ACTUAL (09/09/2026) — pendientes para retomar
-- **CARGA BATERÍA (prioridad #1)**: parche 0080 instalado (kernel md5 9fa025e en /flash, backup KERNEL.bak-012448) pero el firmware ADSP responde "unknown message 0x33" al SET_USB → NO carga en Linux. Siguiente paso: desensamblar `/tmp/qti_battery_charger.ko` (extraído del Android) para hallar el opcode real de esta unidad, o probar reset del power-path tocando el toggle de bypass en Android y volviendo a Linux con cargador. Workaround: cargar apagada/Android.
-- **Frame limiter QAM**: gamescope con parche Nova-Deck instalado (v6644cc9+) → validar con un juego que el límite 60 del QAM se respeta (átomo GAMESCOPE_FPS_LIMIT=60 ya confirmado).
-- **Switch a escritorio desde Steam**: shim con SwitchToDesktopMode real instalado (md5 a7cba1f) → validar desde el menú de Steam.
-- **Batería % congelado**: parche 0079 (poll 30s) instalado → debería refrescar solo; confirmar en uso.
-- **MangoHUD + Postal 2**: toggle por paddle crashea con ese juego (mangoapp bucle) → evitar activar HUD en Postal 2; investigar si molesta.
-- **Overlay Steam sobre juegos**: sigue sin funcionar (upstream FEX/ARM); se oyen menús pero no se dibuja. No es nuestra config.
-- Cargar la Odin y arrancar en Linux para validar todo lo anterior.
+## 🚀 MEJORAS DE ARMADAOS IMPLEMENTADAS (11/09/2026)
+- Doc: `pocknix-odin3-support/ARMADAOS-IMPL.md`. Todo en las fuentes de `pocknix-os`
+  (desplegado en la Odin; suspensión verificada).
+- **1) `pocknix-steam`**: feature gates `STEAM_GAMESCOPE_*` (VRR/tearing/HDR/NIS/
+  `DYNAMIC_FPSLIMITER`/MULTIPLE_XWAYLANDS/color managed...). No definíamos ninguno.
+- **2) `pocknix-desktop-env`** (nuevo autostart fase 1): importa `WAYLAND_DISPLAY`/`DISPLAY`/
+  `XAUTHORITY` a `systemd --user` y al bus D-Bus → arregla el crash del daemon de KScreen.
+- **3) `pocknix-proton-wrapper`**: inyecta `libwayland-client`/`libxkbcommon` x86 en el prefijo
+  (mando muerto en Proton x86) + repara el mando atascado (`VID_28DE` sin promover en
+  `system.reg`) + `DXVK_HUD=none`. Incluye los `.so` x86 en `proton-inject/`.
+- **NO portado** (ya lo tenemos o no aplica): `controller-type` (→ `pocknix-gamepad-target`),
+  perfiles FEX, `scx_loader` (usamos `scx_lavd`), Btrfs nodatacow (ext4), `armada-powerd`
+  (tenemos fancontrol/lavd-mode/powerd/plugin Decky). **Suspensión resuelta** (s2idle real +
+  hook de pantalla). Pendiente: MTP, HDR (`HDR_NITS`), UCM audio Odin 3.
 
-## FRAME LIMITER QAM — ⏳ PROBAR ESTA NOCHE (actualizado 18/09/2026)
+## DeckStation (Odin 3) — estado 18/09/2026
 
-- **Sintoma**: el selector de fps del QAM (24/30/60, global e individual) se mueve pero los fps no varian.
-- **CAUSA RAIZ (diagnostico del 09/09)**: el cliente Steam ARM64 NO comunicaba el limite a gamescope
-  por NINGUN canal:
-  - Atom X GAMESCOPE_FPS_LIMIT: NO lo escribia (se quedaba en 60, verificado con xprop -root en :0)
-  - Protocolo Wayland de gamescope: NO se conectaba al socket (ss -x: solo gamescope-wl consigo mismo)
-  - D-Bus (pocknix-steamos-manager): NO llama
-  - Archivo de config: NO guardaba nada (grep fps en todos los .vdf = vacio)
-- **WORKAROUND (09/09)**: `gamescopectl debug_set_fps_limit 60` en `pocknix-steam`. Limite FIJO 60.
-  → **YA NO ESTA** (se quito el 16/09) y no existe en ningun otro sitio. El backup
-  `/usr/bin/pocknix-steam.bak-fps60` tampoco existe ya.
-- **🔄 ACTUALIZACION 18/09 (manana) — ESTO CAMBIA EL DIAGNOSTICO**:
-  - **Steam SI persiste el limite por app** en
-    `~/.local/share/Steam/userdata/<id>/config/localconfig.vdf`:
-    `"Gamescope" { "AppTargetFrameRate" { "<appid>" "<fps>" } }`
-    (el 18/09 a las 08:00 tenia 1 entrada y el fichero se reescribe con actividad).
-    **Esa era exactamente la pieza que faltaba** para el "daemon que lea el limite de un archivo".
-  - El atom marca **60** y el parche `0004-fps-limit-atom-persist.patch` **si** esta aplicado
-    (gamescope `3.16.25-7-g6644cc9a+`). Pero **60 no prueba nada**: el 09/09 ya se observo 60
-    sin que Steam lo escribiera → hay que hacer el test para distinguir.
-  - Canal de Steam: `steamdeck_publicbeta`. El shim no expone nada de fps.
-- **⏳ TEST PENDIENTE (30 s, necesita UI)**: en Game Mode, cambiar el limite del QAM a **30** y mirar
-  (a) si `localconfig.vdf` pasa a 30, (b) si el atom pasa a 30, (c) si el juego va a 30.
-  - **Si cambia el atom** → **ya funciona** (un cliente mas nuevo lo arreglo) → cerrar el tema.
-  - **Si solo cambia el fichero** → **implementar el daemon**: vigilar `localconfig.vdf` (inotify)
-    + el atom `GAMESCOPE_FOCUSED_APP` y aplicar con `gamescopectl debug_set_fps_limit <fps>`.
-    El parche de gamescope ya hace **persistir** el atom, asi que con eso deberia quedar cerrado.
+**Ubicación en la Odin**: `/opt/deckstation/` (paquete `deckstation-arm`; comando
+`deckstation`). El detalle exhaustivo está en
+`stshunz/deckstation-arm/CAMBIOS-REALIZADOS.md` (secciones 8-11).
 
-## FIX % BATERIA - INSTALADO Y VERIFICADO (09/09/2026)
-- **CAUSA**: el firmware Debug_Board congela voltage_ocv tras el arranque (solo lo reporta una vez). El parche 0078 usaba ese OCV congelado -> % estatico.
-- **FIX**: qcom_battmgr_estimate_percent() ahora usa voltage_now (que SI se actualiza) + compensacion por resistencia interna (~160 mOhm: drop = |I|*R). V_ocv_est = V_now + |I|*R.
-- **VERIFICADO**: antes % congelado en 96; tras el fix, % = 48 con V_now 3.89V (bateria real al 48%). El % baja conforme se descarga.
-- Kernel instalado: md5 dfe90a1 (backup /flash/KERNEL.bak-fixpct). Modulo battmgr con fix OCV (5 refs a voltage_now/drop).
-- NOTA: la tabla OCV tiene escalones de ~50-100mV; el % cambia cuando el voltaje cruza el umbral (no es continuo).
+### Arquitectura portable
+- **ES-DE**: `DeckStation.AppImage` con home en `DeckStation.AppImage.home/ES-DE/`.
+- **es_find_rules.xml / es_systems.xml**: `DeckStation.AppImage.home/ES-DE/custom_systems/`
+  — rutas relativas `./Apps/...` y `%ROMPATH%/...`.
+- **Wrappers `lanzar.sh`**: uno por emulador; limpia `APPIMAGE`/`APPDIR`/`OWD`, exporta
+  `HOME` al `*.home` del AppImage (portable) y fija `SDL_VIDEODRIVER`.
+- **RetroArch**: config portable en `Apps/RetroArch/RetroArch-Linux-aarch64/*.AppImage.home/.config/retroarch/`.
+  `video_driver = glcore` (el Vulkan de Turnip en Adreno 8xx relentiza) y menú **XMB +
+  FlatUX** (requiere los assets de `libretro/retroarch-assets`, no van en git).
 
-## CARGA BATERIA - O PCODES REALES DESCUBIERTOS (09/09/2026) - ¡SOLUCION ENCONTRADA!
-- **METODO**: desensamblar /tmp/qti_battery_charger.ko (Android) con aarch64-linux-gnu-objdump -d -j .text.
-- **HALLAZGOS (del desensamblado de usb_charge_now_store y charge_control_en_store)**:
-  - El firmware del Odin 3 NO usa el protocolo mainline. El mensaje Android (24 bytes) es:
-    - offset 0-7: header 8B = 0x10000800a (owner 0x800a=32778=BATTMGR en low32, type 1=REQ_RESP en high32)
-    - offset 8-11: opcode REAL: usb_charge_now=0x16(22), charge_control_en=0x20(32)
-    - offset 12-19: property<<32 (usb_charge_now usa prop 14=USB_CHARGE_ENABLE, charge_control_en usa prop 24)
-    - offset 20-23: value (0/1)
-  - El mainline usa opcode 0x33 (USB_PROPERTY_SET=51) -> el firmware responde "unknown message 0x33" porque espera 0x16.
-  - El mainline usa header de 12B (owner+type+opcode separados) y property en 32 bits -> formato distinto.
-- **IMPLICACION**: para activar la carga hay que enviar el mensaje en FORMATO ANDROID con opcode 0x16.
-- **PENDIENTE**: escribir el parche 0081 que envia el mensaje en formato Android (header 8B + opcode 0x16 + prop<<32 + value). 
-  - Opcion A: modificar qcom_battmgr_request_property para el caso USB (header compacto + opcode 0x16).
-  - Opcion B: hardcodear el mensaje en el enable_worker.
-- El .ko de Android esta en /tmp/qti_battery_charger.ko (si se pierde, re-extraer via adb del Android).
+### Configuración base reproducible (18/09/2026)
+- `configs/` **es** la config base: `scripts/deckstation-configs.sh` la despliega según
+  `configs/deploy-manifest.txt` (token `{HOME:App}` = el `.home` del emulador). No
+  destructivo. Lo llaman el setup y el launcher. **Ya no hace falta el payload de
+  MediaFire del Updater** (era x86_64).
+- `bios/` + `scripts/deckstation-bios.sh`: solución externa para las BIOS (copyright).
+  El usuario deja sus ficheros por sistema y el script los reparte.
 
-## ESTADO CRITICO - ODIN SIN RESTAURAR (09/09/2026)
-- **URGENTE**: /flash/KERNEL contiene el kernel de ROCKNIX adaptado que NO arranca. Hay que restaurar /flash/KERNEL.bak-nuestro -> /flash/KERNEL.
-- La Odin no bootea hasta que se restaure (Fransis la restaurara con la SD al llegar a casa).
-- Contexto: se probo el kernel ROCKNIX 20260901 (por si arreglaba la carga) pero no arranca con nuestro cmdline/DTB. No volver a intentar sin el DTB correcto.
+### Cores (ojo)
+- **Suyu (Switch)**: las claves van en `<retroarch>/system/suyu/keys/` — NO en la raíz de
+  `system/`. Sin ellas el core revienta en `aes_util.cpp`.
+- **Suyu y GooseStation (PSX)** necesitan su `<command>` en `es_systems.xml`: un core
+  copiado sin `<command>` no aparece en ES-DE.
+- **Idioma de Suyu**: el core de serie **no tiene opción de idioma y no lee ningún fichero
+  de config** → los juegos salían en inglés. Parche propio
+  (`packages/suyu-libretro/suyu-language.patch`) que añade la core option
+  `suyu_language` → *RetroArch > Opciones del core > Suyu > Console Language > Spanish*.
+  El rebuild es incremental (~20 s: solo `retro_core.cpp`).
+- **⚠️ Core options ≠ Overrides (RetroArch)**: si al guardar sale *"No hay nada que guardar"*
+  es que se está usando **Overrides**, que NO guarda core options. Las core options van a
+  `<retroarch>/config/<corename>/<corename>.opt` (se pueden **escribir a mano**); se
+  persisten con *Settings → Core → Manage Core Options → Save Core Options*. NO es un
+  problema de permisos (todo el árbol es `deck:deck`).
 
-## KBUILD SPEEDUP (parches para acelerar compilacion)
-- 23 parches experimentales guardados en: /run/media/fransis/ROMS16TB/proyectos Alfred/kbuild-speedup/
-- Ver LEEME.txt ahi para el detalle. Pendiente de re-extraer de forma robusta e integrar.
+### Setup y cores (18/09/2026)
+- `deckstation-setup.sh` **ya no descarga el RetroArch de Android** (bajaba
+  `RetroArch_ra32.apk` y lo descomprimía en `Apps/RetroArch/`, rompiendo RetroArch en una
+  instalación limpia; y es el script que ejecuta Pocknix Tools). Ahora: baja los assets del
+  buildbot (~75 MB, iconos XMB), enlaza los cores del sistema, despliega lanzar.sh +
+  configs + bios, y **abre el Updater** para los emuladores.
+- `deckstation-cores.sh`: enlaza `/usr/lib/libretro/*.so` y `/usr/share/libretro/info/*.info`
+  a la carpeta portable de cores (así cualquier core empaquetado aparece en ES-DE).
 
-## ✅ CARGA BATERIA - RESUELTO Y VERIFICADO (10/09/2026 noche)
-- **ESTADO: LA BATERIA YA CARGA EN POCKNIX.** Verificado: `status=Charging`, `current=+424207`,
-  `qcom-battmgr-usb online=1` (553mA), `ucsi 3A`, `typec power_role=source [sink]`,
-  firmware `ulog "Test mode" = 0`.
-- **EL FIX**: copiar a `/lib/firmware/qcom/sm8750/` los **DOS** ficheros de firmware de ArmadaOS:
-  - `adsp.mbn` (21907848, md5 `6cfcbbb80b956ddad76950c038ea1a3e`)
-  - `adsp_dtb.mbn` (167736, md5 `d88d7ecbba78ecacb13adcc7bcbe131d`) ← **ESTA era la clave**
-- **POR QUE**: el `adsp_dtb.mbn` es la config del cargador dentro del ADSP e incluye la
-  **autenticación de batería** (`batt_auth_cfg`, `batt-auth-public-key`, `batt-unauth-charging-action`,
-  `en-batt-auth`). El de Pocknix (`632e50f2`) NO la tenía → el firmware no autenticaba la batería →
-  handler de error → **TEST MODE (estado 9)** → no cargaba.
-- **DIAGNOSTICO**: `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` + leer `pmic_pdcharger_ulog` (canal
-  `PMIC_LOGS_ADSP_APPS`) muestra la decisión interna del firmware. Ya compilado en el kernel 7.2.4.
-- **Backups en la Odin**: `adsp.mbn.bak-linux17` (`a1206f38`) y `adsp_dtb.mbn.bak-orig` (`632e50f2`).
-- **PERMANENTE EN EL BUILD (11/09/2026)**: los 2 ficheros están en
-  `pocknix-os/devices/sm8750/firmware/qcom/sm8750/` y `build-image.sh`
-  (`install_firmware()`) los aplica **después** del overlay de ROCKNIX → ganan.
-  Ya no hay que copiarlos a mano en la Odin.
-- **CORRECCION**: el `0x1fffffff` del dmesg es `SERVREG_SERVICE_STATE_UP` (el PDR **sí** sube).
-- **VER DETALLE EN**: BATTERY-ISSUE.md (secciones "premisa CORREGIDA", "HERRAMIENTA...", "SOLUCIÓN ENCONTRADA").
+### Modo juego de Steam (18/09/2026)
+- **DeckStation aparece en Game Mode**: `pocknix-steam-sync` (que `pocknix-steam` llama
+  justo antes de arrancar Steam, el único momento seguro para escribir `shortcuts.vdf`)
+  estaba reapuntado a la capa de emulación de upstream → buscaba `~/ES-DE` +
+  `pocknix-play`, no encontraba nada y el tile nunca aparecía. Ahora emite
+  **`DeckStation` → `/usr/bin/deckstation`** (idempotente, marca `DevkitGameID="pocknix"`).
+- **Fix necesario**: el launcher de DeckStation no fijaba `SDL_VIDEODRIVER` → ES-DE salía
+  en **negro** desde gamescope. Ya lo fija (wayland/x11).
+- **Pocknix Tools**: `do_deckstation()` prepara DeckStation y **ofrece** el asistente de
+  WProton; hay además una entrada propia "Set up WProton (Windows games)...".
+- **Moonlight (juego remoto)**: `moonlight-qt` del repo `extra` de ALARM (aarch64 nativo) +
+  tile "Moonlight" en Game Mode vía `tiles()` de `pocknix-steam-sync`. Icono PNG generado con
+  `rsvg-convert` (Steam no acepta SVG). Corre nativo en Wayland (el plugin viene en
+  `qt6-base`). **El host necesita Sunshine** (o GeForce Experience).
 
-## ✅ KSCREEN / PANTALLA - RESUELTO (11/09/2026)
-- **SINTOMA**: en el escritorio Plasma, Ajustes → Pantalla no mostraba el monitor.
-- **CAUSA**: faltaba el paquete **`kscreen`** (solo `libkscreen` + `kscreenlocker`).
-  Sin él no existe el módulo Ajustes → Pantalla (`kcm_kscreen.so`) ni el KDED
-  `kscreen.so`; `libkscreen` sí da `kscreen-doctor` (por eso el script de rotación
-  funcionaba pero Ajustes no).
-- **FIX**: `sudo pacman -S --noconfirm kscreen` (+ `kimageformats`). Persistente.
-- **VERIFICADO**: `kcm_kscreen` carga en systemsettings; `kscreen-doctor -o` enumera
-  `DSI-1 1080x1920@120 scale 2.5 rotation Rotate270`; daemon `org.kde.KScreen`
-  con backend `kwayland`.
-- **NO era** kernel/DRM/DTS: el panel siempre se detectó (conector DSI-1, driver
-  `panel-chipone-icna35xx`, propiedad `panel orientation` = 3 Right Side Up).
-- La **imagen oficial ya incluye `kscreen`** vía `pocknix-desktop-full`; esta Odin
-  no tiene ese meta (escritorio montado a mano).
-- **VER DETALLE EN**: KSCREEN-ISSUE.md.
+### Pendiente
+- **GooseStation**: licencia CC-BY-NC-ND → servidor externo + descarga (decisión de Fransis).
+- **`suyu-libretro`**: ya lo instala `build-image.sh` como opcional (warn-on-fail) → **ojo:
+  compila desde fuente (submódulos + cmake), build pesado**; si falla, la imagen sale sin el
+  core de Switch.
+- **Accesos por juego en Game Mode**: el código está listo pero necesita
+  `/usr/bin/deckstation-play`.
+- **`setup_arm64_apps.py`**: lista de repos hardcodeada y sin conectar (el instalador real de
+  emuladores es el Updater, desde `updater/git.txt`).
+- PCSX2 / PPSSPP / RPCS3 / Citron / Ryujinx: sin build ARM.
+- Vita3K no es AppImage (`.7z`) → sin `.home` portable ni configs.
+
+## ✅ DECKSTATION ARM — SUBIDO A GIT (14/09/2026)
+
+- **Repo**: `stshunz/deckstation-arm` (público) — https://github.com/stshunz/deckstation-arm
+- **DeckStation es un proyecto INDEPENDIENTE de autoría de `stshunz`** (no vinculado a Pocknix).
+- **Es la versión ARM** (aarch64/armv7h). La versión x86_64 (original) está en `stshunz/deckstation-x86_64`.
+- **Filosofía**: TODO autocontenido en `/opt/deckstation/` (Apps, configs, saves, logs). NADA se mezcla con el sistema host.
+- **En git** (versionado): scripts (setup/launcher/update), configs de emuladores sanitizadas (rutas relativas), configs ES-DE (es_find_rules/es_systems/es_settings adaptados a ARM), autoconfig de RetroArch (610 mandos), PKGBUILD, overlay con comando `deckstation`, docs.
+- **NO en git** (binarios): AppImages de emuladores (~1GB) — se descargan desde GitHub/PkgForge con `deckstation-setup`.
+- **PKGBUILD**: `deckstation-arm` — instala estructura en `/opt/deckstation/` + comando `deckstation` en `/usr/bin/`.
+- **Clon local**: `/home/fransis/deckstation-arm/`
+- **Integración con Pocknix**: NO existe todavía. Si se hace, será por iniciativa de Fransis y por separado (el PKGBUILD se llevaría a `pocknix-os/packages/soc/`).
+
+## ✅ DECKSTATION x86_64 (PC) — SUBIDO A GIT (14/09/2026)
+
+- **Repo**: `stshunz/deckstation-x86_64` (público) — https://github.com/stshunz/deckstation-x86_64
+- **DeckStation es un proyecto INDEPENDIENTE de autoría de `stshunz`** (no vinculado a Pocknix).
+- **Es la versión PC/x86_64** (la original, más completa). Clon local: `/home/fransis/deckstation-x86_64/`.
+- **Fuente original**: `/run/media/fransis/8TB/DeckStation/` (442 GB).
+- **En git** (14 MB, solo texto): scripts (DeckStation.sh, launcher.sh multi-python, mapeador.py, selector_manual.py, compresorKSM.sh, PortProton_wsquashfs.sh, run_squashfs_wrapper.sh, Gestor KSM.desktop), configs de 23 emuladores, ES-DE (custom_systems/settings/scrapers), RetroArch (92 sistemas), evmapy (código fuente), PKGBUILD, overlay, docs.
+- **NO en git**: ROMs, Media (229 GB), wsquashfs (103 GB), Apps (98 GB), bezels (7.8 GB), saves, logs, libs_py*.
+- **PKGBUILD**: `deckstation-x86_64` (arch x86_64).
+- **Rutas sanitizadas**: paths de app → relativas, ROMs → `%ROMPATH%`, listas de ROMs personales eliminadas (melonds RecentROM, pcsx2 RecursivePaths, citron/azahar recentFiles+gamedirs, scummvm juegos, rpcs3 games.yml).
+
+## Bug carga batería — RESUELTO (issue #402 ArmadaOS, 10/09/2026)
+
+- Issue: https://github.com/armada-os/armada/issues/402 (creado por nosotros)
+- **RESUELTO**: ver sección "CARGA BATERIA - RESUELTO". La clave fue el `adsp_dtb.mbn` de ArmadaOS
+  (lleva la config de autenticación de batería). Con los 2 ficheros de firmware de ArmadaOS, carga.
+- Corrección previa: `0x1fffffff` = `SERVREG_SERVICE_STATE_UP` (el PDR sí sube).
+- Diagnóstico: `pmic_pdcharger_ulog` mostró el firmware atascado en TEST MODE (estado 9).
 
 ## ✅ SUSPENSIÓN (s2idle) - RESUELTA (11/09/2026)
 - **SÍNTOMA**: el botón de encendido solo "parpadeaba" la pantalla (apagaba y encendía).
@@ -630,3 +793,293 @@ plugin como root OK; 3 cambios rápidos ya no bloquean; estado final lavd autopi
   no lo pisa; volver a Auto.
 - **NO tocar**: governor cpufreq (`schedutil` es el correcto con scx_lavd), read_ahead SD
   (medido sin diferencia), UFS interna (dejar `none`).
+## IDEAS FUTURAS (pendientes de implementar)
+
+### 🍋 LEPTON (juegos Android en ARM64) — 🗄️ APARCADO (25/09/2026), reabrir en el futuro
+- **Qué es**: capa de Valve para ejecutar juegos Android en Linux ARM64 (creada para el Steam Frame).
+  52/130 juegos del Frame lo usan. Tercer pilar: Proton (Windows) + FEX (x86) + Lepton (Android).
+- **Repo**: `https://gitlab.steamos.cloud/frame-public/lepton/` — clon local `/home/fransis/lepton/`.
+- **Viabilidad en Odin 3**: BUENA — binder+binderfs ya activos en nuestro kernel (build-kernel.sh),
+  Waydroid 1.6.3 + lxc instalados, Turnip OK. Falta: **podman** + construir la imagen Android
+  (do_build.sh, build AOSP pesado).
+- **DECISIÓN (25/09/2026)**: 🗄️ **aparcado** — primero explotar el repo Deckard (binarios listos,
+  ver Referencias útiles). Reabrir cuando toque.
+- **Detalle**: memoria persistente (sección LEPTON) + `/home/fransis/lepton/`.
+
+### 💾 Almacenamiento: ext4 vs F2FS en la UFS interna — 🟡 REVISAR (18/09/2026)
+- **Análisis completo**: `pocknix-odin3-support/docs/IDEAS.md` §6 (+ sección "ALMACENAMIENTO"
+  del `AGENTS.md` del centro).
+- **Medido**: raíz btrfs en microSD → **~82 MB/s** lectura secuencial. Techo real para cargar
+  juegos. No hay datos de la UFS interna todavía.
+- **🔴 F2FS en la microSD: descartado** (perdería snapshots/rollback + checksums + compresión;
+  y en SD el controlador ya hace wear-leveling). *ArmadaOS tiene F2FS en el kernel y su raíz
+  es Btrfs.*
+- **🟡 F2FS en el root de la UFS interna: a revisar** — `pocknix-install-internal` **ya existe**
+  y clona a la UFS **en ext4**, o sea que **ya pierde los snapshots** → F2FS ahí no perdería
+  nada en seguridad. Decidir `ext4` vs `f2fs` y **medir con `fio`**.
+- **🔴 `read_ahead_kb` 128→512: descartado por medición** (6303/6329 ms vs 6340/6378 ms —
+  sin diferencia; la SD está limitada por ancho de banda, no por latencia).
+- **✅ Ya implementado (18/09)**: `f2fs-tools` en `base.list`; `nodatacow` en `steamapps`
+  (`chattr +C`) + `/var/log` + `/var/cache/pacman`. Commits `64bc7e0` / `c6d99bd`.
+
+### Mako Decky (Lossless Scaling para Linux) — ❌ NO FUNCIONA en la Odin 3
+- **Repo**: https://github.com/eugeniosegala/MAKO
+- **Qué es**: plugin Decky que implementa Lossless Scaling (Frame Generation) en Linux.
+- **Integración**: ✅ HECHA — `pocknix-decky` (pkgrel 31). Plugin en `/usr/share/decky-plugins/Mako`, sincronizado a `~/homebrew/plugins/Mako`. **Toggle por juego** en Pocknix Control → Games → "MAKO (Lossless Scaling frame gen)" (commit `148d954`).
+- **Lossless.dll** (software de PAGO — **nunca al repo**): MAKO la lee en runtime de una instalación legal del usuario, en `~/.local/share/Steam/steamapps/common/Lossless Scaling/Lossless.dll`. Instalador en `pocknix-tools` → "Install Lossless Scaling DLL (MAKO)..." (commit `c31e2bc`).
+- **❌ BLOQUEO DEFINITIVO (15/09/2026)**: el Renderer de MAKO es **x86_64**, pero en la Odin los juegos x86_64 corren con Proton ARM64 + **FEX**, y FEX **thunkea** Vulkan al stack **aarch64 del host** (`/run/host/usr/lib/libvulkan.so` + Turnip). Las capas Vulkan deben ser **aarch64** → la capa x86_64 de MAKO **no puede cargarse** (`VK_LOADER_DEBUG`: `cannot open shared object file`; `ctypes.CDLL` desde aarch64 falla). **No hay configuración que lo arregle.**
+- **El autor ya lo sabe** ([issue #15](https://github.com/eugeniosegala/MAKO/issues/15)): *"MAKO currently ships an x86-64 Renderer... does not support AArch64 devices yet. I will work on this as a new feature."*
+- **DECISIÓN (15/09)**: **esperar el Renderer AArch64** (integración ya lista) + **issue en MAKO** pidiendo estado/roadmap y ofreciendo la Odin 3 para probar → **https://github.com/eugeniosegala/MAKO/issues/60**.
+- **📄 Documentación completa**: `pocknix-odin3-support/MAKO-AARCH64.md`.
+- **Al llegar el AArch64**: re-vendorizar el plugin, **borrar `mako-aarch64.patch`** + su línea `patch` del PKGBUILD, rebuild de imagen.
+
+### Proton CachyOS ARM64 (instalado 10/09/2026)
+- **Archivo**: /run/media/fransis/ROMS16TB/proton-cachyos-11.0-20260703-slr-arm64.tar.xz
+- **Ubicación instalada**: ~/Downloads/deckstationARM/Apps/wproton/runtime-aarch64/proton-cachyos-11.0-20260703-slr-arm64/
+- **Versión**: Proton 11.0 (CachyOS, ARM64)
+
+### Estado de la carga de batería (✅ RESUELTO)
+- **RESUELTO 10/09/2026**: la batería carga en Pocknix. Fix = copiar los 2 ficheros de firmware de
+  ArmadaOS (`adsp.mbn` `6cfcbbb8` + `adsp_dtb.mbn` `d88d7ecb`) a `/lib/firmware/qcom/sm8750/`.
+  La clave era el `adsp_dtb.mbn` (config de autenticación de batería del ADSP).
+- Causa raíz: el firmware entraba en TEST MODE (estado 9) porque no podía autenticar la batería.
+- Pendiente: hacerlo permanente en la imagen/build de Pocknix.
+- Documentado en BATTERY-ISSUE.md + issues #54 (Pocknix) y #402 (ArmadaOS).
+
+## 🔥 FIRMWARE IMAGEN LIMPIA — RESUELTO (13/09/2026) — commit fbe787e
+
+- **SÍNTOMA**: una **imagen limpia** de Pocknix arrancaba pero **sin WiFi, sin sonido**,
+  con boot lentísimo y pantalla negra. (La instalación interna funcionaba porque los
+  blobs se habían copiado a mano.)
+- **CAUSA**: `linux-firmware` NO trae los blobs del Odin 3:
+  - WiFi: el chip es **WCN7860**, el driver busca `ath12k/WCN7860/hw2.0/`; el rootfs
+    solo tenía `WCN7850/` y upstream no tiene WCN7860 → probe `-110`, no hay `wlan0`.
+  - ADSP/CDSP: el DTS pide `qcom/sm8750/ayn/odin3/` pero el override ponía `qcom/sm8750/`.
+  - Audio: faltaban `aw883xx_acf.bin` (altavoz) y `SM8750-AYN-tplg.bin` (topology DSP).
+- **FIX (commit `fbe787e`, rama `odin3-pr`)**: el firmware se baja de
+  **`ROCKNIX/extra-firmware`** (commit pinnado `30c56e2`) en `make sync` →
+  `vendor/rocknix-extra-firmware/` (gitignored, sin binarios en el repo);
+  `install_firmware()` para sm8750 lo rsyncea a `/usr/lib/firmware/`. Override ADSP
+  movido a `devices/sm8750/firmware/qcom/sm8750/ayn/odin3/`.
+- **TAMBIÉN en `fbe787e`**: `pocknix-flathub.service` ya no bloquea el boot (quitados
+  `After=/Wants=network-online.target`; antes descargaba >300 MB de Flatpaks dentro de
+  la transacción de boot → sesión de Steam no arrancaba).
+- **VERIFICADO EN CALIENTE**: WiFi 5 GHz OK, adsp/cdsp `running`, tarjeta `SM8750AYN`,
+  PipeWire OK, **login de Steam OK**, carga OK.
+- **OJO SD**: la tarjeta de pruebas se desconectó sola (hub/USB) y corrompió el btrfs.
+- **Config de la SD de pruebas** (NO va en la imagen): keyfile NM **+ `/var/lib/iwd/<SSID>.psk`**
+  (NM usa iwd de backend y NO le pasa la PSK del keyfile), SSH on + `PermitRootLogin yes`,
+  password root `pocknix`.
+- **DETALLE**: `pocknix-odin3-support/FIRMWARE-ISSUE.md`.
+- **ESTADO 13/09 noche**: `make build` terminado + `make sd-image` en marcha (imagen
+  nueva lista para flashear/probar). Pendiente: validar la imagen limpia → PR.
+
+## ✅ ARRANQUE + OOBE — RESUELTOS (14/09/2026) — commits `e574b2a`/`b88018d`/`d13f65d`
+
+- **Arranque lentísimo + pantalla negra → RESUELTO** (commit `e574b2a`):
+  - `pocknix-diag.service` bloqueaba `multi-user.target` (WantedBy + After + sleep 30)
+    → ahora es un **timer** (`pocknix-diag.timer`, `OnBootSec=45s`, `WantedBy=timers.target`).
+  - gamescope arrancaba antes del panel DSI (race condition) → `pocknix-steam` ahora
+    **espera a que el conector DSI reporte `connected`** (máx 30 s, gate DRM).
+  - **Resultado**: `Startup finished in 11.2s (kernel) + 9.5s (userspace) = 20.7s`;
+    `is-system-running` = `running` (antes `starting`).
+
+- **OOBE de Steam (asistente inicial) — RESUELTO** (commits `b88018d` + `d13f65d`):
+  - Faltaba `/etc/steamos-oobe-image` → el cliente no lanzaba la OOBE. Fix: marker
+    instalado por `pocknix-steamos-shim`.
+  - **Bug grave**: `steamos-update apply` devolvía **0** → Steam interpretaba "update
+    applied" → `system restart required` → **bucle de reinicio infinito** durante la OOBE.
+    Fix: `apply` ahora devuelve **7** (no update), igual que el script real de Valve.
+  - Shims afectados: `steamos-update` + `steamos-mandatory-update`. pkgrel 8→9.
+  - Verificado: OOBE completa, sin reinicio, llega al login.
+
+- **Docs nuevos en `pocknix-odin3-support/`**: `BOOT-OOBE-ISSUE.md` (diagnóstico),
+  `PR-DESCRIPTION.md` (texto para el PR upstream en inglés). `README.md` actualizado.
+
+## ✅ PR UPSTREAM — HECHO (14/09/2026)
+
+- **PR #81** abierto en `shuuri-labs/pocknix-os` (rama `odin3-pr`):
+  https://github.com/shuuri-labs/pocknix-os/pull/81 — comentado el issue #54.
+- Incluye TODO el soporte del Odin 3 (kernel, firmware, boot, OOBE). Texto en
+  `pocknix-odin3-support/PR-DESCRIPTION.md`. **Proyecto upstream aparcado.**
+
+## 🎮 INTEGRACIÓN DeckStation + WProton — HECHA (15/09/2026) — rama `odin3-sm8750`
+
+- **Rama de trabajo: `odin3-sm8750`** de `arcadematicas/pocknix-os` (kernel 7.2.4 + mods
+  propios). NO usar `odin3-pr` (rama limpia del PR, kernel 7.2.0 — divergidas).
+- **Emulación de Pocknix ELIMINADA** (`pocknix-emulation{,-full}` + 15 emuladores: es-de,
+  azahar, dolphin-emu, cemu, armsx2/rpcs3/eden/xemu/vita3k-bin, libretro/retroarch, wxwidgets).
+  DeckStation es ahora la capa de emulación. Commit `c4444e0`.
+- **`deckstation-arm`** (vendored de `stshunz/deckstation-arm`) → `/opt/deckstation/` + comando
+  `deckstation` + `.desktop` (SOLO ES-DE; los emuladores se lanzan desde ES-DE).
+- **`wproton-arm`** (vendored de `stshunz/WProton_ARM`) → `/opt/wproton/` + comando `wproton`.
+- **`pocknix-tools`** → nueva opción **"Download DeckStation (emulators)..."** (descarga ~1 GB
+  opcional, NUNCA en el arranque). Commit `75905b6`.
+- `build-image.sh` instala los 2 paquetes (en vez de la capa de emulación); `build-sd-image.sh`
+  hace **`chown deck`** de `/opt/deckstation` + `/opt/wproton`.
+- **Sync de `stshunz/deckstation-arm`** con la Odin: `es_find_rules.xml` → `./Apps/*/lanzar.sh`,
+  `retroarch.cfg` sanitizado (+aarch64), `es_settings.xml`, `deploy_lanzar_sh` en el setup.
+  Commits `84016bf`/`e7bed9b`/`51c7540`.
+
+## 🐛 ARRANQUE / APAGADO — RESUELTOS (15/09/2026)
+
+- **Boot 2min15s → 14.4s**: `odin3-splash`/`odin-ulog-boot` a `Type=simple` + `dhcpcd@wlan0` fuera.
+- **Apagado rápido**: `iwd` enmascarado + `dhcpcd` fuera (se acabó el flapping WiFi).
+- **"Reiniciar" desde Steam reinicia la consola**: `pocknix-steam` lee el sentinel + regla polkit
+  `50-pocknix-deck.rules` instalada.
+- **Pantalla negra tras crash de Steam → auto-recuperable**: `trap cleanup EXIT` mata gamescope.
+- Detalle en `pocknix-odin3-support/config/session-fixes.md` (#13/#14/#15).
+
+## Referencias útiles
+- `POCKNIX-EXPERIENCE.md`, `RESEARCH-ARM-DISTROS.md`, `BATTERY-ISSUE.md`, `IDEAS.md` en el repo.
+- Issues upstream relevantes: shuuri-labs/pocknix-os #54 (Odin 3), #65 (suspend drain Odin 2).
+- Proyectos ARM de referencia: ROCKNIX (PR #2840 charge bypass), ArmadaOS, SteamOS-Ubuntu, Nova-Deck.
+- **🎮 STEAM FRAME (Deckard) — repo de paquetes aarch64 de Valve** ⭐ (25/09/2026):
+  `https://holo-packages.steamos.cloud/archlinux-deckard-hotfixes/` — binarios ARM64 de Valve
+  (Mesa 26.3 devel, Vulkan layers RPO/FDM/fossilize, UCM LPASS, sysctls, hw-support). SM8650 ≈
+  nuestro SM8750 → casi todo usable. **Centro de vigilancia/adaptación**:
+  `/home/fransis/deckard-paquetes/` (LEEME.md, GUIA-ADAPTACION.md, estado.md, `vigilar-deckard.sh`
+  + timer systemd diario 08:00 con aviso Telegram). Prioridad: probar layers RPO y Mesa 26.3 en la Odin.
+
+## ESTADO ACTUAL (09/09/2026) — pendientes para retomar
+- **CARGA BATERÍA (prioridad #1)**: parche 0080 instalado (kernel md5 9fa025e en /flash, backup KERNEL.bak-012448) pero el firmware ADSP responde "unknown message 0x33" al SET_USB → NO carga en Linux. Siguiente paso: desensamblar `/tmp/qti_battery_charger.ko` (extraído del Android) para hallar el opcode real de esta unidad, o probar reset del power-path tocando el toggle de bypass en Android y volviendo a Linux con cargador. Workaround: cargar apagada/Android.
+- **Frame limiter QAM**: gamescope con parche Nova-Deck instalado (v6644cc9+) → validar con un juego que el límite 60 del QAM se respeta (átomo GAMESCOPE_FPS_LIMIT=60 ya confirmado).
+- **Switch a escritorio desde Steam**: shim con SwitchToDesktopMode real instalado (md5 a7cba1f) → validar desde el menú de Steam.
+- **Batería % congelado**: parche 0079 (poll 30s) instalado → debería refrescar solo; confirmar en uso.
+- **MangoHUD + Postal 2**: toggle por paddle crashea con ese juego (mangoapp bucle) → evitar activar HUD en Postal 2; investigar si molesta.
+- **Overlay Steam sobre juegos**: sigue sin funcionar (upstream FEX/ARM); se oyen menús pero no se dibuja. No es nuestra config.
+- Cargar la Odin y arrancar en Linux para validar todo lo anterior.
+
+## FRAME LIMITER QAM — ⏳ PROBAR ESTA NOCHE (actualizado 18/09/2026)
+
+- **Sintoma**: el selector de fps del QAM (24/30/60, global e individual) se mueve pero los fps no varian.
+- **CAUSA RAIZ (diagnostico del 09/09)**: el cliente Steam ARM64 NO comunicaba el limite a gamescope
+  por NINGUN canal:
+  - Atom X GAMESCOPE_FPS_LIMIT: NO lo escribia (se quedaba en 60, verificado con xprop -root en :0)
+  - Protocolo Wayland de gamescope: NO se conectaba al socket (ss -x: solo gamescope-wl consigo mismo)
+  - D-Bus (pocknix-steamos-manager): NO llama
+  - Archivo de config: NO guardaba nada (grep fps en todos los .vdf = vacio)
+- **WORKAROUND (09/09)**: `gamescopectl debug_set_fps_limit 60` en `pocknix-steam`. Limite FIJO 60.
+  → **YA NO ESTA** (se quito el 16/09) y no existe en ningun otro sitio. El backup
+  `/usr/bin/pocknix-steam.bak-fps60` tampoco existe ya.
+- **🔄 ACTUALIZACION 18/09 (manana) — ESTO CAMBIA EL DIAGNOSTICO**:
+  - **Steam SI persiste el limite por app** en
+    `~/.local/share/Steam/userdata/<id>/config/localconfig.vdf`:
+    `"Gamescope" { "AppTargetFrameRate" { "<appid>" "<fps>" } }`
+    (el 18/09 a las 08:00 tenia 1 entrada y el fichero se reescribe con actividad).
+    **Esa era exactamente la pieza que faltaba** para el "daemon que lea el limite de un archivo".
+  - El atom marca **60** y el parche `0004-fps-limit-atom-persist.patch` **si** esta aplicado
+    (gamescope `3.16.25-7-g6644cc9a+`). Pero **60 no prueba nada**: el 09/09 ya se observo 60
+    sin que Steam lo escribiera → hay que hacer el test para distinguir.
+  - Canal de Steam: `steamdeck_publicbeta`. El shim no expone nada de fps.
+- **⏳ TEST PENDIENTE (30 s, necesita UI)**: en Game Mode, cambiar el limite del QAM a **30** y mirar
+  (a) si `localconfig.vdf` pasa a 30, (b) si el atom pasa a 30, (c) si el juego va a 30.
+  - **Si cambia el atom** → **ya funciona** (un cliente mas nuevo lo arreglo) → cerrar el tema.
+  - **Si solo cambia el fichero** → **implementar el daemon**: vigilar `localconfig.vdf` (inotify)
+    + el atom `GAMESCOPE_FOCUSED_APP` y aplicar con `gamescopectl debug_set_fps_limit <fps>`.
+    El parche de gamescope ya hace **persistir** el atom, asi que con eso deberia quedar cerrado.
+
+## FIX % BATERIA - INSTALADO Y VERIFICADO (09/09/2026)
+- **CAUSA**: el firmware Debug_Board congela voltage_ocv tras el arranque (solo lo reporta una vez). El parche 0078 usaba ese OCV congelado -> % estatico.
+- **FIX**: qcom_battmgr_estimate_percent() ahora usa voltage_now (que SI se actualiza) + compensacion por resistencia interna (~160 mOhm: drop = |I|*R). V_ocv_est = V_now + |I|*R.
+- **VERIFICADO**: antes % congelado en 96; tras el fix, % = 48 con V_now 3.89V (bateria real al 48%). El % baja conforme se descarga.
+- Kernel instalado: md5 dfe90a1 (backup /flash/KERNEL.bak-fixpct). Modulo battmgr con fix OCV (5 refs a voltage_now/drop).
+- NOTA: la tabla OCV tiene escalones de ~50-100mV; el % cambia cuando el voltaje cruza el umbral (no es continuo).
+
+## CARGA BATERIA - O PCODES REALES DESCUBIERTOS (09/09/2026) - ¡SOLUCION ENCONTRADA!
+- **METODO**: desensamblar /tmp/qti_battery_charger.ko (Android) con aarch64-linux-gnu-objdump -d -j .text.
+- **HALLAZGOS (del desensamblado de usb_charge_now_store y charge_control_en_store)**:
+  - El firmware del Odin 3 NO usa el protocolo mainline. El mensaje Android (24 bytes) es:
+    - offset 0-7: header 8B = 0x10000800a (owner 0x800a=32778=BATTMGR en low32, type 1=REQ_RESP en high32)
+    - offset 8-11: opcode REAL: usb_charge_now=0x16(22), charge_control_en=0x20(32)
+    - offset 12-19: property<<32 (usb_charge_now usa prop 14=USB_CHARGE_ENABLE, charge_control_en usa prop 24)
+    - offset 20-23: value (0/1)
+  - El mainline usa opcode 0x33 (USB_PROPERTY_SET=51) -> el firmware responde "unknown message 0x33" porque espera 0x16.
+  - El mainline usa header de 12B (owner+type+opcode separados) y property en 32 bits -> formato distinto.
+- **IMPLICACION**: para activar la carga hay que enviar el mensaje en FORMATO ANDROID con opcode 0x16.
+- **PENDIENTE**: escribir el parche 0081 que envia el mensaje en formato Android (header 8B + opcode 0x16 + prop<<32 + value). 
+  - Opcion A: modificar qcom_battmgr_request_property para el caso USB (header compacto + opcode 0x16).
+  - Opcion B: hardcodear el mensaje en el enable_worker.
+- El .ko de Android esta en /tmp/qti_battery_charger.ko (si se pierde, re-extraer via adb del Android).
+
+## ESTADO CRITICO - ODIN SIN RESTAURAR (09/09/2026)
+- **URGENTE**: /flash/KERNEL contiene el kernel de ROCKNIX adaptado que NO arranca. Hay que restaurar /flash/KERNEL.bak-nuestro -> /flash/KERNEL.
+- La Odin no bootea hasta que se restaure (Fransis la restaurara con la SD al llegar a casa).
+- Contexto: se probo el kernel ROCKNIX 20260901 (por si arreglaba la carga) pero no arranca con nuestro cmdline/DTB. No volver a intentar sin el DTB correcto.
+
+## KBUILD SPEEDUP (parches para acelerar compilacion)
+- 23 parches experimentales guardados en: /run/media/fransis/ROMS16TB/proyectos Alfred/kbuild-speedup/
+- Ver LEEME.txt ahi para el detalle. Pendiente de re-extraer de forma robusta e integrar.
+
+## ✅ CARGA BATERIA - RESUELTO Y VERIFICADO (10/09/2026 noche)
+- **ESTADO: LA BATERIA YA CARGA EN POCKNIX.** Verificado: `status=Charging`, `current=+424207`,
+  `qcom-battmgr-usb online=1` (553mA), `ucsi 3A`, `typec power_role=source [sink]`,
+  firmware `ulog "Test mode" = 0`.
+- **EL FIX**: copiar a `/lib/firmware/qcom/sm8750/` los **DOS** ficheros de firmware de ArmadaOS:
+  - `adsp.mbn` (21907848, md5 `6cfcbbb80b956ddad76950c038ea1a3e`)
+  - `adsp_dtb.mbn` (167736, md5 `d88d7ecbba78ecacb13adcc7bcbe131d`) ← **ESTA era la clave**
+- **POR QUE**: el `adsp_dtb.mbn` es la config del cargador dentro del ADSP e incluye la
+  **autenticación de batería** (`batt_auth_cfg`, `batt-auth-public-key`, `batt-unauth-charging-action`,
+  `en-batt-auth`). El de Pocknix (`632e50f2`) NO la tenía → el firmware no autenticaba la batería →
+  handler de error → **TEST MODE (estado 9)** → no cargaba.
+- **DIAGNOSTICO**: `CONFIG_QCOM_PMIC_PDCHARGER_ULOG=m` + leer `pmic_pdcharger_ulog` (canal
+  `PMIC_LOGS_ADSP_APPS`) muestra la decisión interna del firmware. Ya compilado en el kernel 7.2.4.
+- **Backups en la Odin**: `adsp.mbn.bak-linux17` (`a1206f38`) y `adsp_dtb.mbn.bak-orig` (`632e50f2`).
+- **PERMANENTE EN EL BUILD (11/09/2026)**: los 2 ficheros están en
+  `pocknix-os/devices/sm8750/firmware/qcom/sm8750/` y `build-image.sh`
+  (`install_firmware()`) los aplica **después** del overlay de ROCKNIX → ganan.
+  Ya no hay que copiarlos a mano en la Odin.
+- **CORRECCION**: el `0x1fffffff` del dmesg es `SERVREG_SERVICE_STATE_UP` (el PDR **sí** sube).
+- **VER DETALLE EN**: BATTERY-ISSUE.md (secciones "premisa CORREGIDA", "HERRAMIENTA...", "SOLUCIÓN ENCONTRADA").
+
+## ✅ KSCREEN / PANTALLA - RESUELTO (11/09/2026)
+- **SINTOMA**: en el escritorio Plasma, Ajustes → Pantalla no mostraba el monitor.
+- **CAUSA**: faltaba el paquete **`kscreen`** (solo `libkscreen` + `kscreenlocker`).
+  Sin él no existe el módulo Ajustes → Pantalla (`kcm_kscreen.so`) ni el KDED
+  `kscreen.so`; `libkscreen` sí da `kscreen-doctor` (por eso el script de rotación
+  funcionaba pero Ajustes no).
+- **FIX**: `sudo pacman -S --noconfirm kscreen` (+ `kimageformats`). Persistente.
+- **VERIFICADO**: `kcm_kscreen` carga en systemsettings; `kscreen-doctor -o` enumera
+  `DSI-1 1080x1920@120 scale 2.5 rotation Rotate270`; daemon `org.kde.KScreen`
+  con backend `kwayland`.
+- **NO era** kernel/DRM/DTS: el panel siempre se detectó (conector DSI-1, driver
+  `panel-chipone-icna35xx`, propiedad `panel orientation` = 3 Right Side Up).
+- La **imagen oficial ya incluye `kscreen`** vía `pocknix-desktop-full`; esta Odin
+  no tiene ese meta (escritorio montado a mano).
+- **VER DETALLE EN**: KSCREEN-ISSUE.md.
+
+## ⚠️ PENDIENTE PARA MAÑANA
+
+1. **Rebuild imagen** (`make build` + `make sd-image`) en `odin3-sm8750` → flashear + probar en la
+   Odin: arranque, DeckStation en `/opt/deckstation/`, opción de descarga en Pocknix Tools, Steam OK.
+2. **Revocar el token de RetroAchievements** (`5uidroaH4Gk6P7qg`) — estuvo público en el repo.
+3. Avisar a **stshunz** del `.desktop` + `deploy_lanzar_sh` (por si quiere ajustes).
+4. `.gitignore`: `devices/sm8750/firmware/qcom/sm8750/ayn/` sale **untracked** (debería ignorarse).
+## 🚨 INCIDENTE 25/09 NOCHE — bootloop + kernel panic en imagen nueva (EN CURSO)
+**Síntoma**: la Odin flasheó la imagen nueva y entra en **bootloop con kernel panic, sin logs**.
+
+**VEREDICTO: NO es culpa del software nuestro.** Todo verificado y correcto:
+- git commiteado y correcto · KERNEL correcto · fstab correcto · btrfs sano · imagen local íntegra.
+
+**Causa más probable: la transferencia o el flasheo**, no el contenido de la imagen.
+Señales que lo confirman: panic *sin logs* = el root (btrfs) no monta.
+
+**Qué está haciendo Jarvis**: pide (1) `sha256sum` de las 3 partes de la imagen contra
+`SHA256SUMS-partes.txt`; (2) la imagen descomprimida debe dar
+`8f6f335aae12bdabe64f97b3b35440a712e202bcb30c3c693657ee8b02ced5f6`; (3) `dd` al
+**dispositivo completo**, no a una partición. Si el hash no coincide → que reenvíe las partes.
+
+**Refuerzo ya commiteado** (por si el problema fuera de robustez del arranque):
+- `scripts/build-sd-image.sh` — fstab btrfs con `commit=5,nologreplay` (arranque robusto tras corte de energía).
+- cmdline del kernel — `rootflags=nologreplay` + `systemd.show_status=1` (arranque visible y diagnosticable).
+Commits: centro `451b8b3` / `aa31aa8` · pocknix-os `404257a` / `191fbd4`.
+
+**Al Recover**: montando el sistema de ficheros desde el PC se puede diagnosticar aunque la
+Odin no arranque (`journalctl -D <punto>/journal -b 0`).
+
+### Pendientes vivos (25/09 noche)
+- [ ] Jarvis/Compi: verificar SHA256 de las partes de la imagen (ver arriba).
+- [ ] Aplicar los refuerzos de robustez (fstab `commit=5,nologreplay` + cmdline) a la SD actual del usuario cuando la reconecte al PC.
+- [ ] Subir el default `SD_SLACK_MIB=2048` en `config/pocknix.conf` del centro, sync + commit.
+- [ ] Probar el layer Vulkan `VK_LAYER_VALVE_rpo` con un juego real.
+- [ ] Decidir Mesa 26.3: probar el binario de Valve (opción A) o portar los parches (opción B).
