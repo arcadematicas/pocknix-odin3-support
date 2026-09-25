@@ -131,6 +131,18 @@ módulos no cargan → **sin mando** (inputplumber necesita `vhci-hcd`) y **sin 
 **Regla de oro**: el kernel y sus módulos salen **juntos del mismo entorno de compilación**. **No
 recompilar solo el kernel** para una imagen ya construida.
 
+## Deuda estructural que este incidente destapó — CERRADA (26/09/2026)
+
+El cmdline del kernel vive en `devices/sm8750/profile.conf`, y esa ruta **solo existía en el árbol de
+compilación**: no estaba en el centro, y `tools/check-sync.sh` **no la vigilaba**. Por eso el
+`rootflags=nologreplay` se compiló sin pasar por ninguna revisión: el centro no era la fuente de
+verdad de la parte que más rompe (el arranque).
+
+**Cerrado el 26/09/2026**: `config/` (listas de paquetes, `pocknix.conf`, tuning) y
+`devices/sm8750/` (incluido `profile.conf`, el cmdline) ya están en el centro, y
+`tools/sync-to-os.sh` + `tools/check-sync.sh` los cubren. **Un cambio en el cmdline que no pase por
+el centro ahora hace fallar el build.** Los blobs de firmware siguen fuera de git (a propósito).
+
 ## Prevención — NO HACER
 
 - ❌ **NO** poner `nologreplay` en un montaje `rw` (ni en `rootflags=` ni en el `fstab`).

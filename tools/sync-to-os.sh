@@ -84,6 +84,22 @@ overlay "kernel/patches/20-sm8750"   "kernel/sm8750/patches/20-sm8750"
 overlay "kernel/patches/30-version"  "kernel/sm8750/patches/30-version"
 overlay "kernel/dts"                 "kernel/sm8750/dts/qcom"
 
+# --- config/ del build: listas de paquetes, pocknix.conf, tuning -------------
+# Antes vivia SOLO en el arbol: las listas de paquetes (base.list / base-extras.list), el
+# pocknix.conf y el tuning del SoC podian cambiar sin que nadie lo notara. Es el MISMO agujero
+# que dejo pasar el cmdline roto del 25/09 (ver docs/INCIDENTE-2026-09-25-nologreplay.md).
+# Solo van NUESTROS ficheros; los de upstream (pacman.conf.in, tuning sm8250/sm8550) se quedan
+# en el arbol. Es un OVERLAY: anade/actualiza, no borra nada del arbol.
+overlay "config" "config"
+
+# --- devices/sm8750: el CMDLINE del kernel y la lista de paquetes del device --
+# ⚠️ AQUI ESTABA EL BUG DEL 25/09: `rootflags=nologreplay` vivia en profile.conf, que solo
+# existia en el arbol y no lo vigilaba check-sync.sh -> se compilo y la imagen no arrancaba.
+# Ahora el cmdline es del centro. Solo van NUESTROS ficheros (profile.conf, packages.list,
+# firmware/README.md): la subcarpeta packages/ la trae su propio mirror de arriba, y los blobs
+# de firmware (.mbn) NO van a git (se bajan de ROCKNIX/extra-firmware).
+overlay "devices/sm8750" "devices/sm8750"
+
 # --- per-SoC package overrides -----------------------------------------------
 # packages/soc-overrides/<name>/ mirrors packages/soc/<name>/. Needed because build-packages.sh
 # SKIPS any packages/soc/ package whose ./socs does not list the current SoC: upstream's

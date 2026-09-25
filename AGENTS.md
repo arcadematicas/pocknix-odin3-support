@@ -744,11 +744,24 @@ automáticamente; para lo que NO se instala hay que listarlo a mano en `base-ext
 | Opt-in del usuario (samba, tailscale) | `base-extras.list` ✅ + instalación robusta (`-Sy`, familia junta) ✅ |
 | Host sin el paquete y sin repos | provisioning en el propio tool (p. ej. `setup_libxss` en DeckStation) ✅ |
 
-### Y la trampa del veto: la capa vendored y `config/` NO están en el centro
+### ✅ `config/` y `devices/sm8750/` YA están en el centro (26/09/2026)
 
-`tools/sync-to-os.sh` sincroniza paquetes/overlay/kernel, y `check-sync.sh` ya comprueba
-la capa vendored (deckstation-arm, pocknix-steam, tools, suyu…). **`config/` solo vive en
-el árbol** (nuestro fork lo commitea allí) → editarlo en el árbol y **commitearlo ahí**.
+`tools/sync-to-os.sh` sincroniza paquetes/overlay/kernel/DTS, y `check-sync.sh` comprueba la capa
+vendored (deckstation-arm, pocknix-steam, tools, suyu…) **y desde el 26/09 también `config/` y
+`devices/sm8750/`**.
+
+**Por qué se añadieron**: el cmdline del kernel vive en `devices/sm8750/profile.conf`, y hasta el
+26/09 esa ruta **solo existía en el árbol y no la vigilaba `check-sync.sh`** → el
+`rootflags=nologreplay` del 25/09 se coló sin pasar por el centro y dejó la imagen sin arrancar
+(`docs/INCIDENTE-2026-09-25-nologreplay.md`). Ahora **el cmdline es del centro**, y un cambio de
+arranque que no pase por él hace **fallar el check** — o sea, fallar el build.
+
+Qué va al centro (solo lo NUESTRO; es un `overlay`, así que no borra nada del árbol):
+- `config/packages/base.list`, `config/packages/base-extras.list`, `config/pocknix.conf`, `config/tuning/sm8750.conf`
+- `devices/sm8750/profile.conf` (el cmdline), `devices/sm8750/packages.list`, `devices/sm8750/firmware/README.md`
+
+⚠️ **Los blobs de firmware (`.mbn`) NO van a git** (se bajan de ROCKNIX/extra-firmware): al centro solo
+sube el *cómo* (el README). Y la subcarpeta `devices/sm8750/packages/` la trae su propio `mirror`.
 
 ## ✅ SCHEDULERS CPU + I/O — IMPLEMENTADO (24/09/2026)
 
@@ -1100,7 +1113,8 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
 - [ ] Subir el default `SD_SLACK_MIB=2048` en `config/pocknix.conf` del centro, sync + commit.
 - [ ] Probar el layer Vulkan `VK_LAYER_VALVE_rpo` con un juego real.
 - [ ] Decidir Mesa 26.3: probar el binario de Valve (opción A) o portar los parches (opción B).
-- [ ] **Deuda**: subir la fuente del cmdline (`devices/sm8750/profile.conf`) al centro, para que no se
-      pueda colar otra vez un cambio de arranque sin pasar por revisión.
+- [x] **Deuda RESUELTA (26/09)**: `config/` y `devices/sm8750/` (incluido el cmdline) ya están en el
+      centro y los vigila `check-sync.sh`. Un cambio de arranque que no pase por el centro ahora hace
+      **fallar el build** — el agujero por el que se coló el `nologreplay` queda cerrado.
 - [ ] **Espacio**: la raíz de ~25 GB se queda corta para Steam en microSD; valorar usar la UFS interna
       para `/home` (ver sección ALMACENAMIENTO y `docs/IDEAS.md` §6).

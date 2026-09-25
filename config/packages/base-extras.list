@@ -1,0 +1,42 @@
+# ALARM packages hosted in [pocknix-base] but installed by no image (opt-in via
+# pacman -S on a locked device). The harvest only sees what a build installed, hence
+# a hand list; every dep must be hosted too or snapshot-base.sh refuses. dev/pacman-repo.md
+
+# --- VPN / remote access ---
+tailscale
+wireguard-tools      # no openresolv for wg-quick DNS: conflicts with the base's systemd-resolvconf
+
+# --- libXss: la necesita el RetroArch de DeckStation ---
+# El RetroArch de DeckStation NO es un AppImage: es el binario nativo del buildbot,
+# que enlaza contra libXss.so.1. Sin este paquete ES-DE no lanza NINGUN emulador de
+# RetroArch ("libXss.so.1: cannot open shared object file"). Se hospeda aqui para que
+# un dispositivo lo instale desde el snapshot PINNADO y no del ALARM en vivo (mezclar
+# la familia samba fue exactamente el bug del 20/09).
+libxss
+
+# --- file sharing ---
+samba
+
+# --- emulation layer (opt-in: no image installs it, Pocknix Tools does) ---
+# Its ALARM deps, the optional emulators' included. Derive changes from an orphan set on a
+# device, not from the snapshot guard: that reads the metas' depends= only (dev/pacman-repo.md).
+retroarch
+libretro-core-info
+ppsspp
+ppsspp-assets        # ppsspp's own deps from here down
+sdl2_ttf
+openxr
+jsoncpp
+miniupnpc
+glew
+glu
+boost-libs           # the optional emulators (dolphin-emu, azahar, cemu) from here down
+crypto++
+enet
+fmt
+libspng
+mbedtls3
+pugixml
+sfml
+soundtouch
+zlib-ng

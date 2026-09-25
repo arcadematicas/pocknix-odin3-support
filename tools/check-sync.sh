@@ -61,6 +61,14 @@ cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pyga
 cmp_tree "${HERE}/packages/pocknix-steam"     "${OS}/packages/shared/pocknix-steam"
 cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-tools"
   cmp_tree "${HERE}/packages/pocknix-decky"   "${OS}/packages/shared/pocknix-decky"
+
+# config/ y devices/sm8750/: las listas de paquetes, el pocknix.conf, el tuning y — sobre
+# todo — el CMDLINE del kernel (profile.conf). Antes vivian solo en el arbol y no se
+# vigilaban: por ahi se colo el `rootflags=nologreplay` que dejo la imagen sin arrancar
+# (docs/INCIDENTE-2026-09-25-nologreplay.md).
+cmp_tree "${HERE}/config"         "${OS}/config"
+cmp_tree "${HERE}/devices/sm8750" "${OS}/devices/sm8750"
+
 if [ -d "${HERE}/packages/soc-overrides" ]; then
   for d in "${HERE}"/packages/soc-overrides/*/; do
     [ -d "${d}" ] || continue
