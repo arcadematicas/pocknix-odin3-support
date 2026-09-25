@@ -78,11 +78,15 @@ firstboot_config() {
 # The root line names NO subvol on purpose: the kernel boots the btrfs DEFAULT subvolume,
 # which is how pocknix-rollback switches roots without touching boot config.
 # noatime + zstd:1 keep the device's own writes cheap; the image was populated at zstd:3.
-PARTUUID=${SD_ROOT_PARTUUID}  /                  btrfs  rw,noatime,compress=zstd:1                       0 0
-PARTUUID=${SD_ROOT_PARTUUID}  /home              btrfs  rw,noatime,compress=zstd:1,subvol=@home          0 0
-PARTUUID=${SD_ROOT_PARTUUID}  /.snapshots        btrfs  rw,noatime,compress=zstd:1,subvol=@snapshots     0 0
-  PARTUUID=${SD_ROOT_PARTUUID}  /var/cache/pacman  btrfs  rw,noatime,nodatacow,subvol=@pacman-cache  0 0
-  PARTUUID=${SD_ROOT_PARTUUID}  /var/log           btrfs  rw,noatime,nodatacow,subvol=@var-log       0 0
+# commit=5: sync btrfs transactions every 5s (default 30s) so a forced power-off leaves a
+# much smaller tree-log. nologreplay: after a dirty shutdown the kernel mounts WITHOUT
+# replaying the tree-log — the Odin 3 kernel once hung on replay (frozen Tux, no journald).
+# Trade-off: a forced power-off loses at most ~5s of uncommitted writes (was ~30s).
+PARTUUID=${SD_ROOT_PARTUUID}  /                  btrfs  rw,noatime,compress=zstd:1,commit=5,nologreplay                       0 0
+PARTUUID=${SD_ROOT_PARTUUID}  /home              btrfs  rw,noatime,compress=zstd:1,commit=5,nologreplay,subvol=@home          0 0
+PARTUUID=${SD_ROOT_PARTUUID}  /.snapshots        btrfs  rw,noatime,compress=zstd:1,commit=5,nologreplay,subvol=@snapshots     0 0
+  PARTUUID=${SD_ROOT_PARTUUID}  /var/cache/pacman  btrfs  rw,noatime,nodatacow,commit=5,nologreplay,subvol=@pacman-cache  0 0
+  PARTUUID=${SD_ROOT_PARTUUID}  /var/log           btrfs  rw,noatime,nodatacow,commit=5,nologreplay,subvol=@var-log       0 0
 PARTUUID=${SD_BOOT_PARTUUID}  /flash             vfat   rw,noatime,nofail                                0 2
 EOF
   echo "pocknix" > "${root}/etc/hostname"
