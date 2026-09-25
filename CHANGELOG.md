@@ -15,6 +15,36 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 26 de septiembre 2026 — incidente de arranque: resuelto y documentado
+
+Cierra el incidente del día 25. La imagen nueva no arrancaba y el primer diagnóstico
+(transferencia/flasheo) era equivocado: **sí era nuestro software**. Se arregla la causa real y se
+documenta para que no se repita.
+
+### Corregido / solucionado
+
+- ✅ **La imagen vuelve a arrancar**: iba con `nologreplay` como opción de montaje de btrfs — en el
+  cmdline del kernel y en 5 líneas del `fstab`. En Linux 7.2 `nologreplay` **no es una opción
+  válida** (solo `rescue=nologreplay`, y esa exige solo-lectura), así que btrfs rechazaba montar la
+  raíz y el kernel paniqueaba **antes de userspace — sin ningún log**. Quitado de los dos sitios.
+  Verificado en la Odin: arranca con asistente inicial, sonido, botones y WiFi.
+- ✅ **Incidente documentado** (para que no se repita):
+  `docs/INCIDENTE-2026-09-25-nologreplay.md`. `AGENTS.md` corregido: el veredicto anterior
+  ("no es culpa del software / probable transferencia") queda marcado como erróneo.
+
+### ⚠️ Notas (trampas descubiertas)
+
+- ⚠️ **El kernel y sus módulos deben ser del MISMO build.** Un kernel compilado en otra máquina
+  (aunque declare la misma versión y el mismo *vermagic*) **no sirve** para una imagen ya
+  construida: el **BTF** no coincide, el kernel **rechaza los módulos** y te deja **sin mando y sin
+  sonido**. Regla: "misma versión" ≠ "compatible" — mirar el **Image md5**. Kernel y módulos salen
+  juntos del mismo entorno; **no recompilar solo el kernel** para una imagen ya hecha.
+- ⚠️ **Deuda**: el cmdline del kernel vive **solo en el árbol** (`devices/sm8750/profile.conf`), no
+  en el centro. Por eso un cambio de arranque se pudo colar sin revisión. Hay que subir esa fuente
+  al centro.
+
+---
+
 ## 📅 Semana del 22–25 de septiembre 2026
 
 La semana más intensa en emuladores: se reparan los últimos fallos del gestor de

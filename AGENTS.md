@@ -1055,31 +1055,52 @@ plugin como root OK; 3 cambios rápidos ya no bloquean; estado final lavd autopi
 2. **Revocar el token de RetroAchievements** (`5uidroaH4Gk6P7qg`) — estuvo público en el repo.
 3. Avisar a **stshunz** del `.desktop` + `deploy_lanzar_sh` (por si quiere ajustes).
 4. `.gitignore`: `devices/sm8750/firmware/qcom/sm8750/ayn/` sale **untracked** (debería ignorarse).
-## 🚨 INCIDENTE 25/09 NOCHE — bootloop + kernel panic en imagen nueva (EN CURSO)
-**Síntoma**: la Odin flasheó la imagen nueva y entra en **bootloop con kernel panic, sin logs**.
+## ✅ RESUELTO — INCIDENTE 25/09: bootloop + kernel panic en imagen nueva
 
-**VEREDICTO: NO es culpa del software nuestro.** Todo verificado y correcto:
-- git commiteado y correcto · KERNEL correcto · fstab correcto · btrfs sano · imagen local íntegra.
+**Síntoma**: la Odin flasheó la imagen nueva y entraba en **bootloop con kernel panic, sin logs**.
 
-**Causa más probable: la transferencia o el flasheo**, no el contenido de la imagen.
-Señales que lo confirman: panic *sin logs* = el root (btrfs) no monta.
+**Causa raíz CONFIRMADA (26/09)**: se pasó `nologreplay` como opción de montaje de btrfs en montajes
+`rw` — **NO es una opción válida suelta en Linux 7.2** (solo existe `rescue=nologreplay`, y esa exige
+montaje solo-lectura). btrfs devuelve `-EINVAL` ("unrecognized mount option") y **la raíz no monta** →
+panic **antes de userspace** → sin journal. Mensaje en pantalla:
 
-**Qué está haciendo Jarvis**: pide (1) `sha256sum` de las 3 partes de la imagen contra
-`SHA256SUMS-partes.txt`; (2) la imagen descomprimida debe dar
-`8f6f335aae12bdabe64f97b3b35440a712e202bcb30c3c693657ee8b02ced5f6`; (3) `dd` al
-**dispositivo completo**, no a una partición. Si el hash no coincide → que reenvíe las partes.
+```
+VFS: Cannot open root device "PARTLABEL=POCKNIX_ROOT" or unknown-block(179,2)
+```
 
-**Refuerzo ya commiteado** (por si el problema fuera de robustez del arranque):
-- `scripts/build-sd-image.sh` — fstab btrfs con `commit=5,nologreplay` (arranque robusto tras corte de energía).
-- cmdline del kernel — `rootflags=nologreplay` + `systemd.show_status=1` (arranque visible y diagnosticable).
-Commits: centro `451b8b3` / `aa31aa8` · pocknix-os `404257a` / `191fbd4`.
+(`179,2` = `/dev/mmcblk0p2`: la partición SÍ se encontró; lo que falló fue **montar el btrfs**.)
 
-**Al Recover**: montando el sistema de ficheros desde el PC se puede diagnosticar aunque la
-Odin no arranque (`journalctl -D <punto>/journal -b 0`).
+**Dónde estaba** (los dos sitios, ambos commits del 25/09):
+- cmdline: `rootflags=nologreplay` → `devices/sm8750/profile.conf` (commit `191fbd4`) ⚠️ **vive SOLO
+  en el árbol, NO en el centro** → por eso se coló sin pasar por la revisión del centro (deuda).
+- fstab: `,nologreplay` en las 5 líneas → `scripts/build-sd-image.sh` (commit `404257a`, centro `451b8b3`).
 
-### Pendientes vivos (25/09 noche)
-- [ ] Jarvis/Compi: verificar SHA256 de las partes de la imagen (ver arriba).
-- [ ] Aplicar los refuerzos de robustez (fstab `commit=5,nologreplay` + cmdline) a la SD actual del usuario cuando la reconecte al PC.
+**⚠️ El veredicto anterior era ERRÓNEO**: *"NO es culpa del software nuestro / causa probable: la
+transferencia o el flasheo"*. **Sí era nuestro software.** El hash de la imagen, las particiones y el
+btrfs estaban correctos; se descartaron además IOMMU/DTB (se probó otro DTB, seguía fallando) y la
+compresión zstd (el btrfs del árbol hace `select ZSTD_DECOMPRESS`).
+
+**Corrección**: `nologreplay` quitado del cmdline Y del fstab. Verificado: tras corregir ambos en la
+SD, la Odin arrancó con **OOBE, sonido, botones y WiFi OK**.
+
+**⚠️ TRAMPA 2 — el kernel y sus módulos deben ser del MISMO build.** Un kernel compilado en otra
+máquina (aunque diga `7.2.4`) **no sirve** para una imagen ya construida: el BTF no coincide y el
+kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo que deja **sin mando**
+(no carga `vhci-hcd`, que inputplumber necesita) y **sin sonido** (módulos `snd_soc_lpass_*`).
+- Kernel bueno (el de la imagen): `fransis@cachyos-x8664`, Image md5 `624b596fa8e819d2ad940133a94cba57`.
+- Kernel ajeno probado (roto para esta imagen): `davidusky@CachyOS`, Image md5 `3c7a87639dbbc4af77d6ee21056d3bae`.
+- **Regla**: "misma versión" NO es "compatible" — mirar el **Image md5**. Kernel y módulos salen juntos
+  del mismo entorno. **No recompilar solo el kernel para una imagen ya construida.**
+
+**Documento completo**: `docs/INCIDENTE-2026-09-25-nologreplay.md`.
+
+### Pendientes vivos (25/09 noche → 26/09)
+- [x] Jarvis/Compi: verificar SHA256 de las partes de la imagen → **verificado, era correcto** (no era el problema).
+- [x] Aplicar los refuerzos de robustez a la SD → **hecho**… y resultó ser **la causa del fallo**, no un refuerzo inocuo.
 - [ ] Subir el default `SD_SLACK_MIB=2048` en `config/pocknix.conf` del centro, sync + commit.
 - [ ] Probar el layer Vulkan `VK_LAYER_VALVE_rpo` con un juego real.
 - [ ] Decidir Mesa 26.3: probar el binario de Valve (opción A) o portar los parches (opción B).
+- [ ] **Deuda**: subir la fuente del cmdline (`devices/sm8750/profile.conf`) al centro, para que no se
+      pueda colar otra vez un cambio de arranque sin pasar por revisión.
+- [ ] **Espacio**: la raíz de ~25 GB se queda corta para Steam en microSD; valorar usar la UFS interna
+      para `/home` (ver sección ALMACENAMIENTO y `docs/IDEAS.md` §6).
