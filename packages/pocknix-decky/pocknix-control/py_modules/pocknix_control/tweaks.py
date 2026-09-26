@@ -14,15 +14,28 @@ TURNIP_DIRS = {"arm": Path("/usr/share/pocknix/vk-arm"), "x86": Path("/usr/share
 CONTAINER_VK_LIST = Path("/usr/share/fex-emu/vk-x86-container.list")
 
 
+# "26.2.3" -> one entry per series ("26.2"); the wrapper resolves the point release per Proton
+# flavor. Anything with a suffix ("26.3.0devel", "26.3.0-valve") is a one-off build and gets its
+# OWN entry keyed by the full directory name, which the wrapper also accepts verbatim.
+_SERIES_HEAD = re.compile(r"[0-9]+\.[0-9]+")
+_PLAIN_VERSION = re.compile(r"[0-9]+(\.[0-9]+)*")
+
+
+def _mesa_choice_key(choice):
+    # Series first ("26.2" sorts before "26.3.0…"), then a standalone payload of the same
+    # version sorts by name so the list order is stable between calls.
+    nums = tuple(int(x) for x in re.findall(r"[0-9]+", choice["data"]))
+    return (nums, len(nums), choice["data"])
+
+
 def mesa_versions():
-    # One entry per series ("25.2"); the wrapper resolves the point release per Proton flavor.
     # x86 SLR captures graphics from the FEX rootfs, so an x86 payload that is not embedded in
     # the image would be a pin the wrapper refuses at launch.
     try:
         embedded = set(CONTAINER_VK_LIST.read_text().split())
     except OSError:
         embedded = set()
-    series = {}
+    series, standalone = {}, {}
     for arch, base in TURNIP_DIRS.items():
         try:
             versions = [p.name for p in base.iterdir() if (p / "icd.json").is_file()]
@@ -31,22 +44,31 @@ def mesa_versions():
         for v in versions:
             if arch == "x86" and v not in embedded:
                 continue
-            m = re.match(r"([0-9]+)\.([0-9]+)", v)
-            if not m:
+            if not _SERIES_HEAD.match(v):
                 continue
-            entry = series.setdefault(f"{m.group(1)}.{m.group(2)}", {"archs": set(), "rc": True, "devel": True})
+            if _PLAIN_VERSION.fullmatch(v):
+                # Clean X.Y[.Z]: several point releases of one series are one option, and the
+                # wrapper picks the highest one installed.
+                key, bucket = ".".join(v.split(".")[:2]), series
+            else:
+                # Suffixed build (Valve Mesa, a devel snapshot, …): listing it inside the
+                # series would make the wrapper's "highest numbers wins" tie-break pick between
+                # "26.3.0devel" and "26.3.0-valve" arbitrarily, so it gets its own entry.
+                key, bucket = v, standalone
+            entry = bucket.setdefault(key, {"archs": set(), "rc": True, "devel": True})
             entry["archs"].add(arch)
             entry["rc"] = entry["rc"] and "rc" in v
             entry["devel"] = entry["devel"] and "devel" in v
     choices = []
-    for key, entry in series.items():
-        # "git" marks an unreleased main snapshot, so a devel payload can't read as a
-        # shipped release (the series key alone would show a bare "26.3").
-        label = key + (" RC" if entry["rc"] else "") + (" git" if entry["devel"] else "")
-        if entry["archs"] != {"arm", "x86"}:
-            label += f" ({'ARM' if 'arm' in entry['archs'] else 'x86'} only)"
-        choices.append({"data": key, "label": label})
-    return sorted(choices, key=lambda c: tuple(int(x) for x in c["data"].split(".")))
+    for bucket in (series, standalone):
+        for key, entry in bucket.items():
+            # "git" marks an unreleased main snapshot, so a devel payload can't read as a
+            # shipped release (the series key alone would show a bare "26.3").
+            label = key + (" RC" if entry["rc"] else "") + (" git" if entry["devel"] else "")
+            if entry["archs"] != {"arm", "x86"}:
+                label += f" ({'ARM' if 'arm' in entry['archs'] else 'x86'} only)"
+            choices.append({"data": key, "label": label})
+    return sorted(choices, key=_mesa_choice_key)
 
 
 def load_fex_contract():

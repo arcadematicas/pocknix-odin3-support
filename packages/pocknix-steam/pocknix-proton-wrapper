@@ -1,0 +1,419 @@
+#!/usr/bin/env python3
+# pocknix-proton-wrapper — applies the per-game tweaks from /etc/pocknix/game-tweaks.json, then
+# execs the real Proton entrypoint. Reached via the pocknix-proton shim named in the
+# toolmanifest commandline; every tweak must survive execv, since that is all we get.
+import json
+import os
+import pathlib
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import time
+
+
+BASE_FEX_CONFIG = pathlib.Path("/usr/share/fex-emu/Config.json")
+TWEAKS_CONFIG = pathlib.Path("/etc/pocknix/game-tweaks.json")
+FEX_PROFILES_CONFIG = pathlib.Path("/usr/share/pocknix/fex-profiles.json")
+TURNIP_ARM_DIR = pathlib.Path("/usr/share/pocknix/vk-arm")
+TURNIP_X86_DIR = pathlib.Path("/usr/share/pocknix/vk-x86")
+PROTON_INJECT_SRC = pathlib.Path("/usr/share/pocknix/proton-inject/x86_64-linux-gnu")
+# pressure-vessel resolves graphics against the FEX rootfs, NOT the host, so pinning a version
+# the image lacks poisons the container env and the game loses Vulkan entirely.
+CONTAINER_VK_LIST = pathlib.Path("/usr/share/fex-emu/vk-x86-container.list")
+# CRT DLLs wine's NATIVE arm64 service processes import; an amd64 redist copy of these in
+# the prefix kills wineboot/services.exe with c000007b before any game code runs.
+CRT_HEAL_DLLS = ("ucrtbase.dll",)
+PE_AMD64 = 0x8664
+# Per-game performance override consumed by pocknix-fancontrol + pocknix-lavd-mode.
+GAME_MODE_FILE = pathlib.Path("/run/pocknix/game-mode")
+FAN_MODES = ("quiet", "moderate", "performance")
+LAVD_MODES = ("autopilot", "performance", "balanced", "powersave")
+# device.conf is a sh board DISPATCHER, not a flat key=value file, so POCKNIX_BIG_CORES
+# only exists after SOURCING it the way every other consumer does.
+DEVICE_CONF_SNIPPET = (
+    '[ -r /usr/lib/pocknix/device.conf ] && . /usr/lib/pocknix/device.conf;'
+    '[ -r /etc/pocknix/device.conf ] && . /etc/pocknix/device.conf;'
+    'printf "%s" "${POCKNIX_BIG_CORES}"'
+)
+
+
+# prep's name claim hands us the ".real" sibling — both spellings must classify identically.
+SLR_ENTRY_NAMES = ("_v2-entry-point", "_v2-entry-point.real")
+
+
+def is_arm_slr(real_proton):
+    # An SLR chain hides the Proton behind the entry point; the runtime dir name carries the arch.
+    p = pathlib.Path(real_proton)
+    return p.name in SLR_ENTRY_NAMES and p.resolve().parent.name.endswith("-arm64")
+
+
+def is_arm_proton(real_proton):
+    # ARM Proton dists (arm64ec wine) ship native arm64 builtins; x86 dists don't.
+    if is_arm_slr(real_proton):
+        return True
+    return (pathlib.Path(real_proton).resolve().parent / "files/lib/wine/aarch64-windows").is_dir()
+
+
+def pe_machine(path):
+    try:
+        with path.open("rb") as f:
+            head = f.read(4096)
+        off = int.from_bytes(head[0x3C:0x40], "little")
+        return int.from_bytes(head[off + 4:off + 6], "little")
+    except (OSError, IndexError, ValueError):
+        return None
+
+
+def appid():
+    for key in ("STEAM_COMPAT_APP_ID", "SteamAppId", "SteamGameId"):
+        value = os.environ.get(key, "").strip()
+        if value.isdigit():
+            return value
+    return None
+
+
+def load_fex_contract():
+    with FEX_PROFILES_CONFIG.open(encoding="utf-8") as f:
+        contract = json.load(f)
+    profiles = contract.get("profiles")
+    if not isinstance(contract.get("defaults"), dict) or not isinstance(profiles, dict) or "default" not in profiles:
+        raise ValueError("invalid FEX profile contract")
+    for profile in profiles.values():
+        if not isinstance(profile, dict) or not isinstance(profile.get("config"), dict):
+            raise ValueError("invalid FEX profile contract")
+    return contract
+
+
+def load_tweaks(defaults):
+    data = json.loads(json.dumps(defaults))
+    try:
+        with TWEAKS_CONFIG.open(encoding="utf-8") as f:
+            loaded = json.load(f)
+    except (OSError, ValueError):
+        return data
+    if not isinstance(loaded, dict):
+        return data
+    if isinstance(loaded.get("global"), dict):
+        data["global"].update(loaded["global"])
+    if isinstance(loaded.get("games"), dict):
+        data["games"] = loaded["games"]
+    return data
+
+
+def merged_settings(tweaks, game_id):
+    settings = dict(tweaks.get("global", {}))
+    if game_id:
+        game_settings = tweaks.get("games", {}).get(str(game_id))
+        if isinstance(game_settings, dict) and game_settings.get("enabled") is True:
+            settings.update(game_settings)
+    return settings
+
+
+def runtime_config_dir():
+    runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if runtime:
+        return pathlib.Path(runtime) / "pocknix-fex"
+    return pathlib.Path("/tmp") / f"pocknix-fex-{os.getuid()}"
+
+
+def resolve_fex_config(settings, profiles):
+    profile_id = settings.get("fexProfile")
+    if isinstance(profile_id, str) and profile_id in profiles:
+        return profiles[profile_id]["config"]
+    return profiles["default"]["config"]
+
+
+def write_fex_config(settings, game_id, profiles):
+    with BASE_FEX_CONFIG.open(encoding="utf-8") as f:
+        config = json.load(f)
+    allowed = set().union(*(profile["config"].keys() for profile in profiles.values()))
+    fex_config = resolve_fex_config(settings, profiles)
+    config.setdefault("Config", {}).update({k: v for k, v in fex_config.items() if k in allowed})
+
+    config_dir = runtime_config_dir()
+    config_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    cutoff = time.time() - 86400
+    for old in config_dir.glob("*.json"):
+        try:
+            if old.stat().st_mtime < cutoff:
+                old.unlink()
+        except OSError:
+            pass
+    name = f"{game_id or 'global'}.{os.getpid()}.json"
+    target = config_dir / name
+    tmp = target.with_name(f".{name}.tmp")
+    try:
+        with tmp.open("w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2, sort_keys=True)
+            f.write("\n")
+        os.replace(tmp, target)
+        os.environ["FEX_APP_CONFIG"] = str(target)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def apply_audio_latency(settings):
+    # winepulse honors PULSE_LATENCY_MSEC: a bigger buffer absorbs FEX-translated mixer
+    # overruns at the cost of latency, hence per-game rather than global. A launch-option
+    # override is already in our env by now, so only fill in when unset.
+    value = str(settings.get("audioLatency", "") or "").strip()
+    if value.isdigit() and 10 <= int(value) <= 500 and "PULSE_LATENCY_MSEC" not in os.environ:
+        os.environ["PULSE_LATENCY_MSEC"] = value
+
+
+def apply_mesa_version(settings, real_proton):
+    # Per-game Turnip pick: a SERIES value ("25.2") resolves to the installed point release
+    # for the Proton flavor's arch (ARM proton = native ARM Vulkan stack -> vk-arm; x86
+    # proton loads an x86 driver under FEX -> vk-x86). VK_DRIVER_FILES replaces ICD
+    # enumeration, so a wrong-arch icd would strand the game driverless — any miss skips
+    # with a note. Set VK_ICD_FILENAMES too for older loaders.
+    value = str(settings.get("mesaVersion", "") or "").strip()
+    # A value is either a SERIES ("25.2", "26.2.3", "arm:26.2") or the FULL name of a standalone
+    # payload ("26.3.0devel", "26.3.0_devel.gitabc426bb-valve"). The old pattern was numbers,
+    # dots and an optional "rcN", so PocknixControl's suffixed options were dropped SILENTLY here
+    # and the game silently ran on the default driver. Allow letters and the _ + ~ - separators
+    # those names use; the leading [0-9] still forbids ".", ".." and any path trickery.
+    m = re.fullmatch(r"(?:(arm|x86):)?([0-9][0-9A-Za-z.+_~-]*)", value)
+    if not m:
+        return
+    arch, version = m.groups()
+    flavor = "arm" if is_arm_proton(real_proton) else "x86"
+    if arch and arch != flavor:
+        print(f"pocknix-proton: mesa pick {value} is {arch} but this Proton is {flavor}, using default driver", file=sys.stderr)
+        return
+    base = TURNIP_ARM_DIR if flavor == "arm" else TURNIP_X86_DIR
+    candidates = []
+    try:
+        for p in base.iterdir():
+            if (p.name == version or p.name.startswith(version + ".")) and (p / "icd.json").is_file():
+                candidates.append(p.name)
+    except OSError:
+        pass
+    if not candidates:
+        print(f"pocknix-proton: no {base.name} turnip payload for mesa {version}, using default driver", file=sys.stderr)
+        return
+    picked = max(candidates, key=lambda v: tuple(int(x) for x in re.findall(r"[0-9]+", v)))
+    if pathlib.Path(real_proton).name in SLR_ENTRY_NAMES and flavor == "x86":
+        # x86 SLR captures graphics from the FEX rootfs, so only image-embedded versions survive.
+        # An arm64 container captures the real host, where our payloads already live.
+        try:
+            embedded = set(CONTAINER_VK_LIST.read_text().split())
+        except OSError:
+            embedded = set()
+        if picked not in embedded:
+            print(f"pocknix-proton: mesa {picked} is not embedded in the FEX rootfs image, using default driver", file=sys.stderr)
+            return
+    icd = base / picked / "icd.json"
+    if "VK_DRIVER_FILES" not in os.environ and "VK_ICD_FILENAMES" not in os.environ:
+        os.environ["VK_DRIVER_FILES"] = str(icd)
+        os.environ["VK_ICD_FILENAMES"] = str(icd)
+
+
+def apply_game_modes(settings):
+    # Per-game fan curve / CPU scheduler, written pid-tagged: execv keeps our pid for the
+    # whole game session, so the daemons treat a dead pid as "no override" and the pick
+    # reverts on any kind of exit with no cleanup. "-" = field not overridden.
+    fan = str(settings.get("fanMode", "") or "").strip()
+    lavd = str(settings.get("lavdMode", "") or "").strip()
+    fan = fan if fan in FAN_MODES else "-"
+    lavd = lavd if lavd in LAVD_MODES else "-"
+    if fan == "-" and lavd == "-":
+        return
+    try:
+        GAME_MODE_FILE.write_text(f"{os.getpid()} {fan} {lavd}\n")
+    except OSError as exc:
+        print(f"pocknix-proton: failed to write game mode override: {exc}", file=sys.stderr)
+
+
+def big_cores():
+    # Mask is taskset-style ("3-7", "0,4-7"). No fallback guess: an empty set means "leave
+    # affinity alone", since pinning to the wrong cluster is worse than not pinning.
+    try:
+        mask = subprocess.run(["/bin/sh", "-c", DEVICE_CONF_SNIPPET], capture_output=True,
+                              text=True, timeout=5).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    cores = set()
+    for part in mask.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        lo, _, hi = part.partition("-")
+        if not lo.isdigit() or (hi and not hi.isdigit()):
+            return set()
+        cores.update(range(int(lo), int(hi or lo) + 1))
+    return cores
+
+
+def apply_cpu_pin(settings):
+    # Opt-in per title: scx_lavd does the placing by default (see pocknix-steam's launch).
+    # Affinity survives the execv and is inherited by every child, incl. the SLR container.
+    if str(settings.get("cpuPin", "") or "").strip() != "big":
+        return
+    cores = big_cores() & os.sched_getaffinity(0)
+    if not cores:
+        print("pocknix-proton: no usable POCKNIX_BIG_CORES mask, leaving CPU affinity alone", file=sys.stderr)
+        return
+    os.sched_setaffinity(0, cores)
+
+
+def heal_arm_prefix(real_proton):
+    # Steam's first-time setup runs VC-redist installers that plant amd64 CRT DLLs (real
+    # files) into the prefix; wine's NATIVE arm64 services then die c000007b at boot, and
+    # WINEDLLOVERRIDES=b does not recover. Re-point to the tool's arm64X builtin, re-asserted
+    # every launch (verify/updates restore the file; a first launch converges on the second).
+    if not is_arm_proton(real_proton):
+        return
+    compat = os.environ.get("STEAM_COMPAT_DATA_PATH", "").strip()
+    if not compat:
+        return
+    builtin_dir = pathlib.Path(real_proton).resolve().parent / "files/lib/wine/aarch64-windows"
+    system32 = pathlib.Path(compat) / "pfx/drive_c/windows/system32"
+    for name in CRT_HEAL_DLLS:
+        target = system32 / name
+        builtin = builtin_dir / name
+        if not (builtin.is_file() and target.is_file() and not target.is_symlink()):
+            continue
+        if pe_machine(target) != PE_AMD64:
+            continue
+        bak = target.with_name(name + ".amd64.bak")
+        bak.unlink(missing_ok=True)
+        target.rename(bak)
+        target.symlink_to(builtin)
+        print(f"pocknix-proton: healed {name} (amd64 redist copy -> arm64 builtin)", file=sys.stderr)
+
+
+def inject_x86_protocol_libs():
+    # pressure-vessel doesn't provide the x86 libwayland-client/libxkbcommon the game
+    # needs, so it can't talk to the compositor and the controller is dead. Remove once
+    # pressure-vessel ships these libs natively.
+    if not PROTON_INJECT_SRC.is_dir():
+        return
+    for tool in os.environ.get("STEAM_COMPAT_TOOL_PATHS", "").split(":"):
+        files = pathlib.Path(tool) / "files" if tool else None
+        if files is None:
+            continue
+        lib_dir = files / "lib" / "x86_64-linux-gnu"
+        if not lib_dir.is_dir() or (files / "bin-arm64").is_dir():  # skip arm64ec Proton
+            continue
+        # link targets must be copied before the symlinks that point at them
+        for src in sorted(PROTON_INJECT_SRC.iterdir(), key=pathlib.Path.is_symlink):
+            dest = lib_dir / src.name
+            if dest.exists() or dest.is_symlink():
+                continue
+            if src.is_symlink():
+                os.symlink(os.readlink(src), dest)
+            else:
+                shutil.copy2(src, dest)
+
+
+def apply_env_vars(settings):
+    # Free-form per-game env ("Environment Variables" tweak). shlex so quoted values with
+    # spaces survive (DXVK_CONFIG="dxgi.customDeviceDesc = ..."). Anything already in our
+    # env (Steam launch options, the mesaVersion tweak above) wins; we only fill in unset.
+    raw = settings.get("envVars")
+    if not isinstance(raw, str) or not raw.strip():
+        return
+    try:
+        tokens = shlex.split(raw)
+    except ValueError:
+        return
+    for token in tokens:
+        key, sep, value = token.partition("=")
+        if sep and key.isidentifier():
+            os.environ.setdefault(key, value)
+
+
+def repair_wedged_controller():
+    # x86 Proton can leave the pad registered as a bare USB device, never promoted to
+    # WINEXINPUT (dead under x86 too); an arm64ec Proton reusing that prefix then can't
+    # re-register it - winebus hits "already exists" (plugplay 0xe000020b) - and inherits
+    # the dead pad. Drop the stale VID_28DE sections to re-register.
+    data_path = os.environ.get("STEAM_COMPAT_DATA_PATH")
+    if not data_path:
+        return
+    reg = pathlib.Path(data_path) / "pfx" / "system.reg"
+    try:
+        text = reg.read_text(encoding="utf-8", errors="surrogateescape")
+    except FileNotFoundError:
+        return
+    lines = text.splitlines(keepends=True)
+    pad_sections = sum(1 for line in lines if line.startswith("[") and "VID_28DE" in line)
+    # Only a WINEXINPUT key for this same pad proves promotion; an old target's keys outlive it.
+    promoted = any("WINEXINPUT" in line and "VID_28DE" in line for line in lines)
+    if not pad_sections or promoted:
+        return  # no pad registered, or it promoted fine - leave the prefix alone
+    reg.with_name("system.reg.pocknix-bak").write_text(
+        text, encoding="utf-8", errors="surrogateescape")
+    kept, skip = [], False
+    for line in lines:
+        if line.startswith("["):
+            skip = "VID_28DE" in line
+        if not skip:
+            kept.append(line)
+    tmp = reg.with_name(".system.reg.pocknix-tmp")
+    tmp.write_text("".join(kept), encoding="utf-8", errors="surrogateescape")
+    os.replace(tmp, reg)
+    print(f"pocknix-proton: cleared wedged controller state "
+          f"({pad_sections} pad sections)", file=sys.stderr)
+
+
+def main():
+    if len(sys.argv) < 2:
+        raise SystemExit("usage: pocknix-proton-wrapper PROTON_ENTRYPOINT [ARGS...]")
+
+    real_proton = sys.argv[1]
+    args = [real_proton, *sys.argv[2:]]
+    game_id = appid()
+    # Proton-CachyOS enables its shader-compiler HUD unless DXVK_HUD is already set;
+    # keep the default clean while preserving an explicit user HUD (Steam launch options).
+    os.environ.setdefault("DXVK_HUD", "none")
+    settings = {}
+    try:
+        contract = load_fex_contract()
+        settings = merged_settings(load_tweaks(contract["defaults"]), game_id)
+        # Valve's FEX configures itself before we exist; only ARM Proton still reads FEX_APP_CONFIG.
+        if is_arm_proton(real_proton):
+            write_fex_config(settings, game_id, contract["profiles"])
+    except Exception as exc:
+        print(f"pocknix-proton: failed to write FEX config: {exc}", file=sys.stderr)
+    try:
+        apply_audio_latency(settings)
+    except Exception as exc:
+        print(f"pocknix-proton: failed to apply audio latency: {exc}", file=sys.stderr)
+    try:
+        apply_mesa_version(settings, real_proton)
+        apply_env_vars(settings)
+    except Exception as exc:
+        print(f"pocknix-proton: failed to apply env tweaks: {exc}", file=sys.stderr)
+    try:
+        apply_game_modes(settings)
+    except Exception as exc:
+        print(f"pocknix-proton: failed to apply game modes: {exc}", file=sys.stderr)
+    try:
+        apply_cpu_pin(settings)
+    except Exception as exc:
+        print(f"pocknix-proton: failed to pin CPU cores: {exc}", file=sys.stderr)
+    try:
+        heal_arm_prefix(real_proton)
+    except Exception as exc:
+        print(f"pocknix-proton: prefix heal failed: {exc}", file=sys.stderr)
+    try:
+        inject_x86_protocol_libs()
+    except Exception as exc:
+        print(f"pocknix-proton: protocol-lib inject skipped: {exc}", file=sys.stderr)
+    try:
+        repair_wedged_controller()
+    except Exception as exc:
+        print(f"pocknix-proton: controller repair skipped: {exc}", file=sys.stderr)
+
+    try:
+        os.execv(real_proton, args)
+    except OSError as exc:
+        raise SystemExit(f"pocknix-proton: failed to exec Proton: {exc}")
+
+
+if __name__ == "__main__":
+    main()
