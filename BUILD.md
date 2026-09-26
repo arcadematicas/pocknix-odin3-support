@@ -47,13 +47,17 @@ git clone https://github.com/arcadematicas/pocknix-odin3-support
 git clone --depth 1 https://github.com/ROCKNIX/distribution
 export DISTRIBUTION_DIR=~/odin3/distribution
 
-# --- 3. aplicar NUESTRO contenido al árbol de compilación ---
-pocknix-odin3-support/tools/sync-to-os.sh
-pocknix-odin3-support/tools/check-sync.sh        # debe decir OK
-
-# --- 4. vendorizar ROCKNIX (kernel, parches, firmware del SoC) ---
+# --- 3. vendorizar ROCKNIX (kernel, parches, firmware del SoC) ---
+# ⚠️ VA PRIMERO. `make sync` usa `rsync -a --delete` sobre kernel/sm8750/{patches,dts,bootloader},
+#    así que BORRA todos NUESTROS parches (rotación 0013/0067/0068, adreno 0051, batería
+#    0078–0081…) y nuestros DTS. Si se ejecuta DESPUÉS de sync-to-os.sh, se compila una imagen
+#    SIN nuestro trabajo (pasó el 26/09: el kernel salió con 62 parches en vez de 70).
 cd pocknix-os
 DEVICE=sm8750 make sync
+
+# --- 4. aplicar NUESTRO contenido ENCIMA del árbol ya vendorizado ---
+pocknix-odin3-support/tools/sync-to-os.sh
+pocknix-odin3-support/tools/check-sync.sh        # debe decir OK
 
 # --- 5. kernel -> paquetes+rootfs -> imagen ---
 DEVICE=sm8750 JOBS=$(nproc) make kernel
