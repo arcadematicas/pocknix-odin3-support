@@ -100,7 +100,11 @@ def dump_map(d: dict) -> bytes:
 
 def make_entry(appname: str, exe: str, launch_options: str = "",
                startdir: str | None = None, icon: str = "") -> dict:
-    appid = zlib.crc32((exe + appname).encode()) | 0x80000000
+    # El appid del acceso directo se calcula con el exe SIN las comillas del campo "exe"
+    # del vdf (asi lo hace WProton: 3322678579 y su caratula encaja). Con comillas el appid
+    # difiere (DeckStation daba 3281604075 en vez de 2879226642) y el tile sale SIN las
+    # imagenes que deckstation-steam.sh instala en /opt/deckstation/arte.
+    appid = zlib.crc32((exe.strip('"') + appname).encode()) | 0x80000000
     return {
         "appid": struct.unpack("<i", struct.pack("<I", appid))[0],
         "appname": appname,
