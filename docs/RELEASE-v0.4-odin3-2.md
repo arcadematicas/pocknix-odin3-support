@@ -1,9 +1,9 @@
 # Release v0.4-odin3-2 — arreglado el arranque y cerrado el centro
 
-**Fecha**: 26/09/2026 · **Artefacto**: `pocknix-sm8750-sd.img`
+**Fecha**: 26/09/2026 · **Artefacto**: `pocknix-sm8750-sd.img` (25.602.031.616 bytes)
 
 ```
-sha256  <pendiente — build en curso>
+sha256  29c1fde9465296116740a09dc08887b6415dadc24c0ab91c87e850d083eb046e
 ```
 
 ## Por qué esta release

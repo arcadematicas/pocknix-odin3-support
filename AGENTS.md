@@ -1110,7 +1110,8 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
 ### Pendientes vivos (25/09 noche → 26/09)
 - [x] Jarvis/Compi: verificar SHA256 de las partes de la imagen → **verificado, era correcto** (no era el problema).
 - [x] Aplicar los refuerzos de robustez a la SD → **hecho**… y resultó ser **la causa del fallo**, no un refuerzo inocuo.
-- [ ] Subir el default `SD_SLACK_MIB=2048` en `config/pocknix.conf` del centro, sync + commit.
+- [x] Subir el default `SD_SLACK_MIB` a **2048** en `config/pocknix.conf` del centro (hecho 26/09: con
+      1024 el `make sd-image` fallaba con "btrfs root has only 420 MiB free after populate (< 512 MiB)").
 - [ ] Probar el layer Vulkan `VK_LAYER_VALVE_rpo` con un juego real.
 - [ ] Decidir Mesa 26.3: probar el binario de Valve (opción A) o portar los parches (opción B).
 - [x] **Deuda RESUELTA (26/09)**: `config/` y `devices/sm8750/` (incluido el cmdline) ya están en el

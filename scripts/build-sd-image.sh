@@ -79,8 +79,8 @@ firstboot_config() {
 # which is how pocknix-rollback switches roots without touching boot config.
 # noatime + zstd:1 keep the device's own writes cheap; the image was populated at zstd:3.
 # commit=5: sync btrfs transactions every 5s (default 30s) so a forced power-off leaves a
-# much smaller tree-log. NEVER add `nologreplay` to these lines: it is not a valid btrfs
-# mount option in Linux 7.2 (only `rescue=nologreplay`, and that needs ro), and passing it
+# much smaller tree-log. NEVER add nologreplay to these lines: it is not a valid btrfs
+# mount option in Linux 7.2 (only rescue=nologreplay, and that needs ro), and passing it
 # on a rw mount makes btrfs return -EINVAL and the kernel panic before userspace, with no
 # logs. See docs/INCIDENTE-2026-09-25-nologreplay.md.
 PARTUUID=${SD_ROOT_PARTUUID}  /                  btrfs  rw,noatime,compress=zstd:1,commit=5                       0 0
