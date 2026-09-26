@@ -122,17 +122,20 @@ else:
 key = 'shortcuts' if 'shortcuts' in root else list(root)[0]
 sc = root[key]
 
-# ya existe uno con el mismo LaunchOptions? -> actualizar en vez de duplicar
+appid = appid_acceso_directo(EXE, NAME)
+
+# ya existe uno con el MISMO appid (mismo Exe+Nombre)? -> actualizar en vez de duplicar.
+# OJO: NO emparejar por LaunchOptions: WProton tambien lo tiene vacio, y al anadir
+# DeckStation se sobrescribia su entrada (WProton desaparecia de Steam).
 idx = None
 for i, e in sc.items():
-    if isinstance(e, dict) and e.get('LaunchOptions', '') == OPTS:
+    if isinstance(e, dict) and e.get('appid') == appid:
         idx = i
         break
 if idx is None:
     nums = [int(i) for i in sc.keys() if i.isdigit()]
     idx = str(max(nums) + 1 if nums else 0)
 
-appid = appid_acceso_directo(EXE, NAME)
 sc[idx] = {
     'appid': appid, 'AppName': NAME, 'Exe': '"%s"' % EXE,
     'StartDir': '"%s"' % STARTDIR, 'icon': ICON, 'ShortcutPath': '',
