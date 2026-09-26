@@ -588,6 +588,15 @@ se creyó que el cliente Steam ARM64 no comunicaba el límite a gamescope por **
   siempre a la última" **sin arriesgar el driver del sistema**.
 - **`pocknix-turnip-x86`** → equivalente x86_64 para apps bajo FEX.
 
+**🆕 (26/09/2026) — la Mesa de VALVE, MÉDIDA**: su Turnip (del repo del Steam Frame) da **+13,4 % de
+FPS** y **elimina los tirones** frente a nuestra 26.2 (medido en Dead Island), y **+7,2 % sobre nuestra
+propia `26.3.0devel`** con la misma versión → **su tuning aporta de verdad**, no es solo la versión.
+Instalada como payload `26.3.0-valve` con `tools/install-deckard-mesa.sh` (ojo con la dependencia
+`libdisplay-info`: soname `.so.1` vs nuestro `.so.3` → el script lo resuelve).
+**Resultados completos, método, las trampas de MangoHUD en Game Mode y los pendientes** (probar su
+Mesa **completa** en instalación limpia midiendo el OpenGL, y la autactualización desde la **raíz**
+del repo de Valve — los `mr-XXXX` son CI y no se deben pinear): **`docs/PRUEBAS-MESA.md`**.
+
 **Cómo se usa la versión por juego**: PocknixControl → pestaña **Games** → elegir juego →
 activar **"Use Per-Game Settings"** → aparece **"Mesa Version"** (el plugin apunta
 `VK_DRIVER_FILES` a esa versión). ⚠️ **No está en el menú global del QAM** — es por juego y

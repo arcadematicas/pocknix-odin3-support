@@ -249,6 +249,60 @@ contra él. El script:
 
 ---
 
+## 🏁 RESULTADOS — primera sesión (26/09/2026)
+
+**Juego**: Dead Island (app 91310, original de Steam). **Ajustes**: VSync **desactivado**, tope de FPS
+a 100. **Rutina**: mismo guardado y mismo recorrido en las 5 pasadas.
+**Medición**: MangoHUD a CSV, y se comparan **los mismos 90 s de juego real** (columna `elapsed`,
+del segundo 120 al 210) para quitar de en medio la carga y el calentamiento.
+
+| Corrida | Mesa | FPS medio | 1 % low | 0,1 % low | ft medio | stutter |
+|---|---|---|---|---|---|---|
+| 23:47 | 26.2 | 64,2 | 18,2 | 5,1 | 16,09 ms | 56 |
+| 23:55 | **valve** | 71,1 | 52,7 | 46,4 | 14,24 ms | 0 |
+| 00:03 | 26.2 | 66,5 | 29,3 | 23,4 | 15,47 ms | 35 |
+| 00:09 | **valve** | 77,1 | 45,5 | 31,5 | 13,50 ms | 6 |
+| 00:18 | **devel** | 69,1 | 43,4 | 31,8 | 15,05 ms | 2 |
+
+### Medias por variante
+
+| Variante | FPS medio | 1 % low | 0,1 % low | ft medio | stutter | n | Δ FPS |
+|---|---|---|---|---|---|---|---|
+| **26.2** (nuestra estable) | 65,3 | 23,8 | 14,3 | 15,78 ms | 46 | 2 | — |
+| **26.3.0-valve** | **74,1** | **49,1** | **39,0** | **13,87 ms** | **3** | 2 | **+13,4 %** |
+| **26.3.0devel** (nuestra) | 69,1 | 43,4 | 31,8 | 15,05 ms | 2 | 1 | **+5,7 %** |
+
+### Conclusiones
+
+1. **La Mesa de Valve es la mejor: +13,4 % de FPS** y, sobre todo, **los tirones casi desaparecen**
+   (1 % low de 23,8 → 49,1 fps; stutter de 46 → 3).
+2. **No es solo la versión.** Nuestra `26.3 devel` da +5,7 % sobre `26.2` (eso es el salto de versión),
+   pero **Valve saca otro +7,2 % sobre nuestro 26.3 con la misma versión** → **su trabajo (parches,
+   tuning ARM/Adreno) aporta de verdad**.
+3. **La decisión**: nos quedamos **con su Turnip** (payload `26.3.0-valve`, seleccionable por juego).
+   Promocionar su **Mesa completa** al sistema queda **pendiente de medir el OpenGL**.
+
+### ⚠️ Lo que aprendimos para la próxima vez
+
+- **`MangoHUD` en Game Mode NO usa `~/.config/MangoHud/MangoHud.conf`**: lo lleva **mangoapp dentro
+  de gamescope** y lee `MANGOHUD_CONFIGFILE` (un fichero en `/run/user/<uid>/gamescope-mangoapp-*`).
+  Y para que la capa de Vulkan se active en el juego hace falta `MANGOHUD=1` en su entorno.
+- **Su OpenGL NO se puede probar "a medias"**: mezclar sus drivers GL con nuestras librerías
+  (`libEGL`/`libgbm`/`libglvnd`) **crashea** (`dumped core`). O es su paquete completo, o no es nada.
+- **Punto de partida del OpenGL** (nuestra Mesa): `glmark2-es2-drm` → **Score 577**.
+  El OpenGL del sistema va por **freedreno nativo** (`msm_dri.so`), **no** por zink.
+
+### 📌 PENDIENTE (siguiente sesión)
+
+- **Instalación limpia completa con su Mesa entera** (Opción 1) y medir el OpenGL:
+  `glmark2` (comparar con 577) + **funcional: ES-DE** (`/opt/deckstation`, el que ya dio el problema
+  del "negro"), el escritorio y RetroArch. Si va bien → jubilar nuestro `mesa`; si no → quedarse con
+  la Opción 2 (solo el Turnip).
+- **Auto-actualización** desde la raíz del repo de Valve (la rama buena; los `mr-XXXX` son CI de cada
+  merge request y no se deben pinear), guardando la versión anterior para poder volver atrás.
+- **Opción 2** (pendiente de decidir): apuntar el **ICD del sistema** a su payload para que su Turnip
+  sea el predeterminado para todo, sin tocar el OpenGL.
+
 ## 7. Referencias
 
 - `tools/install-deckard-mesa.sh` — instala la Mesa de Valve como payload de `vk-arm`.
