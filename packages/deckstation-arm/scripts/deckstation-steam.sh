@@ -254,10 +254,16 @@ main() {
     done
 
     # Solo desde el modo Escritorio: en el modo Juego la sesión ES Steam.
-    # Se comprueba con las variables de la sesión gráfica Y con pgrep (por si
-    # se ejecuta por SSH, donde esas variables no existen).
+    # Se comprueba con las variables de la sesión gráfica Y con el compositor
+    # real (por si se ejecuta por SSH, donde esas variables no existen).
+    # OJO: NO volver a "pgrep -f gamescope": matchea el helper root SIEMPRE
+    # activo /usr/local/bin/pocknix-gamescope-rt (su cmdline contiene gamescope)
+    # y da falso positivo en modo Escritorio, bloqueando siempre el alta en Steam.
+    # `pidof gamescope gamescope-wl` mira el NOMBRE del proceso (gamescope se
+    # renombra a gamescope-wl), igual que hace pocknix-gamescope-rt, y solo
+    # engancha un compositor de verdad.
     if [ -n "${GAMESCOPE_WAYLAND_DISPLAY:-}" ] || [ "${XDG_CURRENT_DESKTOP:-}" = "gamescope" ] \
-       || pgrep -f gamescope >/dev/null 2>&1; then
+       || pidof gamescope gamescope-wl >/dev/null 2>&1; then
         say "ERROR: esto solo se puede hacer desde el modo Escritorio."
         say "En el modo Juego, la sesión ES Steam y habría que cerrarlo."
         exit 1
