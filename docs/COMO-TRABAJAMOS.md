@@ -69,6 +69,60 @@ La solución es siempre la misma: volver a lanzar `tools/sync-to-os.sh`.
 
 ---
 
+## 3-bis. Los comandos de git (copia y pega)
+
+### Clonar los DOS repos (una vez)
+
+```bash
+git clone https://github.com/arcadematicas/pocknix-odin3-support        # EL CENTRO (aquí se edita)
+git clone -b odin3-sm8750 https://github.com/arcadematicas/pocknix-os   # el sistema (para compilar)
+```
+
+### Mandar un cambio (el día a día)
+
+```bash
+cd pocknix-odin3-support
+git pull                       # SIEMPRE antes de empezar
+# ... editar ...
+tools/check-sync.sh            # comprobar que el centro y el sistema cuadran
+git add -A
+git commit -m "fix(kernel): 0081 manda el mensaje en formato Android (opcode 0x16)"
+git push                       # aqui 'origin' SI es el nuestro
+```
+
+El mensaje del commit: **qué** se hizo y **por qué**, en español, pensando en quien lo lea dentro de
+seis meses.
+
+### ⚠️ LA TRAMPA: en `pocknix-os`, `origin` NO es nuestro
+
+```bash
+cd pocknix-os
+git remote -v
+# origin        -> shuuri-labs/pocknix-os     <-- UPSTREAM. Solo 'git fetch'. NO se pushea aqui.
+# arcadematicas -> arcadematicas/pocknix-os   <-- NUESTRO. Aqui SI.
+
+git push arcadematicas odin3-sm8750     # ✅ correcto
+# git push origin odin3-sm8750          # ❌ "Permission denied" (es el repo de shuuri-labs)
+```
+
+**Si clonaste del upstream por error**, añade nuestro fork y ponte en la rama del proyecto:
+
+```bash
+git remote add arcadematicas https://github.com/arcadematicas/pocknix-os.git
+git fetch arcadematicas
+git switch odin3-sm8750
+```
+
+### Si te dice que no tienes permiso
+
+1. **¿Has aceptado la invitación?** En GitHub → campana de notificaciones → *Invitations*.
+2. Si el error es `403` / `bad credentials`: tu token (PAT) necesita el scope **`repo`** y no estar
+   caducado.
+3. **¿A qué repositorio empujas?** Mira "LA TRAMPA" de arriba: en `pocknix-os` es a
+   **`arcadematicas`**, nunca a `origin`.
+
+---
+
 ## 4. Reglas para no liarla
 
 1. **Se edita en el centro, nunca en el sistema.** Si no, se pierde en el siguiente sync.
