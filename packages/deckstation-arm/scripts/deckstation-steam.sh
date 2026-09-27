@@ -45,9 +45,9 @@ say() { printf '%s\n' "$1" >&2; }
 #   uso: steam_add.py appid <exe> <nombre>   -> imprime el appid calculado
 # ----------------------------------------------------------------------------
 write_steam_add() {
-    grep -q "DECKSTATION_HELPER steam_add.py 3f6725b2040c" "$STEAM_ADD_PY" 2>/dev/null && return 0
+    grep -q "DECKSTATION_HELPER steam_add.py 3f6725b2040c-appid" "$STEAM_ADD_PY" 2>/dev/null && return 0
     cat > "$STEAM_ADD_PY" <<'SAEOF'
-# DECKSTATION_HELPER steam_add.py 3f6725b2040c
+# DECKSTATION_HELPER steam_add.py 3f6725b2040c-appid
 #!/usr/bin/env python3
 # DeckStation - accesos directos de Steam
 #
