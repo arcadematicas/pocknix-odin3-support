@@ -1182,6 +1182,14 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
       En 7.2.6, `0050`/`0055`/`0517` **se saltan solos** (ya en mainline). Compilado e **instalado y
       verificado en la Odin** (`uname -r`=7.2.6, panel `connected`, WiFi `connected:full`, sesión OK).
       Centro `9f16155`, árbol `ff61120`. Backup de rollback: `/flash/KERNEL.bak-20260927-1954`.
-      **Siguiente**: portar el set de **s2idle** de armada (`431bf57`, sleep 0.71→0.37 W).
+- [x] **s2idle power — PORTADO E INSTALADO (27/09/2026)**. Del commit de armada `431bf57`
+      (sleep 0.71→0.37 W en Odin 3): parches `0521` (PCIe suspend OPP SM8750), `0522` (solo
+      endpoints vetaron D3cold), `0523`–`0526` (suspend-state en `qcom-rpmh-regulator` + core) y
+      DTS: rails del códec (`bob1/l15b/l2p8/l2i/s3g/s7i`) en modo **LPM** + **PCIe WAKE# active-low**.
+      Compilado (`KERNEL` md5 `278a738653f9`), instalado, **arranca y suspend/resume OK** verificado
+      por Fransis. Centro `6f6210b`, árbol `13339c1`. Rollback: `/flash/KERNEL.bak-20260927-2018`.
+      *No se midió el vatio exacto (Fransis lo dio por bueno con el resume OK).* **Pendiente menor**:
+      `0903` (battmgr) y `1007` (rsinput MCU supply) del mismo set → chocan con nuestros parches de
+      batería/rsinput; portarlos si se quiere estrujar más.
 - [ ] **Desfase relacionado** (mismo commit `92c6b96`): instalar en la Odin `pocknix-steam-full`
       `-3`, `pocknix-vk-valve` (Turnip de Valve) y `python-pygame-ce` (los PKGBUILD ya compilan).
