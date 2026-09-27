@@ -1170,8 +1170,18 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
       (uid 1000 → 1001 = `builder`, causaba "dubious ownership" de git). Falta **prueba visual con
       un juego WProton** (que el QAM/MangoHUD salga encima); si OK, quitar el watcher `xprop -spy`
       de `pocknix-steam`.
-- [ ] **HDR**: evaluar/activar HDR en la Odin (gates `STEAM_GAMESCOPE_*`, `HDR_NITS`,
-      `GAMESCOPE_DISPLAY_HDR_ENABLED`).
+- [ ] **HDR — INFRA PORTADA, FALTA EXPONERLO (27/09/2026)**. Hecho: kernel con LUTDMA +
+      color pipelines por plano (parches `0070`/`0071`/`0076`/`0077`/`0082`, compilado md5
+      `166a4a40`, instalado) y **gamescope re-baseado a OpenGamingCollective `3.16.29-ogc2`**
+      (PKGBUILD nuevo) + 19 parches de armada (`0101`–`0121`: perfil edidless + HDR del Odin 3
+      650 nits, gamma22, output-LUTs, P3, **color por plano**). Los parches de rotación de ROCKNIX
+      se descartaron (la base OGC ya trae rotación; se mantienen `0009`/`0010`/`0011`). Confirmado
+      en el log: *"Using plane IGC + 3D LUT color pipelines"* + *"Generated synthetic EDID for
+      EDID-less internal connector DSI-1"*. **Pendiente**: (1) la **opción HDR no aparece** en el
+      QAM — el EDID sintético lleva colorimetría pero **no metadatos HDR** (revisar el match del
+      perfil `0103` por modo/panel y/o el gate `STEAM_GAMESCOPE_HDR`/`HDR_NITS`); (2) **escalado**:
+      con la base OGC la UI sale más grande (revisar el cálculo de escala lógica de OGC y el efecto
+      de `--rotated-output-max-height 1088`). Probarlo con un **juego HDR**.
 - [x] **Kernel 7.2.6 — RESUELTO (27/09/2026)**. Ya NO está descartado. Las dos regresiones las
       arregla el propio mainline con los parches de **armada-os** (commit `7ecbd142` + `b0abd0ad`):
       - **Panel negro** (`dsi_calc_clk_rate_6g` redondeaba el byte clock ANTES de reparentar a la
