@@ -67,6 +67,11 @@ el sistema están sincronizados y puedes trabajar tranquilo.
 **Y si algo falla al compilar**, casi siempre es que se editó el sistema sin pasar por el centro.
 La solución es siempre la misma: volver a lanzar `tools/sync-to-os.sh`.
 
+> El paso 4 (`make build`) es para **distribuir**: genera la imagen entera y tarda 30-45 min.
+> Si lo que quieres es **probar un cambio en la Odin que ya tienes delante**, no hace falta
+> flashear: compila solo ese paquete e instálalo por SSH con `tools/deploy-to-device.sh`
+> (ver la sección 7).
+
 ---
 
 ## 3-bis. Los comandos de git (copia y pega)
@@ -160,9 +165,67 @@ qué hizo cada uno.
 
 ---
 
-## 7. Resumen en 30 segundos
+## 7. Iterar sin flashear: `tools/deploy-to-device.sh`
+
+Flashear la imagen entera son 30-45 minutos y solo hace falta para distribuir. Para
+**probar un cambio en la Odin** no hace falta: se compila solo el paquete afectado y se
+instala en caliente por SSH. Eso es `tools/deploy-to-device.sh`.
+
+```bash
+tools/deploy-to-device.sh pocknix-bsp-sm8750          # compila e instala en la Odin
+tools/deploy-to-device.sh pocknix-decky pocknix-tools  # varios de golpe
+```
+
+Hace, en este orden: `sync-to-os.sh` → `make packages PKG=…` → `scp` del `.pkg.tar` →
+`pacman -U` en la Odin → reinicio de los daemons afectados → `systemctl --failed` y el
+desfase que queda.
+
+### Opciones que hay que conocer
+
+| Opción | Qué hace |
+|---|---|
+| `--check` | **No instala nada.** Compara la versión de cada paquete nuestro instalado en la Odin contra la del PKGBUILD del centro y lista el desfase. Sale con **0** si está todo igualado y **1** si hay desfase. No necesita sudo. |
+| `--check --strict` | Como `--check`, pero también falla si un paquete del centro **no está instalado** en la Odin. |
+| `--dry-run` | Muestra los 6 pasos sin hacer ninguno. |
+
+```bash
+tools/deploy-to-device.sh --check        # ¿la Odin está igualada al centro?
+```
+
+### Variables de entorno
+
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `DEVICE_HOST` | `odin-local` (192.168.4.22, la de casa) | Cambia de Odin. `DEVICE_HOST=odin` va por Tailscale. |
+| `DEVICE_SUDO_PASS` | `pocknix` | sudo de `deck` en la Odin. |
+| `PC_SUDO_PASS` | — | sudo del **PC**, solo lo necesita el `make packages` (monta un chroot aarch64). |
+| `NO_RESTART=1` | — | No reinicia ningún servicio al terminar. |
+| `FORCE_RESTART=1` | — | Reinicia el loader de Decky aunque haya Steam. |
+
+### ⚠️ Tres cosas que el script hace por ti (y por qué)
+
+1. **El loader de Decky NO se reinicia si hay Steam o sesión gráfica.** Reiniciarlo en
+   caliente con Steam en modo juego provoca el **crash loop de steamwebhelper** que
+   documenta el `AGENTS.md`. El script lo comprueba y, si la sesión está viva, lo dice y
+   lo deja para que lo reinicies tú desde el escritorio.
+2. **`--overwrite` solo en dos rutas**, `/opt/deckstation/*` y `/usr/share/decky-plugins/*`.
+   Esos árboles los crean en tiempo de ejecución `deckstation-setup.sh` y
+   `deploy-lanzar-sh.sh` (~2900 ficheros sin dueño) y el plugin de Decky, así que
+   `pacman -U` fallaba siempre por conflicto. Limitado a propósito: un `--overwrite '*'`
+   taparía también `/usr/bin` y `/etc`.
+3. **La contraseña va con `SUDO_ASKPASS`, nunca en la línea de órdenes.** El script sube
+   un askpass a `/tmp` de la Odin, modo 700, usa `sudo -A` y lo borra al salir.
+
+Y ojo con esto: **el script instala lo compilado, no cambia el repo**. Si pruebas algo a
+mano en la Odin, tráelo al centro después (regla de oro del punto 2).
+
+---
+
+## 8. Resumen en 30 segundos
 
 - Todo lo nuestro está en **`arcadematicas/pocknix-odin3-support`**. Ese es el sitio donde se trabaja.
 - El otro repo (`pocknix-os`) es la copia del sistema libre, solo para poder compilar. **No se toca a mano.**
 - Después de editar: `tools/sync-to-os.sh`, luego `make build`, probar en la Odin, y commit.
+- Para **probar en la Odin sin flashear**: `tools/deploy-to-device.sh <paquete>`
+  (y `--check` para ver el desfase sin instalar nada).
 - ¿Qué lleva hecho? `CHANGELOG.md`. ¿Detalles técnicos? `AGENTS.md` y `docs/`.
