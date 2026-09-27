@@ -666,6 +666,12 @@ estable, ramas en `_versions`, `_develcommit` vs el HEAD de main). Solo informa.
 
 ## 🔴 KERNEL: 7.2.6 DESCARTADO → 7.2.4 + ROTACIÓN (18/09/2026)
 
+> ⚠️ **ACTUALIZADO 27/09/2026 — el 7.2.6 YA FUNCIONA.** Los parches de armada
+> (`0048a` DSI + `0514`/`0514a` iommu-map) arreglan las dos regresiones; 7.2.6 está compilado,
+> instalado y verificado en la Odin. Esta sección queda como **historial** del diagnóstico (sigue
+> siendo válido por qué fallaba el 7.2.6 "pelado" de mainline). Detalle arriba, en "Pendientes
+> anotados por Fransis (27/09)".
+
 **Ver `docs/PENDIENTE-2026-09-18.md` para el detalle completo.**
 
 ### Decisión
@@ -1166,8 +1172,16 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
       de `pocknix-steam`.
 - [ ] **HDR**: evaluar/activar HDR en la Odin (gates `STEAM_GAMESCOPE_*`, `HDR_NITS`,
       `GAMESCOPE_DISPLAY_HDR_ENABLED`).
-- [ ] **Kernel nuevo**: el **7.2.4** es el bueno. El **7.2.6 se descartó** por 2 regresiones de
-      mainline (display/panel negro por `dsi_calc_clk_rate_6g` + WiFi ath12k/MHI). Revisar si el
-      siguiente 7.2.x / 7.3 ya las arregla antes de subir.
+- [x] **Kernel 7.2.6 — RESUELTO (27/09/2026)**. Ya NO está descartado. Las dos regresiones las
+      arregla el propio mainline con los parches de **armada-os** (commit `7ecbd142` + `b0abd0ad`):
+      - **Panel negro** (`dsi_calc_clk_rate_6g` redondeaba el byte clock ANTES de reparentar a la
+        PHY PLL → rate falso en el PLL) → `0048a-drm-msm-dsi-round-byte-clock-rate-after-reparenting-to-PLL.patch`.
+      - **WiFi** (`pcie-qcom`/OF parseaban `iommu-map` con stride fijo de 4 celdas, pero SM8750 usa
+        `#iommu-cells=2` → fw_devlink enlazaba PCIe con CoreSight → sin host PCIe ni `wlan0`) →
+        `0514-PCI-qcom-honor-iommu-map-cell-count.patch` + `0514a-of-property-honor-iommu-cells-in-iommu-map-devlinks.patch`.
+      En 7.2.6, `0050`/`0055`/`0517` **se saltan solos** (ya en mainline). Compilado e **instalado y
+      verificado en la Odin** (`uname -r`=7.2.6, panel `connected`, WiFi `connected:full`, sesión OK).
+      Centro `9f16155`, árbol `ff61120`. Backup de rollback: `/flash/KERNEL.bak-20260927-1954`.
+      **Siguiente**: portar el set de **s2idle** de armada (`431bf57`, sleep 0.71→0.37 W).
 - [ ] **Desfase relacionado** (mismo commit `92c6b96`): instalar en la Odin `pocknix-steam-full`
       `-3`, `pocknix-vk-valve` (Turnip de Valve) y `python-pygame-ce` (los PKGBUILD ya compilan).
