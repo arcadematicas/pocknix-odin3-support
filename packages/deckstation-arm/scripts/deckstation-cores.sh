@@ -110,3 +110,25 @@ if [ "$DRY" = 1 ]; then
 else
     log "enlazados: $linked | ya presentes: $skipped"
 fi
+
+# Si hemos enlazado cores nuevos, invalidamos el cache de core_info.
+#
+# POR QUE: RetroArch cachea los .info de los cores en
+#   <CORES_DIR>/core_info.cache
+# y ese cache se escribe UNA vez. Si despues se anade un core (p. ej. al
+# instalar un paquete como suyu-libretro, que pone el .so en
+# /usr/lib/libretro y el .info en /usr/share/libretro/info), el cache NO
+# se invalida solo y el core NUEVO NO APARECE en la lista de cores de
+# RetroArch, aunque el .so y el .info esten ahi y ES-DE lo lance sin
+# problema. Es exactamente lo que pasaba con Suyu.
+#
+# Por eso la config de RetroArch va con core_info_cache_enable="false"
+# (ver configs/retroarch/retroarch.cfg); este rm es la red de seguridad
+# para cuando el cache este disponible.
+if [ "$DRY" = 0 ] && [ "$linked" -gt 0 ]; then
+    for f in "$CORES_DIR/core_info.cache" "$CORES_DIR/core_info.cache.tmp"; do
+        [ -e "$f" ] || continue
+        rm -f "$f" 2>/dev/null || warn "no se pudo borrar $(basename "$f")"
+    done
+    log "cache de core_info invalidado (cores nuevos ya visibles en RetroArch)"
+fi
