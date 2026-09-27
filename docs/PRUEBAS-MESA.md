@@ -294,14 +294,126 @@ del segundo 120 al 210) para quitar de en medio la carga y el calentamiento.
 
 ### 📌 PENDIENTE (siguiente sesión)
 
-- **Instalación limpia completa con su Mesa entera** (Opción 1) y medir el OpenGL:
-  `glmark2` (comparar con 577) + **funcional: ES-DE** (`/opt/deckstation`, el que ya dio el problema
-  del "negro"), el escritorio y RetroArch. Si va bien → jubilar nuestro `mesa`; si no → quedarse con
-  la Opción 2 (solo el Turnip).
+- ~~**Instalación limpia completa con su Mesa entera** (Opción 1) y medir el OpenGL.~~
+  → **DESCARTADA el 27/09/2026**: su paquete no trae driver OpenGL para Adreno → la Odin se queda
+  sin GL. Ver la sección siguiente.
 - **Auto-actualización** desde la raíz del repo de Valve (la rama buena; los `mr-XXXX` son CI de cada
   merge request y no se deben pinear), guardando la versión anterior para poder volver atrás.
 - **Opción 2** (pendiente de decidir): apuntar el **ICD del sistema** a su payload para que su Turnip
   sea el predeterminado para todo, sin tocar el OpenGL.
+
+---
+
+## ❌ OPCIÓN 1 DESCARTADA — su Mesa entera no sirve como driver del sistema (27/09/2026)
+
+**Qué se probó**: instalar el **paquete COMPLETO** de Mesa de Valve
+(`deckard-mesa-linux-aarch64`) como **driver del sistema** en una SD de Pocknix, sustituyendo
+nuestra `mesa` + `vulkan-freedreno`, y medir el OpenGL (`glmark2`, con referencia 577).
+
+**Resultado: NO SIRVE.** No por rendimiento, sino porque **no trae driver OpenGL para Adreno**:
+instalado, la Odin se queda **sin OpenGL** (escritorio, ES-DE, RetroArch, `glmark2`).
+
+### 1. El paquete
+
+```
+/home/fransis/deckard-paquetes/deckard-mesa-linux-aarch64-26.3.0_devel+gitabc426bb-1-aarch64.pkg.tar.zst   (~11 MB)
+```
+
+Declara:
+
+```
+provides:  mesa, mesa-libgl, opengl-driver
+replaces:  mesa-libgl
+```
+
+O sea: **queda registrado como `mesa` del sistema** y sustituye a la nuestra de golpe. Por eso la
+instalación tiene que hacerse con cuidado: lo que se quitan son 10 ficheros que **no vuelve a
+poner el paquete de Valve** (ver §4).
+
+### 2. ✅ SÍ trae Vulkan Adreno
+
+```
+usr/lib/libvulkan_freedreno.so                 18.8 MB
+usr/share/vulkan/icd.d/freedreno_icd.aarch64.json
+```
+
+La parte de Vulkan (Turnip) es exactamente lo que ya usamos como payload, y es la que da el
+**+13,4 %** medido arriba.
+
+### 3. ❌ NO trae driver OpenGL para Adreno
+
+`usr/lib/dri/` contiene **exactamente 39 drivers**, y son:
+
+```
+apple_dri.so        armada-drm_dri.so   exynos_dri.so        gm12u320_dri.so
+hdlcd_dri.so        hx8357d_dri.so      ili9163_dri.so       ili9225_dri.so
+ili9341_dri.so      ili9486_dri.so      imx-dcss_dri.so      imx-drm_dri.so
+imx-lcdif_dri.so    ingenic-drm_dri.so  kirin_dri.so         komeda_dri.so
+libdril_dri.so      mali-dp_dri.so      mcde_dri.so          mediatek_dri.so
+meson_dri.so        mi0283qt_dri.so     mxsfb-drm_dri.so     panel-mipi-dbi_dri.so
+pl111_dri.so        rcar-du_dri.so      repaper_dri.so       rockchip_dri.so
+rzg2l-du_dri.so     ssd130x_dri.so      st7586_dri.so        st7735r_dri.so
+sti_dri.so          stm_dri.so          sun4i-drm_dri.so     udl_dri.so
+vkms_dri.so         zink_dri.so         zynqmp-dpsub_dri.so
+```
+
+Leído de una tacada: **todo pantallas SPI/embebidas raras** (`ili9xxx`, `st7xxx`, `ssd130x`,
+`repaper`, `pl111`…), los `kms` de SoCs de TV (**meson**, **rockchip**, **rcar-du**, **sun4i**,
+**zynqmp**, **komeda**), los de framebuffer deible (`udl`, `vkms`), **`libdril`** y **`zink`**.
+
+| Driver | ¿Lo necesita la Odin? |
+|---|---|
+| `zink_dri.so` | ❌ es OpenGL sobre Vulkan; aquí el OpenGL va **nativo** por `msm_dri.so` |
+| `libdril_dri.so` | ❌ es el puente de los drivers proprietary de embebidos |
+| el resto (SPI, KMS de TV, udl/vkms) | ❌ ninguno es el Adreno 830 |
+| **`msm_dri.so`** | 🔴 **FALTA** — es el OpenGL/GLES nativo de Adreno (el de nuestra `msm_dri.so`) |
+| **`swrast_dri.so`** | 🔴 **FALTA** — el rasterizador por software de Mesa |
+| **`kms_swrast_dri.so`** | 🔴 **FALTA** — el mismo, para KMS |
+
+**Los tres que faltan son exactamente los que usa la Odin.** Sin `msm_dri.so` no hay
+`libEGL`/`libGL` acelerados, y sin `swrast` tampoco el camino por software: **no hay OpenGL**.
+
+### 4. Consecuencia comprobada
+
+Se quitó antes nuestra `mesa` + `vulkan-freedreno` y se instaló el paquete de Valve: **10 ficheros
+nuestros quedaron ausentes**, entre ellos:
+
+```
+/usr/lib/dri/msm_dri.so
+/usr/lib/libgallium-26.2.3-pocknix2.1.so
+/usr/share/drirc.d/00-msm-defaults.conf
+/usr/lib/dri/kms_swrast_dri.so
+/usr/lib/dri/swrast_dri.so
+/usr/lib/libGLX_indirect.so.0
+```
+
+`provides: mesa` + `replaces: mesa-libgl` lo HCCE de golpe y **no hay vuelta atrás sin reinstalar
+nuestra Mesa a mano** (por eso lo del snapshot de btrfs, en la guía aparte, es de vida o muerte).
+
+### 5. La trampa de siempre: `libdisplay-info`
+
+Sigue aplicando (ver §1): su driver pide **`libdisplay-info.so.1`** (soname de SteamOS) y nuestro
+sistema tiene **`libdisplay-info.so.0.3.0`** con soname `.so.3`. Sin el symlink, el ICD no carga y
+`vulkaninfo` no lista nada:
+
+```bash
+sudo ln -sf libdisplay-info.so.0.3.0 /usr/lib/libdisplay-info.so.1
+```
+
+### 6. Decisión final
+
+| Opción | Estado |
+|---|---|
+| **Opción 1** — su Mesa **entera** como driver del sistema | 🔴 **DESCARTADA** (27/09/2026): sin `msm_dri.so` la Odin se queda **sin OpenGL** |
+| **Opción 2** — **nuestra Mesa (OpenGL Adreno nativo) + su Turnip (Vulkan)** | ✅ **LA BUENA**: su Turnip mide **+13,4 %** y no toca el OpenGL |
+
+**La Opción 2 es la configuración final.** En la Odin ya está como **opción seleccionable por
+juego**: el payload vive en `/usr/share/pocknix/vk-arm/26.3.0-valve/` y el selector (PocknixControl
+→ Games → "Use Per-Game Settings" → "Mesa Version") está arreglado.
+
+> 📖 Cómo se instaló todo esto sin arrancar la Odin una sola vez (chroot aarch64 con
+> `qemu-aarch64-static`, sin DNS, conflictos de pacman, snapshot btrfs…):
+> **`docs/INSTALAR-PAQUETES-EN-SD-DESDE-PC.md`**.
 
 ## 7. Referencias
 
@@ -309,5 +421,7 @@ del segundo 120 al 210) para quitar de en medio la carga y el calentamiento.
 - `tools/mesa-bench-compare.py` — compara los CSV y da el veredicto.
 - `tools/check-mesa.sh` — qué Mesa/qué ramas de Turnip tenemos y cuáles hay upstream.
 - `packages/soc/pocknix-turnip-arm/PKGBUILD` — nuestras builds de Turnip (una por rama).
+- `docs/INSTALAR-PAQUETES-EN-SD-DESDE-PC.md` — instalar paquetes aarch64 en una SD de Pocknix
+  desde el PC x86_64 (chroot con `qemu-aarch64-static`), sin arrancar la Odin.
 - `/home/fransis/deckard-paquetes/GUIA-ADAPTACION.md` — qué más trae el repo de Valve
   (Vulkan layers RPO/FDM, UCM, sysctls) y qué se puede adaptar a la Odin 3.

@@ -593,9 +593,15 @@ FPS** y **elimina los tirones** frente a nuestra 26.2 (medido en Dead Island), y
 propia `26.3.0devel`** con la misma versión → **su tuning aporta de verdad**, no es solo la versión.
 Instalada como payload `26.3.0-valve` con `tools/install-deckard-mesa.sh` (ojo con la dependencia
 `libdisplay-info`: soname `.so.1` vs nuestro `.so.3` → el script lo resuelve).
-**Resultados completos, método, las trampas de MangoHUD en Game Mode y los pendientes** (probar su
-Mesa **completa** en instalación limpia midiendo el OpenGL, y la autactualización desde la **raíz**
-del repo de Valve — los `mr-XXXX` son CI y no se deben pinear): **`docs/PRUEBAS-MESA.md`**.
+**🔴 SU MESA COMPLETA COMO DRIVER DEL SISTEMA (Opción 1) = DESCARTADA (27/09/2026)**: el paquete
+`deckard-mesa-linux-aarch64` trae `libvulkan_freedreno.so` (Turnip ✅) pero **NO trae driver OpenGL
+para Adreno** — su `usr/lib/dri/` tiene 39 drivers (pantallas SPI, KMS de SoCs de TV, `zink`,
+`libdril`) y **le faltan `msm_dri.so`, `swrast_dri.so` y `kms_swrast_dri.so`** → instalada deja la
+Odin **sin OpenGL** (escritorio, ES-DE, RetroArch, glmark2). **La Opción 2 es la definitiva:
+nuestra Mesa (OpenGL Adreno nativo) + su Turnip (Vulkan).**
+Resultados completos, método y las trampas de MangoHUD en Game Mode: **`docs/PRUEBAS-MESA.md`**.
+Pendiente: la autactualización desde la **raíz** del repo de Valve (los `mr-XXXX` son CI y no se
+deben pinear).
 
 **Cómo se usa la versión por juego**: PocknixControl → pestaña **Games** → elegir juego →
 activar **"Use Per-Game Settings"** → aparece **"Mesa Version"** (el plugin apunta
@@ -1122,7 +1128,9 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
 - [x] Subir el default `SD_SLACK_MIB` a **2048** en `config/pocknix.conf` del centro (hecho 26/09: con
       1024 el `make sd-image` fallaba con "btrfs root has only 420 MiB free after populate (< 512 MiB)").
 - [ ] Probar el layer Vulkan `VK_LAYER_VALVE_rpo` con un juego real.
-- [ ] Decidir Mesa 26.3: probar el binario de Valve (opción A) o portar los parches (opción B).
+- [ ] Decidir Mesa 26.3: ~~probar el binario de Valve (opción A)~~ **DESCARTADA 27/09: su Mesa entera
+      no trae driver OpenGL para Adreno** (`msm_dri.so` no está) → sin GL en la Odin. Se sigue con la
+      **Opción 2: nuestra Mesa + su Turnip** (payload `26.3.0-valve`). Ver `docs/PRUEBAS-MESA.md`.
 - [x] **Deuda RESUELTA (26/09)**: `config/` y `devices/sm8750/` (incluido el cmdline) ya están en el
       centro y los vigila `check-sync.sh`. Un cambio de arranque que no pase por el centro ahora hace
       **fallar el build** — el agujero por el que se coló el `nologreplay` queda cerrado.
