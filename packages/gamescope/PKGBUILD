@@ -4,12 +4,15 @@
 # rotation as the fallback; 0010 adds --rotated-output-max-height so the DPU's inline rotator
 # can rotate AT SCANOUT (free) even on panels past its pre-rotation source cap. pocknix-steam
 # passes logical LANDSCAPE -W/-H and lets gamescope pick scanout vs composite per plane.
+# 0011 (NUESTRO) hace que --force-composition NO se pueda anular desde fuera: el gamescope de
+# la Odin 3 compone por plano primario y los planos overlay del MSM/Adreno no se componen
+# encima, asi que con direct scan-out el QAM/mangoapp quedan DETRAS del juego.
 # epoch=1 outranks ALARM's gamescope. The pkgver segment after "rocknix." must vercmp higher
 # on every bump, hence commit date then sha — a bare sha is non-monotonic.
 pkgname=gamescope
 epoch=1
 pkgver=3.16.0.rocknix.20260802.6644cc9
-pkgrel=5
+pkgrel=6
 _commit=6644cc9a07d8ba937003deae8bd7c28a490d0c64
 install=gamescope.install
 pkgdesc="SteamOS session compositing WM — patched (rotation-shader, for msm/rotated panels)"
@@ -36,8 +39,10 @@ source=("gamescope::git+https://github.com/ValveSoftware/gamescope.git#commit=${
         '0008-steamcompmgr-classify-the-interactive-overlay-by-out.patch'
         # NUESTRO: hace que el atom GAMESCOPE_FPS_LIMIT del QAM se quede (ver el parche)
         '0009-fps-limit-atom-persist.patch'
-        '0010-DRMBackend-add-rotated-output-max-height.patch')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+        '0010-DRMBackend-add-rotated-output-max-height.patch'
+        # NUESTRO: --force-composition gana a la propiedad X11 (ver el parche)
+        '0011-force-composition-not-cancelled-by-x-property.patch')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   cd gamescope
@@ -51,6 +56,9 @@ prepare() {
   # NUESTRO (pocknix-odin3-support): el QAM frame limiter no tenia efecto en HW.
   patch -p1 < "${srcdir}/0009-fps-limit-atom-persist.patch"
   patch -p1 < "${srcdir}/0010-DRMBackend-add-rotated-output-max-height.patch"
+  # NUESTRO (pocknix-odin3-support): sin esto el flag de la linea de gamescope lo cancela
+  # Steam con la propiedad GAMESCOPE_COMPOSITE_FORCE=0 y el QAM vuelve a quedar detras.
+  patch -p1 < "${srcdir}/0011-force-composition-not-cancelled-by-x-property.patch"
 }
 
 build() {

@@ -415,8 +415,94 @@ juego**: el payload vive en `/usr/share/pocknix/vk-arm/26.3.0-valve/` y el selec
 > `qemu-aarch64-static`, sin DNS, conflictos de pacman, snapshot btrfs…):
 > **`docs/INSTALAR-PAQUETES-EN-SD-DESDE-PC.md`**.
 
-## 7. Referencias
+## 7. ✅ `pocknix-vk-valve` — el Turnip de Valve ya está EN EL SISTEMA (27/09/2026)
 
+La Opción 2 ya no es "instalar un payload a mano en la Odin": es **un paquete nuestro**, con lo
+que implica (entra en la imagen, se actualiza con `pacman`, y queda en git).
+
+**Qué instala** (`packages/pocknix-vk-valve/PKGBUILD`, compartido aarch64):
+
+| Ruta | Qué es |
+|---|---|
+| `/usr/share/pocknix/vk-arm/26.3.0-valve/libvulkan_freedreno.so` | el Turnip de Valve (18,8 MB), **byte a byte** el de su paquete |
+| `/usr/share/pocknix/vk-arm/26.3.0-valve/icd.json` | su manifest, con `library_path` reescrito al payload |
+| `/usr/share/pocknix/vk-arm/26.3.0-valve/VERSION.txt` | procedencia: paquete de Valve, sha256, serie, versión nuestra |
+| `/usr/lib/libdisplay-info.so.1` | **symlink** a `libdisplay-info.so.3` (el alias de la §5, ahora con dueño) |
+| `/usr/share/licenses/pocknix-vk-valve/README` | licencia y procedencia (Mesa es libre; el build es de Valve) |
+
+**Lo que NO hace** (y no debe hacerse nunca):
+
+- **NO** instala la Mesa de Valve: ni `msm_dri.so`, ni `libgallium`, ni `usr/lib/dri/*` → el
+  OpenGL de la Odin sigue siendo el nuestro (por eso la Opción 1 está descartada, §6).
+- **NO** es el driver del sistema: nada cambia hasta que elijas "26.3.0-valve" en
+  PocknixControl → Games → "Use Per-Game Settings" → "Mesa Version".
+- **NO** toca `/etc/vulkan/icd.d`: el manifest va en el payload y lo apunta `VK_DRIVER_FILES`.
+
+**Fuente: raíz del repo de Valve, fijada.** `source=` es un fichero **concrete** de la raíz de
+`holo-packages.steamos.cloud/archlinux-deckard-hotfixes/`, con `sha256sums` puesto:
+
+```
+deckard-mesa-linux-aarch64-26.3.0_devel+gitabc426bb-1-aarch64.pkg.tar.zst
+sha256: 7b259d40d5b6845cad91b6cf991da34d6c8a146683fa6009336d3bc464028938
+```
+
+> 🔴 **Los directorios `mr-XXXX/` del repo de Valve NO se pueden pinear.** Son los artefactos de
+> CI de cada *merge request*: se mueven, se sobrescriben y desaparecen. Un `source=` a un
+> `mr-1174/...` compila hoy y rompe dentro de dos semanas. Para refrescar: listar la raíz, ver
+> el `deckard-mesa-linux-aarch64-*` más nuevo, y actualizar `_valve_pkg` + `sha256sums` juntos
+> (es exactamente lo que hace `tools/install-deckard-mesa.sh`).
+
+**Entra en la imagen** por `depends` de `pocknix-steam-full` (override nuestro de un solo
+PKGBUILD, `pkgrel` 2 → 3), que es la capa que ya lleva `pocknix-turnip-arm` / `pocknix-turnip-x86`.
+Con eso llega a las imágenes nuevas **y** a los dispositivos ya desplegados con `-Syu`.
+
+**Compilar** (desde `pocknix-os`, `DEVICE=sm8750` es obligatorio):
+
+```bash
+cd /home/fransis/pocknix-odin3-project/pocknix-odin3-support
+./tools/sync-to-os.sh && ./tools/check-sync.sh        # el paquete es NUESTRO: sin esto, ni está
+cd ../pocknix-os
+sudo make packages PKG="pocknix-vk-valve"              # rápido: descarga 10 MB y desempaqueta
+```
+
+`package()` es una comprobación, no un build: descarga el tar, verifica el sha256, extrae **dos**
+ficheros, y se niega a terminar si
+
+- el `.so` no es `AArch64` (un payload de otra arquitectura se instalaría sin quejarse y
+  fallaría en la Odin),
+- dentro no hay `libvulkan_freedreno.so` o ningún `freedreno_icd*.json` (si Valve cambia el
+  layout, que lo diga el build y no la Odin),
+- no hay ninguna `libdisplay-info.so.[0-9]*` (o sea, `depends=` no satisfecha),
+- algún `DT_NEEDED` del driver no está en la chroot (eso avisa, no rompe: es la red de seguridad
+  del `depends=`).
+
+**Verificar sin Odin** (con el paquete ya construido en `build/localrepo`):
+
+```bash
+PKG=$(ls -t build/localrepo/pocknix-vk-valve-*.pkg.tar.zst | head -1)
+bsdtar -tf "$PKG"                       # 4 rutas + el symlink, ni un byte más
+bsdtar -xOf "$PKG" usr/share/pocknix/vk-arm/26.3.0-valve/icd.json
+# el symlink, que es lo que falla en silencio:
+bsdtar -tvf "$PKG" | grep libdisplay-info
+```
+
+En la Odin, después de instalarlo:
+
+```bash
+pacman -Qo /usr/lib/libdisplay-info.so.1        # -> pocknix-vk-valve (nuestro, no huérfano)
+VK_DRIVER_FILES=/usr/share/pocknix/vk-arm/26.3.0-valve/icd.json vulkaninfo --summary
+#   driverName = turnip Mesa driver   ← si NO sale, el symlink de libdisplay-info se rompió
+```
+
+**El alias se autorepara**: `pocknix-vk-valve.install` lo reapunta en cada instalación/actualización
+(al symlink de SONAME, no al fichero versionado → sobrevive a un `0.3.0` → `0.3.1`) y lo borra al
+desinstalar. Si algún día ALARM cambia el soname de `libdisplay-info` (`.so.3` → `.so.4`), un
+`pacman -S pocknix-vk-valve` de nuevo lo arregla y lo dice en pantalla.
+
+## 8. Referencias
+
+- `packages/pocknix-vk-valve/PKGBUILD` — el paquete (payload + alias + auditoría de `DT_NEEDED`).
+- `packages/pocknix-vk-valve/pocknix-vk-valve.install` — repara/borra el alias de libdisplay-info.
 - `tools/install-deckard-mesa.sh` — instala la Mesa de Valve como payload de `vk-arm`.
 - `tools/mesa-bench-compare.py` — compara los CSV y da el veredicto.
 - `tools/check-mesa.sh` — qué Mesa/qué ramas de Turnip tenemos y cuáles hay upstream.

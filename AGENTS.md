@@ -600,8 +600,26 @@ para Adreno** — su `usr/lib/dri/` tiene 39 drivers (pantallas SPI, KMS de SoCs
 Odin **sin OpenGL** (escritorio, ES-DE, RetroArch, glmark2). **La Opción 2 es la definitiva:
 nuestra Mesa (OpenGL Adreno nativo) + su Turnip (Vulkan).**
 Resultados completos, método y las trampas de MangoHUD en Game Mode: **`docs/PRUEBAS-MESA.md`**.
-Pendiente: la autactualización desde la **raíz** del repo de Valve (los `mr-XXXX` son CI y no se
-deben pinear).
+
+**✅ YA ESTÁ DENTRO DEL SISTEMA (27/09/2026) — paquete `pocknix-vk-valve`**
+- `packages/pocknix-vk-valve/PKGBUILD` (compartido) reempaqueta **solo** el ICD de Vulkan de Valve
+  en `/usr/share/pocknix/vk-arm/26.3.0-valve/` (+ `icd.json` con `library_path` reescrito,
+  `VERSION.txt`) y añade el alias **`/usr/lib/libdisplay-info.so.1`** → `libdisplay-info.so.3`.
+  **No** instala su Mesa entera (sin `msm_dri.so` no hay OpenGL → Opción 1 descartada) y **no**
+  toca `/etc/vulkan/icd.d`: se elige por juego con el tweak "Mesa Version".
+- **Fuente fijada a la raíz** `holo-packages.steamos.cloud/archlinux-deckard-hotfixes/` con
+  `sha256sums`. 🔴 **Los `mr-XXXX/` son CI de merge request: NUNCA pinearlos** (se mueven y
+  desaparecen). Refrescar = listar la raíz y cambiar `_valve_pkg` + `sha256sums` a la vez.
+- Entra en la imagen por `depends` de **`pocknix-steam-full`** (override nuestro de su PKGBUILD,
+  `pkgrel` 2→3) — la capa que ya lleva `pocknix-turnip-arm`/`-x86`. Así llega también por `-Syu`
+  a los dispositivos ya desplegados.
+- El alias de `libdisplay-info` se **autorrepara**: `pocknix-vk-valve.install` lo reapunta en cada
+  install/upgrade (al symlink de SONAME, no al fichero versionado) y lo borra en `pre_remove`.
+- Compilar: `tools/sync-to-os.sh && tools/check-sync.sh` y luego
+  `cd ../pocknix-os && sudo DEVICE=sm8750 make packages PKG="pocknix-vk-valve"` (rápido: 10 MB).
+  `package()` es una comprobación: `die` si el `.so` no es AArch64, si Valve cambia el layout, si
+  no hay `libdisplay-info.so.[0-9]*`, y avisa de cualquier `DT_NEEDED` que falte en la chroot.
+- Detalle, verificaciones y cómo mirar el paquete sin Odin: **`docs/PRUEBAS-MESA.md` §7**.
 
 **Cómo se usa la versión por juego**: PocknixControl → pestaña **Games** → elegir juego →
 activar **"Use Per-Game Settings"** → aparece **"Mesa Version"** (el plugin apunta

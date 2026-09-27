@@ -158,6 +158,20 @@ overlay "packages/suyu-libretro" "packages/shared/suyu-libretro"
 overlay "packages/libretro-cores-pocknix" "packages/shared/libretro-cores-pocknix"
 overlay "packages/pocknix-decky"   "packages/shared/pocknix-decky"
 
+# --- pocknix-vk-valve: el Turnip de VALVE como payload seleccionable ------------
+# Copia SOLO el ICD de Vulkan del paquete aarch64 de Valve (deckard-mesa-linux) a
+# /usr/share/pocknix/vk-arm/26.3.0-valve/, junto al alias libdisplay-info.so.1. El driver del
+# sistema sigue siendo el nuestro: esto lo elige el tweak "Mesa Version" por juego (+13,4% FPS
+# medido). Ver packages/pocknix-vk-valve/PKGBUILD y docs/PRUEBAS-MESA.md.
+overlay "packages/pocknix-vk-valve" "packages/shared/pocknix-vk-valve"
+
+# --- pocknix-steam-full: metapaquete de la capa de Steam ------------------------
+# Override de UN solo PKGBUILD (el resto del paquete es de upstream y no cambia) unicamente para
+# anadir el depends de pocknix-vk-valve: es la capa de juego la que ya lleva los payloads de
+# Turnip (pocknix-turnip-arm / pocknix-turnip-x86), y una linea de depends es lo que hace que el
+# paquete llegue a las imagenes nuevas y a los dispositivos con -Syu.
+overlay "packages/pocknix-steam-full" "packages/shared/pocknix-steam-full"
+
 # --- NOT synced (needs manual work — see the note below) ---------------------
 # kernel/patches is an OVERLAY: a patch we REMOVE from the centre is NOT removed from the build.
 # If you retire a patch, delete it in pocknix-os too (or the image keeps applying it).

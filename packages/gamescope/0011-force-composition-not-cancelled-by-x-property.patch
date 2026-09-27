@@ -1,0 +1,40 @@
+diff --git a/src/steamcompmgr.cpp b/src/steamcompmgr.cpp
+index ecb3808..4ee1d4b 100644
+--- a/src/steamcompmgr.cpp
++++ b/src/steamcompmgr.cpp
+@@ -1140,6 +1140,11 @@ static bool		debugEvents = false;
+ extern bool		steamMode;
+ 
+ gamescope::ConVar<bool> cv_composite_force{ "composite_force", false, "Force composition always, never use scanout" };
++// Set when --force-composition was given on the command line. The X11 root property
++// GAMESCOPE_COMPOSITE_FORCE is assigned onto cv_composite_force verbatim, so an external
++// writer can silently cancel a flag the user asked for explicitly. Track the CLI intent
++// separately and let the property write only cv_composite_force itself.
++static bool		bForceCompositionFromCLI = false;
+ static bool		useXRes = true;
+ 
+ namespace gamescope
+@@ -6328,7 +6333,14 @@ handle_property_notify(xwayland_ctx_t *ctx, XPropertyEvent *ev)
+ 	}
+ 	if ( ev->atom == ctx->atoms.gamescopeCompositeForce )
+ 	{
+-		cv_composite_force = !!get_prop( ctx, ctx->root, ctx->atoms.gamescopeCompositeForce, 0 );
++		// --force-composition wins over the property: it is the documented "disable direct
++		// scan-out" switch, and letting a client property turn it back off makes the flag
++		// unusable (Steam keeps GAMESCOPE_COMPOSITE_FORCE at 0). Without --force-composition
++		// the property still drives cv_composite_force, exactly as before.
++		if ( !bForceCompositionFromCLI )
++		{
++			cv_composite_force = !!get_prop( ctx, ctx->root, ctx->atoms.gamescopeCompositeForce, 0 );
++		}
+ 		hasRepaint = true;
+ 	}
+ 	if ( ev->atom == ctx->atoms.gamescopeCompositeDebug )
+@@ -8368,6 +8380,7 @@ steamcompmgr_main(int argc, char **argv)
+ 				drawDebugInfo = true;
+ 				break;
+ 			case 'c':
++				bForceCompositionFromCLI = true;
+ 				cv_composite_force = true;
+ 				break;
+ 			case 'x':

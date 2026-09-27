@@ -1,0 +1,31 @@
+# pocknix-steam-full — the Steam gaming-session layer. Hard depends= so
+# `pacman -Rs pocknix-steam-full` removes exactly this layer. Per-SoC members (the proton
+# compat tools) hang off the pocknix-device-<soc> metapackages instead.
+#
+# OVERRIDE NUESTRO (27/09/2026, pkgrel 2 -> 3): unica linea anadida, el depends de
+# pocknix-vk-valve. Es la capa de juego la que ya lleva los payloads de Turnip
+# (pocknix-turnip-arm / pocknix-turnip-x86), asi que el de Valve (26.3.0-valve) va aqui: con el
+# paquete en depends, la imagen nueva lo trae y `pacman -Syu` lo lleva a los dispositivos ya
+# desplegados. Si upstream toca este fichero, re-mergear (esta copia es solo el PKGBUILD).
+pkgname=pocknix-steam-full
+pkgver=0.1.0
+pkgrel=3
+pkgdesc="pocknix optional layer: Steam gamescope session, FEX x86 runtime, Decky"
+arch=('any')
+url="https://github.com/shuuri-labs/pocknix-os"
+license=('GPL2')
+depends=('pocknix-steam'
+         'gamescope'            # must be ours: vanilla black-screens rotated panels
+         'mangohud'             # must be ours: vanilla has no Adreno sysfs reader
+         'xorg-xwayland'
+         'pocknix-steamos-shim'
+         'pocknix-decky'
+         'fex-emu'
+         'fex-rootfs'
+         'pocknix-turnip-arm'
+         'pocknix-turnip-x86'
+         'pocknix-vk-valve')    # Turnip de Valve como payload 26.3.0-valve (+13,4% FPS medido)
+
+package() {
+  :   # pure metapackage
+}

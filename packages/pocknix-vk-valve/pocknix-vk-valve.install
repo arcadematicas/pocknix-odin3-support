@@ -1,0 +1,38 @@
+# pocknix-vk-valve.install — el alias /usr/lib/libdisplay-info.so.1 es la UNICA pieza fragil del
+# payload (ver PKGBUILD). Si ALARM cambia el soname de libdisplay-info (hoy 0.3 -> .so.3), el
+# symlink queda colgado y el ICD deja de cargar en silencio: el tweak sigue ofreciendo
+# "<serie>-valve" y el juego se queda SIN driver de Vulkan. Aqui lo reapuntamos en cada
+# instalacion/actualizacion, con la misma eleccion que tools/install-deckard-mesa.sh.
+_pvk_valve_fix_libdisplay_info() {
+  local cands f src
+  cands="$(for f in /usr/lib/libdisplay-info.so.[0-9]*; do
+            [ -f "$f" ] || continue                 # -f sigue symlinks: queremos los que resuelven
+            [ "${f##*/}" = "libdisplay-info.so.1" ] && continue
+            printf '%s\n' "${f##*/}"
+          done | sort -V)"
+  src="$(printf '%s\n' "${cands}" | tail -n 1)"
+  if [ -z "${src}" ]; then
+    echo "pocknix-vk-valve: no encuentro libdisplay-info.so.[0-9]*: el payload no cargara." >&2
+    echo "  instala libdisplay-info y repite: pacman -S pocknix-vk-valve" >&2
+    return 1
+  fi
+  if [ "$(readlink /usr/lib/libdisplay-info.so.1 2>/dev/null)" != "${src}" ]; then
+    ln -sfn "${src}" /usr/lib/libdisplay-info.so.1
+    echo "pocknix-vk-valve: /usr/lib/libdisplay-info.so.1 -> ${src}"
+  fi
+  return 0
+}
+
+post_install() {
+  _pvk_valve_fix_libdisplay_info || true
+}
+
+post_upgrade() {
+  _pvk_valve_fix_libdisplay_info || true
+}
+
+pre_remove() {
+  # El alias es nuestro (/usr/lib/libdisplay-info.so.1 no lo trae libdisplay-info): si nos vamos,
+  # no puede quedarse colgando.
+  rm -f /usr/lib/libdisplay-info.so.1
+}

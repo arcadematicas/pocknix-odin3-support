@@ -61,6 +61,8 @@ cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pyga
 cmp_tree "${HERE}/packages/pocknix-steam"     "${OS}/packages/shared/pocknix-steam"
 cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-tools"
   cmp_tree "${HERE}/packages/pocknix-decky"   "${OS}/packages/shared/pocknix-decky"
+  cmp_tree "${HERE}/packages/pocknix-vk-valve" "${OS}/packages/shared/pocknix-vk-valve"
+cmp_tree "${HERE}/packages/pocknix-steam-full" "${OS}/packages/shared/pocknix-steam-full"
 
 # config/ y devices/sm8750/: las listas de paquetes, el pocknix.conf, el tuning y — sobre
 # todo — el CMDLINE del kernel (profile.conf). Antes vivian solo en el arbol y no se

@@ -221,6 +221,43 @@ mano en la Odin, tráelo al centro después (regla de oro del punto 2).
 
 ---
 
+## 7-bis. DeckStation vive en DOS sitios (y esto se olvida)
+
+DeckStation (el lanzador de emuladores) está en **dos repositorios a la vez**:
+
+| Sitio | Qué es | Para qué |
+|---|---|---|
+| **`stshunz/deckstation-arm`** (GitHub) | **El repo del proyecto DeckStation** | Compartido con stshunz, David y Jarvis |
+| **`packages/deckstation-arm/`** (aquí, en el centro) | **Nuestra copia**, la que acaba en la imagen de la Odin | Para que el sistema lleve los cambios |
+
+**La regla**: cualquier cambio que hagamos en DeckStation **para nuestro sistema**
+(wrapper de Steam, cores, configs de RetroArch, ES-DE, scripts, arte…) tiene que quedar
+**en los dos sitios**. Está en el `AGENTS.md` del centro, pero se olvida, así que aquí va
+el flujo concreto:
+
+```bash
+C=/home/fransis/pocknix-odin3-project/pocknix-odin3-support
+D=/home/fransis/deckstation-arm
+
+# 1. editar en el centro (fuente de verdad de nuestro sistema)
+# 2. copiarlo al repo
+cp "$C/packages/deckstation-arm/<ruta>" "$D/<ruta>"
+# 3. subir los dos
+git -C "$D" add -A && git -C "$D" commit -m "..." && git -C "$D" push
+git -C "$C" add -A && git -C "$C" commit -m "..." && git -C "$C" push
+# 4. desplegarlo a la Odin (si hay que probarlo ya)
+"$C/tools/deploy-to-device.sh" deckstation-arm
+# 5. comprobar que no queda nada descuadrado
+diff -rq "$C/packages/deckstation-arm" "$D"
+```
+
+⚠️ **Los scripts de DeckStation (`scripts/*.sh`) no los gestiona ningún paquete** — los
+despliega el propio DeckStation en `/opt/deckstation/scripts/`. Si tocas uno, además de
+subirlo a los dos sitios, **cópialo a mano a la Odin**, o se queda viejo sin que nadie se
+entere (nos ha pasado: tres arreglos de Jarvis llevaban semanas sin llegar a la consola).
+
+---
+
 ## 8. Resumen en 30 segundos
 
 - Todo lo nuestro está en **`arcadematicas/pocknix-odin3-support`**. Ese es el sitio donde se trabaja.

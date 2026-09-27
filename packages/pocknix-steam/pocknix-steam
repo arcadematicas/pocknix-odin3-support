@@ -156,6 +156,7 @@ cleanup() {
   local rc=$?
   # #15: never leave a compositor (or its mangoapp child) holding /dev/dri for the next session.
   pkill -x mangoapp 2>/dev/null || true
+  if [ -n "${GS_GUARD_PID:-}" ]; then kill "${GS_GUARD_PID}" 2>/dev/null || true; fi
   if [ -n "${GS_PID:-}" ]; then kill "${GS_PID}" 2>/dev/null || true; fi
   # #14: Steam writes a sentinel and exits instead of calling logind itself (the paths come from
   # STEAMOS_STEAM_*_SENTINEL above). Remove it FIRST so a failing power action cannot spin: the
@@ -192,4 +193,51 @@ env -u WAYLAND_DISPLAY \
     env LD_LIBRARY_PATH="${LDLP}" "${CLIENT}" -gamepadui -steamos3 -steampal -steamdeck -noverifyfiles -noshaders \
   >"${GS_LOG}" 2>&1 &
 GS_PID=$!
+
+# --force-composition by itself is NOT enough (see the note on the gamescope line): gamescope
+# also reads the X11 ROOT property GAMESCOPE_COMPOSITE_FORCE and assigns it onto the very same
+# variable the flag sets (src/steamcompmgr.cpp, the PropertyNotify handler does
+# `cv_composite_force = !!get_prop(root, GAMESCOPE_COMPOSITE_FORCE)`), so the property WINS over
+# the command line. Steam leaves that property at 0 in our sessions, so the flag was silently
+# cancelled and we went back to direct scan-out: the game lands on the primary DRM plane and, on
+# this MSM/Adreno, the overlay planes are not composed over it -- so gamescope's own UI (QAM,
+# mangoapp) ended up UNDER the game. WProton games hit it because they present FULLSCREEN through
+# Gamescope WSI; a windowed client (WiiCompiled) never qualifies for scan-out, which is exactly
+# why only the WProton titles lost the overlay. So assert the property, which is the one gamescope
+# actually obeys, and keep asserting it: a single write would go stale as soon as the writer
+# touches the property again, i.e. precisely when a game starts. One long-lived `xprop -spy` does
+# the watching, so this costs no polling.
+#
+# Cost, stated plainly: the composite pass is per-frame GPU work (render + a full-screen blit)
+# where direct scan-out was a plane flip. That is the same trade SteamOS makes whenever the QAM
+# has to overlay, and it is the only way to get the QAM on top on this DPU.
+if command -v xprop >/dev/null 2>&1; then
+  (
+    # Wait for the session's first Xwayland. With --xwayland-count 2 the control properties live on
+    # :0; the per-game :1 only carries GAMESCOPE_PID / SERVER_ID (see the live check on the Odin).
+    for _ in $(seq 1 120); do
+      [ -S /tmp/.X11-unix/X0 ] && break
+      sleep 0.5
+    done
+    while [ -S /tmp/.X11-unix/X0 ] && kill -0 "${GS_PID}" 2>/dev/null; do
+      # The first write also CREATES the property, so it beats a stale 0 already sitting there.
+      DISPLAY=:0 xprop -root -f GAMESCOPE_COMPOSITE_FORCE 32c -set GAMESCOPE_COMPOSITE_FORCE 1 \
+        >/dev/null 2>&1 || break
+      # -spy dumps the whole root once and then one line per change, so that initial dump is what
+      # catches a writer that got there before us; later lines catch it dropping us mid-game.
+      DISPLAY=:0 xprop -root -spy -f GAMESCOPE_COMPOSITE_FORCE 32c 2>/dev/null |
+        while IFS= read -r line; do
+          case "${line}" in
+            *GAMESCOPE_COMPOSITE_FORCE*'= 0'*)
+              DISPLAY=:0 xprop -root -f GAMESCOPE_COMPOSITE_FORCE 32c \
+                -set GAMESCOPE_COMPOSITE_FORCE 1 >/dev/null 2>&1 || true
+              ;;
+          esac
+        done
+      sleep 1   # the pipe only ends if Xwayland went away; don't spin on that
+    done
+  ) &
+  GS_GUARD_PID=$!
+fi
+
 wait "${GS_PID}" || true

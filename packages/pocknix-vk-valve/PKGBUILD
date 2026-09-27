@@ -1,0 +1,126 @@
+# pocknix-vk-valve — Valve's Turnip (their Steam Frame / "Deckard" mesa build) vendored as a
+# SELECTABLE aarch64 payload under /usr/share/pocknix/vk-arm/<mesa>-valve/, so the per-game
+# "Mesa Version" tweak can pick it next to our own pocknix-turnip-arm series. Counterpart of
+# pocknix-turnip-x86 on the x86 (FEX) side; shared package: the payload is a prebuilt aarch64
+# .so, so there is nothing to tune per SoC.
+#
+# WHY A PAYLOAD AND NOT A MESA REPLACEMENT
+#   Measured on the AYN Odin 3 (2026-09, docs/PRUEBAS-MESA.md): +13.4% FPS and no stutter against
+#   our own 26.3.0devel Turnip. But Valve's package also ships GL/EGL/gbm and *conflicts* mesa, so
+#   installing it system-wide would swap out the whole tuned stack for one vendor build. Here we
+#   ship ONLY the Vulkan ICD: the system driver keeps being ours and the tweak switches per game.
+#   It is NOT on by default — you pick "26.3.0-valve" in the Steam/game tweaks panel.
+#
+# WHY A PINNED ROOT URL AND NOT mr-XXXX
+#   holo-packages.steamos.cloud/archlinux-deckard-hotfixes/ is Valve's Deckard build repo. Its
+#   mr-XXXX/ subdirs are per-merge-request CI artifacts that get rotated/deleted, so we pin the
+#   root-level pkgver file, which is immutable. Refresh deliberately: bump _valve_pkg AND
+#   sha256sums together (tools/install-deckard-mesa.sh fetches the same file).
+pkgname=pocknix-vk-valve
+pkgver=20260927
+pkgrel=1
+pkgdesc="Valve's Turnip as a selectable aarch64 vk-arm payload (+13.4% FPS measured on the Odin 3)"
+arch=('aarch64')
+url="https://holo-packages.steamos.cloud/archlinux-deckard-hotfixes/"
+license=('custom')
+# Every DT_NEEDED of the payload, minus the one we ship an alias for (libdisplay-info). They are
+# all in the pinned base snapshot, so `makepkg -s` resolves them in the chroot; package() then
+# re-audits DT_NEEDED against ldconfig and warns about anything missing from this list.
+depends=(expat glibc libdrm libdisplay-info libx11 libxcb libxshmfence spirv-tools
+         systemd-libs vulkan-icd-loader wayland zlib zstd)
+install=pocknix-vk-valve.install
+_valve_repo='https://holo-packages.steamos.cloud/archlinux-deckard-hotfixes'
+_valve_pkg='deckard-mesa-linux-aarch64-26.3.0_devel+gitabc426bb-1-aarch64.pkg.tar.zst'
+source=("${_valve_repo}/${_valve_pkg}")
+sha256sums=('7b259d40d5b6845cad91b6cf991da34d6c8a146683fa6009336d3bc464028938')
+# El source es un .pkg.tar.zst: extraemos a mano en prepare() en vez de fiarnos del autodetect
+# de makepkg, y con noextract el tree de fuentes se queda en el tar tal cual.
+noextract=("${_valve_pkg}")
+
+# Directory name comes from Valve's pkgver, so bumping the source renames the payload: the tweak
+# keys "<series>-<suffix>" entries by directory name, and "<name>" has to start with a digit.
+#   deckard-...-26.3.0_devel+gitabc426bb-1-aarch64.pkg.tar.zst -> 26.3.0-valve
+_valve_srcver="${_valve_pkg#*-aarch64-}"     # 26.3.0_devel+gitabc426bb-1
+_valve_srcver="${_valve_srcver%-aarch64.pkg.tar.zst}"
+_valve_srcver="${_valve_srcver%-*}"          # 26.3.0_devel+gitabc426bb
+_mesa_series="${_valve_srcver%%+*}"          # 26.3.0_devel
+_mesa_series="${_mesa_series%%_*}"           # 26.3.0
+_payload="/usr/share/pocknix/vk-arm/${_mesa_series}-valve"
+
+prepare() {
+  bsdtar -xf "${srcdir}/${_valve_pkg}" -C "${srcdir}"
+}
+
+package() {
+  local drv icd libdi='' missing='' sonames='' n
+  # readelf/grep sobre etiquetas traducidas ("Machine:", "Nombre-so") daria falsos negativos.
+  export LC_ALL=C
+  drv="${srcdir}/usr/lib/libvulkan_freedreno.so"
+  # The ICD manifest name has changed across Valve builds (freedreno_icd.aarch64.json at 26.2):
+  # glob it instead of hardcoding, and fail loudly if Valve moved things again.
+  for icd in "${srcdir}"/usr/share/vulkan/icd.d/freedreno_icd*.json; do break; done
+  [ -f "${drv}" ] || die "no/usr/lib/libvulkan_freedreno.so dentro de ${_valve_pkg}"
+  [ -f "${icd}" ] || die "ningun freedreno_icd*.json dentro de ${_valve_pkg}"
+  # A payload de otra arquitectura se instalaria sin quejarse y solo fallaria en la Odin.
+  readelf -h "${drv}" | grep -q AArch64 || die "${_valve_pkg} no es aarch64"
+
+  # 1) el driver, tal cual
+  install -Dm755 "${drv}" "${pkgdir}${_payload}/libvulkan_freedreno.so"
+  # 2) el manifest, con library_path reescrito al payload (el de Valve apunta a /usr/lib, que es
+  #    NUESTRO mesa: sin esto el tweak cargaria el driver equivocado)
+  sed -E "s|\"library_path\": *\"[^\"]*\"|\"library_path\": \"${_payload}/libvulkan_freedreno.so\"|" \
+    "${icd}" > "${pkgdir}${_payload}/icd.json"
+  chmod 0644 "${pkgdir}${_payload}/icd.json"
+
+  # 3) libdisplay-info.so.1: el payload de Valve lo pide, y ALARM sirve .so.<minor>
+  #    (0.3.0 -> libdisplay-info.so.3). Sin este alias el ICD no carga y no dice NADA: el tweak
+  #    sigue ofreciendo "<serie>-valve" y el juego se queda sin driver de Vulkan.
+  #    Apuntamos al symlink de SONAME (no al fichero versionado) para que sobreviva a un
+  #    0.3.0 -> 0.3.1. Misma eleccion (candidato mas alto por sort -V) que
+  #    tools/install-deckard-mesa.sh:buscar_lib_hermana, para que el paquete y el script
+  #    instalen EXACTAMENTE el mismo alias.
+  libdi="$(for n in /usr/lib/libdisplay-info.so.[0-9]*; do
+             [ -f "${n}" ] || continue                # -f sigue symlinks: los que resuelven
+             [ "${n##*/}" = "libdisplay-info.so.1" ] && continue
+             printf '%s\n' "${n##*/}"
+           done | sort -V | tail -n 1)"
+  [ -n "${libdi}" ] || die "no hay libdisplay-info.so.[0-9]*: depends= no satisfecha"
+  case "${libdi}" in
+    libdisplay-info.so.1) ;;                     # ALARM ya lo llama asi: no hay alias que crear
+    *) install -d "${pkgdir}/usr/lib"
+       ln -s "${libdi}" "${pkgdir}/usr/lib/libdisplay-info.so.1" ;;
+  esac
+
+  # 4) auditoria: todo lo que el driver necesita y esta imagen no tendria. depends= es el
+  #    contrato, esto es la red de seguridad en tiempo de build (avisa, no rompe: un falso
+  #    positivo por el layout de la chroot no debe tumbar el paquete).
+  sonames="$(ldconfig -p 2>/dev/null | awk '{print $1}')"
+  for n in $(readelf -d "${drv}" | sed -n 's/.*NEEDED.*\[\(.*\)\].*/\1/p'); do
+    [ "${n}" = "libdisplay-info.so.1" ] && continue   # lo servimos nosotros, arriba
+    case "${n}" in ld-linux-*) continue ;; esac        # el loader nunca sale de ldconfig
+    printf '%s\n' "${sonames}" | grep -qxF "${n}" || missing="${missing} ${n}"
+  done
+  [ -n "${missing}" ] && warning "el payload necesita:${missing} — revisa depends= de ${pkgname}"
+
+  # 5) procedencia, para saber que hay dentro sin desempaquetar nada
+  cat > "${pkgdir}${_payload}/VERSION.txt" <<-EOF
+		${_valve_pkg##*/} (${_valve_repo})
+		sha256: ${sha256sums[0]}
+		serie:  ${_mesa_series}   (payload: ${_payload})
+		${pkgname} ${pkgver}-${pkgrel}
+		Solo el ICD de Vulkan de Valve. El resto de Mesa del sistema es el nuestro
+		(pocknix-core -> mesa, packages/soc/mesa).
+	EOF
+  chmod 0644 "${pkgdir}${_payload}/VERSION.txt"
+
+  mkdir -p "${pkgdir}/usr/share/licenses/${pkgname}"
+  cat > "${pkgdir}/usr/share/licenses/${pkgname}/README" <<-EOF
+		${pkgname} ${pkgver}-${pkgrel} reempaqueta SOLO el ICD de Vulkan de Valve.
+		Fuente (binario, aarch64, precompilado por Valve): ${_valve_repo}/${_valve_pkg}
+		sha256: ${sha256sums[0]}
+		Mesa es software libre (MIT AND BSD-3-Clause AND SGI-B-2.0); este .so lo compilo Valve
+		a partir de Mesa, asi que su licencia es la de Mesa mas los terminos de Valve. No hay
+		codigo nuestro en el binario: solo seleccionamos, extraemos y parcheamos el manifest.
+	EOF
+  chmod 0644 "${pkgdir}/usr/share/licenses/${pkgname}/README"
+}
