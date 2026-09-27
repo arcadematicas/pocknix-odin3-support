@@ -49,7 +49,8 @@ cmp_tree "${HERE}/kernel/patches/10-mainline"      "${OS}/kernel/sm8750/patches/
 cmp_tree "${HERE}/kernel/patches/20-sm8750"        "${OS}/kernel/sm8750/patches/20-sm8750"
 cmp_tree "${HERE}/kernel/patches/30-version"       "${OS}/kernel/sm8750/patches/30-version"
 cmp_tree "${HERE}/kernel/dts"                     "${OS}/kernel/sm8750/dts/qcom"
-cmp_tree "${HERE}/packages/gamescope"             "${OS}/packages/soc/gamescope"
+# gamescope ya NO tiene linea propia: es un paquete packages/soc/ y lo cubre el bucle
+# `packages/soc-overrides/*` de mas abajo (antes vivia en packages/gamescope/).
 cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix-desktop"
 # La capa vendored: si NO se comprueba, puede quedarse atras EN SILENCIO (paso con
 # deckstation-arm: al launcher le faltaba el fix de SDL y al setup el de libXss, y

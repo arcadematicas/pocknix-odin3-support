@@ -118,11 +118,16 @@ fi
 # started only by the NM dispatcher once a link is really up (odin3-pr e574b2a).
 overlay "packages/pocknix-desktop" "packages/shared/pocknix-desktop"
 
-# --- gamescope: our patch + our PKGBUILD -------------------------------------
-# packages/gamescope/PKGBUILD is a FULL COPY of the build's, with 0009 added to source=() and
-# prepare(). It is an override: if upstream changes its gamescope PKGBUILD, this copy has to be
-# re-merged (the check will NOT notice that, only that the two files match).
-overlay "packages/gamescope" "packages/soc/gamescope"
+# --- gamescope: our patches + our PKGBUILD -----------------------------------
+# NO tiene bloque propio: lo cubre el bucle `packages/soc-overrides/*` de arriba.
+# gamescope es un paquete packages/soc/, asi que el centro solo puede sobrescribirlo
+# POR AHI (mirror a packages/soc/gamescope/): su PKGBUILD es una COPIA COMPLETA del del
+# build con 0009 (frame limiter del QAM) + 0010 (rotacion HW) + 0011 (--force-composition
+# no cancelable por la X property) en source=() y prepare(). Al ser un override, si
+# upstream cambia su PKGBUILD hay que re-fusionar (el check solo ve que los ficheros
+# cuadran, no que el PKGBUILD siga a upstream). Antes vivia en packages/gamescope/, que
+# el build NUNCA veia (build-packages.sh salta packages/soc/ cuyo socs no lista el SoC:
+# asi se colo semanas el parche 0009 sin llegar a la imagen).
 
 # --- deckstation-arm: PKGBUILD + el Updater ----------------------------------
 # deckstation-arm es un paquete NUESTRO (vendored de stshunz) que vive entero en
