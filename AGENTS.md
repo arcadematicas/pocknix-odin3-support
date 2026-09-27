@@ -1154,3 +1154,20 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
       **fallar el build** — el agujero por el que se coló el `nologreplay` queda cerrado.
 - [ ] **Espacio**: la raíz de ~25 GB se queda corta para Steam en microSD; valorar usar la UFS interna
       para `/home` (ver sección ALMACENAMIENTO y `docs/IDEAS.md` §6).
+
+### Pendientes anotados por Fransis (27/09/2026)
+- [x] **gamescope 0011** (`--force-composition` no cancelable por la X property
+      `GAMESCOPE_COMPOSITE_FORCE`): el parche estaba en el centro pero **nunca se había compilado**
+      (localrepo seguía en `-5`). Compilado `-6` e instalado/cargado en la Odin (sesión reiniciada
+      con `steamos-session-select gamescope`). Además se arreglaron 2 bloqueos de build: un **lock
+      huérfano de `repo-add`** (`build/localrepo/**/*.lck`) y el **ownership del `srccache`**
+      (uid 1000 → 1001 = `builder`, causaba "dubious ownership" de git). Falta **prueba visual con
+      un juego WProton** (que el QAM/MangoHUD salga encima); si OK, quitar el watcher `xprop -spy`
+      de `pocknix-steam`.
+- [ ] **HDR**: evaluar/activar HDR en la Odin (gates `STEAM_GAMESCOPE_*`, `HDR_NITS`,
+      `GAMESCOPE_DISPLAY_HDR_ENABLED`).
+- [ ] **Kernel nuevo**: el **7.2.4** es el bueno. El **7.2.6 se descartó** por 2 regresiones de
+      mainline (display/panel negro por `dsi_calc_clk_rate_6g` + WiFi ath12k/MHI). Revisar si el
+      siguiente 7.2.x / 7.3 ya las arregla antes de subir.
+- [ ] **Desfase relacionado** (mismo commit `92c6b96`): instalar en la Odin `pocknix-steam-full`
+      `-3`, `pocknix-vk-valve` (Turnip de Valve) y `python-pygame-ce` (los PKGBUILD ya compilan).
