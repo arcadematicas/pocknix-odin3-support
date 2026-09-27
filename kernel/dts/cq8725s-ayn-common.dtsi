@@ -982,7 +982,8 @@
 };
 
 &pcieport0 {
-	wake-gpios = <&tlmm 104 GPIO_ACTIVE_HIGH>;
+	/* s2idle: WAKE# es active-low; con HIGH el host PCIe no deja bajar el link (de armada 431bf57) */
+	wake-gpios = <&tlmm 104 GPIO_ACTIVE_LOW>;
 	reset-gpios = <&tlmm 102 GPIO_ACTIVE_LOW>;
 
 	wifi@0 {

@@ -362,3 +362,43 @@
 &{/pmic-glink} {
 	monitored-battery = <&battery>;
 };
+
+/*
+ * s2idle: el códec WCD9395 mantiene estos rails encendidos durante suspend.
+ * Bajarlos a modo LPM (low-power) ahorra ~0.3 W en reposo (de armada 431bf57).
+ * Necesita los parches 0523/0524/0526 (regulator suspend-state).
+ */
+&vreg_bob1 {
+	regulator-state-mem {
+		regulator-on-in-suspend;
+		regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+	};
+};
+
+&vreg_l15b_1p8 {
+	regulator-state-mem {
+		regulator-on-in-suspend;
+		regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+	};
+};
+
+&vreg_l2i_1p2 {
+	regulator-state-mem {
+		regulator-on-in-suspend;
+		regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+	};
+};
+
+&vreg_s3g_1p8 {
+	regulator-state-mem {
+		regulator-on-in-suspend;
+		regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+	};
+};
+
+&vreg_s7i_1p2 {
+	regulator-state-mem {
+		regulator-on-in-suspend;
+		regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+	};
+};
