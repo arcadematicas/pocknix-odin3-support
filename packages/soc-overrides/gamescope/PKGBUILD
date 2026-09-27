@@ -1,23 +1,32 @@
-# gamescope (pocknix) — patched build for rotated msm/DPU panels.
-# Vanilla gamescope cannot drive them: it asks for a DRM plane rotation the msm DPU rejects,
-# so every flip fails ("Failed to prepare 1-layer flip"). 0007/0008 add a composite-pass
-# rotation as the fallback; 0010 adds --rotated-output-max-height so the DPU's inline rotator
-# can rotate AT SCANOUT (free) even on panels past its pre-rotation source cap. pocknix-steam
-# passes logical LANDSCAPE -W/-H and lets gamescope pick scanout vs composite per plane.
-# 0011 (NUESTRO) hace que --force-composition NO se pueda anular desde fuera: el gamescope de
-# la Odin 3 compone por plano primario y los planos overlay del MSM/Adreno no se componen
-# encima, asi que con direct scan-out el QAM/mangoapp quedan DETRAS del juego.
-# epoch=1 outranks ALARM's gamescope. The pkgver segment after "rocknix." must vercmp higher
-# on every bump, hence commit date then sha — a bare sha is non-monotonic.
+# gamescope (pocknix) — base OpenGamingCollective (OGC) + parches de armada + nuestros.
+#
+# CAMBIO 27/09/2026: se pasa de la base ROCKNIX (Valve 3.16.25, commit 6644cc9) a la base
+# OpenGamingCollective "3.16.29-ogc2" (commit 4b50dd7). Motivo: el HDR de armada (perfil
+# edidless del Odin 3 + color management por plano, parche gamescope 0021) va contra esa base.
+#
+# La base OGC YA trae la rotacion (--force-composition-rotation, deteccion de rotacion en
+# scanout: drm_plane_supported_rotations/bScanoutCanRotate/currentOutputRotation), asi que
+# los parches ROCKNIX de rotacion (0007/0008) y los de touch/cursor/overlay sobran aqui.
+#
+# Parches de armada (rebautizados 01xx para no chocar con los nuestros):
+#   0102/0103 = perfil edidless + HDR del Odin 3 (650 nits, gamma 2.2)  <- CLAVE para HDR
+#   0104..0107,0110,0117,0119 = color/HDR (gamma22, tonemap, output-LUTs, P3)
+#   0121 = color management POR PLANO (usa el LUTDMA del kernel 0070/0076/0077)
+#   0111..0116 = DRM lease (leasing de la salida)
+#   0101,0109,0118 = varios (appid fallback, vulkan realtime, virtual white ARM64)
+# Nuestros: 0009 (fps-limit atom persist), 0010 (rotated-output-max-height), 0011
+# (--force-composition no cancelable por la X property).
+#
+# epoch=1 outranks ALARM's gamescope. El pkgver DEBE vercmp-higher que la base anterior.
 pkgname=gamescope
 epoch=1
-pkgver=3.16.0.rocknix.20260802.6644cc9
-pkgrel=6
-_commit=6644cc9a07d8ba937003deae8bd7c28a490d0c64
+pkgver=3.16.29.ogc2.20260918.4b50dd7
+pkgrel=1
+_commit=4b50dd7a719c09acb1a0141ff6eac9dab1ab4f2f
 install=gamescope.install
-pkgdesc="SteamOS session compositing WM — patched (rotation-shader, for msm/rotated panels)"
+pkgdesc="SteamOS session compositing WM — OGC base + armada HDR patches (msm/rotated panels)"
 arch=('aarch64')
-url="https://github.com/ValveSoftware/gamescope"
+url="https://github.com/OpenGamingCollective/gamescope"
 license=('BSD-2-Clause')
 provides=('gamescope')
 conflicts=('gamescope')
@@ -31,34 +40,65 @@ makedepends=('git' 'meson' 'ninja' 'cmake' 'pkgconf' 'glslang' 'vulkan-headers'
              # wlroots subproject build-deps (else meson tries to build them itself):
              'xorg-xwayland' 'libdisplay-info' 'xcb-util-errors' 'xcb-util-renderutil'
              'xcb-util-image' 'xcb-util-keysyms')
-source=("gamescope::git+https://github.com/ValveSoftware/gamescope.git#commit=${_commit}"
-        '0001-WaylandBackend-wire-up-wl_touch-implementation.patch'
-        '0004-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch'
-        '0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch'
-        '0007-Add-composited-output-rotation-for-displays-that-can.patch'
-        '0008-steamcompmgr-classify-the-interactive-overlay-by-out.patch'
-        # NUESTRO: hace que el atom GAMESCOPE_FPS_LIMIT del QAM se quede (ver el parche)
+source=("gamescope::git+https://github.com/OpenGamingCollective/gamescope.git#commit=${_commit}"
+        # --- parches de armada (serie, en orden) ---
+        '0101-steamcompmgr-fallback-appid-focus.patch'
+        '0102-drm-synthesize-edid-for-edidless-internal-panels.patch'
+        '0103-drm-support-known-display-profiles-for-edidless-panels.patch'
+        '0104-drm-compose-gamma22-hdr-without-hardware-color-management.patch'
+        '0105-wsi-filter-hdr-formats-by-underlying-support.patch'
+        '0106-color-scale-sdr-white-on-gamma22-hdr-output.patch'
+        '0107-expose-client-sampleable-formats.patch'
+        '0109-main-add-opt-in-force-vulkan-realtime.patch'
+        '0110-color-fall-back-to-app-hdr-metadata-for-tonemapping.patch'
+        '0111-wlserver-implement-drm-lease-v1.patch'
+        '0112-wsi-layer-pass-through-display-surface-swapchains.patch'
+        '0113-feat-drm-run-a-compositor-from-the-leased-output.patch'
+        '0114-wlserver-always-swallow-ignored-touch-device.patch'
+        '0115-drm-blank-leased-connector-on-release.patch'
+        '0116-drm-let-a-socket-lease-holder-yield-to-protocol-clients.patch'
+        '0117-drm-sdr-color-management-through-dpu-output-luts.patch'
+        '0118-steamcompmgr-arm64-virtual-white.patch'
+        '0119-color-p3-red-is-wide-gamut.patch'
+        '0121-drm-per-plane-color-management-through-msm-plane-color-pipelines.patch'
+        # --- nuestros (pocknix-odin3-support) ---
         '0009-fps-limit-atom-persist.patch'
-        '0010-DRMBackend-add-rotated-output-max-height.patch'
-        # NUESTRO: --force-composition gana a la propiedad X11 (ver el parche)
-        '0011-force-composition-not-cancelled-by-x-property.patch')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+        '0011-force-composition-not-cancelled-by-x-property.patch'
+        '0010-DRMBackend-add-rotated-output-max-height.patch')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   cd gamescope
   git submodule update --init --recursive
-  # Numbering is inherited: 0001/0004/0006 keep ROCKNIX's, 0007/0008 are upstream PR #2228.
-  patch -p1 < "${srcdir}/0001-WaylandBackend-wire-up-wl_touch-implementation.patch"
-  patch -p1 < "${srcdir}/0004-DRMBackend-Add-GAMESCOPE_FAKE_OUTPUT_MM-env-to-set-c.patch"
-  patch -p1 < "${srcdir}/0006-steamcompmgr-fix-gamepad-cursor-sprite-frozen-via-XTest.patch"
-  patch -p1 < "${srcdir}/0007-Add-composited-output-rotation-for-displays-that-can.patch"
-  patch -p1 < "${srcdir}/0008-steamcompmgr-classify-the-interactive-overlay-by-out.patch"
-  # NUESTRO (pocknix-odin3-support): el QAM frame limiter no tenia efecto en HW.
+  # armada (serie, en orden numerico)
+  for _p in \
+    0101-steamcompmgr-fallback-appid-focus \
+    0102-drm-synthesize-edid-for-edidless-internal-panels \
+    0103-drm-support-known-display-profiles-for-edidless-panels \
+    0104-drm-compose-gamma22-hdr-without-hardware-color-management \
+    0105-wsi-filter-hdr-formats-by-underlying-support \
+    0106-color-scale-sdr-white-on-gamma22-hdr-output \
+    0107-expose-client-sampleable-formats \
+    0109-main-add-opt-in-force-vulkan-realtime \
+    0110-color-fall-back-to-app-hdr-metadata-for-tonemapping \
+    0111-wlserver-implement-drm-lease-v1 \
+    0112-wsi-layer-pass-through-display-surface-swapchains \
+    0113-feat-drm-run-a-compositor-from-the-leased-output \
+    0114-wlserver-always-swallow-ignored-touch-device \
+    0115-drm-blank-leased-connector-on-release \
+    0116-drm-let-a-socket-lease-holder-yield-to-protocol-clients \
+    0117-drm-sdr-color-management-through-dpu-output-luts \
+    0118-steamcompmgr-arm64-virtual-white \
+    0119-color-p3-red-is-wide-gamut \
+    0121-drm-per-plane-color-management-through-msm-plane-color-pipelines ; do
+    patch -p1 < "${srcdir}/${_p}.patch"
+  done
+  # nuestros (el 0010 va despues de 0009/0011 porque se regenero sobre esa pila)
   patch -p1 < "${srcdir}/0009-fps-limit-atom-persist.patch"
-  patch -p1 < "${srcdir}/0010-DRMBackend-add-rotated-output-max-height.patch"
-  # NUESTRO (pocknix-odin3-support): sin esto el flag de la linea de gamescope lo cancela
-  # Steam con la propiedad GAMESCOPE_COMPOSITE_FORCE=0 y el QAM vuelve a quedar detras.
   patch -p1 < "${srcdir}/0011-force-composition-not-cancelled-by-x-property.patch"
+  patch -p1 < "${srcdir}/0010-DRMBackend-add-rotated-output-max-height.patch"
 }
 
 build() {
@@ -68,7 +108,6 @@ build() {
   # propagate into the subprojects.
   export CFLAGS+=" -Wno-error" CXXFLAGS+=" -Wno-error"
   # Appended last so -march/-mtune override ALARM's defaults, subprojects included.
-  # Fallback = sm8550, as in packages/soc/mesa.
   local _rocknix_tune="${POCKNIX_TUNE_CFLAGS:--march=armv9-a+fp16+crypto+i8mm+bf16+memtag+sm4+sha3+nosve+nosve2 -mtune=cortex-x3 -mno-outline-atomics}"
   export CFLAGS+=" ${_rocknix_tune}" CXXFLAGS+=" ${_rocknix_tune}"
   meson setup build \
