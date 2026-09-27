@@ -128,5 +128,21 @@ echo "=============================================="
 echo "  ✅ Entorno listo. Lanzando DeckStation..."
 echo "=============================================="
 
+# 8-bis. VULKAN DE VALVE PARA LOS EMULADORES
+#
+# El selector "Mesa Version" del plugin PocknixControl es POR JUEGO y solo afecta a los
+# juegos de Steam. Los emuladores se lanzan desde ES-DE (o sea, desde aquí), así que la
+# única forma de que usen el Turnip de Valve es exportarlo en el entorno del lanzador:
+# todo lo que arranque después lo hereda (Suyu sobre todo; RetroArch va por glcore/OpenGL).
+# Si el payload no está instalado, se sigue con el driver del sistema sin tocar nada.
+for _icd in /usr/share/pocknix/vk-arm/26.3.0-valve/*icd*.json; do
+    if [ -f "$_icd" ]; then
+        export VK_DRIVER_FILES="$_icd"
+        echo "  🎮 Vulkan: Turnip de Valve ($(basename "$(dirname "$_icd")"))"
+        break
+    fi
+done
+unset _icd
+
 # 9. LANZAR ES-DE (el AppImage original)
 exec "$DECKSTATION_ROOT/DeckStation.AppImage" "$@"
