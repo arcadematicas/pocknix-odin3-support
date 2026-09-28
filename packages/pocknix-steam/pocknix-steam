@@ -120,6 +120,10 @@ mark "starting gamescope"
 # Steam/gamescope feature gates (portado de ArmadaOS; sin ellas Steam no expone VRR/tearing/HDR/NIS/fps-limiter dinámico en el QAM)
 # gamescope WSI layer: the game presents straight into gamescope's compositor.
 export ENABLE_GAMESCOPE_WSI=1
+# Entorno Steam Deck: habilita en el cliente los flags/UI propios de la Deck (incl. los ajustes
+# de HDR). Nota de gates pendiente (AGENTS.md); armada por su parte identifica la Deck con
+# `-steamdeck` (que ya pasamos). Se anade por si habilita el toggle de HDR en la UI.
+export SteamDeck=1
 export STEAM_GAMESCOPE_VRR_SUPPORTED=1
 export STEAM_MANGOAPP_PRESETS_SUPPORTED=1
 export STEAM_USE_MANGOAPP=1
