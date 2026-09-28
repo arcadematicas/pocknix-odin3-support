@@ -29,7 +29,7 @@
 pkgname=gamescope-session
 _commit=0232e0c0410b051b0c679c99c55bf34f5aaf9f78
 pkgver=20260928
-pkgrel=1
+pkgrel=2
 pkgdesc="gamescope-session-plus (OGC): gamescope standalone + cliente hermano, sesiones por sessions.d"
 arch=('aarch64')
 url="https://github.com/OpenGamingCollective/gamescope-session"
@@ -48,6 +48,10 @@ package() {
   # usr/bin/export-gpu tal cual los trae upstream.
   install -d "${pkgdir}"
   cp -a "${src}/usr" "${pkgdir}/usr"
+
+  # Quitar el xtrace del motor: upstream trae `set -x` (llena el log de la sesion con cada comando;
+  # armada lo hace con su parche 0001). Solo la linea suelta `set -x`, NO `set -e`/`set -euo`.
+  sed -i '/^set -x$/d' "${pkgdir}/usr/share/gamescope-session-plus/gamescope-session-plus"
 
   install -Dm644 "${src}/LICENSE" \
     "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"

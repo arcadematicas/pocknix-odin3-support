@@ -216,23 +216,14 @@ ${GS_OUTPUT[*]} \
 #    limite escanea en negro. Por debajo del limite no hace nada.
 #  - --force-composition: en el MSM/Adreno de la Odin el scan-out directo NO compone los planos
 #    overlay, asi que la UI de gamescope (QAM, MangoHUD via mangoapp) quedaba DETRAS del juego.
-#    Equivale a la propiedad X11 GAMESCOPE_COMPOSITE_FORCE=1 (que el watcher de mas abajo vuelve a
-#    imponer, porque en gamescope la propiedad PISA al flag).
+#    El parche de gamescope `0011` hace que este flag NO lo pueda cancelar la propiedad X11
+#    GAMESCOPE_COMPOSITE_FORCE (por eso ya no hay watcher; ver la nota mas abajo).
 # Coste, dicho claro: la pasada de composicion es trabajo de GPU por frame donde el scan-out
 # directo era un plane flip. Es el mismo trato que hace SteamOS cuando el QAM tiene que superponerse.
 
 # ───────────────────────────────────────────────────────────────────────────────
 # 4. Hooks
 # ───────────────────────────────────────────────────────────────────────────────
-# ¿gamescope sigue vivo? El motor llama a este hook DESPUES de arrancar gamescope, en el mismo
-# shell, asi que gamescope_pid esta disponible; si no, caemos a pgrep.
-_gs_alive() {
-  if [ -n "${gamescope_pid:-}" ]; then
-    kill -0 "${gamescope_pid}" 2>/dev/null
-  else
-    pgrep -x gamescope >/dev/null 2>&1
-  fi
-}
 
 short_session_recover() {
   # La llama el gestor de sesiones si la sesion fallo 5 veces seguidas:gamescope arranca, pero
@@ -251,59 +242,9 @@ post_gamescope_start() {
   fi
 }
 
-# ───────────────────────────────────────────────────────────────────────────────
-# 5. Watcher de GAMESCOPE_COMPOSITE_FORCE (arranca al sourcear, corre en segundo plano)
-# ───────────────────────────────────────────────────────────────────────────────
-# --force-composition by itself is NOT enough (ver la nota del GAMESCOPECMD): gamescope tambien
-# lee la propiedad X11 ROOT GAMESCOPE_COMPOSITE_FORCE y la asigna a la MISMA variable que el flag
-# pone (src/steamcompmgr.cpp, el PropertyNotify hace
-# `cv_composite_force = !!get_prop(root, GAMESCOPE_COMPOSITE_FORCE)`), asi que la PROPIEDAD GANA
-# sobre la linea de comandos. Steam la deja a 0 en nuestras sesiones, con lo que el flag se cancelaba
-# en silencio y volviamos al scan-out directo: el juego aterrizaba en el plano DRM principal y, en
-# este MSM/Adreno, los planos overlay no se componen encima -> la UI de gamescope (QAM, mangoapp)
-# acababa DEBAJO del juego. Afecta a todo lo que presente en fullscreen con Gamescope WSI; solo lo
-# NOTABAN los juegos WProton, que presentan FULLSCREEN, porque un cliente en ventana (WiiCompiled)
-# no llega a calificar para el scan-out.
-# Por eso se IMPONE la propiedad (la que gamescope obedece de verdad) y se sigue imponiendo: una
-# sola escritura se quedaria vieja en cuanto otro la toque, que es justo cuando arranca un juego.
-# Un unico `xprop -spy` vigila, asi que no cuesta polling.
-#
-# OJO: esto es lo que hace gamescope-session-plus con nuestra sesion. Con el pocknix-steam de hoy
-# sigue haciendo falta, porque ALLI el flag es el unico que hay (y el parche 0011 de gamescope es
-# lo que evita que la propiedad lo cancele). Si el 0011 esta dentro en la imagen, este watcher es
-# solo una red de seguridad: se puede quitar cuando el QAM se vea encima con un juego WProton.
-if command -v xprop >/dev/null 2>&1; then
-  (
-    # Las propiedades de control viven en el PRIMER Xwayland: con --xwayland-count 2 el :0 las
-    # lleva (GAMESCOPE_COMPOSITE_FORCE, VSync, el atom de fps); el :1 del juego solo trae
-    # GAMESCOPE_PID / SERVER_ID. DISPLAY ya apunta al :0 aqui (el motor lo exporto al leer el socket).
-    _xdisp="${DISPLAY:-:0}"
-    _xsock="/tmp/.X11-unix/X${_xdisp#:}"
-    for _ in $(seq 1 120); do
-      [ -S "${_xsock}" ] && break
-      sleep 0.5
-    done
-    while [ -S "${_xsock}" ] && _gs_alive; do
-      # La primera escritura tambien CREA la propiedad, asi que gana a un 0 ya puesto.
-      DISPLAY="${_xdisp}" xprop -root -f GAMESCOPE_COMPOSITE_FORCE 32c \
-        -set GAMESCOPE_COMPOSITE_FORCE 1 >/dev/null 2>&1 || break
-      # -spy vuelca la root entera una vez y luego una linea por cambio: ese volcado inicial es lo
-      # que pilla a un escritor que llego antes que nosotros; las lineas siguientes, que nos baje
-      # a 0 en mitad de un juego.
-      DISPLAY="${_xdisp}" xprop -root -spy -f GAMESCOPE_COMPOSITE_FORCE 32c 2>/dev/null |
-        while IFS= read -r line; do
-          case "${line}" in
-            *GAMESCOPE_COMPOSITE_FORCE*'= 0'*)
-              DISPLAY="${_xdisp}" xprop -root -f GAMESCOPE_COMPOSITE_FORCE 32c \
-                -set GAMESCOPE_COMPOSITE_FORCE 1 >/dev/null 2>&1 || true
-              ;;
-          esac
-        done
-      sleep 1   # el pipe solo acaba si se fue Xwayland; no lo esperes girando
-    done
-  ) &
-  GS_GUARD_PID=$!
-fi
+# NOTA (28/09/2026): aqui vivia el watcher `xprop -spy` de GAMESCOPE_COMPOSITE_FORCE.
+# YA NO HACE FALTA: el parche de gamescope `0011` hace que `--force-composition` (que va en
+# el GAMESCOPECMD) gane sobre la propiedad X11, asi que esta NO lo cancela.
 
 # ───────────────────────────────────────────────────────────────────────────────
 # 6. Estado de arranque (de OGC; en Pocknix es inerte: no hay bootstrap tarball, porque el

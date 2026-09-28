@@ -23,7 +23,7 @@
 pkgname=gamescope-session-steam
 _commit=82c45fc112775e3fa927d5c326c39b21f1761cc1
 pkgver=20260928
-pkgrel=1
+pkgrel=2
 pkgdesc="gamescope-session-plus de OGC + sesion steam para la Odin 3 (panel, flags de gamescope y cliente ARM64)"
 arch=('aarch64')
 url="https://github.com/OpenGamingCollective/gamescope-session-steam"
