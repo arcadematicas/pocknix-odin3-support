@@ -1,0 +1,76 @@
+# gamescope-session-steam — la sesion "Steam Big Picture" de gamescope-session-plus (OGC),
+# con NUESTRO fichero sessions.d/steam para la AYN Odin 3.
+#
+# QUE HACE DISTINTO A UPSTREAM
+#   upstream trae una sesion steam pensada para ChimeraOS (bootstrap tarball, steamosctl, el
+#   `steam` del PATH). La nuestra:
+#     - arranca el cliente NATIVO ARM64 con nuestro wrapper `pocknix-steam-client` (no `steam`),
+#     - fija la geometria del panel leyendo /usr/lib/pocknix/device.conf (POCKNIX_PANEL_*),
+#     - y monta GAMESCOPECMD a mano con los flags de la Odin: SIEMPRE --force-composition y
+#       --rotated-output-max-height, y SIN -e/splash (el splash es de pocknix-steam).
+#   El resto de los ficheros de usr/ son los de upstream sin tocar.
+#
+# ⚠️ SHIMS DE STEAMOS QUE NO SE INSTALAN (y por que)
+#   upstream mete en usr/bin/ cuatro helpers de SteamOS que Pocknix YA PROVE con otro cuerpo:
+#     /usr/bin/steamos-update, /usr/bin/steamos-select-branch, /usr/bin/jupiter-biosupdate,
+#     /usr/bin/steamos-session-select  (+ las tres copias en steamos-polkit-helpers/)
+#   - los tres primeros los da `pocknix-steamos-shim` (nuestros: devuelven el 7 del OOBE de Valve);
+#   - `steamos-session-select` lo da `pocknix-desktop` (nuestro: escribe el state file y avisa al
+#     compositor; el de OGC buscaria /usr/lib/os-session-select, que en Pocknix no existe).
+#   Instalarlos aqui seria un CONFLICTO DE FICHERO y pacman abortaria la transaccion, asi que se
+#   borran del tarball. Si algun dia se quieren los de OGC, hay que quitar antes los nuestros.
+#   El arbol usr/ de este directorio ya viene sin ellos: es exactamente lo que se instala.
+pkgname=gamescope-session-steam
+_commit=82c45fc112775e3fa927d5c326c39b21f1761cc1
+pkgver=20260928
+pkgrel=1
+pkgdesc="gamescope-session-plus de OGC + sesion steam para la Odin 3 (panel, flags de gamescope y cliente ARM64)"
+arch=('aarch64')
+url="https://github.com/OpenGamingCollective/gamescope-session-steam"
+license=('MIT')
+# gamescope-session: el motor (el binario, la unidad de usuario y sessions.d/).
+# pocknix-steam: de ahi sale `pocknix-steam-client`, el wrapper que esta sesion lanza.
+depends=('gamescope-session' 'pocknix-steam')
+# xorg-xprop: lo usa el hook post_gamescope_start para mantener GAMESCOPE_COMPOSITE_FORCE=1.
+# pocknix-steam ya lo pide en depends, por eso va en optdepends y no en depends.
+optdepends=('xorg-xprop: el watcher de GAMESCOPE_COMPOSITE_FORCE que pone el QAM sobre el juego')
+source=("https://github.com/OpenGamingCollective/gamescope-session-steam/archive/${_commit}.tar.gz")
+sha256sums=('SKIP')
+
+# Shims de SteamOS que ya tenemos con otro cuerpo (ver cabecera): fuera del paquete.
+_steamos_shims=(
+  usr/bin/steamos-update
+  usr/bin/steamos-select-branch
+  usr/bin/jupiter-biosupdate
+  usr/bin/steamos-session-select
+  usr/bin/steamos-polkit-helpers/steamos-update
+  usr/bin/steamos-polkit-helpers/steamos-select-branch
+  usr/bin/steamos-polkit-helpers/jupiter-biosupdate
+)
+
+package() {
+  local src="${srcdir}/gamescope-session-steam-${_commit}"
+
+  install -d "${pkgdir}"
+  cp -a "${src}/usr" "${pkgdir}/usr"
+
+  # Nuestra sesion sustituye a la de upstream (mismo nombre, mismo path: el motor sourcea
+  # sessions.d/$CLIENT, y $CLIENT es "steam" en la unidad gamescope-session-plus@steam.service).
+  install -Dm755 "${startdir}/usr/share/gamescope-session-plus/sessions.d/steam" \
+    "${pkgdir}/usr/share/gamescope-session-plus/sessions.d/steam"
+
+  # Nuestro lanzador del cliente ARM64 (lo llama CLIENTCMD de la sesion). Vive en este paquete
+  # (no en pocknix-steam) para no tener que tocar el PKGBUILD upstream de pocknix-steam.
+  install -Dm755 "${startdir}/usr/bin/pocknix-steam-client" \
+    "${pkgdir}/usr/bin/pocknix-steam-client"
+
+  # Los shims de los dos paquetes que ya los traen: fuera, o pacman aborta por conflicto.
+  local shim
+  for shim in "${_steamos_shims[@]}"; do
+    rm -f "${pkgdir}/${shim}"
+  done
+  rmdir "${pkgdir}/usr/bin/steamos-polkit-helpers" 2>/dev/null || true
+
+  install -Dm644 "${src}/LICENSE" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

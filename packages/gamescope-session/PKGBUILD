@@ -1,0 +1,54 @@
+# gamescope-session — la sesion estándar de gamescope-session-plus (OGC) para Pocknix.
+#
+# POR QUE ESTE PAQUETE
+#   Hoy la sesion de juego la lanza `pocknix-steam` (script nuestro, gamescope embebido con
+#   `-e -- splash -- steam` y un supervisor en ~/.bash_profile). gamescope-session-plus es el
+#   modelo de SteamOS/armadaOS: gamescope ARRANCA SOLO, y el cliente se lanza como hermano al
+#   leer el socket `-R` (asi Steam ve el compositor como en un Deck). Es la via por la que se
+#   supone que el cliente ARM64 expone el toggle de HDR del QAM.
+#   NO se cambia nada del flujo actual con este paquete: solo existe para poder probarlo.
+#
+# QUE INSTALA (todo lo que trae upstream, sin tocarlo)
+#   /usr/bin/gamescope-session-plus              lanzador de la sesion (env + systemd --user)
+#   /usr/bin/export-gpu                          helper de export-gpu
+#   /usr/lib/systemd/user/gamescope-session-plus@.service + gamescope-session.target
+#   /usr/share/gamescope-session-plus/{gamescope-session-plus,device-quirks}
+#   /usr/share/gamescope/scripts/50-custom/50-disable-explicit-sync.lua
+#
+# EL ARBOL usr/ DE ESTE DIRECTORIO
+#   Es la copia de REFERENCIA del commit pineado (_commit), versionada en el centro para que el
+#   contenido se pueda revisar y diff-ear contra upstream sin bajar nada. package() NO la usa:
+#   instala desde el tarball pineado, asi el paquete siempre sale del upstream exacto.
+#
+# ⚠️ depends y la trampa del chroot de compilacion (AGENTS.md, "COMO SE AÑADEN PAQUETES")
+#   El chroot de `make packages` solo ve los repos de pocknix -> un depends de ALARM que no este
+#   HOSPEDADO en el snapshot ([pocknix-base]) hace fallar makepkg con "Missing dependencies".
+#   hoy base.list trae systemd y util-linux, pero NO bash, dbus, gamescope ni xorg-xprop. Si al
+#   compilar se queja, lo que se anade no es un depends: es una entrada en
+#   config/packages/base-extras.list (hospedada en el snapshot) o en base.list (instalada).
+pkgname=gamescope-session
+_commit=0232e0c0410b051b0c679c99c55bf34f5aaf9f78
+pkgver=20260928
+pkgrel=1
+pkgdesc="gamescope-session-plus (OGC): gamescope standalone + cliente hermano, sesiones por sessions.d"
+arch=('aarch64')
+url="https://github.com/OpenGamingCollective/gamescope-session"
+license=('MIT')
+# gamescope: el compositor. bash: el script de sesion. systemd: las unidades de usuario.
+# util-linux: flock (el "global session lock" del socket de stats). dbus: dbus-update-activation-environment
+# (lo llama /usr/bin/gamescope-session-plus para volcar DESKTOP_SESSION y las XDG_* al bus).
+depends=('gamescope' 'bash' 'systemd' 'util-linux' 'dbus')
+source=("https://github.com/OpenGamingCollective/gamescope-session/archive/${_commit}.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  local src="${srcdir}/gamescope-session-${_commit}"
+
+  # `cp -a` y no install: hay que conservar el bit +x de usr/bin/gamescope-session-plus y
+  # usr/bin/export-gpu tal cual los trae upstream.
+  install -d "${pkgdir}"
+  cp -a "${src}/usr" "${pkgdir}/usr"
+
+  install -Dm644 "${src}/LICENSE" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

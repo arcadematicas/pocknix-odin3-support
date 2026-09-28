@@ -57,6 +57,12 @@ mirror "packages/pocknix-device-sm8750" "devices/sm8750/packages/pocknix-device-
 mirror "packages/linux-pocknix-sm8750"      "packages/soc/linux-pocknix-sm8750"
 mirror "packages/pocknix-bootloader-sm8750" "packages/soc/pocknix-bootloader-sm8750"
 
+# --- gamescope-session-plus (la sesion estandar de SteamOS) -------------------
+# Portado de OGC (armadaOS usa esto). gamescope-session = el motor; gamescope-session-steam =
+# nuestra sesion "steam" + pocknix-steam-client. Paquetes nuestros (no existen en el arbol).
+mirror "packages/gamescope-session"       "packages/shared/gamescope-session"
+mirror "packages/gamescope-session-steam" "packages/shared/gamescope-session-steam"
+
 # --- our files that the build copies verbatim into the rootfs ----------------
 overlay "overlay" "overlay"
 

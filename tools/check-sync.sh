@@ -64,6 +64,8 @@ cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-too
   cmp_tree "${HERE}/packages/pocknix-decky"   "${OS}/packages/shared/pocknix-decky"
   cmp_tree "${HERE}/packages/pocknix-vk-valve" "${OS}/packages/shared/pocknix-vk-valve"
 cmp_tree "${HERE}/packages/pocknix-steam-full" "${OS}/packages/shared/pocknix-steam-full"
+cmp_tree "${HERE}/packages/gamescope-session"       "${OS}/packages/shared/gamescope-session"
+cmp_tree "${HERE}/packages/gamescope-session-steam" "${OS}/packages/shared/gamescope-session-steam"
 
 # config/ y devices/sm8750/: las listas de paquetes, el pocknix.conf, el tuning y — sobre
 # todo — el CMDLINE del kernel (profile.conf). Antes vivian solo en el arbol y no se

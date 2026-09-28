@@ -1,0 +1,324 @@
+#! /bin/bash
+# gamescope-session-plus: sesion "steam" de la AYN Odin 3.
+#
+# Este fichero lo sourcea el motor de gamescope-session-plus (con `set -a`) segun el nombre del
+# cliente: /usr/share/gamescope-session-plus/sessions.d/$CLIENT, con $CLIENT="steam" en
+# gamescope-session-plus@steam.service. Lo que deje aqui manda sobre el motor:
+#
+#   - Las variables de GEOMETRIA y PANEL alimentan el GAMESCOPECMD por defecto del motor.
+#   - GAMESCOPECMD: si esta DEFINIDA, el motor NO arma su comando por defecto y solo le anade al
+#     final `-R $socket -T $stats`. Por eso aqui hay que escribir el comando COMPLETO (y por eso
+#     podemos meter flags que el motor no soporta, como --force-composition).
+#   - CLIENTCMD: el cliente que se arranca cuando gamescope ha avisado por el socket.
+#   - short_session_recover() / post_gamescope_start() / post_client_shutdown(): hooks.
+#
+# Base: la sesion de OGC (gamescope-session-steam, commit 82c45fc1) + lo que sacamos de
+# pocknix-steam (nuestro lanzador actual). El flujo actual NO cambia con esto: solo se instala.
+#
+# ⚠️ Esto se sourcea, no se ejecuta: nada de `set -e` ni de `exit` aqui.
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 0. Config del panel: /usr/lib/pocknix/device.conf y /etc/pocknix/device.conf
+#    (los MISMOS ficheros y el mismo orden que lee pocknix-steam: primero la imagen,
+#     despues el override del usuario, para que este gane)
+# ───────────────────────────────────────────────────────────────────────────────
+for _dc in /usr/lib/pocknix/device.conf /etc/pocknix/device.conf; do
+  [[ -r "${_dc}" ]] && . "${_dc}"
+done
+
+_PN_W="${POCKNIX_PANEL_W:-1080}"
+_PN_H="${POCKNIX_PANEL_H:-1920}"
+_PN_REFRESH="${POCKNIX_PANEL_REFRESH:-120}"
+# Ojo con el nombre: en pocknix-steam el default era "left" y aqui tambien, pero el valor REAL de
+# la Odin lo pone device.conf (POCKNIX_PANEL_ORIENT). Es el mismo --force-orientation de siempre.
+_PN_ORIENT="${POCKNIX_PANEL_ORIENT:-left}"
+_PN_MM="${POCKNIX_PANEL_MM:-177x100}"
+_PN_ROTATE_MAX_H="${POCKNIX_PANEL_ROTATE_MAX_H:-1088}"
+
+# device.conf trae la geometria NATIVA en vertical; gamescope quiere -W/-H en horizontal logico,
+# asi que se transpone para 90/270. Copiado de pocknix-steam.
+case "${_PN_ORIENT}" in
+  left|right) SCREEN_WIDTH="${_PN_H}"; SCREEN_HEIGHT="${_PN_W}" ;;
+  *)          SCREEN_WIDTH="${_PN_W}"; SCREEN_HEIGHT="${_PN_H}" ;;
+esac
+
+# OUTPUT_CONNECTOR: solo si device.conf lo define. Sin esto el motor usaria su "*,eDP-1"
+# (nuestro panel es DSI-1) y ademas el gamescope-session.target haria fallback a Plasma.
+OUTPUT_CONNECTOR="${POCKNIX_PANEL_OUTPUT}"
+ORIENTATION="${_PN_ORIENT}"
+BACKEND="drm"
+# Steam necesita los dos Xwayland: :0 para las propiedades de control (QAM, MangoHUD, VSync) y
+# :1 para el juego. Con uno solo no hay aislamiento y el overlay se pierde.
+XWAYLAND_COUNT=2
+TOUCH_MODE="${POCKNIX_TOUCH_MODE:-4}"
+# gamepadui mide su UI con los mm fisicos de la salida: el default (~96 DPI) la deja en tamano de
+# escritorio. Mismo valor que usa pocknix-steam (177x100 = el ICNA3520 de la Odin).
+FAKE_OUTPUT_MM="${_PN_MM}"
+# La variable de entorno tambien, para lo que la lea (en pocknix-steam se pasaba con env(1)).
+export GAMESCOPE_FAKE_OUTPUT_MM="${FAKE_OUTPUT_MM}"
+
+# El cliente se arranca como hermano de gamescope, no embebido: este es el modelo SteamOS.
+# pocknix-steam-client es quien llama a pocknix-proton-prep / pocknix-steam-sync JUSTO a tiempo.
+export CLIENTCMD="/usr/bin/pocknix-steam-client"
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 1. Gates de Steam / gamescope (los de OGC, sin tocar)
+# ───────────────────────────────────────────────────────────────────────────────
+export GAMESCOPE_SESSION_STEAM_BOOTSTRAP_ARCHIVE="/etc/first-boot/bootstraplinux_ubuntu12_32.tar.xz"
+export GAMESCOPE_SESSION_STEAM_BOOTSTRAP_DIR="${HOME}/.local/share/Steam"
+
+# Show VRR controls in Steam
+export STEAM_GAMESCOPE_VRR_SUPPORTED=1
+
+# Enable Mangoapp
+export STEAM_MANGOAPP_PRESETS_SUPPORTED=1
+export STEAM_USE_MANGOAPP=1
+
+export STEAM_USE_DYNAMIC_VRS=1
+
+# Set up first time bootstrap status
+export STEAM_BOOTSTRAP_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/gamescope/bootstrap.cfg"
+
+# Make path to Steam bootstrap config file.
+mkdir -p "$(dirname "$STEAM_BOOTSTRAP_CONFIG")"
+touch "$STEAM_BOOTSTRAP_CONFIG"
+
+# Support for gamescope tearing with GAMESCOPE_ALLOW_TEARING atom
+export STEAM_GAMESCOPE_HAS_TEARING_SUPPORT=1
+
+# Enable tearing controls in steam
+export STEAM_GAMESCOPE_TEARING_SUPPORTED=1
+
+export STEAM_GAMESCOPE_HDR_SUPPORTED=1
+
+# Workaround for steam getting killed immediatly during reboot
+# (gamescope-session-plus es quien honra estos sentinels al final de la sesion, asi que los
+#  shut down / reboot del QAM ya no necesitan el trap de pocknix-steam)
+export STEAMOS_STEAM_REBOOT_SENTINEL="/tmp/steamos-reboot-sentinel"
+export REBOOT_SENTINEL="$STEAMOS_STEAM_REBOOT_SENTINEL" # for common gamescope-session-plus
+
+# Workaround for steam getting killed immediatly during shutdown
+# Same idea as reboot sentinel above
+export STEAMOS_STEAM_SHUTDOWN_SENTINEL="/tmp/steamos-shutdown-sentinel"
+export SHUTDOWN_SENTINEL="$STEAMOS_STEAM_SHUTDOWN_SENTINEL" # for common gamescope-session-plus
+
+# Enable volume key management via steam for this session
+export STEAM_ENABLE_VOLUME_HANDLER=1
+
+# Have SteamRT's xdg-open send http:// and https:// URLs to Steam
+export SRT_URLOPEN_PREFER_STEAM=1
+
+# Disable automatic audio device switching in steam, now handled by wireplumber
+export STEAM_DISABLE_AUDIO_DEVICE_SWITCHING=1
+
+# Enable support for xwayland isolation per-game in Steam
+export STEAM_MULTIPLE_XWAYLANDS=1
+
+# We have the Mesa integration for the fifo-based dynamic fps-limiter
+export STEAM_GAMESCOPE_DYNAMIC_FPSLIMITER=1
+
+# We have NIS support
+export STEAM_GAMESCOPE_NIS_SUPPORTED=1
+
+# Let steam know it can unmount drives without superuser privileges
+export STEAM_ALLOW_DRIVE_UNMOUNT=1
+
+# Allow formatting external drives
+export STEAM_ALLOW_DRIVE_ADOPT=1
+
+# We no longer need to set GAMESCOPE_EXTERNAL_OVERLAY from steam, mangoapp now does it itself
+export STEAM_DISABLE_MANGOAPP_ATOM_WORKAROUND=1
+
+# Enable horizontal mangoapp bar
+export STEAM_MANGOAPP_HORIZONTAL_SUPPORTED=1
+
+# Scaling support
+export STEAM_GAMESCOPE_FANCY_SCALING_SUPPORT=1
+
+# Color management support
+export STEAM_GAMESCOPE_COLOR_MANAGED=1
+export STEAM_GAMESCOPE_VIRTUAL_WHITE=1
+
+# Set input method modules for Qt/GTK that will show the Steam keyboard
+export QT_IM_MODULE=steam
+export GTK_IM_MODULE=Steam
+
+# Use SteamOS background if exists
+if [ -f "/usr/share/steamos/steamos.png" ] ; then
+  export STEAM_UPDATEUI_PNG_BACKGROUND=/usr/share/steamos/steamos.png
+fi
+
+export CURSOR_FILE="${HOME}/.local/share/Steam/tenfoot/resource/images/cursors/arrow.png"
+
+export XCURSOR_THEME=steam
+export XCURSOR_SCALE=256
+
+if command -v kwriteconfig6 >/dev/null; then
+  # Chromium (and therefore Steam) ignore XCursor and use only the GTK config
+  kwriteconfig6 --file gtk-3.0/settings.ini  --group Settings --key gtk-cursor-theme-name steam
+fi
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 2. Gates NUESTROS (sacados de pocknix-steam, lo que OGC no traia)
+#    Los sentinels de reboot/shutdown ya estan en el punto 1 (son los mismos valores).
+# ───────────────────────────────────────────────────────────────────────────────
+# gamescope WSI layer: el juego presenta directo en el compositor de gamescope.
+export ENABLE_GAMESCOPE_WSI=1
+# Entorno Steam Deck: habilita en el cliente los flags/UI propios de la Deck. La sesion
+# identifica la Deck de verdad con -steamdeck (que pasa pocknix-steam-client).
+export SteamDeck=1
+# Identifica el panel interno (edidless) para que gamescope enganche el perfil de color/HDR de
+# /usr/share/gamescope/scripts/10-armada/ayn.icna3520.oled.lua (650 nits, gamma 2.2). Sin esto el
+# panel de la Odin no reporta HDR. (portado de armada-os, ya en uso con pocknix-steam)
+export GAMESCOPE_INTERNAL_DEVICE_ID=ayn-odin-3
+# El panel no tiene EDID: gamescope usa este appid para el perfil de display sintetico.
+export GAMESCOPE_FALLBACK_APPID=0x41524d41
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 3. GAMESCOPECMD — comando COMPLETO de gamescope para la Odin
+#    Definido => el motor no arma el suyo y solo anade `-R $socket -T $stats` al final.
+#    NO se mete -e ni el splash: ese es el modelo de pocknix-steam, aqui el cliente es hermano.
+# ───────────────────────────────────────────────────────────────────────────────
+GS_CURSOR=""
+if [ -f "$CURSOR_FILE" ]; then
+  GS_CURSOR="--cursor ${CURSOR_FILE}"
+fi
+
+# --prefer-output fija el panel principal: el modeset de gamescope desactiva el resto de CRTCs
+# (que es lo que apaga la segunda pantalla), y ademas el target cae a Plasma si el conector no
+# existe. Si device.conf no define POCKNIX_PANEL_OUTPUT, gamescope elige solo (es un toggle, no
+# un requisito) — no pongamos un "*" sintetico, que es justo lo que rompe el fallback del target.
+if [ -n "${POCKNIX_PANEL_OUTPUT:-}" ]; then
+  GS_OUTPUT=(--prefer-output "${POCKNIX_PANEL_OUTPUT}")
+else
+  GS_OUTPUT=()
+fi
+
+export GAMESCOPECMD="${GAMESCOPE_BIN:-/usr/bin/gamescope} \
+${GS_CURSOR} \
+-W ${SCREEN_WIDTH} -H ${SCREEN_HEIGHT} \
+-r ${_PN_REFRESH} \
+--xwayland-count 2 \
+--mangoapp \
+--backend drm \
+--force-orientation ${ORIENTATION} \
+${GS_OUTPUT[*]} \
+--fake-output-mm ${FAKE_OUTPUT_MM} \
+--default-touch-mode ${TOUCH_MODE} \
+--rotated-output-max-height ${_PN_ROTATE_MAX_H} \
+--force-composition \
+--steam"
+
+# Justificacion de los dos flags que aqui SIEMPRE van (copiado de pocknix-steam):
+#  - --rotated-output-max-height: la rotacion en scanout (rotador inline del DPU) solo acepta un
+#    plano cuya altura PRE-rotada cabe en ese maximo (1088 lineas en el DPU del SM8750); passinglo
+#    limita la salida logica para que la rotacion siga siendo legal. Sin el, un panel que pase del
+#    limite escanea en negro. Por debajo del limite no hace nada.
+#  - --force-composition: en el MSM/Adreno de la Odin el scan-out directo NO compone los planos
+#    overlay, asi que la UI de gamescope (QAM, MangoHUD via mangoapp) quedaba DETRAS del juego.
+#    Equivale a la propiedad X11 GAMESCOPE_COMPOSITE_FORCE=1 (que el watcher de mas abajo vuelve a
+#    imponer, porque en gamescope la propiedad PISA al flag).
+# Coste, dicho claro: la pasada de composicion es trabajo de GPU por frame donde el scan-out
+# directo era un plane flip. Es el mismo trato que hace SteamOS cuando el QAM tiene que superponerse.
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 4. Hooks
+# ───────────────────────────────────────────────────────────────────────────────
+# ¿gamescope sigue vivo? El motor llama a este hook DESPUES de arrancar gamescope, en el mismo
+# shell, asi que gamescope_pid esta disponible; si no, caemos a pgrep.
+_gs_alive() {
+  if [ -n "${gamescope_pid:-}" ]; then
+    kill -0 "${gamescope_pid}" 2>/dev/null
+  else
+    pgrep -x gamescope >/dev/null 2>&1
+  fi
+}
+
+short_session_recover() {
+  # La llama el gestor de sesiones si la sesion fallo 5 veces seguidas:gamescope arranca, pero
+  # o Steam o su estado estan rotos, y reintentar solo enseñaria lo mismo. Salimos al escritorio.
+  # En Pocknix el cambio de sesion es `steamos-session-select` (el de pocknix-desktop), que escribe
+  # el state file y avisa al compositor. `steamosctl` (lo que usa OGC) NO existe aqui.
+  if command -v steamos-session-select >/dev/null 2>&1; then
+    steamos-session-select desktop
+  fi
+}
+
+post_gamescope_start() {
+  # Lo mismo que el hook de OGC (steam-tweaks), mas lo que haga falta en la Odin.
+  if command -v steam-tweaks > /dev/null; then
+    steam-tweaks || true
+  fi
+}
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 5. Watcher de GAMESCOPE_COMPOSITE_FORCE (arranca al sourcear, corre en segundo plano)
+# ───────────────────────────────────────────────────────────────────────────────
+# --force-composition by itself is NOT enough (ver la nota del GAMESCOPECMD): gamescope tambien
+# lee la propiedad X11 ROOT GAMESCOPE_COMPOSITE_FORCE y la asigna a la MISMA variable que el flag
+# pone (src/steamcompmgr.cpp, el PropertyNotify hace
+# `cv_composite_force = !!get_prop(root, GAMESCOPE_COMPOSITE_FORCE)`), asi que la PROPIEDAD GANA
+# sobre la linea de comandos. Steam la deja a 0 en nuestras sesiones, con lo que el flag se cancelaba
+# en silencio y volviamos al scan-out directo: el juego aterrizaba en el plano DRM principal y, en
+# este MSM/Adreno, los planos overlay no se componen encima -> la UI de gamescope (QAM, mangoapp)
+# acababa DEBAJO del juego. Afecta a todo lo que presente en fullscreen con Gamescope WSI; solo lo
+# NOTABAN los juegos WProton, que presentan FULLSCREEN, porque un cliente en ventana (WiiCompiled)
+# no llega a calificar para el scan-out.
+# Por eso se IMPONE la propiedad (la que gamescope obedece de verdad) y se sigue imponiendo: una
+# sola escritura se quedaria vieja en cuanto otro la toque, que es justo cuando arranca un juego.
+# Un unico `xprop -spy` vigila, asi que no cuesta polling.
+#
+# OJO: esto es lo que hace gamescope-session-plus con nuestra sesion. Con el pocknix-steam de hoy
+# sigue haciendo falta, porque ALLI el flag es el unico que hay (y el parche 0011 de gamescope es
+# lo que evita que la propiedad lo cancele). Si el 0011 esta dentro en la imagen, este watcher es
+# solo una red de seguridad: se puede quitar cuando el QAM se vea encima con un juego WProton.
+if command -v xprop >/dev/null 2>&1; then
+  (
+    # Las propiedades de control viven en el PRIMER Xwayland: con --xwayland-count 2 el :0 las
+    # lleva (GAMESCOPE_COMPOSITE_FORCE, VSync, el atom de fps); el :1 del juego solo trae
+    # GAMESCOPE_PID / SERVER_ID. DISPLAY ya apunta al :0 aqui (el motor lo exporto al leer el socket).
+    _xdisp="${DISPLAY:-:0}"
+    _xsock="/tmp/.X11-unix/X${_xdisp#:}"
+    for _ in $(seq 1 120); do
+      [ -S "${_xsock}" ] && break
+      sleep 0.5
+    done
+    while [ -S "${_xsock}" ] && _gs_alive; do
+      # La primera escritura tambien CREA la propiedad, asi que gana a un 0 ya puesto.
+      DISPLAY="${_xdisp}" xprop -root -f GAMESCOPE_COMPOSITE_FORCE 32c \
+        -set GAMESCOPE_COMPOSITE_FORCE 1 >/dev/null 2>&1 || break
+      # -spy vuelca la root entera una vez y luego una linea por cambio: ese volcado inicial es lo
+      # que pilla a un escritor que llego antes que nosotros; las lineas siguientes, que nos baje
+      # a 0 en mitad de un juego.
+      DISPLAY="${_xdisp}" xprop -root -spy -f GAMESCOPE_COMPOSITE_FORCE 32c 2>/dev/null |
+        while IFS= read -r line; do
+          case "${line}" in
+            *GAMESCOPE_COMPOSITE_FORCE*'= 0'*)
+              DISPLAY="${_xdisp}" xprop -root -f GAMESCOPE_COMPOSITE_FORCE 32c \
+                -set GAMESCOPE_COMPOSITE_FORCE 1 >/dev/null 2>&1 || true
+              ;;
+          esac
+        done
+      sleep 1   # el pipe solo acaba si se fue Xwayland; no lo esperes girando
+    done
+  ) &
+  GS_GUARD_PID=$!
+fi
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 6. Estado de arranque (de OGC; en Pocknix es inerte: no hay bootstrap tarball, porque el
+#    cliente ARM64 se hornea en la imagen. Se deja por si algun dia lo hay.)
+# ───────────────────────────────────────────────────────────────────────────────
+# Workaround for Steam login issue while Steam client change propagates out of Beta
+touch "${HOME}"/.steam/root/config/SteamAppData.vdf || true
+
+if [[ -f "$GAMESCOPE_SESSION_STEAM_BOOTSTRAP_ARCHIVE" ]] && ! grep -q "set_bootstrap=1" "$STEAM_BOOTSTRAP_CONFIG"; then
+    mkdir -p "$GAMESCOPE_SESSION_STEAM_BOOTSTRAP_DIR"
+    tar xf "$GAMESCOPE_SESSION_STEAM_BOOTSTRAP_ARCHIVE" -C "$GAMESCOPE_SESSION_STEAM_BOOTSTRAP_DIR"
+    echo "set_bootstrap=1" >> "$STEAM_BOOTSTRAP_CONFIG"
+fi
+
+# If we have steam_notif_daemon binary start it
+if command -v steam_notif_daemon > /dev/null; then
+    steam_notif_daemon &
+fi
