@@ -1185,9 +1185,11 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
       armada_ayn_icna3520_oled"*. **HDR FUNCIONANDO (28/09)**: `Ori and the Will of the Wisps`
       (WProton) reconoció HDR → gamescope `xwm: HDR output enabled`. **El toggle del QAM no
       aparece** (el cliente Steam ARM64 no lo expone; no hace falta, el juego pide HDR directo).
-      **Pendiente**: (1) **escalado**: con la base OGC la UI sale más grande (revisar el cálculo de
-      escala lógica de OGC y el efecto de `--rotated-output-max-height 1088`); (2) compilar el
-      paquete `pocknix-steam` del centro para que el env llegue a la imagen.
+      **Pendiente**: (1) **escalado**: con la base OGC la UI sale más grande (Steam no puede leer
+      la salida por XRandR — `Error: XRRGetOutputInfo() is not available` — y asume otro DPI);
+      Fransis lo ajustó y lo ve bien, queda anotado por si se quiere afinar. El paquete
+      `pocknix-steam` **ya se compiló e instaló** (`0.1.0-63`, con el env), así que el fix llega a
+      la imagen.
 - [x] **Kernel 7.2.6 — RESUELTO (27/09/2026)**. Ya NO está descartado. Las dos regresiones las
       arregla el propio mainline con los parches de **armada-os** (commit `7ecbd142` + `b0abd0ad`):
       - **Panel negro** (`dsi_calc_clk_rate_6g` redondeaba el byte clock ANTES de reparentar a la
