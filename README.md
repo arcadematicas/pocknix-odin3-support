@@ -13,27 +13,28 @@ documentación. El árbol de compilación (`pocknix-os`) **se regenera desde aqu
 
 ---
 
-## 📊 Estado actual (20/09/2026)
+## 📊 Estado actual (28/09/2026)
 
 | Área | Estado |
 |---|---|
-| **Arranque** | ✅ Kernel **7.2.4** + DTS del Odin 3. Arranque en ~20 s (`pocknix-diag` a timer, no bloquea) |
+| **Arranque** | ✅ Kernel **7.2.6** + DTS del Odin 3. Arranque en ~20 s (`pocknix-diag` a timer, no bloquea) |
 | **Rotación de pantalla** | ✅ **POR HARDWARE** — el DPU rota en scanout (`rotation=8`/`ROTATE_270`), sin coste de GPU. Ver [`docs/ROTACION-HARDWARE.md`](docs/ROTACION-HARDWARE.md) |
-| **Sesión de juego** | ✅ gamescope + Steam gamepadui estable (sin `VkDeviceLost`) |
-| **Gráficos** | ✅ **Mesa 26.2.3** + **Turnip 20260918** (`driverInfo = Mesa 26.2.3-pocknix2.1`, Adreno 830, Vulkan 1.4.354) |
+| **Sesión de juego** | ✅ **gamescope-session-plus** (modelo SteamOS, portado de armadaOS) + Steam gamepadui. Reversible vía `~deck/.use-gsplus`. Ver [`CHANGELOG.md`](CHANGELOG.md) |
+| **HDR** | ✅ **FUNCIONANDO** — panel edidless con perfil propio (650 nits, gamma 2.2) + color pipelines por plano en el kernel. Verificado en `Ori and the Will of the Wisps` |
+| **Gráficos** | ✅ **Mesa 26.2.3** + **Turnip 20260918** (Adreno 830, Vulkan 1.4.354) + payload Turnip de Valve (`pocknix-vk-valve`) |
 | **Mando + táctil** | ✅ InputPlumber, incluido el gamepad UART (driver `rsinput`) |
 | **WiFi / Bluetooth** | ✅ NetworkManager + `hci0` (ath12k **WCN7860**) |
-| **Audio** | ✅ Sound card `SM8750AYN` (ADSP + stack LPASS completo) |
+| **Audio** | ✅ Sound card `SM8750AYN` (ADSP + stack LPASS completo) + UCM |
 | **Batería** | ✅ Carga + % estimado por OCV (ver [`docs/BATTERY-ISSUE.md`](docs/BATTERY-ISSUE.md)) |
-| **Suspensión** | ✅ `s2idle` real + hook que reactiva la pantalla al resumir ([`docs/SUSPEND-ISSUE.md`](docs/SUSPEND-ISSUE.md)) |
+| **Suspensión** | ✅ `s2idle` real (PCIe/D3cold/regulator de armadaOS, ~0.37 W) con ADSP que duerme aunque haya audio |
 | **Escritorio (Plasma)** | ✅ KScreen enumera el panel ([`docs/KSCREEN-ISSUE.md`](docs/KSCREEN-ISSUE.md)) |
-| **Bootanimation** | ✅ Splash del Odin 3 dibujado en `/dev/fb0` (sin Plymouth) |
 | **Bootloader** | ✅ **ABL 1.1.8** en ambos slots (`pocknix-update-abl --status` → `uptodate`) |
 | **Emulación** | ✅ DeckStation ARM en `/opt/deckstation/` (capa de emulación propia) + WProton |
-| **Panel Decky** | ✅ PocknixControl en la imagen (potencia, luces, OLED care) |
+| **Panel Decky** | ✅ PocknixControl (potencia, luces, OLED care, **interruptor de HDR**, scheduler SCX) |
 | **Sensores IIO** | ⚠️ `hexagonrpcd` sale al arrancar y no expone IIO → **sin auto-rotación ni brillo adaptativo** |
 
-> El detalle de la sesión más reciente y lo que queda: [`docs/PENDIENTE-2026-09-20.md`](docs/PENDIENTE-2026-09-20.md)
+> El historial reciente está en [`CHANGELOG.md`](CHANGELOG.md); el detalle de la sesión del 20/09, en
+> [`docs/PENDIENTE-2026-09-20.md`](docs/PENDIENTE-2026-09-20.md)
 
 ---
 

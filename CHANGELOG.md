@@ -15,6 +15,88 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 27–28 de septiembre 2026 — HDR, kernel 7.2.6, s2idle, sesión SteamOS y limpiezas
+
+Dos días muy intensos: se recupera el kernel 7.2.6, se porta todo el trabajo de energía de armadaOS,
+se **consigue el HDR** y se cambia la sesión de Steam al modelo de SteamOS. Todo verificado en la Odin.
+
+### 🚀 HDR (conseguido)
+
+- 🚀 **Kernel con color pipelines por plano**: LUTDMA (`dpu_hw_reg_dma`) + IGC/3D-LUT por plano en VIG
+  y soporte de planos 10-bit (`ABGR/XBGR2101010`) — parches `0070`/`0071`/`0076`/`0077`/`0082`
+  (portados de armadaOS, adaptado el hunk del catálogo VIG a nuestra entrada).
+- 🚀 **gamescope re-baseado a OpenGamingCollective `3.16.29-ogc2`** (antes ROCKNIX/Valve 3.16.25) con
+  **19 parches de armada** (`0101`–`0121`): perfil edidless + HDR del Odin 3 (650 nits, gamma 2.2),
+  tonemap, output-LUTs, P3 y **color por plano**. Se descartaron los parches de rotación de ROCKNIX
+  (la base OGC ya trae rotación); se mantienen `0009`/`0010`/`0011`.
+- 🚀 **Perfil de panel del Odin 3** (`ayn.icna3520.oled.lua`, en `overlay/`) + `GAMESCOPE_INTERNAL_DEVICE_ID=ayn-odin-3`
+  en `pocknix-steam` + `GAMESCOPE_EXPOSE_CLIENT_SAMPLEABLE_FORMATS=1` y `--hdr-itm-target-nits 650`
+  (de armada). El log confirma `Got known display: armada_ayn_icna3520_oled` y `xwm: HDR output enabled`.
+- ✅ **HDR funcionando** en `Ori and the Will of the Wisps` (WProton). *El toggle del QAM del cliente
+  Steam ARM64 no se dibuja (gate interno del cliente, igual que en armadaOS), pero el juego pide HDR
+  directo y funciona.*
+
+### 🚀 Kernel 7.2.6 (recuperado)
+
+- ✅ **El 7.2.6 deja de estar descartado**: las dos regresiones las arregla mainline con los parches de
+  armadaOS — panel negro (`0048a`, DSI byte clock tras reparentar) y WiFi (`0514`/`0514a`, `iommu-map`
+  con `#iommu-cells=2`). En 7.2.6, `0050`/`0055`/`0517` se saltan solos (ya en mainline).
+- ✅ Compilado, instalado y verificado (panel `connected`, WiFi `connected:full`, sesión OK).
+
+### 🚀 Energía (s2idle + ADSP)
+
+- 🚀 **s2idle de armadaOS**: `0521` (PCIe suspend OPP), `0522` (D3cold), `0523`–`0526` (regulator
+  suspend-state) + DTS (rails del códec en LPM + PCIe WAKE# active-low). Sleep 0.71 → 0.37 W (medido
+  por armada). Verificado suspend/resume en la Odin.
+- 🚀 **ADSP duerme al suspender con audio abierto** (`0528`/`0529`/`0613`, este último renumerado desde
+  el `0530` de armada para ir *después* del `0612` de ROCKNIX). Verificado (audio OK tras resume).
+- 🚀 **Extras** `0903` (battmgr charge-current) y `1007` (rsinput MCU supply en sleep).
+
+### 🚀 Sesión de Steam (modelo SteamOS)
+
+- 🚀 **gamescope-session-plus portado a Pocknix**: paquetes `gamescope-session` (motor OGC) +
+  `gamescope-session-steam` (nuestra `sessions.d/steam` con geometría/rotación del panel,
+  `GAMESCOPECMD` propio con `--force-composition` + `--rotated-output-max-height`, y
+  `pocknix-steam-client`). **Reversible**: se activa con `~deck/.use-gsplus` y el supervisor
+  `~/.bash_profile` elige; borrar el fichero vuelve a `pocknix-steam`.
+- 🚀 Aparece la **VRS** (sombreado de velocidad variable) en el QAM con la sesión nueva.
+
+### 🚀 Plugin PocknixControl
+
+- 🚀 **Interruptor de HDR** en la pestaña System: lee/escribe los átomos de gamescope
+  (`GAMESCOPE_DISPLAY_{SUPPORTS,HDR_ENABLED}`). El plugin corre como **root** y el X de gamescope exige
+  cookie, así que el `xprop` se lanza **como `deck`** (`runuser`) — si no, salía "HDR no disponible".
+- ✅ **Estado del OLED care**: el timer de 4 h no actualizaba `/run/pocknix/oled-care.json` → el plugin
+  decía "sin refrescos" aunque sí refrescaba en modo juego. Ya lo escribe.
+
+### 🎮 DeckStation / emulación
+
+- ✅ **Naomi / Naomi 2**: faltaba la BIOS de NAOMI (DeckStation no la contemplaba) → añadida al
+  manifiesto (`bios/naomi/` → `system/dc` de RetroArch). Subido a `stshunz/deckstation-arm` + centro.
+- ✅ **Saturn**: `yabause`/`kronos` buscan `saturn_bios.bin` (la Odin solo tenía `sega_101.bin`) →
+  añadido el alias. `yabasanshiro` no puede (pide OpenGLES3 y el RetroArch es OpenGL).
+- ✅ **Launcher**: resetea el límite de FPS de gamescope al arrancar (evita heredar el 30/60 del último
+  juego de Steam y que los emuladores vayan a media velocidad).
+
+### 🧹 Limpiezas
+
+- 🧹 **Watcher `xprop` retirado** de `pocknix-steam` y de la sesión: era redundante con el parche
+  gamescope `0011` (`--force-composition` no cancelable por la propiedad X11).
+- 🧹 **`set -x` retirado** del motor de gamescope-session-plus (llenaba el log de la sesión).
+- 🧹 Corregido un **chown equivocado del chroot** de compilación (se dejó entero en uid 1000 y rompió
+  el setuid de `sudo`); y limpiados los restos muertos de `packages/gamescope` en `tools/`.
+
+### ⚠️ Gotchas de build documentados
+
+- ⚠️ **Locks huérfanos de `repo-add`**: `make packages` muere en silencio tras el `-Syu`.
+  `sudo find build/localrepo -name '*.lck' -delete` (y si sigue, lanzar `bash scripts/build-packages.sh <pkg>`
+  directo, que ha funcionado).
+- ⚠️ **`srccache` con ownership equivocado** (uid 1000 vs `builder` 1001) → makepkg "dubious ownership"
+  → "is not a clone of". `chown -R 1001:1001` del `srccache` (NO del chroot entero).
+- ⚠️ **Push bloqueado por el llavero**: usar `GH_TOKEN` del MCP de GitHub (`grep` en la config de opencode).
+
+---
+
 ## 📅 26 de septiembre 2026 — incidente de arranque: resuelto y documentado
 
 Cierra el incidente del día 25. La imagen nueva no arrancaba y el primer diagnóstico
