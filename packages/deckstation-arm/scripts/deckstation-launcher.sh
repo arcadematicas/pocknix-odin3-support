@@ -144,5 +144,19 @@ for _icd in /usr/share/pocknix/vk-arm/26.3.0-valve/*icd*.json; do
 done
 unset _icd
 
+# 8-ter. NO HEREDAR EL LIMITE DE FPS DEL ULTIMO JUEGO DE STEAM
+#
+# El atomo GAMESCOPE_FPS_LIMIT lo escribe el cliente Steam POR APP, pero nuestro parche
+# 0009 lo hace PERSISTIR: al pasar a una app NO-Steam (DeckStation) el cliente no lo
+# resetea, asi que ES-DE y los emuladores arrancaban al 30/60 del ultimo juego de Steam
+# -> juegos "lentos" (un emulador de 60 fps sincroniza a vblank y va a media velocidad).
+#
+# Lo ponemos a 0 (sin limite) al arrancar DeckStation: los emuladores van a su ritmo.
+# El limitador del QAM sigue disponible para los juegos de Steam.
+if command -v xprop >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+    xprop -root -f GAMESCOPE_FPS_LIMIT 32c -set GAMESCOPE_FPS_LIMIT 0 2>/dev/null \
+        && echo "  ⏱️  Limite de FPS: sin limite (evita heredar el del ultimo juego)"
+fi
+
 # 9. LANZAR ES-DE (el AppImage original)
 exec "$DECKSTATION_ROOT/DeckStation.AppImage" "$@"
