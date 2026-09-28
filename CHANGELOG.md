@@ -95,6 +95,23 @@ se **consigue el HDR** y se cambia la sesión de Steam al modelo de SteamOS. Tod
   → "is not a clone of". `chown -R 1001:1001` del `srccache` (NO del chroot entero).
 - ⚠️ **Push bloqueado por el llavero**: usar `GH_TOKEN` del MCP de GitHub (`grep` en la config de opencode).
 
+### ⚠️ Abierto al cerrar el día (28/09)
+
+- ⚠️ **MangoHUD: FPS con caídas/desincronía** en todos los juegos (Steam, AppImages, WProton). El
+  mangoapp calcula los FPS con los *nudges* de frame de gamescope (`mangoapp_nudge_app_frame`), así
+  que si el compositor entrega frames irregularmente, el HUD lo refleja.
+- ⚠️ **El QAM vuelve a quedarse detrás del juego** en algún caso (intermitente): se vio con
+  `--force-composition` puesto y el parche `0011` instalado, y el DRM en 1 plano (composite) otras
+  veces — no es permanente.
+- **Hipótesis**: el **HDR estaba encendido GLOBALMENTE** (`GAMESCOPE_DISPLAY_HDR_ENABLED=1` por
+  defecto del cliente), lo que obliga a gamescope a la ruta HDR + tonemap por frame en TODO (también
+  SDR) y, con los planos de color por plano de armada, podría mandar el juego a su plano y dejar los
+  overlays detrás. **Se dejó el HDR APAGADO** (átomo a 0) para probar; Fransis lo seguía notando "raro"
+  pero sin confirmar. **Pendiente** de probar a fondo (con el toggle de PocknixControl) y, si se
+  confirma, dejar el HDR apagado por defecto y encenderlo solo para juegos HDR.
+- **A investigar**: mangoapp de OGC 3.16.29 vs el anterior; interacción del `--force-composition`/
+  `0011` con el pacing; el límite de FPS.
+
 ---
 
 ## 📅 26 de septiembre 2026 — incidente de arranque: resuelto y documentado
