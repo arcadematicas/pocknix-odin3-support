@@ -88,3 +88,6 @@ pcecd|{HOME:RetroArch}/.config/retroarch/system
 
 # --- 3DO (RetroArch) ----------------------------------------------------
 3do|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Sega NAOMI / NAOMI 2 / GD-ROM (Flycast libretro espera naomi*.zip en system/dc) ---
+naomi|{HOME:RetroArch}/.config/retroarch/system/dc
