@@ -6,31 +6,34 @@ X11 en la raiz de SU Xwayland (el de la sesion de juego, DISPLAY=:0):
     GAMESCOPE_DISPLAY_SUPPORTS_HDR  — el output/backend soporta HDR
     GAMESCOPE_DISPLAY_HDR_ENABLED   — HDR activado (CARDINAL 0/1)
 
-Son los mismos atomos que usa el cliente de Steam, asi que activarlos aqui es
-equivalente a lo que haria el QAM (que en el cliente ARM64 no lo expone).
+Son los mismos atomos que usa el cliente de Steam.
 
-El PluginLoader de Decky corre como root SIN entorno grafico, por lo que no
-tiene DISPLAY/XAUTHORITY: se reutiliza el mismo truco que el OLED care
-(oled_care._session_env()) y se le pasa ese entorno a xprop. Si no hay sesion
-gamescope (escritorio Plasma, o sin steam) no hay atomos -> available=False y la
-UI muestra el interruptor deshabilitado.
+⚠️ El PluginLoader de Decky corre como ROOT, pero el Xwayland de gamescope exige
+cookie X y root NO la tiene (xprop devuelve "Authorization required"). El usuario
+`deck` SI puede abrirlo sin XAUTHORITY, asi que lanzamos `xprop` COMO `deck`
+(runuser). Verificado en la Odin: root falla, deck funciona.
+
+Si no hay sesion gamescope (escritorio Plasma puro, o sin steam) no hay atomos ->
+available=False y la UI muestra el interruptor deshabilitado.
 """
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
-
-from pocknix_control.oled_care import _session_env
 
 # Atomos de gamescope para el HDR (ver gamescope: xatom / HDR support).
 ATOM_SUPPORTS_HDR = "GAMESCOPE_DISPLAY_SUPPORTS_HDR"
 ATOM_HDR_ENABLED = "GAMESCOPE_DISPLAY_HDR_ENABLED"
 
 # La sesion de juego (gamescope) tiene SIEMPRE su Xwayland en :0; el de Plasma
-# puede estar en otro, y ahi no hay atomos de gamescope. Igual que hace
-# oled_care.run_refresher() para el modo juego, fijamos :0 a proposito.
+# puede estar en otro, y ahi no hay atomos de gamescope.
 GAMESCOPE_DISPLAY = ":0"
+
+# uid/gid de `deck` (ver AGENTS.md: fransis=1000, deck=1001).
+DECK_UID = 1001
+DECK_GID = 1001
 
 _XPROP_TIMEOUT = 5
 
@@ -39,32 +42,44 @@ _ATOM_RE = re.compile(r"^\s*([A-Z0-9_]+)\s*(?:\(\w+\))?\s*=\s*(.*)$")
 _NUM_RE = re.compile(r"-?\d+")
 
 
-def _xprop_env() -> dict:
-    """Entorno para poder hablar con el Xwayland de gamescope."""
-    env = {"DISPLAY": GAMESCOPE_DISPLAY}
-    # XAUTHORITY / XDG_RUNTIME_DIR vienen del proceso de la sesion; DISPLAY lo
-    # fijamos nosotros (ver GAMESCOPE_DISPLAY).
-    for key, value in _session_env().items():
-        if key != "DISPLAY":
-            env[key] = value
-    return env
+def _xprop_attempts(args: list[str]) -> list[list[str]]:
+    """Comandos xprop a probar, en orden (el plugin corre como root)."""
+    intentos: list[list[str]] = []
+    display = f"DISPLAY={GAMESCOPE_DISPLAY}"
+    if os.geteuid() == 0:
+        # Como `deck`: es quien puede abrir el X de gamescope sin cookie (root no).
+        intentos.append(["runuser", "-u", "deck", "--", "env", display, "xprop"] + args)
+        intentos.append([
+            "setpriv", f"--reuid={DECK_UID}", f"--regid={DECK_GID}",
+            "--init-groups", "env", display, "xprop",
+        ] + args)
+    # Fallback directo: vale si ya somos deck, o si el X no exige cookie.
+    intentos.append(["env", display, "xprop"] + args)
+    return intentos
+
+
+def _run_xprop(args: list[str]) -> subprocess.CompletedProcess | None:
+    """xprop contra el Xwayland de gamescope, probando los distintos metodos."""
+    for cmd in _xprop_attempts(args):
+        try:
+            cp = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=_XPROP_TIMEOUT,
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if cp.returncode == 0:
+            return cp
+    return None
 
 
 def _read_atoms() -> dict:
     """Valores enteros de los atomos de HDR, o {} si no hay sesion gamescope."""
-    try:
-        out = subprocess.run(
-            ["xprop", "-root"],
-            capture_output=True, text=True,
-            timeout=_XPROP_TIMEOUT, env=_xprop_env(),
-        )
-    except (OSError, subprocess.SubprocessError):
-        return {}
-    if out.returncode != 0:
+    cp = _run_xprop(["-root"])
+    if cp is None:
         return {}
 
     valores: dict[str, int] = {}
-    for linea in (out.stdout or "").splitlines():
+    for linea in (cp.stdout or "").splitlines():
         match = _ATOM_RE.match(linea)
         if not match:
             continue
@@ -102,14 +117,10 @@ def set_hdr(enabled: bool) -> dict:
         return estado
 
     valor = 1 if enabled else 0
-    try:
-        subprocess.run(
-            ["xprop", "-root", "-f", ATOM_HDR_ENABLED, "32c",
-             "-set", ATOM_HDR_ENABLED, str(valor)],
-            capture_output=True, text=True,
-            timeout=_XPROP_TIMEOUT, env=_xprop_env(),
-        )
-    except (OSError, subprocess.SubprocessError) as err:
-        # Si falla, se devuelve el estado real para que la UI revierta el toggle.
-        print(f"[pocknix] set_hdr({enabled}) fallo: {err}", flush=True)
+    cp = _run_xprop(["-root", "-f", ATOM_HDR_ENABLED, "32c",
+                     "-set", ATOM_HDR_ENABLED, str(valor)])
+    if cp is None:
+        print(f"[pocknix] set_hdr({enabled}): xprop fallo (¿sin sesion gamescope?)",
+              flush=True)
+    # Si fallo, se devuelve el estado real para que la UI revierta el toggle.
     return hdr_status()
