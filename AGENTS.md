@@ -1182,10 +1182,12 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
       (`overlay/usr/share/gamescope/scripts/10-armada/ayn.icna3520.oled.lua` = ICNA3520, Odin 3,
       HDR 650 nits gamma22) + el env **`GAMESCOPE_INTERNAL_DEVICE_ID=ayn-odin-3`** en `pocknix-steam`
       (el perfil casa por `device_id`+`internal`+sin EDID). Confirmado: *"Got known display:
-      armada_ayn_icna3520_oled"*. **Pendiente**: (1) probar con un **juego HDR** (Ori Wisps copiado a
-      `/opt/wproton/games/`); (2) **escalado**: con la base OGC la UI sale más grande (revisar el
-      cálculo de escala lógica de OGC y el efecto de `--rotated-output-max-height 1088`); (3) compilar
-      el paquete `pocknix-steam` del centro (el env del fichero del centro aún no está en la imagen).
+      armada_ayn_icna3520_oled"*. **HDR FUNCIONANDO (28/09)**: `Ori and the Will of the Wisps`
+      (WProton) reconoció HDR → gamescope `xwm: HDR output enabled`. **El toggle del QAM no
+      aparece** (el cliente Steam ARM64 no lo expone; no hace falta, el juego pide HDR directo).
+      **Pendiente**: (1) **escalado**: con la base OGC la UI sale más grande (revisar el cálculo de
+      escala lógica de OGC y el efecto de `--rotated-output-max-height 1088`); (2) compilar el
+      paquete `pocknix-steam` del centro para que el env llegue a la imagen.
 - [x] **Kernel 7.2.6 — RESUELTO (27/09/2026)**. Ya NO está descartado. Las dos regresiones las
       arregla el propio mainline con los parches de **armada-os** (commit `7ecbd142` + `b0abd0ad`):
       - **Panel negro** (`dsi_calc_clk_rate_6g` redondeaba el byte clock ANTES de reparentar a la
