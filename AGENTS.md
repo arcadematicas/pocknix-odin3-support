@@ -1177,11 +1177,15 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
       650 nits, gamma22, output-LUTs, P3, **color por plano**). Los parches de rotación de ROCKNIX
       se descartaron (la base OGC ya trae rotación; se mantienen `0009`/`0010`/`0011`). Confirmado
       en el log: *"Using plane IGC + 3D LUT color pipelines"* + *"Generated synthetic EDID for
-      EDID-less internal connector DSI-1"*. **Pendiente**: (1) la **opción HDR no aparece** en el
-      QAM — el EDID sintético lleva colorimetría pero **no metadatos HDR** (revisar el match del
-      perfil `0103` por modo/panel y/o el gate `STEAM_GAMESCOPE_HDR`/`HDR_NITS`); (2) **escalado**:
-      con la base OGC la UI sale más grande (revisar el cálculo de escala lógica de OGC y el efecto
-      de `--rotated-output-max-height 1088`). Probarlo con un **juego HDR**.
+      EDID-less internal connector DSI-1"*. **EXPOSICIÓN ARREGLADA (28/09)**: faltaba el **perfil
+      'known display'** del panel edidless, que armada define en **Lua**
+      (`overlay/usr/share/gamescope/scripts/10-armada/ayn.icna3520.oled.lua` = ICNA3520, Odin 3,
+      HDR 650 nits gamma22) + el env **`GAMESCOPE_INTERNAL_DEVICE_ID=ayn-odin-3`** en `pocknix-steam`
+      (el perfil casa por `device_id`+`internal`+sin EDID). Confirmado: *"Got known display:
+      armada_ayn_icna3520_oled"*. **Pendiente**: (1) probar con un **juego HDR** (Ori Wisps copiado a
+      `/opt/wproton/games/`); (2) **escalado**: con la base OGC la UI sale más grande (revisar el
+      cálculo de escala lógica de OGC y el efecto de `--rotated-output-max-height 1088`); (3) compilar
+      el paquete `pocknix-steam` del centro (el env del fichero del centro aún no está en la imagen).
 - [x] **Kernel 7.2.6 — RESUELTO (27/09/2026)**. Ya NO está descartado. Las dos regresiones las
       arregla el propio mainline con los parches de **armada-os** (commit `7ecbd142` + `b0abd0ad`):
       - **Panel negro** (`dsi_calc_clk_rate_6g` redondeaba el byte clock ANTES de reparentar a la
