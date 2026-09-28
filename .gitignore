@@ -15,3 +15,6 @@ overlay/bootanimation-odin3.zip
 # bytecode de Python
 __pycache__/
 *.pyc
+
+# dependencias npm del frontend del plugin (95 MB; se reinstalan con npm ci)
+node_modules/

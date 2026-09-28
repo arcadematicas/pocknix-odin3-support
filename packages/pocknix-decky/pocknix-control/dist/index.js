@@ -56,6 +56,10 @@ const snapshotStatus = () => call("snapshot_status");
 const startRollback = (id) => call("start_rollback", id);
 const rebootSystem = () => call("reboot_system");
 const makoStatus = () => call("mako_status");
+// HDR de gamescope (atomos X11 en su Xwayland). El cliente Steam ARM64 no
+// expone el toggle del QAM, asi que se controla desde aqui.
+const hdrStatus = () => call("hdr_status");
+const setHdr = (enabled) => call("set_hdr", enabled);
 
 function useDebouncedSave(options) {
     const { config, field, snapshot, save, setConfig, onError, delay = 900 } = options;
@@ -324,23 +328,51 @@ const amperios = (ua) => (ua == null ? null : `${(ua / 1000000).toFixed(2)} A`);
 //     (pocknix-steamos-manager) traduce low-power/balanced/performance a nuestro
 //     `pocknix-power-profile`. Duplicarlo aqui solo confundia (avisado por Fransis).
 //   - El brillo ya lo controla Steam de forma nativa.
-// Esta pestaña es solo LECTURA: lo que Steam no enseña (salud y ciclos de la
-// bateria, voltaje y corriente reales).
+// Lo de la bateria es solo LECTURA: lo que Steam no enseña (salud y ciclos, voltaje
+// y corriente reales). Lo unico que se toca es el HDR, que gamescope expone como
+// atomo X11 y el cliente Steam ARM64 no pone en ningun menu.
 function System() {
     const [status, setStatus] = SP_REACT.useState(null);
     const [error, setError] = SP_REACT.useState("");
+    const [hdr, setHdrStatus] = SP_REACT.useState(null);
+    const [hdrError, setHdrError] = SP_REACT.useState("");
     SP_REACT.useEffect(() => {
         systemStatus()
             .then(setStatus)
             .catch((err) => setError(String(err)));
     }, []);
+    const refrescarHdr = () => {
+        hdrStatus().then(setHdrStatus).catch(() => setHdrStatus(null));
+    };
+    SP_REACT.useEffect(refrescarHdr, []);
     const b = status?.battery;
     const detalle = b?.available
         ? [b.status, b.health, b.cycles != null ? `${b.cycles} ciclos` : null, amperios(b.currentNow), voltios(b.voltageNow)]
             .filter(Boolean)
             .join(" · ")
         : "no disponible en este equipo";
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }));
+    // El backend devuelve el estado REAL tras escribir el atomo, asi que se refleja
+    // lo que gamescope acepto (y si no, se vuelve a leer y se revierte el toggle).
+    const cambiarHdr = (valor) => {
+        setHdrStatus((cur) => (cur ? { ...cur, enabled: valor } : cur));
+        setHdr(valor)
+            .then((next) => {
+            setHdrStatus(next);
+            setHdrError("");
+        })
+            .catch((err) => {
+            setHdrError(String(err));
+            refrescarHdr();
+        });
+    };
+    const hdrDescripcion = !hdr
+        ? "…"
+        : !hdr.available
+            ? "HDR no disponible (requiere gamescope)."
+            : !hdr.capable
+                ? "Este panel no reporta soporte HDR."
+                : "High dynamic range en la sesion de juego (650 nits). Los juegos lo piden solos.";
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), SP_JSX.jsxs(DFL.PanelSection, { title: "DISPLAY", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "HDR", description: hdrDescripcion, checked: !!hdr?.enabled, disabled: !hdr?.available || !hdr?.capable, onChange: cambiarHdr }) }), hdrError ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: hdrError }) })) : null] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }));
 }
 
 // Drives the same state as Steam's own per-game compatibility dropdown (SpecifyCompatTool +

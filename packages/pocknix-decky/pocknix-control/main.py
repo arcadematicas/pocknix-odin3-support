@@ -15,6 +15,7 @@ from pocknix_control.modes import set_fan_mode, set_lavd_mode, set_scx_mode, set
 from pocknix_control.cleanup import clean, scan, biggest
 from pocknix_control.system_info import system_status
 from pocknix_control.oled_care import oled_care_status, run_refresher
+from pocknix_control.hdr import hdr_status, set_hdr
 from pocknix_control.sdcard import detect_sdcard, format_sdcard
 from pocknix_control.sharing import install_samba, set_share, share_status
 from pocknix_control.snapshots import reboot_system, snapshot_status, start_rollback
@@ -136,3 +137,12 @@ class Plugin:
     # Renderer was never installed.
     async def mako_status(self):
         return await asyncio.to_thread(mako_status)
+
+    # HDR de gamescope: se lee/escribe el atomo X11 GAMESCOPE_DISPLAY_HDR_ENABLED
+    # en su Xwayland (:0). El cliente Steam ARM64 no expone el toggle del QAM,
+    # asi que desde aqui es la unica forma de activarlo a mano.
+    async def hdr_status(self):
+        return await asyncio.to_thread(hdr_status)
+
+    async def set_hdr(self, enabled):
+        return await asyncio.to_thread(set_hdr, enabled)

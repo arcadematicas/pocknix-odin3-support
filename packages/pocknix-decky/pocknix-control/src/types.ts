@@ -166,6 +166,15 @@ export interface MakoStatus {
   wrapper: string;
 }
 
+export interface HdrStatus {
+  /** Hay sesion de gamescope (los atomos de HDR existen en su Xwayland). */
+  available: boolean;
+  /** Ese output soporta HDR. */
+  capable: boolean;
+  /** HDR activado ahora mismo. */
+  enabled: boolean;
+}
+
 export type ShareStatus = {
   installed: boolean;
   on: boolean;

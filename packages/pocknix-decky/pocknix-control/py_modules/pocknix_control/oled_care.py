@@ -28,14 +28,18 @@ CELL_PX = 3
 # is the compositor and does not export WAYLAND_DISPLAY, so look at clients.
 # In game mode the visible compositor is gamescope (Steam carries its env);
 # on the desktop it is kwin (plasma-keyboard/plasmashell carry the env).
+# gamescope va el ultimo: solo se consulta si no encontramos a Steam ni al
+# escritorio (lo usa hdr.py para hablar con su Xwayland).
 _SESSION_KEYS = (
     "WAYLAND_DISPLAY",
     "DISPLAY",
     "XDG_RUNTIME_DIR",
     "DBUS_SESSION_BUS_ADDRESS",
     "XDG_SESSION_TYPE",
+    # root no tiene autorizacion X propia: sin esto no puede abrir :0
+    "XAUTHORITY",
 )
-_SESSION_PATTERNS = ("steam", "plasma-keyboard", "plasmashell")
+_SESSION_PATTERNS = ("steam", "plasma-keyboard", "plasmashell", "gamescope")
 
 
 def _session_env() -> dict:
