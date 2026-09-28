@@ -1,0 +1,88 @@
+From: Armada <noreply@armada.local>
+Subject: [PATCH] input: rsinput: drop the MCU supply across system sleep
+
+The MCU is already quiesced across suspend, but its 3.3 V supply stays on
+because rsinput is its last consumer (the joystick LED drivers release
+it). Disable it at suspend and enable it again before the resume
+re-initialisation. Track whether the supply is off so a failed resume
+enable does not leave remove with an unbalanced disable.
+
+Ported to our tree. Unlike upstream we have no suspend callback at all
+(our 0508 only adds a resume, and our 1002/1004 have no rumble_work), so
+this adds rsinput_suspend() and registers it in the PM ops. The
+quiesce step from armada's 1005 is inlined here because its premise
+holds nowhere else: the MCU enable/reset lines are dropped before the
+supply, mirroring rsinput_remove(). rsinput_init_commands() raises them
+again on resume.
+---
+--- a/drivers/input/joystick/rsinput.c
++++ b/drivers/input/joystick/rsinput.c
+@@ -128,6 +128,7 @@
+     struct serdev_device *serdev;
+     struct input_dev *input;
+     struct regulator *vdd;
++    bool vdd_off;
+     struct gpio_desc *boot_gpio;
+     struct gpio_desc *enable_gpio;
+     struct gpio_desc *reset_gpio;
+@@ -586,17 +587,58 @@
+     if (drv->reset_gpio)
+         gpiod_set_value_cansleep(drv->reset_gpio, 0);
+ 
+-    regulator_disable(drv->vdd);
++    if (!drv->vdd_off)
++        regulator_disable(drv->vdd);
++}
++
++static int rsinput_suspend(struct device *dev)
++{
++    struct rsinput_driver *drv = dev_get_drvdata(dev);
++    int error;
++
++    /*
++     * Stop the MCU reports before the UART suspends, otherwise the UART
++     * IRQ can be disabled as spurious and the RX path stays dead after
++     * resume. rsinput_resume() powers the MCU back on through
++     * rsinput_init_commands().
++     */
++    if (drv->enable_gpio)
++        gpiod_set_value_cansleep(drv->enable_gpio, 0);
++
++    if (drv->reset_gpio)
++        gpiod_set_value_cansleep(drv->reset_gpio, 0);
++
++    if (!drv->vdd_off) {
++        error = regulator_disable(drv->vdd);
++        if (error) {
++            dev_err(dev, "Failed to disable MCU supply: %d\n", error);
++            rsinput_init_commands(drv);
++            return error;
++        }
++        drv->vdd_off = true;
++    }
++
++    return 0;
+ }
+ 
+ static int rsinput_resume(struct device *dev)
+ {
+     struct rsinput_driver *drv = dev_get_drvdata(dev);
++    int error;
++
++    if (drv->vdd_off) {
++        error = regulator_enable(drv->vdd);
++        if (error) {
++            dev_err(dev, "Failed to enable MCU supply: %d\n", error);
++            return error;
++        }
++        drv->vdd_off = false;
++    }
+ 
+     return rsinput_init_commands(drv);
+ }
+ 
+-static DEFINE_SIMPLE_DEV_PM_OPS(rsinput_pm_ops, NULL, rsinput_resume);
++static DEFINE_SIMPLE_DEV_PM_OPS(rsinput_pm_ops, rsinput_suspend, rsinput_resume);
+ 
+ static const struct of_device_id rsinput_of_match[] = {
+     { .compatible = "gamepad,rsinput" },
