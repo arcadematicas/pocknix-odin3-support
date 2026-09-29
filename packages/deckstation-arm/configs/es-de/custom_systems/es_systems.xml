@@ -22,7 +22,6 @@
         <command label="MAME [Software list] (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/adam adam %BASENAME%</command>
         <platform>adam</platform>
         <theme>adam</theme>
-    <command label="ColEm (Standalone)">%EMULATOR_COLEM% %INJECT%=%BASENAME%.commands -adam %ROM%</command>
         </system>
     <system>
         <name>ags</name>
@@ -93,7 +92,6 @@
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/amstradcpc cpc6128 -flop1 %ROM%</command>
         <platform>amstradcpc</platform>
         <theme>amstradcpc</theme>
-    <command label="ACE-DL (Standalone)">%EMULATOR_ACE-DL% %INJECT%=%BASENAME%.commands %ROM%</command>
         </system>
     <system>
         <name>android</name>
@@ -129,7 +127,6 @@
         <theme>apple2gs</theme>
     <command label="MAME - Current [Software list]">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so "apple2gs -rompath \"%GAMEDIRRAW%;%ROMPATH%/apple2gs\" -gameio joy %BASENAME%"</command>
         <command label="MAME [Software list] (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/apple2gs apple2gs -gameio joy %BASENAME%</command>
-        <command label="KEGS (Standalone)">%EMULATOR_KEGS% %INJECT%=%BASENAME%.commands -s7d1 %ROM%</command>
         </system>
     <system>
         <name>arcade</name>
@@ -155,9 +152,6 @@
     <command label="MAME 2003">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2003_libretro.so %ROM%</command>
         <command label="Geolith">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/geolith_libretro.so %ROM%</command>
         <command label="DICE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dice_libretro.so %ROM%</command>
-        <command label="Lindbergh Loader (Standalone)">%STARTDIR%=%GAMEENTRYDIR% %EMULATOR_LINDBERGH-LOADER% %INJECT%=%BASENAME%/%BASENAME%.commands</command>
-        <command label="MFME (Wine)">%PRECOMMAND_WINE% %EMULATOR_MFME-WINDOWS% "%ROMRAWWIN%"</command>
-        <command label="MFME (Proton)">%PRECOMMAND_PROTON% %EMULATOR_MFME-WINDOWS% "%ROMRAWWIN%"</command>
         </system>
     <system>
         <name>arcadia</name>
@@ -236,7 +230,6 @@
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/atari7800 a7800 -cart %ROM%</command>
         <platform>atari7800</platform>
         <theme>atari7800</theme>
-    <command label="A7800 (Standalone)">%STARTDIR%=%EMUDIR% %EMULATOR_A7800% -rompath %GAMEDIR%\;%ROMPATH%/atari7800 a7800 -cart1 %INJECT%=%BASENAME%.commands %ROM%</command>
         </system>
     <system>
         <name>atari800</name>
@@ -406,7 +399,6 @@
         <platform>colecovision</platform>
         <theme>colecovision</theme>
     <command label="Mesen (Standalone)">%EMULATOR_MESEN% --fullscreen %ROM%</command>
-        <command label="ColEm (Standalone)">%EMULATOR_COLEM% %INJECT%=%BASENAME%.commands -cv %ROM%</command>
         </system>
     <system>
         <name>consolearcade</name>
@@ -656,9 +648,6 @@
         <command label="3dSen (Proton)">%STARTDIR%=%EMUDIR% %PRECOMMAND_PROTON% %EMULATOR_3DSEN-WINDOWS% -id=%INJECT%=%BASENAME%.3dsen</command>
         <platform>famicom</platform>
         <theme>famicom</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
-        <command label="Plastic (Standalone)">%EMULATOR_PLASTIC% %ROM%</command>
-        <command label="3dSen (Standalone)">%EMULATOR_3DSEN% -id=%INJECT%=%BASENAME%.3dsen</command>
         </system>
     <system>
         <name>fba</name>
@@ -791,7 +780,6 @@
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Game Gear" %ROM%</command>
         <platform>gamegear</platform>
         <theme>gamegear</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>gb</name>
@@ -817,7 +805,6 @@
         <command label="SkyEmu (Standalone)">%EMULATOR_SKYEMU% %ROM%</command>
         <platform>gb</platform>
         <theme>gb</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>gba</name>
@@ -837,7 +824,6 @@
         <platform>gba</platform>
         <theme>gba</theme>
     <command label="NooDS">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/noods_libretro.so %ROM%</command>
-        <command label="NooDS (Standalone)">%EMULATOR_NOODS% %ROM%</command>
         </system>
     <system>
         <name>gbc</name>
@@ -863,7 +849,6 @@
         <command label="SkyEmu (Standalone)">%EMULATOR_SKYEMU% %ROM%</command>
         <platform>gbc</platform>
         <theme>gbc</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>gc</name>
@@ -891,7 +876,6 @@
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Mega Drive" %ROM%</command>
         <platform>genesis</platform>
         <theme>genesis</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>gmaster</name>
@@ -1039,9 +1023,6 @@
     <command label="MAME 2003">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2003_libretro.so %ROM%</command>
         <command label="Geolith">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/geolith_libretro.so %ROM%</command>
         <command label="DICE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dice_libretro.so %ROM%</command>
-        <command label="Lindbergh Loader (Standalone)">%STARTDIR%=%GAMEENTRYDIR% %EMULATOR_LINDBERGH-LOADER% %INJECT%=%BASENAME%/%BASENAME%.commands</command>
-        <command label="MFME (Wine)">%PRECOMMAND_WINE% %EMULATOR_MFME-WINDOWS% "%ROMRAWWIN%"</command>
-        <command label="MFME (Proton)">%PRECOMMAND_PROTON% %EMULATOR_MFME-WINDOWS% "%ROMRAWWIN%"</command>
         </system>
     <system>
         <name>mame-advmame</name>
@@ -1067,7 +1048,6 @@
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Master System" %ROM%</command>
         <platform>mastersystem</platform>
         <theme>mastersystem</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>megacd</name>
@@ -1080,7 +1060,6 @@
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Mega CD" %ROM%</command>
         <platform>segacd</platform>
         <theme>megacd</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>megacdjp</name>
@@ -1093,7 +1072,6 @@
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Mega CD" %ROM%</command>
         <platform>segacd</platform>
         <theme>megacdjp</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>megadrive</name>
@@ -1111,7 +1089,6 @@
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Mega Drive" %ROM%</command>
         <platform>megadrive</platform>
         <theme>megadrive</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>megadrivejp</name>
@@ -1128,7 +1105,6 @@
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Mega Drive" %ROM%</command>
         <platform>megadrive</platform>
         <theme>megadrivejp</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>megaduck</name>
@@ -1263,7 +1239,6 @@
         <command label="Citra (Standalone)">%EMULATOR_CITRA% %ROM%</command>
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
 
-        <command label="Lime3ds (Standalone)">./Apps/lime3ds/lime3ds.AppImage -f %ROM%</command>
         <command label="Azahar">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/azahar_libretro.so %ROM%</command>
         <platform>n3ds</platform>
         <theme>n3ds</theme>
@@ -1282,8 +1257,6 @@
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Nintendo 64" %ROM%</command>
         <platform>n64</platform>
         <theme>n64</theme>
-    <command label="Parallel Launcher (Standalone)">%EMULATOR_PARALLEL-LAUNCHER% %ROM%</command>
-        <command label="Gopher64 (Standalone)">%EMULATOR_GOPHER64% -f %ROM%</command>
         <command label="Native port">%STARTDIR%=%GAMEDIR% %EMULATOR_OS-SHELL% -c "%ROM%"</command>
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
         </system>
@@ -1347,7 +1320,6 @@
         <platform>nds</platform>
         <theme>nds</theme>
     <command label="NooDS">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/noods_libretro.so %ROM%</command>
-        <command label="NooDS (Standalone)">%EMULATOR_NOODS% %ROM%</command>
         </system>
     <system>
         <name>neogeo</name>
@@ -1405,9 +1377,6 @@
         <command label="3dSen (Proton)">%STARTDIR%=%EMUDIR% %PRECOMMAND_PROTON% %EMULATOR_3DSEN-WINDOWS% -id=%INJECT%=%BASENAME%.3dsen</command>
         <platform>nes</platform>
         <theme>nes</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
-        <command label="Plastic (Standalone)">%EMULATOR_PLASTIC% %ROM%</command>
-        <command label="3dSen (Standalone)">%EMULATOR_3DSEN% -id=%INJECT%=%BASENAME%.3dsen</command>
         </system>
     <system>
         <name>nesh</name>
@@ -1643,7 +1612,6 @@
         <extension>.arcadedef .bin .BIN .chd .CHD .ciso .CISO .cso .CSO .dump .DUMP .elf .ELF .gz .GZ .m3u .M3U .mdf .MDF .img .IMG .iso .ISO .isz .ISZ .ngr .NRG .zso .ZSO</extension>
         <command label="LRPS2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx2_libretro.so %ROM%</command>
         <command label="PCSX2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx2_libretro.so %ROM%</command>
-        <command label="PCSX2 (Standalone)">./Apps/Pcsx2/pcsx2.AppImage -batch %ROM%</command>
         <command label="PCSX2 Legacy (Standalone)">%EMULATOR_PCSX2-LEGACY% --nogui %ROM%</command>
         <command label="Play! (Standalone)">%EMULATOR_PLAY!% --disc %ROM%</command>
         <platform>ps2</platform>
@@ -1667,16 +1635,12 @@
         <fullname>Sony PlayStation 4</fullname>
         <path>%ROMPATH%/ps4</path>
         <extension>.ps4 .PS4 .zip .ZIP .sh</extension>
-        <command label="shadPS4 (Standalone)">./Apps/ShadPS4/Shadps4-qt.AppImage -g %ROM%/eboot.bin</command>
-        <command label="shadPS4 Gravity Rush (Standalone)">./Apps/ShadPS4/Shadps4-qt_GR.AppImage -g %ROM%/eboot.bin</command>
         <command label="shadPS4 Gravity Rush (Standalone-LOSSLESS)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL%</command>
         <platform>ps4</platform>
         <theme>ps4</theme>
     <command label="shadPS4 Shortcut (Standalone)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
         <command label="shadPS4 Game Serial (Standalone)">%EMULATOR_SHADPS4% -g %INJECT%=%BASENAME%.ps4</command>
         <command label="shadPS4 eboot.bin (Standalone)">%EMULATOR_SHADPS4% %ROM%</command>
-        <command label="shadPS4 [GUI] Game Serial (Standalone)">%EMULATOR_SHADPS4-GUI% -d -g %INJECT%=%BASENAME%.ps4</command>
-        <command label="shadPS4 [GUI] eboot.bin (Standalone)">%EMULATOR_SHADPS4-GUI% -d -g %ROM%</command>
         </system>
     <system>
         <name>psp</name>
@@ -1791,7 +1755,6 @@
         <command label="Ymir (Standalone)">%EMULATOR_YMIR% %ROM%</command>
         <platform>saturn</platform>
         <theme>saturn</theme>
-    <command label="Kronos (Standalone)">%EMULATOR_KRONOS% %ROM%</command>
         </system>
     <system>
         <name>saturnjp</name>
@@ -1806,7 +1769,6 @@
         <command label="Ymir (Standalone)">%EMULATOR_YMIR% %ROM%</command>
         <platform>saturn</platform>
         <theme>saturnjp</theme>
-    <command label="Kronos (Standalone)">%EMULATOR_KRONOS% %ROM%</command>
         </system>
     <system>
         <name>scummvm</name>
@@ -1871,7 +1833,6 @@
     <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "Mega CD" %ROM%</command>
         <platform>segacd</platform>
         <theme>segacd</theme>
-    <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>sfc</name>
@@ -1894,7 +1855,6 @@
         <theme>sfc</theme>
     <command label="Snes9x 2005 Plus">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2005_plus_libretro.so %ROM%</command>
         <command label="bsnes-jg">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes-jg_libretro.so %ROM%</command>
-        <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>sg-1000</name>
@@ -2005,7 +1965,6 @@
         <theme>snesna</theme>
     <command label="Snes9x 2005 Plus">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/snes9x2005_plus_libretro.so %ROM%</command>
         <command label="bsnes-jg">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bsnes-jg_libretro.so %ROM%</command>
-        <command label="jgenesis (Standalone)">%EMULATOR_JGENESIS% --file-path %ROM%</command>
         </system>
     <system>
         <name>solarus</name>
@@ -2105,10 +2064,7 @@
         <path>%ROMPATH%/switch</path>
         <extension>.nca .NCA .nro .NRO .nso .NSO .nsp .NSP .xci .XCI</extension>
         <command label="Suyu (RetroArch)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/suyu_libretro.so %ROM%</command>
-        <command label="Yuzu (Standalone)">./Apps/Yuzu/Yuzu.AppImage -f -g $PWD/%ROM%</command>
         <command label="Eden (Standalone)">%EMULATOR_EDEN% -f -g $PWD/%ROM%</command>
-        <command label="Ryujinx (Standalone)">./Apps/Ryujinx/ryujinx.AppImage %ROM%</command>
-        <command label="Citron (Standalone)">./Apps/Citron/Citron.AppImage -f -g $PWD/%ROM%</command>
         <platform>switch</platform>
         <theme>switch</theme>
     </system>
@@ -2465,9 +2421,7 @@
         <fullname>Microsoft Xbox 360</fullname>
         <path>%ROMPATH%/xbox360</path>
         <extension>. .desktop .iso .ISO .sh .xex .XEX .zar .ZAR</extension>
-        <command label="xenia (Linux)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% ./Apps/xenia_canary/xenia.sh ../../%ROM%</command>
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
-        <command label="xenia (Standalone)">%STARTDIR%=%EMUDIR% %EMULATOR_XENIA% %INJECT%=%BASENAME%.commands %ROM%</command>
         <command label="Xenia Edge (Standalone)">%EMULATOR_XENIA-EDGE% %INJECT%=%BASENAME%.commands %ROM%</command>
         <platform>xbox360</platform>
         <theme>xbox360</theme>
