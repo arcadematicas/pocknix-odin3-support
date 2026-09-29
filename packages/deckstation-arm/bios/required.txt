@@ -103,3 +103,6 @@ naomi|naomi2.zip|NAOMI 2 BIOS||843c0d51237dc945f57237c4b9872b1d
 naomi|naomigd.zip|NAOMI GD-ROM BIOS||8970b2ea1fa70f5f54f675275d2fc584
 # --- Saturn: copia con el nombre que esperan yabause/kronos (mismo contenido que sega_101.bin) ---
 saturn|saturn_bios.bin|Saturn (yabause/kronos)|sega_101.bin|85ec9ca47d8f6807718151cbcca8b964
+
+# --- Philips CD-i (core same_cdi y core "CDi 2015") --------------------
+cdimono1|cdimono1.zip|Philips CD-i (romset MAME cdimono1: cdi200/cdi220/cdi220b)||
