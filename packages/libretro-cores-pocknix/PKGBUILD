@@ -5,7 +5,7 @@
 # ALARM's libretro-* packages use, so a vendored core can be replaced transparently.
 pkgname=libretro-cores-pocknix
 pkgver=0.1.0
-pkgrel=5
+pkgrel=6
 pkgdesc="Prebuilt aarch64 libretro cores (vendored, christianhaitian/ArkOS set)"
 arch=('aarch64')
 url="https://github.com/christianhaitian/retroarch-cores"
@@ -34,6 +34,7 @@ _cores_extra=(
     omicron openlara pcee2 pcsx2 pd777
     play pocketcdg pokketstation radio remotejoy
     rustynes skyemu spmp8000emu stella2023 superbroswar
+    squirreljme   
     supermodel tamalibretro thepowdertoy tia uw8
     vaporspec video_processor virtualxt vitaquake2 vitaquake2-rogue
     vitaquake2-xatrix vitaquake2-zaero vitaquake3 wqxemu

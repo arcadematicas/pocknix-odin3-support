@@ -1,0 +1,74 @@
+# Maintainer: Fransis <arcadematicas>
+# Core de libretro de Azahar (Nintendo 3DS) para aarch64.
+#
+# POR QUE EXISTE ESTE PAQUETE:
+#   ES-DE ofrece "Azahar" (core libretro) en el sistema `n3ds`, pero
+#   `azahar_libretro.so` NO esta en el buildbot oficial de libretro ni en el set
+#   de ArkOS. Habia que compilarlo. Se compilo en la Odin el 30/09/2026 con la
+#   receta de Batocera (package/.../libretro-azahar) y funciono.
+#
+# VERSION:
+#   Tag 2126.1.2 (el mismo que usa Batocera en su receta).
+#
+# NOTAS DE BUILD (aprendidas al compilarlo):
+#   - El .so resultante sale con dependencias MINIMAS (glibc/libstdc++): Azahar
+#     enlaza dentro sus `externals/` (dynarmic, cryptopp, cubeb, ffmpeg, ...).
+#   - Se compila con CLANG (el proyecto lo prefiere) y ninja.
+#   - ENABLE_SSE42=OFF es OBLIGATORIO en ARM (es una optimizacion x86).
+#   - El .so se genera en `bin/Release/azahar_libretro.so` dentro del build dir.
+#   - ~35 min en la Odin (8 nucleos), con los submodulos ya descargados.
+#
+# INTEGRACION CON DECKSTATION:
+#   Se instala en /usr/lib/libretro/ + su .info en /usr/share/libretro/info/.
+#   `scripts/deckstation-cores.sh` los enlaza en la carpeta portable de RetroArch
+#   y `deckstation-cores-sync.sh` hace reaparecer el comando de ES-DE solo.
+pkgname=libretro-azahar
+pkgver=2126.1.2
+pkgrel=1
+pkgdesc="Nintendo 3DS emulator (Azahar) libretro core for aarch64"
+arch=('aarch64')
+url="https://github.com/azahar-emu/azahar"
+license=('GPL-2.0-or-later')
+depends=('gcc-libs' 'vulkan-icd-loader')
+makedepends=('cmake' 'ninja' 'git' 'clang' 'vulkan-headers' 'glslang' 'python')
+source=("azahar::git+https://github.com/azahar-emu/azahar.git#tag=2126.1.2"
+        "azahar_libretro.info")
+sha256sums=('SKIP'
+            'SKIP')
+
+prepare() {
+    # Azahar arrastra muchos submodulos (dynarmic, cryptopp, cubeb, zstd,
+    # spirv-tools, ...). Shallow para no bajar el historial completo (~550 MB).
+    git -C "${srcdir}/azahar" submodule update --init --recursive --depth 1
+}
+
+build() {
+    cd "${srcdir}/azahar"
+    # Flags tomados de la receta de Batocera (libretro-azahar.mk), adaptados:
+    #  - ENABLE_LTO=OFF: el LTO con clang alarga muchisimo el build sin ganancia clara.
+    #  - ENABLE_SSE42=OFF: optimizacion x86, no aplica en aarch64.
+    cmake -B build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+        -DENABLE_LIBRETRO=ON \
+        -DENABLE_TESTS=OFF \
+        -DENABLE_ROOM=OFF \
+        -DENABLE_WEB_SERVICE=OFF \
+        -DUSE_DISCORD_PRESENCE=OFF \
+        -DENABLE_SOFTWARE_RENDERER=ON \
+        -DUSE_SYSTEM_OPENAL=ON \
+        -DUSE_SYSTEM_BOOST=OFF \
+        -DENABLE_LTO=OFF \
+        -DENABLE_SSE42=OFF \
+        -DENABLE_VULKAN=ON \
+        -DUSE_SYSTEM_VULKAN_HEADERS=ON \
+        -DCITRA_WARNINGS_AS_ERRORS=OFF
+    ninja -C build
+}
+
+package() {
+    install -Dm755 "${srcdir}/azahar/build/bin/Release/azahar_libretro.so" \
+        "${pkgdir}/usr/lib/libretro/azahar_libretro.so"
+    install -Dm644 "${srcdir}/azahar_libretro.info" \
+        "${pkgdir}/usr/share/libretro/info/azahar_libretro.info"
+}

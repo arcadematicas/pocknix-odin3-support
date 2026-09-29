@@ -1,0 +1,53 @@
+# Maintainer: Fransis <arcadematicas>
+# Core de libretro de bsnes-hd (SNES con widescreen HD) para aarch64.
+#
+# POR QUE EXISTE ESTE PAQUETE:
+#   ES-DE pide `bsnes_hd_beta_libretro.so` para el sistema `snes`/`snesh`, pero
+#   el core NO esta ni en el buildbot oficial de libretro (nightly/linux/aarch64)
+#   ni en el set de ArkOS (christianhaitian/retroarch-cores). Habia que
+#   compilarlo. El 30/09/2026 se compilo a mano en la Odin y funciono:
+#     make -C bsnes -f GNUmakefile target=libretro platform=linux local=false -j8
+#   (necesita libX11 + libXext; el resto lo trae el propio arbol).
+#
+# VERSION:
+#   Fijada al mismo commit que usa Batocera (5 dic 2025) para tener una base
+#   conocida-buena: fc26b25ea236f0f877f0265d2a2c37dfd93dfde9.
+#
+# INTEGRACION CON DECKSTATION:
+#   Se instala en /usr/lib/libretro/ (ubicacion estandar) + su .info en
+#   /usr/share/libretro/info/. `scripts/deckstation-cores.sh` los enlaza en la
+#   carpeta portable de RetroArch y `deckstation-cores-sync.sh` hace reaparecer
+#   los comandos de ES-DE automaticamente (el .so debe llamarse EXACTAMENTE
+#   `bsnes_hd_beta_libretro.so`, que es lo que produce el build).
+pkgname=libretro-bsnes-hd
+pkgver=20251205
+pkgrel=1
+pkgdesc="SNES emulator (bsnes-hd beta) libretro core for aarch64"
+arch=('aarch64')
+url="https://github.com/DerKoun/bsnes-hd"
+license=('GPL-3.0-only')
+depends=('libx11' 'libxext')
+makedepends=('git' 'make' 'gcc')
+source=("bsnes-hd::git+https://github.com/DerKoun/bsnes-hd.git#commit=fc26b25ea236f0f877f0265d2a2c37dfd93dfde9"
+        "bsnes_hd_beta_libretro.info")
+sha256sums=('SKIP'
+            'SKIP')
+
+prepare() {
+    # bsnes usa submódulos (nall, ...). Shallow para no bajar historial entero.
+    git -C "${srcdir}/bsnes-hd" submodule update --init --recursive --depth 1
+}
+
+build() {
+    cd "${srcdir}/bsnes-hd"
+    # `local=false` = usa el compilador del sistema (no uno empaquetado).
+    make -C bsnes -f GNUmakefile target="libretro" platform="linux" \
+         local=false -j"$(nproc)"
+}
+
+package() {
+    install -Dm755 "${srcdir}/bsnes-hd/bsnes/out/bsnes_hd_beta_libretro.so" \
+        "${pkgdir}/usr/lib/libretro/bsnes_hd_beta_libretro.so"
+    install -Dm644 "${srcdir}/bsnes_hd_beta_libretro.info" \
+        "${pkgdir}/usr/share/libretro/info/bsnes_hd_beta_libretro.info"
+}
