@@ -11,7 +11,8 @@
 #   del build y build-kernel.sh solo deja un `warn`.
 #
 #   Este script fija el orden en CODIGO:
-#     make sync  ->  sync-to-os.sh  ->  check-sync.sh (aborta si algo falta)  ->  build
+#     git pull (el trabajo se hace en el PORTATIL)  ->  make sync  ->  sync-to-os.sh
+#       ->  check-sync.sh (aborta si algo falta)  ->  build
 #
 # USO
 #   tools/build-odin3.sh              # build completo (pide sudo para kernel/imagen)
@@ -31,16 +32,30 @@ if [ "${1:-}" = "--check" ]; then
   exit $?
 fi
 
-echo "==> 1/4  make sync   (vendoriza ROCKNIX; BORRA nuestros parches — es esperado)"
+echo "==> 0/5  actualizar los repos (git pull)"
+# El trabajo (editar + commit + push) se hace en el PORTATIL. El PC solo COMPILA:
+# antes de construir se trae lo ultimo de GitHub. Si no hay red o hay cambios
+# locales que lo impiden, se AVISA y se sigue con lo que haya (no se aborta).
+for _repo in "${HERE}" "${OS}"; do
+  [ -d "${_repo}/.git" ] || continue
+  if git -C "${_repo}" pull --ff-only --quiet 2>/dev/null; then
+    echo "    ${_repo##*/}: al dia — $(git -C "${_repo}" log -1 --format='%h %s' | cut -c1-56)"
+  else
+    echo "    AVISO: no se pudo actualizar ${_repo##*/} (¿sin red / cambios locales?) — sigo con lo que hay" >&2
+    git -C "${_repo}" status --porcelain 2>/dev/null | head -3 | sed 's/^/      /' >&2
+  fi
+done
+
+echo "==> 1/5  make sync   (vendoriza ROCKNIX; BORRA nuestros parches — es esperado)"
 ( cd "${OS}" && make sync )
 
-echo "==> 2/4  sync-to-os.sh   (reaplica NUESTRO contenido ENCIMA)"
+echo "==> 2/5  sync-to-os.sh   (reaplica NUESTRO contenido ENCIMA)"
 "${HERE}/tools/sync-to-os.sh"
 
-echo "==> 3/4  check-sync.sh   (si falta algo nuestro, aborta AQUI)"
+echo "==> 3/5  check-sync.sh   (si falta algo nuestro, aborta AQUI)"
 "${HERE}/tools/check-sync.sh"
 
-echo "==> 4/4  kernel + imagen + SD"
+echo "==> 4/5  kernel + imagen + SD"
 if [ "$(id -u)" -eq 0 ]; then
   ( cd "${OS}" && make kernel && make build && make sd-image )
 else
