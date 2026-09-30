@@ -122,7 +122,6 @@
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module apple2 %ROM%</command>
         <platform>apple2</platform>
         <theme>apple2</theme>
-    <command label="Applewin">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/applewin_libretro.so %ROM%</command>
         </system>
     <system>
         <name>apple2gs</name>
