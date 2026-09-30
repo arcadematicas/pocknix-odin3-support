@@ -231,10 +231,23 @@ setup_retroarch_assets() {
 
 # Cores instalados como paquetes del sistema (p. ej. suyu-libretro) ->
 # carpeta portable de cores, para que ES-DE/RetroArch los vean.
+# Cores que NADIE publica compilados (azahar, bsnes-hd) + el set completo de
+# ArkOS/buildbot: se DESCARGAN a la carpeta portable de RetroArch, dentro de
+# DeckStation. Asi DeckStation es autonomo del sistema operativo del cliente y
+# una instalacion limpia acaba con TODOS los cores dentro de su propia carpeta.
+# Va DESPUES de que el Updater haya instalado RetroArch y ANTES de
+# deploy_cores_sync (que poda ES-DE segun lo que haya en la carpeta portable).
+fetch_extra_cores() {
+    if [ -x "${SCRIPTS_DIR}/deckstation-cores-fetch.sh" ]; then
+        log "Descargando a DeckStation los cores que falten..."
+        "${SCRIPTS_DIR}/deckstation-cores-fetch.sh" || log_warn "Fallo al descargar los cores de DeckStation"
+    fi
+}
+
 deploy_system_cores() {
     if [ -x "${SCRIPTS_DIR}/deckstation-cores.sh" ]; then
-        log "Enlazando cores del sistema a la carpeta portable..."
-        "${SCRIPTS_DIR}/deckstation-cores.sh" || log_warn "Fallo al enlazar los cores del sistema"
+        log "Copiando cores del sistema a la carpeta portable..."
+        "${SCRIPTS_DIR}/deckstation-cores.sh" || log_warn "Fallo al copiar los cores del sistema"
     fi
 }
 
@@ -504,6 +517,12 @@ main() {
     # lanzar.sh y las configs: el setup prepara el entorno ANTES de que el Updater
     # descargue nada. Se repite aqui, ya con RetroArch en su sitio.
     setup_retroarch_assets
+
+    # Cores: descargar a DeckStation los que no vengan del sistema (incluidos
+    # los que nadie publica compilados). Es lo que hace que al instalar
+    # DeckStation desde Pocknix Tools queden TODOS los cores dentro de la
+    # carpeta portable, sin depender del SO.
+    fetch_extra_cores
 
     # ES-DE: quitar del selector los cores que no estan instalados. Va al final,
     # con RetroArch ya instalado y las configs desplegadas (es cuando el

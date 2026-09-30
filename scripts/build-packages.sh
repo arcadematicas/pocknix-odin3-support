@@ -36,7 +36,7 @@ SHARED_REPO_DB="pocknix-shared.db.tar.gz"
 
 # libretro-cores-pocknix va APARTE a proposito: NO es un build pesado (solo baja
 # cores aarch64 ya compilados del set de ArkOS) y DeckStation lo necesita SIEMPRE
-# (deckstation-cores.sh solo ENLAZA lo que encuentre en /usr/lib/libretro). Estaba
+# (deckstation-cores.sh COPIA lo que encuentre en /usr/lib/libretro). Estaba
 # en la lista de arriba, asi que ni se compilaba ni entraba en la imagen, y
 # RetroArch se quedaba sin ningun core. Mismo criterio que suyu-libretro.
 #
