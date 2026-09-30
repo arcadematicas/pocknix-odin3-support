@@ -11,11 +11,11 @@
 #   /usr/lib/libretro/*.so
 #   /usr/share/libretro/info/*.info
 #
-# Este script ENLAZA (symlink) lo que haya en esas rutas estandar dentro de
-# la carpeta portable, para que ES-DE/RetroArch los vean sin copiarlos a
-# mano. Asi, cualquier core que empaquetemos aparece solo.
+# Este script COPIA lo que haya en esas rutas estandar DENTRO de
+# la carpeta portable, para que ES-DE/RetroArch los tengan EN DeckStation sin
+# depender de rutas del sistema. Asi, cualquier core empaquetado queda dentro.
 #
-# No destructivo: solo crea los enlaces que falten y nunca pisa un core que
+# No destructivo: solo copia los que falten y nunca pisa un core que
 # ya exista como fichero real en la carpeta portable.
 #
 # Uso: deckstation-cores.sh [--dry-run]
@@ -61,13 +61,13 @@ resolve_retroarch_home() {
 }
 
 RA_HOME="$(resolve_retroarch_home)" || {
-    log "RetroArch no instalado todavia; nada que enlazar"
+    log "RetroArch no instalado todavia; nada que copiar"
     exit 0
 }
 CORES_DIR="${RA_HOME}/.config/retroarch/cores"
 
 if [ ! -d "$SYS_CORES" ] && [ ! -d "$SYS_INFO" ]; then
-    log "No hay cores del sistema (${SYS_CORES}); nada que enlazar"
+    log "No hay cores del sistema (${SYS_CORES}); nada que copiar"
     exit 0
 fi
 
@@ -84,9 +84,9 @@ for f in "$SYS_CORES"/*.so; do
         continue
     fi
     if [ "$DRY" = 1 ]; then
-        log "enlazar $f -> $dst"
+        log "copiar $f -> $dst"
     else
-        ln -s "$f" "$dst" || { warn "no se pudo enlazar ${base}"; continue; }
+        cp -f "$f" "$dst" || { warn "no se pudo copiar ${base}"; continue; }
     fi
     linked=$((linked + 1))
 done
@@ -98,20 +98,20 @@ for f in "$SYS_INFO"/*.info; do
     dst="${CORES_DIR}/${base}"
     [ -e "$dst" ] && { skipped=$((skipped + 1)); continue; }
     if [ "$DRY" = 1 ]; then
-        log "enlazar $f -> $dst"
+        log "copiar $f -> $dst"
     else
-        ln -s "$f" "$dst" || { warn "no se pudo enlazar ${base}"; continue; }
+        cp -f "$f" "$dst" || { warn "no se pudo copiar ${base}"; continue; }
     fi
     linked=$((linked + 1))
 done
 
 if [ "$DRY" = 1 ]; then
-    log "SIMULACION: $linked por enlazar | $skipped ya presentes"
+    log "SIMULACION: $linked por copiar | $skipped ya presentes"
 else
-    log "enlazados: $linked | ya presentes: $skipped"
+    log "copiados: $linked | ya presentes: $skipped"
 fi
 
-# Si hemos enlazado cores nuevos, invalidamos el cache de core_info.
+# Si hemos copiado cores nuevos, invalidamos el cache de core_info.
 #
 # POR QUE: RetroArch cachea los .info de los cores en
 #   <CORES_DIR>/core_info.cache
