@@ -60,6 +60,8 @@ package() {
         "${pkgdir}/opt/deckstation/scripts/deckstation-bios.sh"
     install -Dm755 "${sd}/scripts/deckstation-cores.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-cores.sh"
+    install -Dm755 "${sd}/scripts/deckstation-cores-fetch.sh" \
+        "${pkgdir}/opt/deckstation/scripts/deckstation-cores-fetch.sh"
     install -Dm755 "${sd}/scripts/deckstation-cores-sync.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-cores-sync.sh"
     install -Dm755 "${sd}/scripts/deckstation-steam.sh" \
