@@ -318,12 +318,14 @@ if command -v /usr/bin/ibus-daemon >/dev/null; then
 	/usr/bin/ibus-daemon -d -r --panel=disable --emoji-extension=disable
 fi
 
-# If we have mangoapp binary start it
-if command -v mangoapp >/dev/null; then
-	(while true; do
-		mangoapp
-	done) &
-fi
+# MangoHud: NO arrancar mangoapp aqui.
+#
+# Heredado de SteamOS, donde gamescope se lanzaba sin --mangoapp. Nosotros SI le
+# pasamos --mangoapp (ver sessions.d/steam), y eso hace que gamescope lo arranque
+# el mismo a traves de `gamescopereaper --respawn -- mangoapp`. Con las dos cosas
+# activas habia DOS mangoapp dibujando el mismo overlay, que es justo lo que
+# produce el OSD desincronizado / congelado que se veia a veces en juegos.
+# Una sola via: la de gamescope.
 
 # Handle Galileo Mura Correction
 # This is applied here and not in device-quirks because it must be called after gamescope has started.
