@@ -64,6 +64,14 @@ bios/
 ├── msx/                 ROMs de MSX / MSX2
 ├── switch/              claves de Switch (prod.keys / title.keys)
 ├── 3ds/                 sysdata de 3DS (aes_keys.txt, seeddb.bin, ...)
+├── amiga/               kickstarts de Amiga (A500/A600/A1200/A4000/CDTV/CD32)
+├── atarist/             TOS de Atari ST (o EmuTOS)
+├── atari800/ atari5200/ atari7800/
+├── intellivision/ colecovision/ odyssey2/ atarilynx/
+├── x68000/ pc98/ pc88/ fmtowns/ pcfx/ neogeocd/
+├── macintosh/ apple2gs/
+├── adam/ coco/ vsmile/  BIOS de dispositivo de MAME (van a la carpeta de ROMs)
+├── mame/                BIOS de dispositivo de MAME (awbios, naomi, konamigv...)
 └── misc/                cualquier otra BIOS -> system/ de RetroArch
 ```
 
@@ -82,7 +90,26 @@ bios/
 | `msx/` | `MSX.ROM`, `MSX2.ROM`, `MSX2EXT.ROM`, `MSX2P.ROM`, `MSX2PEXT.ROM` |
 | `switch/` | `prod.keys`, `title.keys` (y opcionalmente el firmware) |
 | `3ds/` | `aes_keys.txt`, `seeddb.bin` (sysdata de Azahar) |
-| `misc/` | Cualquier otra (Jaguar, Intellivision, ColecoVision, ...) |
+| `amiga/` | Kickstarts: `kick34005.A500` (1.3), `kick37175.A500` (2.05), `kick33180.A500` (1.2), `kick40063.A600`, `kick40068.A1200` (3.1), `kick39106.A1200` (3.0), `kick40068.A4000`, `kick34005.CDTV`, `kick40060.CD32` (+ `.ext`). Van **también al `system/` de RetroArch** (si solo están en `bios/amiga`, PUAE y FS-UAE no arrancan). |
+| `atarist/` | `tos.img` (TOS 1.02), `tos206.img` (TOS 2.06). **Alternativa libre:** `etos192uk.img` (EmuTOS). |
+| `atari800/` | `ATARIXL.ROM` (OS XL/XE), `ATARIBAS.ROM`, `ATARIOSA.ROM`, `ATARIOSB.ROM` |
+| `atari5200/` | `5200.rom` |
+| `atari7800/` | `7800 BIOS (U).rom`, `7800 BIOS (E).rom` |
+| `intellivision/` | `exec.bin`, `grom.bin` |
+| `colecovision/` | `colecovision.rom` (o `coleco.rom`) |
+| `odyssey2/` | `o2rom.bin`, `c52.bin` (Philips C52), `g7400.bin` (G7400) |
+| `atarilynx/` | `lynxboot.img` |
+| `x68000/` | `iplrom.dat`, `cgrom.dat` (se dejan en `system/` y en `system/keropi/`) |
+| `pc98/` | `bios.rom`, `itf.rom`, `font.rom`, `sound.rom` (van a `system/np2kai/`) |
+| `pc88/` | `n88.rom` |
+| `fmtowns/` | `FMT_SYS.ROM`, `FMT_DIC.ROM`, `FMT_F20.ROM`, `FMT_DOS.ROM` |
+| `pcfx/` | `pcfx.rom` |
+| `neogeocd/` | `neocd.bin`, `neocd_f.rom`, `neocd_z.rom` |
+| `macintosh/` | `MacII.ROM` (minivmac) |
+| `apple2gs/` | `apple2gs.rom` |
+| `adam/` `coco/` `vsmile/` | `adam.zip` (+ `adam_ddp/fdc/kb/prn.zip`), `coco.zip`/`coco3.zip`, `vsmile.zip` → **van a la carpeta de ROMs** |
+| `mame/` | BIOS de dispositivo: `awbios.zip`, `pgm.zip`, `skns.zip`, `naomi.zip`, `naomi2.zip`, `naomigd.zip`, `konamigv.zip`, `konamigx.zip`, `megaplay.zip`, `megatech.zip`, `sys246.zip`, `sys256.zip`, `sys573.zip`, `galgbios.zip`, `hng64.zip` → **van a la carpeta de ROMs** (arcade, naomi, atomiswave, model2, model3) |
+| `misc/` | Cualquier otra (Jaguar, ...) |
 
 > No todas las BIOS son obligatorias: muchos cores de RetroArch funcionan sin
 > ellas (o con HLE). Si un sistema no arranca, mira el log del emulador: casi
@@ -91,8 +118,11 @@ bios/
 ## Sistemas que NO necesitan BIOS
 
 Game Boy / GBA / NES / SNES / Mega Drive / Master System / N64 / PSP / PS Vita
-(juegos), Neo Geo Pocket, WonderSwan, Atari 2600/5200/7800, Lynx, PC Engine
-(HuCard), etc.
+(juegos), Neo Geo Pocket, WonderSwan, Atari 2600, PC Engine (HuCard), Spectrum,
+Amstrad CPC, C64, etc.
+
+> **Ojo**: Atari 5200, 7800 y Lynx **sí** tienen BIOS (no son imprescindibles,
+> pero mejoran la compatibilidad), y están en el manifiesto.
 
 ## Firmware que no es "BIOS"
 
@@ -103,6 +133,17 @@ Algunos emuladores necesitan además **claves o firmware del sistema**:
   Algunos juegos piden además el firmware instalado.
 - **Azahar (3DS)**: sysdata en `3ds/`.
 - **Vita3K**: necesita su propio firmware (se instala desde el menú del emulador).
+
+## Origen de las BIOS de esta instalación
+
+Las 122 BIOS de esta Odin se recuperaron de la **colección personal del SHARE**
+(que resulta ser un share de Batocera: `SHARE/bios` + `SHARE/system/bios`, 17.650
+ficheros). De ahí salieron los 21 sistemas que faltaban en el manifiesto
+(Atari ST, kickstarts de Amiga, IntelliVision, ColecoVision, Odyssey2, Lynx,
+X68000, PC-98/88, FM Towns, PC-FX, Neo Geo CD, Mac II, Apple IIGS y los BIOS de
+dispositivo de MAME), además de los ya cubiertos.
+
+`deckstation-bios.sh --check` da **40/40 sistemas cubiertos**.
 
 ## Nota legal
 

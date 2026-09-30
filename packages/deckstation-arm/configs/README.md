@@ -39,6 +39,11 @@ Configuraciones personalizadas importadas desde el proyecto DeckStation ARM
 | ZSNES | `zsnes/*.cfg` | `Apps/ZSNES/.../.config/zsnes/` | Configs de input y video (zmovie, zinput, zsnesl). |
 | Supermodel | `supermodel/Supermodel.ini` | `Apps/Supermodel/.../.config/supermodel/Config/Supermodel.ini` | Config limpia. |
 | AntiMicroX | `antimicrox/antimicrox_settings.ini` | `Apps/Antimicrox/.../.config/antimicrox/` | Paths de perfiles convertidos a relativos. |
+| RetroArch | `retroarch/cores/retroarch-core-options.cfg` | Colección Batocera (`SHARE/system/configs/retroarch/cores/`) | **2320 líneas** de ajustes finos por core: fast-load, chroma, bordes, hacks de widescreen… Los cores ignoran las opciones que no conocen. Política `keep`. |
+| Supermodel | `supermodel/Supermodel.ini` | Colección Batocera | **27 secciones por juego** (Daytona 2, Scud Race, Spikeout, Ocean Hunter, Lemans 24, Harley, Sega Rally 2, Magtruck, Get Bass…) encima de nuestro `[ Global ]` propio. |
+| Supermodel | `supermodel/Games.xml` | Colección Batocera | Definición de juegos de Model 3 (153 KB). |
+| Amiberry | `amiberry/conf/amiberry.conf` | Colección Batocera | Quickstart, F12 abre la GUI, ajustes de mando. |
+| Amiberry | `amiberry/conf/gamecontrollerdb.txt` | Colección Batocera | Base SDL de mandos (2116 entradas). |
 | Vita3K | `vita3k/*.xml` | `Apps/Vita3K/.../.config/Vita3K/config/` | Configs por juego (3 títulos). |
 
 ## Qué NO se copió (y por qué)
@@ -49,6 +54,11 @@ Configuraciones personalizadas importadas desde el proyecto DeckStation ARM
 - **Caches** (shader cache, mesa) — se regeneran en runtime.
 - **`QtProject.conf`** de DuckStation/Azahar — solo estado de UI con paths
   hardcodeados del sistema original.
+- **De la colección Batocera** (octubre 2026): `scummvm.ini` (eran las **partidas** del usuario, 3221
+  líneas de rutas), `init.tcl` de OpenMSX (genérico, ya viene en el AppImage), los `cfg` por sistema de
+  MAME (116 ficheros; dependen de rutas `/userdata/roms/...` y de su versión de MAME), `vice/`,
+  `hatari/`, `hypseus-singe/` y `cannonball/` (no enviamos esos standalone) y `evmapy/` (nuestro
+  equivalente es AntimicroX).
 - **`es_find_rules.xml` / `es_systems.xml` del proyecto ARM** — no existen en
   `deckstation-arm/` (búsqueda exhaustiva). Se importaron los del PC original
   (ROMS16TB) y se adaptaron las rutas de emuladores a ARM.

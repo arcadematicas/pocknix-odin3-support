@@ -92,3 +92,18 @@ rpcs3/config.yml|{HOME:RPCS3}/.config/rpcs3/config.yml|keep
 # portable.txt hace que Xenia use su config local (junto al AppImage) en vez
 # de ~/.config/xenia. Fuerza el marcador: es 100% nuestro.
 xenia/portable.txt|Apps/xenia_edge/portable.txt|force
+
+# --- Aportes de la coleccion Batocera (01/10/2026) ----------------------
+# Core options de RetroArch curadas (2320 lineas: ajustes finos por core:
+# fast-load, chroma, bordes, hacks de widescreen...). Los cores ignoran las
+# opciones que no conocen, asi que es de bajo riesgo. "keep" para no pisar
+# lo que el usuario cambie luego desde el menu de RetroArch.
+retroarch/cores/retroarch-core-options.cfg|{HOME:RetroArch}/.config/retroarch/cores/retroarch-core-options.cfg|keep
+
+# Supermodel (Model 3): Games.xml + secciones por juego para Daytona 2, Scud
+# Race, Spikeout, Ocean Hunter, Lemans 24, Harley, Sega Rally 2... (27 juegos)
+supermodel/Games.xml|{HOME:Supermodel}/.config/supermodel/Games.xml|keep
+supermodel/Games.xml|{HOME:Supermodel}/.config/supermodel/Config/Games.xml|keep
+
+# Amiberry (Amiga): conf + base de datos SDL de mandos
+amiberry/conf|{HOME:Amiberry}/Amiberry/conf|keep

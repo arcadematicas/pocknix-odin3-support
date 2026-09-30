@@ -106,3 +106,91 @@ saturn|saturn_bios.bin|Saturn (yabause/kronos)|sega_101.bin|85ec9ca47d8f68077181
 
 # --- Philips CD-i (core same_cdi y core "CDi 2015") --------------------
 cdimono1|cdimono1.zip|Philips CD-i (romset MAME cdimono1: cdi200/cdi220/cdi220b)||
+
+# ======================================================================
+# AMPLIACION 01/10/2026 — sistemas que faltaban en el manifiesto
+# ======================================================================
+
+# --- Atari ST (Hatari) ---
+atarist|tos.img|TOS 1.02||
+atarist|etos192uk.img|EmuTOS 192K UK (libre, alternativa a TOS)||
+atarist|tos206.img|TOS 2.06||
+
+# --- Atari 8 bits / 5200 / 7800 ---
+atari800|ATARIXL.ROM|OS Atari XL/XE||
+atari800|ATARIBAS.ROM|BASIC||
+atari800|ATARIOSA.ROM|OS 400/800 rev A||
+atari800|ATARIOSB.ROM|OS 400/800 rev B||
+atari5200|5200.rom|BIOS Atari 5200||
+atari7800|7800 BIOS (U).rom|BIOS Atari 7800 USA||
+atari7800|7800 BIOS (E).rom|BIOS Atari 7800 Europa||
+
+# --- Intellivision / ColecoVision / Odyssey2 / Atari Lynx ---
+intellivision|exec.bin|EXEC Intellivision||
+intellivision|grom.bin|GROM Intellivision||
+colecovision|colecovision.rom|BIOS ColecoVision||
+colecovision|coleco.rom|BIOS ColecoVision (nombre alternativo)||
+odyssey2|o2rom.bin|BIOS Odyssey2||
+odyssey2|c52.bin|BIOS Philips C52||
+odyssey2|g7400.bin|BIOS Philips G7400||
+atarilynx|lynxboot.img|BIOS Atari Lynx||
+
+# --- Sharp X68000 ---
+x68000|iplrom.dat|IPL ROM||
+x68000|cgrom.dat|CG ROM||
+
+# --- NEC PC-98 / PC-88 ---
+pc98|bios.rom|BIOS PC-98 (NP2kai)||
+pc98|itf.rom|BIOS ITF||
+pc98|font.rom|Font ROM||
+pc98|sound.rom|Sound ROM||
+pc88|n88.rom|BIOS PC-88||
+
+# --- FM Towns / PC-FX / Neo Geo CD ---
+fmtowns|FMT_SYS.ROM|BIOS sistema FM Towns||
+fmtowns|FMT_DIC.ROM|BIOS diccionario||
+fmtowns|FMT_F20.ROM|BIOS F20||
+fmtowns|FMT_DOS.ROM|DOS ROM||
+pcfx|pcfx.rom|BIOS PC-FX||
+neogeocd|neocd.bin|BIOS Neo Geo CD||
+neogeocd|neocd_f.rom|BIOS Neo Geo CD (front loader)||
+neogeocd|neocd_z.rom|BIOS Neo Geo CDZ||
+
+# --- Macintosh / Apple IIGS ---
+macintosh|MacII.ROM|ROM Mac II (minivmac)||
+apple2gs|apple2gs.rom|ROM Apple IIGS||
+
+# --- Amiga: kickstarts (dentro de bios/amiga) ---
+amiga|kick34005.A500|Kickstart 1.3||
+amiga|kick40068.A1200|Kickstart 3.1 (A1200)||
+amiga|kick37175.A500|Kickstart 2.05||
+amiga|kick40063.A600|Kickstart 3.1 (A600)||
+amiga|kick34005.CDTV|Kickstart CDTV||
+amiga|kick39106.A1200|Kickstart 3.0 (A1200)||
+amiga|kick33180.A500|Kickstart 1.2||
+amiga|kick40068.A4000|Kickstart 3.1 (A4000)||
+
+# --- MAME: BIOS de dispositivo (van a la carpeta de ROMs) ---
+mame|awbios.zip|BIOS Atomiswave||
+mame|pgm.zip|BIOS PGM||
+mame|skns.zip|BIOS Super Kaneko Nova System||
+mame|naomi.zip|BIOS Naomi||
+mame|naomi2.zip|BIOS Naomi 2||
+mame|naomigd.zip|BIOS Naomi GD-ROM||
+mame|konamigv.zip|BIOS Konami GV||
+mame|konamigx.zip|BIOS Konami GX||
+mame|megaplay.zip|BIOS Mega Play||
+mame|megatech.zip|BIOS Mega-Tech||
+mame|sys246.zip|BIOS System 246||
+mame|sys256.zip|BIOS System 256||
+mame|sys573.zip|BIOS System 573||
+mame|galgbios.zip|BIOS Galaga||
+mame|hng64.zip|BIOS Hyper Neo Geo 64||
+adam|adam.zip|BIOS Coleco Adam||
+adam|adam_ddp.zip|||
+adam|adam_fdc.zip|||
+adam|adam_kb.zip|||
+adam|adam_prn.zip|||
+coco|coco.zip|BIOS Tandy CoCo||
+coco|coco3.zip|BIOS Tandy CoCo 3||
+vsmile|vsmile.zip|BIOS V.Smile||

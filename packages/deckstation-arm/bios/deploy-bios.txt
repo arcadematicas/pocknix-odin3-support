@@ -95,3 +95,60 @@ naomi|{HOME:RetroArch}/.config/retroarch/system/dc
 # --- Philips CD-i (same_cdi -> system/same_cdi/bios; CDi 2015 -> system/) ---
 cdimono1|{HOME:RetroArch}/.config/retroarch/system/same_cdi/bios
 cdimono1|{HOME:RetroArch}/.config/retroarch/system
+
+# ======================================================================
+# AMPLIACION 01/10/2026 — BIOS para los sistemas que faltaban en el manifiesto
+# (recuperadas de la coleccion SHARE/bios, 68 ficheros)
+# ======================================================================
+
+# --- Amiga: los kickstarts DEBEN estar tambien en el system de RetroArch
+#     (la entrada "amiga" de arriba solo los dejaba en bios/amiga, y por eso
+#      PUAE y FS-UAE no arrancaban) ---
+amiga|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Atari ST (Hatari: TOS) ---
+atarist|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Atari 800 / 5200 / 7800 ---
+atari800|{HOME:RetroArch}/.config/retroarch/system
+atari5200|{HOME:RetroArch}/.config/retroarch/system
+atari7800|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Intellivision / ColecoVision / Odyssey2 / Atari Lynx ---
+intellivision|{HOME:RetroArch}/.config/retroarch/system
+colecovision|{HOME:RetroArch}/.config/retroarch/system
+odyssey2|{HOME:RetroArch}/.config/retroarch/system
+atarilynx|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Sharp X68000 (PX68k busca en system/keropi; se deja tambien en system) ---
+x68000|{HOME:RetroArch}/.config/retroarch/system/keropi
+x68000|{HOME:RetroArch}/.config/retroarch/system
+
+# --- NEC PC-98 (NP2kai) y PC-88 ---
+pc98|{HOME:RetroArch}/.config/retroarch/system/np2kai
+pc98|{HOME:RetroArch}/.config/retroarch/system
+pc88|{HOME:RetroArch}/.config/retroarch/system
+
+# --- FM Towns (Tsugaru) / PC-FX / Neo Geo CD ---
+fmtowns|{HOME:RetroArch}/.config/retroarch/system
+pcfx|{HOME:RetroArch}/.config/retroarch/system
+neogeocd|{HOME:RetroArch}/.config/retroarch/system/neocd
+neogeocd|{HOME:RetroArch}/.config/retroarch/system
+
+# --- Apple Macintosh (minivmac) y Apple IIGS ---
+macintosh|{HOME:RetroArch}/.config/retroarch/system
+apple2gs|{HOME:RetroArch}/.config/retroarch/system
+apple2gs|ROMs/apple2gs
+
+# --- MAME: los BIOS de dispositivo (awbios, pgm, naomi, konamigv...) tienen que
+#     estar EN LA CARPETA DE ROMS, porque es ahi donde MAME busca su rompath ---
+mame|ROMs/arcade
+mame|ROMs/naomi
+mame|ROMs/atomiswave
+mame|ROMs/model2
+mame|ROMs/model3
+neogeo|ROMs/arcade
+neogeo|ROMs/neogeo
+adam|ROMs/adam
+coco|ROMs/coco
+vsmile|ROMs/vsmile
