@@ -16,6 +16,7 @@ import struct
 import sys
 import zlib
 import glob
+import shutil
 import xml.etree.ElementTree as ET
 
 HOME = os.path.expanduser("~")
@@ -38,6 +39,22 @@ PLAY = "/usr/bin/deckstation-play"
 # GeForce Experience). moonlight-qt viene del repo extra de ALARM (aarch64).
 MOONLIGHT = "/usr/bin/moonlight"
 MOONLIGHT_ICON = "/usr/share/icons/hicolor/256x256/apps/moonlight.png"
+
+# Arte de la biblioteca de DeckStation (lo instala su PKGBUILD en <root>/arte).
+# Steam lo busca en userdata/<id>/config/grid/<appid><sufijo>.png, con SUS
+# sufijos: "p" = portada vertical, "" = apaisada, "_hero" = cabecera y
+# "_logo" = logotipo. El icono NO va al grid: va en el campo `icon` del atajo.
+ARTE_DIR = os.path.join(DECKSTATION_ROOT, "arte")
+GRID_ART = (
+    ("deckstation_p.png", "p"),
+    ("deckstation_header.png", ""),
+    ("deckstation_hero.png", "_hero"),
+    ("deckstation_logo.png", "_logo"),
+)
+ICON_CANDIDATES = (
+    os.path.join(DECKSTATION_ROOT, "DeckStation.png"),
+    os.path.join(ARTE_DIR, "deckstation_icono.png"),
+)
 
 
 def rom_dir() -> str:
@@ -103,7 +120,9 @@ def make_entry(appname: str, exe: str, launch_options: str = "",
     # El appid del acceso directo se calcula con el exe SIN las comillas del campo "exe"
     # del vdf (asi lo hace WProton: 3322678579 y su caratula encaja). Con comillas el appid
     # difiere (DeckStation daba 3281604075 en vez de 2879226642) y el tile sale SIN las
-    # imagenes que deckstation-steam.sh instala en /opt/deckstation/arte.
+    # imagenes que Steam busca por appid en su carpeta `grid` -- de eso se encarga ahora
+    # install_grid_art(), que las copia con ESTE appid (antes solo las ponia
+    # deckstation-steam.sh, y solo desde el modo Escritorio).
     appid = zlib.crc32((exe.strip('"') + appname).encode()) | 0x80000000
     return {
         "appid": struct.unpack("<i", struct.pack("<I", appid))[0],
@@ -194,6 +213,56 @@ def _icon(path: str) -> str:
     return path if os.path.exists(path) else ""
 
 
+def _deckstation_icon() -> str:
+    """Icono del atajo de DeckStation: el del paquete si existe, si no el del
+    arte. Antes apuntaba a <root>/DeckStation.png, que NO existia en la imagen
+    -> el atajo salia sin icono."""
+    for candidato in ICON_CANDIDATES:
+        if os.path.exists(candidato):
+            return candidato
+    return ""
+
+
+def install_grid_art(cfgdir: str, entries: list) -> bool:
+    """Copia el arte de DeckStation a userdata/<id>/config/grid con el appid que
+    calcula ESTE script.
+
+    POR QUE ESTA AQUI: el arte lo instalaba `deckstation-steam.sh`, que solo
+    corre en modo ESCritorio. En modo Juego el sync no lo tocaba, asi que una
+    instalacion nueva (o el propio modo juego) salia SIN imagenes. Y aunque se
+    hubiera instalado, el appid puede no coincidir: con el `Exe` entre comillas
+    el crc32 cambia (DeckStation quedo con 3281604075 mientras el atajo pide
+    2879226642) y Steam busca por appid -> imagenes invisibles.
+
+    Idempotente y barato: 4 ficheros de unos MB. Devuelve True si puso alguno.
+    """
+    puesto = False
+    for e in entries:
+        if e.get("appname") != "DeckStation":
+            continue
+        appid = e["appid"] & 0xFFFFFFFF          # el nombre del fichero es el
+        grid = os.path.join(cfgdir, "grid")       # appid SIN signo
+        n = 0
+        for src, sufijo in GRID_ART:
+            origen = os.path.join(ARTE_DIR, src)
+            if not os.path.exists(origen):
+                continue
+            try:
+                os.makedirs(grid, exist_ok=True)
+                shutil.copyfile(origen, os.path.join(grid, f"{appid}{sufijo}.png"))
+                n += 1
+            except OSError as err:
+                print(f"[pocknix-steam-sync] grid {src}: {err}", file=sys.stderr)
+        if n:
+            print(f"[pocknix-steam-sync] DeckStation: {n} imagenes de biblioteca "
+                  f"(appid {appid})")
+            puesto = True
+        else:
+            print(f"[pocknix-steam-sync] DeckStation: faltan las imagenes en "
+                  f"{ARTE_DIR} (¿el paquete no las instalo?)", file=sys.stderr)
+    return puesto
+
+
 def tiles() -> list[dict]:
     """Lo que Pocknix mantiene en la biblioteca de Steam (Game Mode).
     Anade aqui cualquier cosa que deba aparecer en el modo juego."""
@@ -202,8 +271,7 @@ def tiles() -> list[dict]:
     if os.path.exists(DECKSTATION):
         out.append(make_entry("DeckStation", f'"{DECKSTATION}"',
                               startdir=DECKSTATION_ROOT,
-                              icon=_icon(os.path.join(DECKSTATION_ROOT,
-                                                      "DeckStation.png"))))
+                              icon=_deckstation_icon()))
         if os.path.exists(PLAY):
             out += favorites()
     # Moonlight: juego remoto desde un PC.
@@ -223,6 +291,9 @@ def main() -> None:
             continue  # anonymous placeholder account
         try:
             sync(cfgdir, desired)
+            # Las imagenes de la biblioteca van aparte del .vdf: Steam las busca
+            # en su carpeta `grid` por appid (ver install_grid_art).
+            install_grid_art(cfgdir, desired)
         except OSError as e:
             print(f"[pocknix-steam-sync] {cfgdir}: {e}", file=sys.stderr)
 
