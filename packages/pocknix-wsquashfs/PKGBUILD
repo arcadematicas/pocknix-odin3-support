@@ -32,6 +32,9 @@ license=('GPL2')
 # resuelve al compilar (regla: nada de ALARM que el chroot no vea).
 depends=('squashfs-tools')
 options=('!strip')          # son scripts: nada que pelar
+# OJO: sin esta linea, makepkg NO mete el .install en el paquete y el
+# update-mime-database no se ejecuta nunca -> el .wsquashfs no se registra.
+install=pocknix-wsquashfs.install
 
 # ⚠️ LOS FICHEROS VAN AQUI AL LADO DEL PKGBUILD, NO EN SUBCARPETA: makepkg se
 # queda con el NOMBRE BASE de cada `source=` y busca ese nombre en el directorio
