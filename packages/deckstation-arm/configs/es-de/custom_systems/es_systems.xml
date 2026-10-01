@@ -336,6 +336,28 @@
         <theme>bbcmicro</theme>
     <command label="b2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/b2_libretro.so %ROM%</command>
         </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `bbkemu` (BBK Electronic Dictionary), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>bbk</name>
+        <fullname>BBK Electronic Dictionary</fullname>
+        <path>%ROMPATH%/bbk</path>
+        <extension>.bin .gam .zip .7z</extension>
+        <command label="BBKEmu">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bbkemu_libretro.so %ROM%</command>
+        <platform>bbk</platform>
+        <theme>bbk</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `bk` (Elektronika BK-0010/BK-0011(M)), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>bk</name>
+        <fullname>Elektronika BK-0010/BK-0011(M)</fullname>
+        <path>%ROMPATH%/bk</path>
+        <extension>.bin .dsk .rom .zip .7z</extension>
+        <command label="BK">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bk_libretro.so %ROM%</command>
+        <platform>bk</platform>
+        <theme>bk</theme>
+    </system>
     <system>
         <name>c64</name>
         <fullname>Commodore 64</fullname>
@@ -349,6 +371,41 @@
         <command label="Frodo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/frodo_libretro.so %ROM%</command>
         <platform>c64</platform>
         <theme>c64</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `pd777` (Epoch Cassette Vision), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>cassettevision</name>
+        <fullname>Epoch Cassette Vision</fullname>
+        <path>%ROMPATH%/cassettevision</path>
+        <extension>.bin .cart .zip .7z</extension>
+        <command label="PD777">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pd777_libretro.so %ROM%</command>
+        <platform>cassettevision</platform>
+        <theme>cassettevision</theme>
+    </system>
+    <!-- Añadido 01/10/2026: core libretro `vice_xcbm2` (Commodore CBM-II 6x0/7x0). Es la misma familia VICE que
+         c64 / vic20 / plus4, que ya existen: mismas extensiones.
+         Se crea para que el core aparezca en el lanzador de ES-DE. -->
+    <system>
+        <name>cbm2</name>
+        <fullname>Commodore CBM-II 6x0/7x0</fullname>
+        <path>%ROMPATH%/cbm2</path>
+        <extension>.a0 .A0 .b0 .B0 .bin .BIN .cmd .CMD .crt .CRT .d2m .D2M .d4m .D4M .d64 .D64 .d6z .D6Z .d71 .D71 .d7z .D7Z .d80 .D80 .d81 .D81 .d82 .D82 .d8z .D8Z .g41 .G41 .g4z .G4Z .g64 .G64 .g6z .G6Z .gz .GZ .lnx .LNX .m3u .M3U .nbz .NBZ .nib .NIB .p00 .P00 .prg .PRG .rom .ROM .t64 .T64 .tap .TAP .vfl .VFL .vsf .VSF .x64 .X64 .x6z .X6Z .7z .7Z .zip .ZIP</extension>
+        <command label="VICE xcbm2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vice_xcbm2_libretro.so %ROM%</command>
+        <platform>cbm2</platform>
+        <theme>cbm2</theme>
+    </system>
+    <!-- Añadido 01/10/2026: core libretro `vice_xcbm5x0` (Commodore CBM-II 5x0). Es la misma familia VICE que
+         c64 / vic20 / plus4, que ya existen: mismas extensiones.
+         Se crea para que el core aparezca en el lanzador de ES-DE. -->
+    <system>
+        <name>cbm5x0</name>
+        <fullname>Commodore CBM-II 5x0</fullname>
+        <path>%ROMPATH%/cbm5x0</path>
+        <extension>.a0 .A0 .b0 .B0 .bin .BIN .cmd .CMD .crt .CRT .d2m .D2M .d4m .D4M .d64 .D64 .d6z .D6Z .d71 .D71 .d7z .D7Z .d80 .D80 .d81 .D81 .d82 .D82 .d8z .D8Z .g41 .G41 .g4z .G4Z .g64 .G64 .g6z .G6Z .gz .GZ .lnx .LNX .m3u .M3U .nbz .NBZ .nib .NIB .p00 .P00 .prg .PRG .rom .ROM .t64 .T64 .tap .TAP .vfl .VFL .vsf .VSF .x64 .X64 .x6z .X6Z .7z .7Z .zip .ZIP</extension>
+        <command label="VICE xcbm5x0">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vice_xcbm5x0_libretro.so %ROM%</command>
+        <platform>cbm5x0</platform>
+        <theme>cbm5x0</theme>
     </system>
     <system>
         <name>cdimono1</name>
@@ -394,6 +451,17 @@
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/channelf channelf -cart %ROM%</command>
         <platform>channelf</platform>
         <theme>channelf</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `jaxe` (CHIP-8 / S-CHIP / XO-CHIP), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>chip8</name>
+        <fullname>CHIP-8 / S-CHIP / XO-CHIP</fullname>
+        <path>%ROMPATH%/chip8</path>
+        <extension>.ch8 .sc8 .xo8 .c8 .zip .7z</extension>
+        <command label="JAXE">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/jaxe_libretro.so %ROM%</command>
+        <platform>chip8</platform>
+        <theme>chip8</theme>
     </system>
     <system>
         <name>coco</name>
@@ -454,12 +522,12 @@
         <fullname>Capcom Play System</fullname>
         <path>%ROMPATH%/cps</path>
         <extension>.7z .7Z .zip .ZIP</extension>
+        <command label="FinalBurn Neo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbneo_libretro.so %ROM%</command>
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="MAME 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2010_libretro.so %ROM%</command>
         <command label="MAME 2003-Plus">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2003_plus_libretro.so %ROM%</command>
         <command label="MAME 2000">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2000_libretro.so %ROM%</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/cps %BASENAME%</command>
-        <command label="FinalBurn Neo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbneo_libretro.so %ROM%</command>
         <command label="FinalBurn Neo (Standalone)">%EMULATOR_FINALBURN-NEO% -fullscreen %BASENAME%</command>
         <command label="FB Alpha 2012">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbalpha2012_libretro.so %ROM%</command>
         <command label="FB Alpha 2012 CPS-1">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbalpha2012_cps1_libretro.so %ROM%</command>
@@ -479,12 +547,12 @@
         <fullname>Capcom Play System I</fullname>
         <path>%ROMPATH%/cps1</path>
         <extension>.7z .7Z .zip .ZIP</extension>
+        <command label="FinalBurn Neo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbneo_libretro.so %ROM%</command>
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="MAME 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2010_libretro.so %ROM%</command>
         <command label="MAME 2003-Plus">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2003_plus_libretro.so %ROM%</command>
         <command label="MAME 2000">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2000_libretro.so %ROM%</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/cps1 %BASENAME%</command>
-        <command label="FinalBurn Neo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbneo_libretro.so %ROM%</command>
         <command label="FinalBurn Neo (Standalone)">%EMULATOR_FINALBURN-NEO% -fullscreen %BASENAME%</command>
         <command label="FB Alpha 2012">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbalpha2012_libretro.so %ROM%</command>
         <command label="FB Alpha 2012 CPS-1">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbalpha2012_cps1_libretro.so %ROM%</command>
@@ -502,12 +570,12 @@
         <fullname>Capcom Play System II</fullname>
         <path>%ROMPATH%/cps2</path>
         <extension>.7z .7Z .zip .ZIP</extension>
+        <command label="FinalBurn Neo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbneo_libretro.so %ROM%</command>
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="MAME 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2010_libretro.so %ROM%</command>
         <command label="MAME 2003-Plus">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2003_plus_libretro.so %ROM%</command>
         <command label="MAME 2000">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2000_libretro.so %ROM%</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/cps2 %BASENAME%</command>
-        <command label="FinalBurn Neo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbneo_libretro.so %ROM%</command>
         <command label="FinalBurn Neo (Standalone)">%EMULATOR_FINALBURN-NEO% -fullscreen %BASENAME%</command>
         <command label="FB Alpha 2012">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbalpha2012_libretro.so %ROM%</command>
         <command label="FB Alpha 2012 CPS-2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbalpha2012_cps2_libretro.so %ROM%</command>
@@ -525,12 +593,12 @@
         <fullname>Capcom Play System III</fullname>
         <path>%ROMPATH%/cps3</path>
         <extension>.7z .7Z .zip .ZIP</extension>
+        <command label="FinalBurn Neo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbneo_libretro.so %ROM%</command>
         <command label="MAME - Current">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame_libretro.so %ROM%</command>
         <command label="MAME 2010">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2010_libretro.so %ROM%</command>
         <command label="MAME 2003-Plus">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2003_plus_libretro.so %ROM%</command>
         <command label="MAME 2000">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mame2000_libretro.so %ROM%</command>
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/cps3 %BASENAME%</command>
-        <command label="FinalBurn Neo">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbneo_libretro.so %ROM%</command>
         <command label="FinalBurn Neo (Standalone)">%EMULATOR_FINALBURN-NEO% -fullscreen %BASENAME%</command>
         <command label="FB Alpha 2012">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbalpha2012_libretro.so %ROM%</command>
         <command label="FB Alpha 2012 CPS-3">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fbalpha2012_cps3_libretro.so %ROM%</command>
@@ -579,6 +647,28 @@
         <command label="AppImage (Keep ES-DE running)">%RUNINBACKGROUND% %EMULATOR_OS-SHELL% -c "%ROM%"</command>
         <platform>pcwindows</platform>
         <theme>desktop</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `dingooemu` (Dingoo A320 / Gemei A330), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>dingoo</name>
+        <fullname>Dingoo A320 / Gemei A330</fullname>
+        <path>%ROMPATH%/dingoo</path>
+        <extension>.sim .app .bin .zip .7z</extension>
+        <command label="DingooEmu">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dingooemu_libretro.so %ROM%</command>
+        <platform>dingoo</platform>
+        <theme>dingoo</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `dinothawr` (Dinothawr), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>dinothawr</name>
+        <fullname>Dinothawr</fullname>
+        <path>%ROMPATH%/dinothawr</path>
+        <extension>.dinothawr .zip</extension>
+        <command label="Dinothawr">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/dinothawr_libretro.so %ROM%</command>
+        <platform>dinothawr</platform>
+        <theme>dinothawr</theme>
     </system>
     <system>
         <name>doom</name>
@@ -668,6 +758,17 @@
         <command label="AppImage (Keep ES-DE running)">%RUNINBACKGROUND% %EMULATOR_OS-SHELL% -c "%ROM%"</command>
         <platform>pcwindows</platform>
         <theme>emulators</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `ep128emu_core` (Enterprise 64/128), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>ep128</name>
+        <fullname>Enterprise 64/128</fullname>
+        <path>%ROMPATH%/ep128</path>
+        <extension>.dsk .img .tap .trd .zip .7z</extension>
+        <command label="ep128emu">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/ep128emu_core_libretro.so %ROM%</command>
+        <platform>ep128</platform>
+        <theme>ep128</theme>
     </system>
     <system>
         <name>epic</name>
@@ -793,6 +894,28 @@
         <platform>fpinball</platform>
         <theme>fpinball</theme>
     </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `galaksija` (Galaksija), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>galaksija</name>
+        <fullname>Galaksija</fullname>
+        <path>%ROMPATH%/galaksija</path>
+        <extension>.tap .gal .bin .zip .7z</extension>
+        <command label="Galaksija">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/galaksija_libretro.so %ROM%</command>
+        <platform>galaksija</platform>
+        <theme>galaksija</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `gam4980` (GAM4980), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>gam4980</name>
+        <fullname>GAM4980</fullname>
+        <path>%ROMPATH%/gam4980</path>
+        <extension>.bin .rom .zip .7z</extension>
+        <command label="GAM4980">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/gam4980_libretro.so %ROM%</command>
+        <platform>gam4980</platform>
+        <theme>gam4980</theme>
+    </system>
     <system>
         <name>gamate</name>
         <fullname>Bit Corporation Gamate</fullname>
@@ -843,6 +966,17 @@
         <platform>gamegear</platform>
         <theme>gamegear</theme>
         </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `libgametank` (GameTank), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>gametank</name>
+        <fullname>GameTank</fullname>
+        <path>%ROMPATH%/gametank</path>
+        <extension>.gtr .bin .zip .7z</extension>
+        <command label="GameTank">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/libgametank_libretro.so %ROM%</command>
+        <platform>gametank</platform>
+        <theme>gametank</theme>
+    </system>
     <system>
         <name>gb</name>
         <fullname>Nintendo Game Boy</fullname>
@@ -998,6 +1132,17 @@
 <command label="FreeJ2ME-Plus">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/freej2me-plus_libretro.so %ROM%</command>
         <platform>android</platform>
         <theme>j2me</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `jumpnbump` (Jump 'n Bump), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>jumpnbump</name>
+        <fullname>Jump 'n Bump</fullname>
+        <path>%ROMPATH%/jumpnbump</path>
+        <extension>.jumpnbump .zip .7z</extension>
+        <command label="Jump 'n Bump">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/jumpnbump_libretro.so %ROM%</command>
+        <platform>jumpnbump</platform>
+        <theme>jumpnbump</theme>
     </system>
     <system>
         <name>kodi</name>
@@ -1408,6 +1553,17 @@
         <platform>arcade</platform>
         <theme>naomigd</theme>
     </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `native32emu` (Native32), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>native32</name>
+        <fullname>Native32</fullname>
+        <path>%ROMPATH%/native32</path>
+        <extension>.bin .rom .zip .7z</extension>
+        <command label="Native32Emu">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/native32emu_libretro.so %ROM%</command>
+        <platform>native32</platform>
+        <theme>native32</theme>
+    </system>
     <system>
         <name>nds</name>
         <fullname>Nintendo DS</fullname>
@@ -1564,6 +1720,39 @@
         <platform>ngpc</platform>
         <theme>ngpc</theme>
     </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `nicaiemu` (Nicai), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>nicai</name>
+        <fullname>Nicai</fullname>
+        <path>%ROMPATH%/nicai</path>
+        <extension>.bin .rom .zip .7z</extension>
+        <command label="NicaiEmu">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/nicaiemu_libretro.so %ROM%</command>
+        <platform>nicai</platform>
+        <theme>nicai</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `nuance` (VM Labs NUON), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>nuon</name>
+        <fullname>VM Labs NUON</fullname>
+        <path>%ROMPATH%/nuon</path>
+        <extension>.nuon .bin .zip .7z</extension>
+        <command label="Nuance">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/nuance_libretro.so %ROM%</command>
+        <platform>nuon</platform>
+        <theme>nuon</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `oberon` (Oberon RISC), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>oberon</name>
+        <fullname>Oberon RISC</fullname>
+        <path>%ROMPATH%/oberon</path>
+        <extension>.bin .dsk .zip .7z</extension>
+        <command label="Oberon">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/oberon_libretro.so %ROM%</command>
+        <platform>oberon</platform>
+        <theme>oberon</theme>
+    </system>
     <system>
         <name>odyssey2</name>
         <fullname>Magnavox Odyssey 2</fullname>
@@ -1574,6 +1763,39 @@
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/odyssey2 odyssey2 -cart %ROM%</command>
         <platform>odyssey2</platform>
         <theme>odyssey2</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `omicron` (Omicron), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>omicron</name>
+        <fullname>Omicron</fullname>
+        <path>%ROMPATH%/omicron</path>
+        <extension>.omicron .zip</extension>
+        <command label="Omicron">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/omicron_libretro.so %ROM%</command>
+        <platform>omicron</platform>
+        <theme>omicron</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `onscripter` (ONScripter), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>onscripter</name>
+        <fullname>ONScripter</fullname>
+        <path>%ROMPATH%/onscripter</path>
+        <extension>.ini .txt .zip .7z</extension>
+        <command label="ONScripter">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/onscripter_libretro.so %ROM%</command>
+        <platform>onscripter</platform>
+        <theme>onscripter</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `onsyuri` (ONScripter Yuri), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>onsyuri</name>
+        <fullname>ONScripter Yuri</fullname>
+        <path>%ROMPATH%/onsyuri</path>
+        <extension>.ini .txt .zip .7z</extension>
+        <command label="ONScripter Yuri">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/onsyuri_libretro.so %ROM%</command>
+        <platform>onsyuri</platform>
+        <theme>onsyuri</theme>
     </system>
     <system>
         <name>oric</name>
@@ -1685,6 +1907,18 @@
         <platform>pcfx</platform>
         <theme>pcfx</theme>
     </system>
+    <!-- Añadido 01/10/2026: core libretro `vice_xpet` (Commodore PET). Es la misma familia VICE que
+         c64 / vic20 / plus4, que ya existen: mismas extensiones.
+         Se crea para que el core aparezca en el lanzador de ES-DE. -->
+    <system>
+        <name>pet</name>
+        <fullname>Commodore PET</fullname>
+        <path>%ROMPATH%/pet</path>
+        <extension>.a0 .A0 .b0 .B0 .bin .BIN .cmd .CMD .crt .CRT .d2m .D2M .d4m .D4M .d64 .D64 .d6z .D6Z .d71 .D71 .d7z .D7Z .d80 .D80 .d81 .D81 .d82 .D82 .d8z .D8Z .g41 .G41 .g4z .G4Z .g64 .G64 .g6z .G6Z .gz .GZ .lnx .LNX .m3u .M3U .nbz .NBZ .nib .NIB .p00 .P00 .prg .PRG .rom .ROM .t64 .T64 .tap .TAP .vfl .VFL .vsf .VSF .x64 .X64 .x6z .X6Z .7z .7Z .zip .ZIP</extension>
+        <command label="VICE xpet">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vice_xpet_libretro.so %ROM%</command>
+        <platform>pet</platform>
+        <theme>pet</theme>
+    </system>
     <system>
         <name>pico8</name>
         <fullname>PICO-8 Fantasy Console</fullname>
@@ -1706,6 +1940,17 @@
         <command label="VICE xplus4 (Standalone)">%EMULATOR_VICE-XPLUS4% %ROM%</command>
         <platform>plus4</platform>
         <theme>plus4</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `pokketstation` (Sony PocketStation), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>pocketstation</name>
+        <fullname>Sony PocketStation</fullname>
+        <path>%ROMPATH%/pocketstation</path>
+        <extension>.mcs .bin .zip .7z</extension>
+        <command label="pokketstation">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pokketstation_libretro.so %ROM%</command>
+        <platform>pocketstation</platform>
+        <theme>pocketstation</theme>
     </system>
     <system>
         <name>pokemini</name>
@@ -1734,6 +1979,9 @@
     <command label="CannonBall (OutRun)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/cannonball_libretro.so %ROM%</command>
         <command label="Mr.Boom (Bomberman)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mrboom_libretro.so %INJECT%=nothing</command>
         <command label="drs (Cave Story)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/doukutsu_rs_libretro.so %ROM%</command>
+    <!-- Añadido 01/10/2026: core libretro `craft` como ALTERNATIVA más del sistema
+         `ports` (Minecraft). No cambia el predeterminado. -->
+    <command label="Minecraft (Craft)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/craft_libretro.so %ROM%</command>
         </system>
     <system>
         <name>ps2</name>
@@ -1822,6 +2070,17 @@
 <command label="DuckStation">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/duckstation_libretro.so %ROM%</command>
 <command label="PCSX ReARMed Rumble">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx_rearmed_rumble_libretro.so %ROM%</command>
         </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `puzzlescript` (PuzzleScript), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>puzzlescript</name>
+        <fullname>PuzzleScript</fullname>
+        <path>%ROMPATH%/puzzlescript</path>
+        <extension>.ps .zip</extension>
+        <command label="pzretro">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/puzzlescript_libretro.so %ROM%</command>
+        <platform>puzzlescript</platform>
+        <theme>puzzlescript</theme>
+    </system>
     <system>
         <name>pv1000</name>
         <fullname>Casio PV-1000</fullname>
@@ -1846,6 +2105,17 @@
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
         <platform>pc, pcwindows</platform>
         <theme>quake</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `reminiscence` (Flashback), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>reminiscence</name>
+        <fullname>Flashback</fullname>
+        <path>%ROMPATH%/reminiscence</path>
+        <extension>.map .zip .7z</extension>
+        <command label="REminiscence">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/reminiscence_libretro.so %ROM%</command>
+        <platform>reminiscence</platform>
+        <theme>reminiscence</theme>
     </system>
     <system>
         <name>samcoupe</name>
@@ -2166,6 +2436,17 @@
         <platform>spectravideo</platform>
         <theme>spectravideo</theme>
     </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `spmp8000emu` (SPMP8000), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>spmp8000</name>
+        <fullname>SPMP8000</fullname>
+        <path>%ROMPATH%/spmp8000</path>
+        <extension>.bin .rom .zip .7z</extension>
+        <command label="SPMP8000Emu">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/spmp8000emu_libretro.so %ROM%</command>
+        <platform>spmp8000</platform>
+        <theme>spmp8000</theme>
+    </system>
     <system>
         <name>steam</name>
         <fullname>Valve Steam</fullname>
@@ -2302,6 +2583,28 @@
         <theme>tg-cd</theme>
     <command label="Beetle SuperGrafx">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_supergrafx_libretro.so %ROM%</command>
         </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `thepowdertoy` (The Powder Toy), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>thepowdertoy</name>
+        <fullname>The Powder Toy</fullname>
+        <path>%ROMPATH%/thepowdertoy</path>
+        <extension>.tpt .zip</extension>
+        <command label="The Powder Toy">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/thepowdertoy_libretro.so %ROM%</command>
+        <platform>thepowdertoy</platform>
+        <theme>thepowdertoy</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `numero` (Texas Instruments TI-83), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>ti83</name>
+        <fullname>Texas Instruments TI-83</fullname>
+        <path>%ROMPATH%/ti83</path>
+        <extension>.83p .8xp .8xk .zip .7z</extension>
+        <command label="Numero">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/numero_libretro.so %ROM%</command>
+        <platform>ti83</platform>
+        <theme>ti83</theme>
+    </system>
     <system>
         <name>ti99</name>
         <fullname>Texas Instruments TI-99</fullname>
@@ -2363,6 +2666,17 @@
         <platform>arcade</platform>
         <theme>type-x</theme>
     </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `uw8` (MicroW8), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>uw8</name>
+        <fullname>MicroW8</fullname>
+        <path>%ROMPATH%/uw8</path>
+        <extension>.w8 .zip</extension>
+        <command label="MicroW8">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/uw8_libretro.so %ROM%</command>
+        <platform>uw8</platform>
+        <theme>uw8</theme>
+    </system>
     <system>
         <name>uzebox</name>
         <fullname>Uzebox Open Source Console</fullname>
@@ -2371,6 +2685,17 @@
         <command label="Uzem">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/uzem_libretro.so %ROM%</command>
         <platform>uzebox</platform>
         <theme>uzebox</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `vaporspec` (VaporSpec), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>vaporspec</name>
+        <fullname>VaporSpec</fullname>
+        <path>%ROMPATH%/vaporspec</path>
+        <extension>.vaporbin .bin .zip .7z</extension>
+        <command label="VaporSpec">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vaporspec_libretro.so %ROM%</command>
+        <platform>vaporspec</platform>
+        <theme>vaporspec</theme>
     </system>
     <system>
         <name>vectrex</name>
@@ -2382,6 +2707,17 @@
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/vectrex vectrex -cart %ROM%</command>
         <platform>vectrex</platform>
         <theme>vectrex</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `vemulator` (VeMUlator), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>vemulator</name>
+        <fullname>VeMUlator</fullname>
+        <path>%ROMPATH%/vemulator</path>
+        <extension>.bin .zip .7z</extension>
+        <command label="VeMUlator">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vemulator_libretro.so %ROM%</command>
+        <platform>vemulator</platform>
+        <theme>vemulator</theme>
     </system>
     <system>
         <name>vic20</name>
@@ -2403,6 +2739,17 @@
         <command label="MAME (Standalone)">%EMULATOR_MAME% -rompath %GAMEDIR%\;%ROMPATH%/videopac videopac -cart %ROM%</command>
         <platform>odyssey2</platform>
         <theme>videopac</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema `vircon32`, copiado TAL CUAL del es_systems.xml
+         oficial de ES-DE. Sin <command> (Standalone): no lo tenemos. -->
+    <system>
+        <name>vircon32</name>
+        <fullname>Vircon32 Virtual Console</fullname>
+        <path>%ROMPATH%/vircon32</path>
+        <extension>.v32 .V32 .7z .7Z .zip .ZIP</extension>
+        <command label="Vircon32">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vircon32_libretro.so %ROM%</command>
+        <platform>vircon32</platform>
+        <theme>vircon32</theme>
     </system>
     <system>
         <name>virtualboy</name>
@@ -2552,6 +2899,17 @@
         <platform>wonderswancolor</platform>
         <theme>wonderswancolor</theme>
     </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `wqxemu` (Wenquxing), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>wqx</name>
+        <fullname>Wenquxing</fullname>
+        <path>%ROMPATH%/wqx</path>
+        <extension>.bin .gam .zip .7z</extension>
+        <command label="WQXEmu">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/wqxemu_libretro.so %ROM%</command>
+        <platform>wqx</platform>
+        <theme>wqx</theme>
+    </system>
     <system>
         <name>x1</name>
         <fullname>Sharp X1</fullname>
@@ -2602,6 +2960,17 @@
         <command label="Xenia Edge (Standalone)">%EMULATOR_XENIA-EDGE% %INJECT%=%BASENAME%.commands %ROM%</command>
         <platform>xbox360</platform>
         <theme>xbox360</theme>
+    </system>
+    <!-- Añadido 01/10/2026: sistema para el core libretro `xrick` (Rick Dangerous), que estaba
+         instalado pero sin sistema en ES-DE (no aparecía en el lanzador). -->
+    <system>
+        <name>xrick</name>
+        <fullname>Rick Dangerous</fullname>
+        <path>%ROMPATH%/xrick</path>
+        <extension>.zip .7z</extension>
+        <command label="XRick">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/xrick_libretro.so %ROM%</command>
+        <platform>xrick</platform>
+        <theme>xrick</theme>
     </system>
     <system>
         <name>zmachine</name>
