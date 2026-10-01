@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-wsquashfs">
+    <comment>Imagen SquashFS comprimida con Zstd (wsquashfs)</comment>
+    <comment xml:lang="es">Imagen SquashFS comprimida con Zstd (wsquashfs)</comment>
+    <icon name="application-x-compressed-tar"/>
+    <glob pattern="*.wsquashfs" weight="80"/>
+    <magic priority="60">
+      <match type="string" value="hsqs" offset="0"/>
+    </magic>
+  </mime-type>
+</mime-info>

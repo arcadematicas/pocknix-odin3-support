@@ -184,6 +184,14 @@ overlay "packages/plutovg"              "packages/shared/plutovg"
 overlay "packages/plutosvg"             "packages/shared/plutosvg"
 overlay "packages/pocknix-soname-compat" "packages/shared/pocknix-soname-compat"
 
+# --- pocknix-wsquashfs: comprimir juegos a .wsquashfs ------------------------
+# Los scripts + los menus de Dolphin + el tipo MIME. En la Odin los juegos viven
+# en una microSD pequeña; comprimirlos libera espacio. Es la MISMA receta que usa
+# el DeckStation x86_64 de Fransis (mksquashfs -comp zstd -b 1M -noappend), asi
+# el resultado es identico. Ver el PKGBUILD para las 3 reglas de los ServiceMenus
+# de KDE 6 (carpeta kio/servicemenus, clave ServiceTypes y el bit de ejecucion).
+overlay "packages/pocknix-wsquashfs"    "packages/shared/pocknix-wsquashfs"
+
 # --- pocknix-vk-valve: el Turnip de VALVE como payload seleccionable ------------
 # Copia SOLO el ICD de Vulkan del paquete aarch64 de Valve (deckard-mesa-linux) a
 # /usr/share/pocknix/vk-arm/26.3.0-valve/, junto al alias libdisplay-info.so.1. El driver del

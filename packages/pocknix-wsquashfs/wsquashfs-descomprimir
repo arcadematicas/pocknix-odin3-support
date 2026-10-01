@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# ============================================================
+#  wsquashfs-descomprimir
+#  Descomprime un .wsquashfs en la misma carpeta que el archivo
+#     unsquashfs -f -d "$dir" "$archivo.wsquashfs"
+# ============================================================
+
+set -uo pipefail
+
+FORZAR=0
+ARCHIVOS=()
+
+usage() {
+    cat <<'EOF'
+uso: wsquashfs-descomprimir [--forzar] ARCHIVO.wsquashfs...
+
+opciones:
+  --forzar   descomprime aunque ya exista la carpeta de destino (unsquashfs -f)
+  -h|--help  esta ayuda
+
+Cada archivo se extrae en "$(dirname ARCHIVO)/$(basename ARCHIVO .wsquashfs)".
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --forzar)  FORZAR=1; shift ;;
+        -h|--help) usage; exit 0 ;;
+        --)        shift; break ;;
+        -*)        echo "ERROR: opción desconocida: $1"; echo; usage; exit 1 ;;
+        *)         ARCHIVOS+=("$1"); shift ;;
+    esac
+done
+
+if [[ ${#ARCHIVOS[@]} -eq 0 ]]; then
+    echo "ERROR: no hay nada que descomprimir"
+    echo
+    usage
+    exit 1
+fi
+
+echo "============================================================"
+echo " wsquashfs-descomprimir  (${#ARCHIVOS[@]} archivo/s)"
+[[ $FORZAR -eq 1 ]] && echo " Opciones : --forzar"
+echo "============================================================"
+
+ok=0; salt=0; fail=0
+
+for a in "${ARCHIVOS[@]}"; do
+    echo "------------------------------------------------------------"
+    echo "Origen  : $a"
+
+    if [[ ! -f "$a" ]]; then
+        echo "ERROR   : no existe o no es un fichero, se salta"
+        fail=$((fail+1))
+        continue
+    fi
+
+    dir="$(dirname "$a")"
+    base="$(basename "$a" .wsquashfs)"
+    destino="$dir/$base"
+
+    if [[ -e "$destino" && $FORZAR -eq 0 ]]; then
+        echo "SALTADO : ya existe la carpeta $destino"
+        echo "          usa --forzar para sobrescribirla (NO se ha tocado)"
+        salt=$((salt+1))
+        continue
+    fi
+
+    echo "Destino : $destino"
+    echo "Extrayendo ... (puede tardar)"
+    echo
+    if unsquashfs -f -d "$destino" "$a"; then
+        echo "OK      : extraído en $destino"
+        ok=$((ok+1))
+    else
+        echo "ERROR   : unsquashfs ha fallado"
+        fail=$((fail+1))
+    fi
+done
+
+echo "============================================================"
+echo " RESUMEN: extraidos=$ok  saltados=$salt  fallidos=$fail"
+echo "============================================================"
+
+[[ $fail -gt 0 ]] && exit 1
+[[ $ok -eq 0 ]] && exit 1
+exit 0

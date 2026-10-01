@@ -1,0 +1,59 @@
+# pocknix-wsquashfs — comprimir/descomprimir juegos a .wsquashfs sin salir de Dolphin.
+# ---------------------------------------------------------------------------
+# POR QUE EXISTE: en el PC de Fransis (DeckStation x86_64) hay un compresor de
+# juegos a SquashFS+Zstd que se usa desde el clic derecho. En la Odin no existia:
+# sus juegos viven en una microSD pequeña y comprimirlos libera espacio. Este
+# paquete lleva las MISMAS herramientas a Pocknix.
+#
+# LA RECETA ES LA MISMA del proyecto, para que el resultado sea identico al que
+# ya usaba:
+#     mksquashfs "$ORIGEN" "$DESTINO" -comp zstd -b 1M -noappend
+#
+# LOS MENUS DE KDE 6 — tres cosas que hay que cumplir (las tres aprendidas a
+# golpes el 01/10/2026):
+#   1) van en /usr/share/kio/servicemenus/  (KF6 cambio la carpeta; kservices5
+#      solo se lee por compatibilidad)
+#   2) la clave `ServiceTypes` (la de verdad, SIN prefijo X-KDE-) tiene que decir
+#      exactamente `KonqPopupMenu/Plugin`
+#   3) el .desktop tiene que ser de root O tener el bit de ejecucion -> 755
+#
+# OJO — LA ODIN PUEDE NO TENER konsole. Por eso los menus NO llaman al script
+# directamente: llaman a wsquashfs-menu-*, que usa konsole si existe y, si no,
+# ejecuta igual y avisa con kdialog.
+pkgname=pocknix-wsquashfs
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Comprimir/descomprimir juegos a .wsquashfs (SquashFS+Zstd) desde el clic derecho o la terminal"
+arch=('any')
+url="https://github.com/arcadematicas/pocknix-odin3-support"
+license=('GPL2')
+# squashfs-tools trae mksquashfs/unsquashfs. Comprobado que el repo congelado que
+# ve el chroot de compilacion ([pocknix-base]) lo tiene, asi que el depends se
+# resuelve al compilar (regla: nada de ALARM que el chroot no vea).
+depends=('squashfs-tools')
+options=('!strip')          # son scripts: nada que pelar
+
+source=('wsquashfs-comprimir'
+        'wsquashfs-descomprimir'
+        'wsquashfs-menu-comprimir'
+        'wsquashfs-menu-descomprimir'
+        'kde/wsquashfs.desktop'
+        'kde/wsquashfs-descomprimir.desktop'
+        'kde/wsquashfs.xml')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+    # --- los 4 scripts, en /usr/local/bin ---
+    install -Dm755 "${srcdir}/wsquashfs-comprimir"         "${pkgdir}/usr/local/bin/wsquashfs-comprimir"
+    install -Dm755 "${srcdir}/wsquashfs-descomprimir"      "${pkgdir}/usr/local/bin/wsquashfs-descomprimir"
+    install -Dm755 "${srcdir}/wsquashfs-menu-comprimir"    "${pkgdir}/usr/local/bin/wsquashfs-menu-comprimir"
+    install -Dm755 "${srcdir}/wsquashfs-menu-descomprimir" "${pkgdir}/usr/local/bin/wsquashfs-menu-descomprimir"
+
+    # --- menus de Dolphin: 0755 (ver la nota de arriba; es la causa de que un
+    #     ServiceMenu se deniegue EN SILENCIO si no es de root y no es ejecutable)
+    install -Dm755 "${srcdir}/kde/wsquashfs.desktop"              "${pkgdir}/usr/share/kio/servicemenus/wsquashfs.desktop"
+    install -Dm755 "${srcdir}/kde/wsquashfs-descomprimir.desktop" "${pkgdir}/usr/share/kio/servicemenus/wsquashfs-descomprimir.desktop"
+
+    # --- tipo MIME, para que Dolphin reconozca los .wsquashfs ---
+    install -Dm644 "${srcdir}/kde/wsquashfs.xml" "${pkgdir}/usr/share/mime/packages/wsquashfs.xml"
+}

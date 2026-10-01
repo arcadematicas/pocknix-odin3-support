@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+# ============================================================
+#  wsquashfs-comprimir
+#  Comprime carpetas (juegos de Linux) a SquashFS con Zstd
+#  Receta del proyecto:
+#     mksquashfs "$ORIGEN" "$DESTINO" -comp zstd -b 1M -noappend
+#  Destino: "$(dirname "$src")/$(basename "$src").wsquashfs"
+# ============================================================
+
+set -uo pipefail
+
+NIVEL=15
+FORZAR=0
+BORRAR=0
+SUBCARPETAS=0
+CARPETAS=()
+ARGUMENTOS=()
+
+# ------------------------------------------------------------
+usage() {
+    cat <<'EOF'
+uso: wsquashfs-comprimir [opciones] CARPETA...
+
+opciones:
+  --subcarpetas   en vez de comprimir CARPETA, comprime CADA subcarpeta suya
+                  (el caso "tengo una carpeta con 30 juegos dentro")
+  --forzar        sobrescribe el .wsquashfs si ya existe
+  --borrar        AL TERMINAR Y VERIFICAR, borra la carpeta original
+                  (destructivo: solo si el archivo verifica)
+  --nivel N       compresión zstd (por defecto 15; usa -Xcompression-level N)
+  -h|--help       esta ayuda
+
+El .wsquashfs se crea en la MISMA carpeta que el juego y con su nombre.
+EOF
+}
+
+# ------------------------------------------------------------
+human() {
+    local b="${1:-0}"
+    if command -v numfmt >/dev/null 2>&1; then
+        numfmt --to=iec --suffix=B --format='%.1f' "$b" 2>/dev/null || echo "${b}B"
+    else
+        echo "${b}B"
+    fi
+}
+
+tam_dir() {  # bytes aparentemente ocupados por un árbol
+    du -sb "$1" 2>/dev/null | awk '{print $1}'
+}
+
+tam_fich() {
+    stat -c '%s' "$1" 2>/dev/null || echo 0
+}
+
+# ------------------------------------------------------------
+# Comprime una carpeta. Devuelve 0 si todo fue bien.
+comprimir_una() {
+    local src="$1"
+    local dir base destino
+    dir="$(dirname "$src")"
+    base="$(basename "$src")"
+    destino="$dir/$base.wsquashfs"
+
+    echo "------------------------------------------------------------"
+    echo "Origen  : $src"
+
+    # Verificación del origen
+    if [[ ! -d "$src" ]]; then
+        echo "ERROR   : no es un directorio, se salta"
+        return 2
+    fi
+    if [[ ! -r "$src" ]]; then
+        echo "ERROR   : no se puede leer, se salta"
+        return 2
+    fi
+    if [[ -L "$src" ]]; then
+        echo "AVISO   : es un enlace simbólico, se usa el destino"
+    fi
+
+    # ¿Existe ya?
+    if [[ -e "$destino" && $FORZAR -eq 0 ]]; then
+        echo "SALTADO : ya existe $destino"
+        echo "          usa --forzar para sobrescribirlo (NO se ha tocado)"
+        return 1
+    fi
+
+    local bytes_orig
+    bytes_orig="$(tam_dir "$src")"
+    echo "Tamaño  : $(human "$bytes_orig")  ($(find "$src" 2>/dev/null | wc -l) entradas)"
+    echo "Destino : $destino"
+    echo "Comprimiendo con zstd nivel $NIVEL ... (puede tardar)"
+    echo
+
+    local log
+    log="$(mktemp)"
+    if ! mksquashfs "$src" "$destino" -comp zstd -b 1M -noappend \
+            -Xcompression-level "$NIVEL" >"$log" 2>&1; then
+        echo "ERROR   : mksquashfs ha fallado:"
+        tail -n 12 "$log" | sed 's/^/          /'
+        rm -f "$log"
+        rm -f "$destino"
+        return 2
+    fi
+    rm -f "$log"
+
+    local bytes_dest
+    bytes_dest="$(tam_fich "$destino")"
+
+    if [[ "${bytes_orig:-0}" -gt 0 ]]; then
+        pct="$(awk -v a="$bytes_dest" -v b="$bytes_orig" 'BEGIN{printf "%.1f", a*100.0/b}')"
+    else
+        pct="?"
+    fi
+    if [[ "${bytes_dest:-0}" -ge "${bytes_orig:-0}" ]]; then
+        echo "OK      : $(human "$bytes_orig") -> $(human "$bytes_dest")  (no se ahorra nada: la carpeta es muy pequena)"
+    else
+        echo "OK      : $(human "$bytes_orig") -> $(human "$bytes_dest")  (queda el ${pct}% del original)"
+    fi
+
+    # ¿Borrar el original?
+    if [[ $BORRAR -eq 1 ]]; then
+        if verificar "$src" "$destino"; then
+            echo "VERIF   : correcto, borrando el original ..."
+            if rm -rf -- "$src"; then
+                echo "BORRADO : $src"
+            else
+                echo "ERROR   : no se pudo borrar $src (se conserva)"
+                return 2
+            fi
+        else
+            echo "AVISO   : la verificación ha fallado, NO se borra nada"
+            echo "          conserva $src y revisa $destino"
+            return 2
+        fi
+    fi
+    return 0
+}
+
+# ------------------------------------------------------------
+# Verifica que el wsquashfs es legible y que cuadra con el origen.
+verificar() {
+    local src="$1" destino="$2"
+    local n_orig n_sq
+
+    if ! unsquashfs -l "$destino" >/dev/null 2>&1; then
+        echo "          el archivo no se puede listar"
+        return 1
+    fi
+    n_orig="$(find "$src" 2>/dev/null | wc -l)"
+    n_sq="$(unsquashfs -l "$destino" 2>/dev/null | grep -c '^[-dlbcps]')"
+    if [[ "$n_orig" != "$n_sq" ]]; then
+        echo "          nº de entradas no coincide: original=$n_orig wsquashfs=$n_sq"
+        return 1
+    fi
+    echo "          $n_sq entradas verificadas"
+    return 0
+}
+
+# ------------------------------------------------------------
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --subcarpetas) SUBCARPETAS=1; shift ;;
+        --forzar)      FORZAR=1; shift ;;
+        --borrar)      BORRAR=1; shift ;;
+        --nivel)
+            if [[ $# -lt 2 ]]; then echo "ERROR: --nivel necesita un número"; exit 1; fi
+            NIVEL="$2"; shift 2 ;;
+        --nivel=*)     NIVEL="${1#*=}"; shift ;;
+        -h|--help)     usage; exit 0 ;;
+        --)            shift; break ;;
+        -*)            echo "ERROR: opción desconocida: $1"; echo; usage; exit 1 ;;
+        *)             ARGUMENTOS+=("$1"); shift ;;
+    esac
+done
+
+for a in ${ARGUMENTOS+"${ARGUMENTOS[@]}"} ${1+"$@"}; do
+    if [[ $SUBCARPETAS -eq 0 ]]; then
+        CARPETAS+=("$a")
+    else
+        [[ -d "$a" ]] || { echo "AVISO   : $a no es un directorio, se salta"; continue; }
+        local_found=$(find "$a" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+        if [[ "$local_found" -eq 0 ]]; then
+            echo "AVISO   : $a no tiene subcarpetas, se salta"
+            continue
+        fi
+        while IFS= read -r -d '' sub; do
+            CARPETAS+=("$sub")
+        done < <(find "$a" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null)
+    fi
+done
+
+if [[ ${#CARPETAS[@]} -eq 0 ]]; then
+    echo "ERROR: no hay nada que comprimir"
+    echo
+    usage
+    exit 1
+fi
+
+echo "============================================================"
+echo " wsquashfs-comprimir   (zstd nivel $NIVEL)"
+echo " Elementos: ${#CARPETAS[@]}"
+OPTS=""
+[[ $SUBCARPETAS -eq 1 ]] && OPTS="$OPTS --subcarpetas"
+[[ $FORZAR -eq 1 ]] && OPTS="$OPTS --forzar"
+[[ $BORRAR -eq 1 ]] && OPTS="$OPTS --borrar"
+echo " Opciones :${OPTS:- (ninguna)}"
+[[ $BORRAR -eq 1 ]] && echo "           AVISO: se borrarán los originales tras verificar"
+echo "============================================================"
+
+ok=0; salt=0; fail=0
+for c in "${CARPETAS[@]}"; do
+    comprimir_una "$c"
+    case $? in
+        0) ok=$((ok+1)) ;;
+        1) salt=$((salt+1)) ;;
+        *) fail=$((fail+1)) ;;
+    esac
+done
+
+echo "============================================================"
+echo " RESUMEN: comprimidos=$ok  saltados=$salt  fallidos=$fail"
+echo "============================================================"
+
+[[ $fail -gt 0 ]] && exit 1
+[[ $ok -eq 0 ]] && exit 1
+exit 0

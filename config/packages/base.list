@@ -144,3 +144,8 @@ tk
 # 7zip: el Updater de DeckStation descomprime assets .7z (p. ej. RetroArch.7z
 # del buildbot) y sin el binario `7z` esa instalacion falla.
 7zip
+
+# squashfs-tools: mksquashfs/unsquashfs, el motor del paquete pocknix-wsquashfs
+# (comprimir juegos a .wsquashfs desde el clic derecho de Dolphin o la terminal).
+# Sin el, los menus y los scripts existen pero fallan al usarlos.
+squashfs-tools

@@ -1,0 +1,10 @@
+# El tipo MIME application/x-wsquashfs solo existe para la base si se refresca
+# el indice compartido-mime; sin esto Dolphin no reconoce los .wsquashfs y el
+# menu de descomprimir no sale (MimeType=application/x-wsquashfs).
+post_install() {
+    update-mime-database /usr/share/mime 2>/dev/null || true
+}
+
+post_upgrade() {
+    post_install
+}

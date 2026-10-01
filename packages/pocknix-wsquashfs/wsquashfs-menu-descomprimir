@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# ============================================================
+#  wsquashfs-menu-descomprimir — envoltorio para el menu del clic derecho
+#  (gemelo de wsquashfs-menu-comprimir; ver alli el por que)
+# ============================================================
+
+set -uo pipefail
+
+SCRIPT=/usr/local/bin/wsquashfs-descomprimir
+
+if command -v konsole >/dev/null 2>&1; then
+    exec konsole --hold -p tabtitle=wsquashfs -e "$SCRIPT" "$@"
+fi
+
+"$SCRIPT" "$@"
+rc=$?
+
+if command -v kdialog >/dev/null 2>&1; then
+    if [ "$rc" -eq 0 ]; then
+        kdialog --title wsquashfs --passivepopup "Descompresión terminada." 10
+    else
+        kdialog --title wsquashfs --error \
+            "La descompresión terminó con errores (código $rc)."
+    fi
+fi
+
+exit "$rc"

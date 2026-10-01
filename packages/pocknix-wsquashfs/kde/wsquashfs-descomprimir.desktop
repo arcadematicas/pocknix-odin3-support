@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Service
+Name=Descomprimir wsquashfs
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=application/x-wsquashfs;
+Actions=Descomprimir;
+X-KDE-Priority=TopLevel
+X-KDE-Submenu=wsquashfs
+X-KDE-Icon=application-x-compressed-tar
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+
+[Desktop Action Descomprimir]
+Name=Descomprimir wsquashfs
+Icon=application-x-compressed-tar
+Exec=/usr/local/bin/wsquashfs-menu-descomprimir %F

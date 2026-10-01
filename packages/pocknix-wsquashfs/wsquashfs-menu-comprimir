@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# ============================================================
+#  wsquashfs-menu-comprimir — envoltorio para el menu del clic derecho
+#
+#  POR QUE EXISTE: el menu necesita una TERMINAL para que se vea el progreso
+#  (mksquashfs tarda y va sacando el porcentaje), pero la Odin puede no tener
+#  konsole instalado. Este envoltorio usa konsole si esta y, si no, comprime
+#  igualmente y avisa del resultado con kdialog. Asi el menu no depende de que
+#  haya un terminal concreto.
+#
+#  Los .desktop llaman AQUI, no al script directamente.
+# ============================================================
+
+set -uo pipefail
+
+SCRIPT=/usr/local/bin/wsquashfs-comprimir
+
+if command -v konsole >/dev/null 2>&1; then
+    exec konsole --hold -p tabtitle=wsquashfs -e "$SCRIPT" "$@"
+fi
+
+# Sin terminal: se hace igual y se avisa al terminar
+"$SCRIPT" "$@"
+rc=$?
+
+if command -v kdialog >/dev/null 2>&1; then
+    if [ "$rc" -eq 0 ]; then
+        kdialog --title wsquashfs --passivepopup "Compresión terminada." 10
+    else
+        kdialog --title wsquashfs --error \
+            "La compresión terminó con errores (código $rc).
+Si algo no se comprimió, los originales siguen intactos."
+    fi
+fi
+
+exit "$rc"
