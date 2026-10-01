@@ -303,6 +303,14 @@ done
 #   /usr/share/decky-plugins/*    -> 48 ficheros (24 en PocknixControl, 24 en Mako): los
 #                                    plugins que pocknix-decky-loader despliega en homebrew.
 #                                    Sin --overwrite tampoco se puede actualizar el plugin.
+#   /usr/lib/modules/*            -> los módulos del kernel. Si el dispositivo se actualizó
+#                                    alguna vez con `flash-kernel.sh` (que hace `tar`+`depmod`
+#                                    a mano), ese /lib/modules/<ver>/ NO lo posee ningún
+#                                    paquete -> `pacman -U` aborta con "exists in filesystem"
+#                                    y el deploy entero falla. Pasó el 01/10/2026 al
+#                                    instalar linux-pocknix-sm8750 7.2.6-1 en la Odin.
+#                                    Es seguro: el paquete trae modules.dep/alias/builtin
+#                                    recalculados por su post_install (depmod).
 #
 # Se limita a esas rutas a propósito: un `--overwrite '*'` también pisaría /usr/bin, /etc o
 # las unidades de systemd, que es justo lo que no queremos que se silencie un cambio de
@@ -310,7 +318,7 @@ done
 # abre la puerta a todo el sistema.
 
 OVERWRITE=( '/opt/deckstation/*' '/usr/share/decky-plugins/PocknixControl/*'
-            '/usr/share/decky-plugins/Mako/*' )
+            '/usr/share/decky-plugins/Mako/*' '/usr/lib/modules/*' )
 
 echo "==> 4/6 instalando en ${HOST}"
 # Los globs van como argv (dsudo los cita uno a uno), NUNCA como texto para un shell.
