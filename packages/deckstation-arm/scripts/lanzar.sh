@@ -1,4 +1,19 @@
 #!/bin/bash
+# --- PATH de emergencia (Alfred, 02/10/2026) ---------------------------
+# Cuando ES-DE se lanza DESDE STEAM, Steam le deja PATH=/tmp/.pathNNNN, una
+# carpeta que solo contiene un enlace a fusermount (la prepara para poder montar
+# el AppImage dentro de su entorno). Con ese PATH este script no encuentra
+# readlink/dirname/find/tr/... y el emulador NO arranca: ES-DE dice que ha
+# lanzado el juego y no da ningun error, y el emulador ni llega a escribir su
+# log. Se ve en el journal como "readlink: command not found".
+#
+# Se pone delante el PATH normal y se conserva el de Steam AL FINAL, porque si
+# hace falta: es el que trae fusermount para montar los AppImage.
+#
+# Diagnostico completo: docs/DECKSTATION-ESDE-NO-LANZA-JUEGOS.md
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH:-}"
+export PATH
+
 # lanzar.sh — Wrapper portable universal para DeckStation (ARM)
 # Redirige HOME al .home del AppImage para que todo quede portable.
 #
