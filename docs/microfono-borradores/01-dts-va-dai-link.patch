@@ -1,0 +1,86 @@
+Subject: [PATCH] AYN Odin 3 (SM8750): habilita el path de captura del VA macro (DMIC)
+
+BORRADOR — no aplicado. Ver ../MICROFONO-INVESTIGACION.md para el diagnóstico.
+
+Añade a kernel/dts/cq8725s-ayn-common.dtsi:
+
+  1. el dai-link "VA Capture" (lpass_vamacro -> VA_CODEC_DMA_TX_0), AL FINAL
+     del nodo `sound` para que la numeracion de PCM no cambie:
+       spk-i2s = 0, wcd-playback = 1, wcd-capture = 2, va-capture = 3
+  2. `status = "okay"` + pinctrl DMIC + vdd-micb-supply en &lpass_vamacro, y
+     `status = "okay"` en &lpass_tlmm. En sm8750.dtsi ambos nodos vienen sin
+     `status` (= disabled), por lo que el platform device no se instanciaba y
+     snd-soc-lpass-va-macro.ko nunca se autoloaba.
+
+NO hace falta tocar `audio-routing`: los DMIC del VA macro y los DMIC internos
+del WCD9395 no son widgets de entrada DAPM (y el routing actual es identico al
+del Odin 2, donde el micro SI funciona).
+
+SOLO con este parche el PCM 3 queda sin ruta en el DSP: hace falta tambien una
+topologia con VA_CODEC_DMA_TX_0 (Fase 1 de MICROFONO-INVESTIGACION.md).
+
+Ref: sm8750-mtp.dts:186-198 y :978-984; sm8750.dtsi:2605-2618, :2620, :2669-2700;
+     sound/soc/codecs/lpass-va-macro.c:1141
+
+--- a/kernel/dts/cq8725s-ayn-common.dtsi
++++ b/kernel/dts/cq8725s-ayn-common.dtsi
+@@ -183,6 +183,28 @@
+ 				sound-dai = <&q6apm>;
+ 			};
+ 		};
++
++		/*
++		 * VA Capture: DMIC de 1 bit del LPASS VA macro.
++		 * DEBE ir al final: el orden de los dai-links fija la numeracion de
++		 * los PCM (spk=0, wcd-play=1, wcd-cap=2, va=3).
++		 * Ref: sm8750-mtp.dts:186-198
++		 */
++		va-dai-link {
++			link-name = "VA Capture";
++
++			codec {
++				sound-dai = <&lpass_vamacro 0>;
++			};
++
++			cpu {
++				sound-dai = <&q6apmbedai VA_CODEC_DMA_TX_0>;
++			};
++
++			platform {
++				sound-dai = <&q6apm>;
++			};
++		};
+ 	};
+ 
+ 	pmic-glink {
+@@ -958,10 +980,30 @@
+ 	status = "okay";
+ };
+ 
++/*
++ * LPASS VA macro: micro digital (DMIC de 1 bit) del Odin 3.
++ * En sm8750.dtsi estos dos nodos vienen SIN `status` (= disabled), asi que no
++ * se instanciaba el platform device y snd-soc-lpass-va-macro.ko nunca se
++ * autoloaba. Sin esto no existe ningun PCM de captura del VA macro.
++ * Ref: sm8750-mtp.dts:978-984, sm8750.dtsi:2605-2618 / :2620 / :2669-2700
++ */
+ &lpass_vamacro {
++	status = "okay";
++
++	pinctrl-0 = <&dmic01_default>, <&dmic23_default>;
++	pinctrl-names = "default";
++
++	/* Sin esta property el widget vdd-micb queda DUMMY (sin mic-bias):
++	 * lpass-va-macro.c:1141 -> SND_SOC_DAPM_REGULATOR_SUPPLY("vdd-micb",0,0) */
++	vdd-micb-supply = <&vreg_l1b_1p8>;
+ 	qcom,dmic-sample-rate = <4800000>;
+ };
+ 
++/* El pinmux DMIC (gpio6/7 dmic1, gpio8/9 dmic2) vive en este nodo. */
++&lpass_tlmm {
++	status = "okay";
++};
++
+ &mdss {
+ 	status = "okay";
+ };
