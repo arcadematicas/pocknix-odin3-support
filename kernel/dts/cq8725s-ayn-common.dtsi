@@ -364,6 +364,12 @@
 			regulator-min-microvolt = <3008000>;
 			regulator-max-microvolt = <4000000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+			regulator-state-mem {
+				/* s2idle (patch 0523/0524/0526): el riel sigue vivo en LPM,
+				 * no se apaga al suspender. De ArmadaOS. */
+				regulator-on-in-suspend;
+				regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+			};
 		};
 
 		vreg_bob2: bob2 {
@@ -512,6 +518,12 @@
 			regulator-allow-set-load;
 			regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM
 						   RPMH_REGULATOR_MODE_HPM>;
+			regulator-state-mem {
+				/* s2idle (patch 0523/0524/0526): el riel sigue vivo en LPM,
+				 * no se apaga al suspender. De ArmadaOS. */
+				regulator-on-in-suspend;
+				regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+			};
 		};
 
 		vreg_l16b_2p8: ldo16 {
@@ -674,6 +686,12 @@
 			regulator-allow-set-load;
 			regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM
 						   RPMH_REGULATOR_MODE_HPM>;
+			regulator-state-mem {
+				/* s2idle (patch 0523/0524/0526): el riel sigue vivo en LPM,
+				 * no se apaga al suspender. De ArmadaOS. */
+				regulator-on-in-suspend;
+				regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+			};
 		};
 
 		vreg_s4g_0p75: smps4 {
@@ -730,6 +748,12 @@
 			regulator-min-microvolt = <1224000>;
 			regulator-max-microvolt = <1340000>;
 			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+			regulator-state-mem {
+				/* s2idle (patch 0523/0524/0526): el riel sigue vivo en LPM,
+				 * no se apaga al suspender. De ArmadaOS. */
+				regulator-on-in-suspend;
+				regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+			};
 		};
 
 		vreg_s8i_0p9: smps8 {
@@ -757,6 +781,12 @@
 			regulator-allow-set-load;
 			regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM
 						   RPMH_REGULATOR_MODE_HPM>;
+			regulator-state-mem {
+				/* s2idle (patch 0523/0524/0526): el riel sigue vivo en LPM,
+				 * no se apaga al suspender. De ArmadaOS. */
+				regulator-on-in-suspend;
+				regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
+			};
 		};
 
 		vreg_l3i_0p88: ldo3 {
@@ -947,6 +977,9 @@
 
 	display_panel: panel@0 {
 		reg = <0>;
+		/* Dither estatico del DPU a 8bpc (parche 2100, de ArmadaOS):
+		 * quita el banding del panel alimentado desde el pipeline de 10 bit. */
+		armada,dpu-8bpc-dither;
 
 		port {
 			panel0_in: endpoint {

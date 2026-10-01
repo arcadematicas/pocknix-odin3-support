@@ -1,0 +1,207 @@
+From: Armada <noreply@armada.local> [Pocknix port]
+Subject: [PATCH] input: haptics: serialize the rumble bridge against remove
+
+Pocknix port of the ArmadaOS patch
+`1003-input-haptics-fix-rumble-bridge-atomic-sleep.patch`
+(armada-os/armada, packages/kernel/patches/).
+
+WHY THE RENUMBERING
+-------------------
+ArmadaOS numbers its patch set independently of ours and the numbers collide:
+armada `1003` is this haptics fix, while OUR `1003` is
+`1003-arm64-dts-qcom-ayn-cq8725s-common-hv-haptics.patch`. Filed here as
+`2101-`, sorting after the whole `20-sm8750` stack, provenance in the name.
+
+WHAT THE BUG WAS
+----------------
+The qcom_spmi_haptics_global_* bridge used to wrap the haptics driver's
+upload, playback and erase callbacks in the haptics input device's
+event_lock. Those callbacks sleep (SPMI regmap I/O, the play mutex,
+cancel_work_sync against the set_gain/stop workers), and RSInput's playback
+callback additionally runs under its own input device's event_lock with
+interrupts disabled -- so the bridge's spin_unlock_irq re-enabled interrupts
+inside the outer critical section and underflowed the preempt count. On the
+AYN Odin 3 that produced "BUG: scheduling while atomic" on every rumble stop
+and intermittent hard lockups.
+
+WHAT WE ALREADY HAD (why this patch is smaller than ArmadaOS's)
+--------------------------------------------------------------
+Our own `1004-input-qcom-hv-haptics-defer-rsinput-playback.patch` already
+fixed the atomic-context half of this, from the haptics side instead of the
+rsinput side:
+
+  - `chip->global_ff_lock`, a mutex, serializes upload and gain in process
+    context, replacing the `event_lock` spin_lock_irq in those two bridges;
+  - `chip->global_playback_work` defers the sleeping
+    haptics_playback()/haptics_erase() to a work item, so the atomic caller
+    only takes `global_playback_lock` and does schedule_work();
+  - that work is drained in `haptics_remove()` and in
+    `haptics_suspend_config()`, together with `stop_work`.
+
+ArmadaOS instead defers on the *rsinput* side (a `rumble_work` on
+`system_freezable_wq`) and then takes its `haptics_global_lock` mutex in all
+three bridge functions, including `..._global_playback()`.
+
+ADAPTATION: what changed, and what was left out
+-----------------------------------------------
+1. PORTED (the two things ArmadaOS's mutex adds that we did NOT have):
+   - `haptics_global_lock` now guards publication of `phapchip` in
+     `haptics_probe()` and its teardown in `haptics_remove()`, and is held
+     across the pointer dereference in
+     `qcom_spmi_haptics_global_upload()` and
+     `qcom_spmi_haptics_global_set_gain()`. That closes the use-after-free
+     window where a bridge call could load `phapchip` and keep using it while
+     remove ran. Both are process-context callers (the input_ff_upload and
+     input_ff_set_gain ioctl paths), so the sleeping mutex is safe there.
+   - `cancel_work_sync(&chip->set_gain_work)` added next to the existing drains
+     in `haptics_suspend_config()`, so a set_gain timer armed before sleep
+     cannot fire into the resume path and race the first post-wake rumble.
+     ArmadaOS does this; our `1004` only drained `stop_work`.
+
+2. DELIBERATELY NOT PORTED -- taking the mutex in `..._global_playback()`. In
+   OUR tree that call still comes straight from RSInput's `ff->playback`,
+   which the input core runs under `guard(spinlock_irqsave)(&dev->event_lock)`
+   (input.c: input_event() -> input_ff_event(), ff-core.c). Adding a
+   `mutex_lock()` there would put a sleeping lock under event_lock with
+   interrupts disabled, i.e. it would REINTRODUCE the very
+   `scheduling while atomic` this series exists to remove. ArmadaOS can take
+   that mutex only because its rsinput half already defers the call to process
+   context; ours does not need to, because our `1004` already keeps that path
+   non-sleeping. A comment at the call site records this, so the absent mutex
+   is not later mistaken for an oversight.
+
+3. DELIBERATELY NOT PORTED -- the whole rsinput half: the `rumble_work` member,
+   `rsinput_rumble_work()`, queueing on `system_freezable_wq`,
+   `input_set_drvdata(drv->input, drv)`, `INIT_WORK()`, the `flush_work()` in
+   `rsinput_remove()`, the new `rsinput_suspend()` and the
+   `DEFINE_SIMPLE_DEV_PM_OPS` change. It is redundant here: our `1004` already
+   defers the playback to `global_playback_work` and drains it on remove and on
+   suspend, and our tree already has `rsinput_suspend()` / `rsinput_pm_ops`
+   taking suspend+resume and powering the MCU off across sleep (from
+   `0508`/`1007`). A second work item per rumble would only add a queue hop.
+
+PATCH FORMAT
+------------
+Regenerated against our patched tree (kernel 7.2.6 + the full 20-sm8750 stack,
+which includes our 1000-1004 haptics work), so it applies with ZERO offset and
+ZERO fuzz. Against the ArmadaOS original, 4 of its 7 hunks in
+qcom-hv-haptics.c and 3 of its 8 in rsinput.c failed to apply.
+
+Signed-off-by: Armada <noreply@armada.local>
+---diff --git a/drivers/input/misc/qcom-hv-haptics.c b/drivers/input/misc/qcom-hv-haptics.c
+--- a/drivers/input/misc/qcom-hv-haptics.c
++++ b/drivers/input/misc/qcom-hv-haptics.c
+@@ -866,6 +866,17 @@
+ static struct haptics_chip *phapchip;
+ static void haptics_global_playback_work(struct work_struct *work);
+ 
++/*
++ * Guards phapchip against remove and serializes the exported bridge against
++ * a concurrent teardown. The bridged upload and set_gain callbacks sleep, so
++ * their bridge callers must be in process context.
++ *
++ * qcom_spmi_haptics_global_playback() is deliberately NOT serialized with this
++ * mutex: rsinput calls it from its ff->playback callback, which the input core
++ * runs under dev->event_lock with interrupts disabled. See the comment there.
++ */
++static DEFINE_MUTEX(haptics_global_lock);
++
+ bool qcom_haptics_vi_sense_is_enabled(void)
+ {
+ 	if (!phapchip)
+@@ -6538,7 +6549,9 @@
+ //		dev_err(chip->dev, "Creating debugfs failed, rc=%d\n", rc);
+ 
+ 	haptics_runtime_autosuspend(chip);
++	mutex_lock(&haptics_global_lock);
+ 	phapchip = chip;
++	mutex_unlock(&haptics_global_lock);
+ 	return 0;
+ 
+ remove_v_gain_error:
+@@ -6554,7 +6567,9 @@
+ {
+ 	struct haptics_chip *chip = dev_get_drvdata(&pdev->dev);
+ 
++	mutex_lock(&haptics_global_lock);
+ 	phapchip = NULL;
++	mutex_unlock(&haptics_global_lock);
+ 	cancel_work_sync(&chip->global_playback_work);
+ 	if (chip->pbs_node)
+ 		of_node_put(chip->pbs_node);
+@@ -6614,6 +6629,8 @@
+ 	int rc;
+ 
+ 	cancel_work_sync(&chip->global_playback_work);
++	/* Pending workers must not fire into the resume path */
++	cancel_work_sync(&chip->set_gain_work);
+ 	cancel_delayed_work_sync(&chip->stop_work);
+ 
+ 	mutex_lock(&play->lock);
+@@ -6785,15 +6802,21 @@
+ 
+ int qcom_spmi_haptics_global_upload(struct ff_effect *effect)
+ {
+-	struct haptics_chip *chip = READ_ONCE(phapchip);
++	struct haptics_chip *chip;
+ 	int ret;
+ 
+-	if (!chip)
++	/* Process context (the input_ff_upload ioctl), so the guard is safe */
++	mutex_lock(&haptics_global_lock);
++	chip = phapchip;
++	if (!chip) {
++		mutex_unlock(&haptics_global_lock);
+ 		return -ENODEV;
++	}
+ 
+ 	mutex_lock(&chip->global_ff_lock);
+ 	ret = haptics_upload_effect(chip->input_dev, effect, NULL);
+ 	mutex_unlock(&chip->global_ff_lock);
++	mutex_unlock(&haptics_global_lock);
+ 
+ 	return ret;
+ }
+@@ -6803,6 +6826,16 @@
+ 	struct haptics_chip *chip = READ_ONCE(phapchip);
+ 	unsigned long flags;
+ 
++	/*
++	 * Called from rsinput's ff->playback, i.e. from input_event() below
++	 * guard(spinlock_irqsave)(&dev->event_lock) -> input_ff_event(). This
++	 * path must stay non-sleeping, so it does NOT take haptics_global_lock
++	 * and must not call the sleeping haptics_playback()/haptics_erase()
++	 * directly. It records the latest request under global_playback_lock and
++	 * defers the real work to global_playback_work, which is drained in
++	 * haptics_remove() and in haptics_suspend_config(). That deferral is the
++	 * fix for the BUG: scheduling while atomic on every rumble stop.
++	 */
+ 	if (!chip)
+ 		return -ENODEV;
+ 
+@@ -6818,10 +6851,15 @@
+ 
+ int qcom_spmi_haptics_global_set_gain(u16 gain)
+ {
+-	struct haptics_chip *chip = READ_ONCE(phapchip);
++	struct haptics_chip *chip;
+ 
+-	if (!chip)
++	/* Process context, so the guard is safe here */
++	mutex_lock(&haptics_global_lock);
++	chip = phapchip;
++	if (!chip) {
++		mutex_unlock(&haptics_global_lock);
+ 		return -ENODEV;
++	}
+ 
+ 	//max is 0x7fff, and minimum is 0x4000 the same values android uses
+ 	gain = clamp(gain, 0x4000, 0x7fff);
+@@ -6829,6 +6867,7 @@
+ 	mutex_lock(&chip->global_ff_lock);
+ 	haptics_set_gain(chip->input_dev, gain);
+ 	mutex_unlock(&chip->global_ff_lock);
++	mutex_unlock(&haptics_global_lock);
+ 
+ 	return 0;
+ }
