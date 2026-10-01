@@ -1,0 +1,76 @@
+# plutosvg — renderizador de SVG en C construido SOBRE plutovg (MIT).
+# ---------------------------------------------------------------------------
+# POR QUE EXISTE ESTE PAQUETE:
+#   Par de `plutovg`. `armsx2_libretro.so` (el emulador de PS2 del set de cores
+#   precompilados que usa DeckStation) enlaza contra las dos:
+#       libplutovg.so.1  (paquete `plutovg`)
+#       libplutosvg.so.0 (este paquete)
+#   En una instalacion limpia de la Odin ninguna de las dos existia y el core
+#   no cargaba. Se resolvia copiando las .so a mano al rootfs.
+#
+# QUE INSTALA:
+#   /usr/lib/libplutosvg.so.0 -> libplutosvg.so.0.0.8  (SOVERSION = MAJOR = 0).
+#   Ojo al 0: es legitimo (upstream marca SOVERSION ${PLUTOSVG_VERSION_MAJOR} y la
+#   version mayor es 0), no un forgotten-build. El numero NO debe cambiar.
+#
+# POR QUE `depends=('plutovg')` Y NO UN VENDORED:
+#   El CMakeLists de plutosvg hace:
+#       find_package(plutovg 1.0.0 QUIET)
+#       if(NOT plutovg_FOUND) add_subdirectory(plutovg) endif()
+#   Ese `add_subdirectory(plutovg)` apunta al SUBMODULO plutovg, que NO viene en
+#   el tarball de github (los .tar.gz de GitHub no incluyen submódulos) -> el
+#   fallback revienta con "add_subdirectory given source ... which is not an
+#   existing directory".
+#   La via buena es que `plutovg` este INSTALADO: como es dependencia, `makepkg -s`
+#   lo instala en el chroot de compilacion desde el repo local y `find_package`
+#   lo encuentra en /usr/lib/cmake/plutovg/ (por eso `plutovg` instala su config).
+#   Por eso plutovg TIENE que compilarse antes: build-packages.sh reintenta los
+#   paquetes fallidos en cascada, asi que el orden alfabetico (plutosvg antes que
+#   plutovg) se resuelve solo.
+#
+# PLUTOSVG_ENABLE_FREETYPE=OFF:
+#   Es el default de upstream y lo que queremos: sin freetype el paquete no
+#   arrastra esa dependencia. ARMSX2 pide libplutosvg.so.0 + libfreetype.so.6 por
+#   separado (freetype ya viene en la imagen), no hace falta meterlo aqui.
+pkgname=plutosvg
+pkgver=0.0.8
+pkgrel=1
+pkgdesc="SVG renderer in C on top of plutovg (MIT)"
+arch=('aarch64')
+url="https://github.com/sammycage/plutosvg"
+license=('MIT')
+depends=('glibc' 'plutovg')
+makedepends=('cmake' 'ninja')
+source=("https://github.com/sammycage/plutosvg/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('49d5cfe772d3aa10cd4879f2f6e189f5083c08e4c8ea01bf3d5b87c97dfca7d2')
+
+build() {
+    cmake -B build -S "${srcdir}/plutosvg-${pkgver}" -GNinja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \
+        -DPLUTOSVG_BUILD_EXAMPLES=OFF \
+        -DPLUTOSVG_ENABLE_FREETYPE=OFF \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib
+    cmake --build build
+}
+
+package() {
+    DESTDIR="${pkgdir}" cmake --install build
+    # El soname que ARMSX2 pide (libplutosvg.so.0). Si upstream subiera el major,
+    # el core dejaria de cargar y el aviso tiene que salir en el BUILD, no en la Odin.
+    if [ ! -e "${pkgdir}/usr/lib/libplutosvg.so.0" ]; then
+        echo "ERROR: no se instalo usr/lib/libplutosvg.so.0 (cambio el SOVERSION en upstream?)" >&2
+        return 1
+    fi
+    if ! readelf -h "${pkgdir}/usr/lib/libplutosvg.so.0" | grep -q 'Machine:.*AArch64'; then
+        echo "ERROR: libplutosvg.so.0 no es AArch64" >&2
+        return 1
+    fi
+    # Y tiene que enlazar contra la plutovg que acabamos de instalar (NO una copia
+    # vendorizada dentro del build dir, que es lo que haria el add_subdirectory).
+    if ! readelf -d "${pkgdir}/usr/lib/libplutosvg.so.0" | grep -q 'libplutovg\.so\.1'; then
+        echo "ERROR: libplutosvg.so.0 no enlaza contra libplutovg.so.1" >&2
+        return 1
+    fi
+}

@@ -5,12 +5,28 @@
 # ALARM's libretro-* packages use, so a vendored core can be replaced transparently.
 pkgname=libretro-cores-pocknix
 pkgver=0.1.0
-pkgrel=6
+# 7: depends de las librerias que piden los cores precompilados (plutovg,
+# plutosvg, pocknix-soname-compat). Sin esto, en una instalacion limpia ARMSX2
+# y uae4arm no cargan. Ver el comentario de depends=() mas abajo.
+pkgrel=7
 pkgdesc="Prebuilt aarch64 libretro cores (vendored, christianhaitian/ArkOS set)"
 arch=('aarch64')
 url="https://github.com/christianhaitian/retroarch-cores"
 license=('GPL2')  # umbrella only; per-core licenses vary, some arcade cores non-commercial
-depends=()
+# POR QUE ESTOS depends (y no antes):
+#   Este paquete NO compila los cores: se baja .so YA CONSTRUIDOS del set de
+#   ArkOS/TheRA, que se compila sobre DEBIAN. Eso deja sonames que ALARM no
+#   tiene, asi que en una instalacion limpia los cores NO cargaban. Concretamente
+#   (verificado con `readelf -d` sobre los .so de este mismo paquete):
+#     armsx2_libretro.so  (PS2)  -> libplutovg.so.1, libplutosvg.so.0, libpcap.so.0.8
+#     uae4arm_libretro.so (Amiga) -> libFLAC.so.8
+#   Los tres shims van en paquetes NUESTROS (no hay nada en ALARM que los traiga):
+#     plutovg + plutosvg        -> las dos librerias de vector, compiladas de verdad.
+#     pocknix-soname-compat     -> libFLAC.so.8 (FLAC 1.3.4) + el symlink libpcap.so.0.8.
+#   Meterlos aqui (y no en la lista de la imagen) es lo que hace que instalar los
+#   cores arrastre las librerias: hasta ahora solo funcionaba porque se copiaron a
+#   mano al rootfs de la Odin. Ver los comentarios de cada PKGBUILD para el detalle.
+depends=('plutovg' 'plutosvg' 'pocknix-soname-compat')
 makedepends=('unzip')
 
 # Pinned: upstream force-updates the files in place, so a floating ref is not reproducible.

@@ -169,6 +169,21 @@ overlay "packages/suyu-libretro" "packages/shared/suyu-libretro"
 overlay "packages/libretro-cores-pocknix" "packages/shared/libretro-cores-pocknix"
 overlay "packages/pocknix-decky"   "packages/shared/pocknix-decky"
 
+# --- librerias + shims que necesitan los cores PRECOMPILADOS de ArkOS --------
+# Los cores de libretro-cores-pocknix se bajan ya construidos (los compilo
+# ArkOS sobre Debian) y enlazan contra sonames que ALARM no tiene:
+#   armsx2_libretro.so  -> libplutovg.so.1 + libplutosvg.so.0 + libpcap.so.0.8
+#   uae4arm_libretro.so -> libFLAC.so.8
+# plutovg y plutosvg se COMPILAN de verdad (no hay nada equivalente en ALARM);
+# pocknix-soname-compat trae libFLAC.so.8 (FLAC 1.3.4, ABI distinta de la 1.5.0
+# del sistema) y el symlink libpcap.so.0.8 -> libpcap.so.1. Los tres son
+# shared (no dependen del SoC) y los engancha `depends` de libretro-cores-pocknix,
+# de modo que instalar los cores arrastra las librerias tambien en una
+# instalacion limpia (antes solo funcionaba porque se copiaron a mano).
+overlay "packages/plutovg"              "packages/shared/plutovg"
+overlay "packages/plutosvg"             "packages/shared/plutosvg"
+overlay "packages/pocknix-soname-compat" "packages/shared/pocknix-soname-compat"
+
 # --- pocknix-vk-valve: el Turnip de VALVE como payload seleccionable ------------
 # Copia SOLO el ICD de Vulkan del paquete aarch64 de Valve (deckard-mesa-linux) a
 # /usr/share/pocknix/vk-arm/26.3.0-valve/, junto al alias libdisplay-info.so.1. El driver del

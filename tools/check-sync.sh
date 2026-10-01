@@ -20,20 +20,29 @@ fi
 drift=0
 missing=0
 
-# compare every file we own against its counterpart in the build tree
+# compare every file we own against its counterpart in the build tree.
+# Los SYMLINKS tambien se comprueban (overlay/usr/bin/FEXInterpreter -> FEX):
+# con `-type f` un symlink se escapaba del check, y al no estar en el arbol el
+# build lo desplegaria... sin él, sin ningun aviso. Un symlink se compara por su
+# TARGET (readlink), no byte a byte del fichero al que apunta.
 cmp_tree() {
   local src="$1" dst="$2" rel
   [ -d "${src}" ] || return 0
   while IFS= read -r -d '' f; do
     rel="${f#${src}/}"
-    if [ ! -e "${dst}/${rel}" ]; then
+    if [ ! -e "${dst}/${rel}" ] && [ ! -L "${dst}/${rel}" ]; then
       echo "  MISSING  ${dst#${OS}/}/${rel}"
       missing=$((missing + 1))
+    elif [ -L "${f}" ]; then
+      if [ ! -L "${dst}/${rel}" ] || [ "$(readlink "${f}")" != "$(readlink "${dst}/${rel}")" ]; then
+        echo "  SYMLINK  ${dst#${OS}/}/${rel} (ours -> $(readlink "${f}"), tree -> $(readlink "${dst}/${rel}" 2>/dev/null || echo 'no es symlink'))"
+        drift=$((drift + 1))
+      fi
     elif ! cmp -s "${f}" "${dst}/${rel}"; then
       echo "  DIFFERS  ${dst#${OS}/}/${rel}"
       drift=$((drift + 1))
     fi
-  done < <(find "${src}" -type f -print0)
+  done < <(find "${src}" \( -type f -o -type l \) -print0)
 }
 
 echo "check-sync: comparing ${HERE} -> ${OS}"
@@ -59,6 +68,13 @@ cmp_tree "${HERE}/packages/deckstation-arm"   "${OS}/packages/shared/deckstation
 cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pygame-ce"
   cmp_tree "${HERE}/packages/suyu-libretro"     "${OS}/packages/shared/suyu-libretro"
   cmp_tree "${HERE}/packages/libretro-cores-pocknix" "${OS}/packages/shared/libretro-cores-pocknix"
+# Librerias + shims de los cores precompilados (ARMSX2/uae4arm los piden por
+# soname). Sin estas lineas, un cambio aqui podria quedarse SIN sincronizar y el
+# fallo apareceria en la Odin ("error while loading shared libraries") en vez de
+# en el build — que es justo lo que hacia este paquete.
+  cmp_tree "${HERE}/packages/plutovg"               "${OS}/packages/shared/plutovg"
+  cmp_tree "${HERE}/packages/plutosvg"              "${OS}/packages/shared/plutosvg"
+  cmp_tree "${HERE}/packages/pocknix-soname-compat" "${OS}/packages/shared/pocknix-soname-compat"
 cmp_tree "${HERE}/packages/pocknix-steam"     "${OS}/packages/shared/pocknix-steam"
 cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-tools"
   cmp_tree "${HERE}/packages/pocknix-decky"   "${OS}/packages/shared/pocknix-decky"

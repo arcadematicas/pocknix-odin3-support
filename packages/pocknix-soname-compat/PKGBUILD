@@ -1,0 +1,143 @@
+# pocknix-soname-compat — "shims" de soname para binarios PRECOMPILADOS de terceros.
+# ---------------------------------------------------------------------------
+# POR QUE EXISTE ESTE PAQUETE:
+#   Los cores libretro que trae `libretro-cores-pocknix` NO los compilamos: se
+#   descargan ya construidos del set de christianhaitian (ArkOS/TheRA), que se
+#   compila sobre DEBIAN. El enlazador de un .so precompilado guarda el SONAME
+#   tal cual lo dejo quien lo compilo, y ALARM/Arch usan OTROS sonames. Como no
+#   podemos tocar el .so (no tenemos sources ni toolchain de ese mundo), la
+#   solucion es poner en el sistema los nombres que esos binarios piden.
+#
+#   En concreto, con `readelf -d` sobre los cores del paquete:
+#
+#     armsx2_libretro.so  ->  libpcap.so.0.8    (Debian lo llama libpcap.so.0.8)
+#     uae4arm_libretro.so ->  libFLAC.so.8     (FLAC 1.3.4)
+#
+#   Los dos sonames quenoi existen en ALARM:
+#     - libpcap: ALARM va por libpcap.so.1 (1.10.x, ABI actual).
+#     - libFLAC: ALARM va por libFLAC.so.14 (FLAC 1.5.0). Ojo: 14 > 8 NO quiere
+#       decir "nuevo y compatible"; libFLAC cambio de API entre 1.3.x y 1.4+ y el
+#       numero de soname SUBE con cada ruptura. Un binario enlazado contra 1.3.4
+#       (soname 8) NO puede usar la 1.5.0 (soname 14): por eso hay que COMPILAR
+#       la 1.3.4, no hacer symlink como con libpcap.
+#
+# QUE HACE CADA COSA:
+#
+#   1) libFLAC.so.8 (y .so.8.3.0) — compilado de verdad desde FLAC 1.3.4.
+#      TODO lo demas de FLAC se borra en package(): el paquete `flac` de ALARM ya
+#      es dueno de /usr/lib/libFLAC.so (el symlink de desarrollo), de
+#      /usr/include/FLAC/* y de /usr/lib/libFLAC++.so*; si los dejamos aqui,
+#      pacman da conflicto de ficheros en la instalacion y el arbol se rompe.
+#      Por eso depends=('flac'): el sistema aporta los headers y la lib sin
+#      nombre, este paquete aporta SOLO el par .so.8* con la ABI vieja.
+#      (BUILD_CXXLIBS=OFF ademas evita que se instale libFLAC++ en ningun caso.)
+#
+#   2) libpcap.so.0.8 -> libpcap.so.1 (symlink RELATIVO, en el mismo dir).
+#      Aqui si vale el symlink porque la API que ARMSX2 usa (abrir/capturar una
+#      interfaz) es ESTABLE entre 0.8 y 1.x: no hay ruta de codigo de 0.8 que
+#      1.10 haya roto en la practica. PROBADO en la Odin con Shadow of the
+#      Colossus: el symlink basta y el juego arranca. En general un symlink de
+#      soname es un apaño con riesgo de crash si el binario usa simbolos que se
+#      fueron; aqui se asume el riesgo conscientemente porque el alternative
+#      (compilar libpcap 0.8) es mucho mas caro para el mismo resultado.
+#
+# QUE CORE NECESITA QUE:
+#   - `armsx2_libretro.so`  (PS2, el emulador de PCSX2 para ARM) necesita el shim
+#     de libpcap y las dos librerias de vector: `plutovg` + `plutosvg`.
+#   - `uae4arm_libretro.so` (Amiga) necesita el shim de FLAC.
+#   Los dos entran por `libretro-cores-pocknix`, que por eso declara este paquete
+#   (y los otros dos) en depends=(): asi los shims llegan a una instalacion limpia
+#   sin que haya que instalar nada a mano.
+#
+# SHARED, no SoC:
+#   Los shims no dependen del SoC (ni del codigo ARM que los llama, que es
+#   precompilado): van a packages/shared/ y se compilan una sola vez.
+pkgname=pocknix-soname-compat
+pkgver=1.3.4
+pkgrel=1
+pkgdesc="ABI soname shims for prebuilt third-party libretro cores (libFLAC.so.8, libpcap.so.0.8)"
+arch=('aarch64')
+url="https://github.com/xiph/flac"
+license=('BSD-3-Clause')
+# `flac` y `libpcap` son de ALARM: existen en el chroot de compilacion y en la
+# imagen, asi que `makepkg -s` los resuelve y el sistema se queda con los
+# headers y los .so sin nombre. Lo que aporta este paquete son SOLO los nombres
+# viejos que piden los cores precompilados.
+depends=('flac' 'glibc' 'libpcap')
+makedepends=('cmake' 'ninja')
+source=("https://github.com/xiph/flac/archive/refs/tags/${pkgver}.tar.gz")
+sha256sums=('53e9dbe3ae54a9f42c1e65afe7f516c02d8393c0c6d56bc455c15e1e044069a9')
+
+build() {
+    # Solo la LIBRERIA. Sin programas (flac/metaflac ya estan en el paquete
+    # `flac` de ALARM), sin C++ (libFLAC++ es de otro paquete), sin docs, sin
+    # ejemplos ni tests: este paquete es una .so y poco mas.
+    # WITH_OGG=OFF quita la dependencia de libogg (FLAC puro, que es lo que
+    # necesita uae4arm).
+    cmake -B build -S "${srcdir}/flac-${pkgver}" -GNinja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_CXXLIBS=OFF \
+        -DBUILD_PROGRAMS=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DBUILD_DOCS=OFF \
+        -DBUILD_TESTING=OFF \
+        -DWITH_OGG=OFF \
+        -DINSTALL_MANPAGES=OFF \
+        -DINSTALL_PKGCONFIG_MODULES=OFF \
+        -DINSTALL_CMAKE_CONFIG_MODULE=OFF \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib
+    cmake --build build
+}
+
+package() {
+    DESTDIR="${pkgdir}" cmake --install build
+
+    # --- 1) FLAC 1.3.4: quedarse SOLO con libFLAC.so.8* ----------------------
+    # Todo lo demas que instala el build de FLAC es territorio del paquete
+    # `flac` de ALARM y solaparlo da conflicto de ficheros en pacman:
+    #   /usr/lib/libFLAC.so        (symlink de desarrollo, es de flac)
+    #   /usr/lib/libFLAC++.so*    (BUILD_CXXLIBS=OFF no lo trae, pero por si acaso)
+    #   /usr/include/FLAC/*        (cabeceras, de flac)
+    #   /usr/include/FLAC++/*     (idem)
+    #   /usr/share/FLAC/cmake/*   (INSTALL_CMAKE_CONFIG_MODULE=OFF no lo trae)
+    rm -f "${pkgdir}/usr/lib/libFLAC.so"
+    rm -f "${pkgdir}"/usr/lib/libFLAC++.so*
+    rm -rf "${pkgdir}/usr/include"
+
+    # --- 2) libpcap: el shim de soname ----------------------------------------
+    # Verificado en la Odin con Shadow of the Colossus (ARMSX2). RELATIVO a
+    # proposito: un symlink con ruta absoluta (/usr/lib/libpcap.so.1) se rompe
+    # si alguien cambia el prefijo; relativo, el loader lo resuelve siempre que
+    # los dos archivos esten en el mismo directorio, que es lo que Guarantee.
+    install -d "${pkgdir}/usr/lib"
+    ln -s libpcap.so.1 "${pkgdir}/usr/lib/libpcap.so.0.8"
+
+    # --- comprobaciones: que el paquete sirve para lo que se hizo -------------
+    if [ ! -e "${pkgdir}/usr/lib/libFLAC.so.8" ]; then
+        echo "ERROR: no se instalo usr/lib/libFLAC.so.8 (FLAC cambio su SOVERSION)" >&2
+        return 1
+    fi
+    if [ -e "${pkgdir}/usr/lib/libFLAC.so" ]; then
+        echo "ERROR: libFLAC.so se colaria y chocaria con el paquete flac" >&2
+        return 1
+    fi
+    if [ -d "${pkgdir}/usr/include" ]; then
+        echo "ERROR: las cabeceras de FLAC chocarian con el paquete flac" >&2
+        return 1
+    fi
+    if [ ! -L "${pkgdir}/usr/lib/libpcap.so.0.8" ] \
+       || [ "$(readlink "${pkgdir}/usr/lib/libpcap.so.0.8")" != "libpcap.so.1" ]; then
+        echo "ERROR: el shim libpcap.so.0.8 no es un symlink relativo a libpcap.so.1" >&2
+        return 1
+    fi
+    # AArch64 de verdad: si esto fuera un .so de otra arquitectura, el fallo
+    # apareceria en el core, no en el build.
+    for so in "${pkgdir}/usr/lib/libFLAC.so.8.3.0" "${pkgdir}/usr/lib/libFLAC.so.8"; do
+        if ! readelf -h "$so" | grep -q 'Machine:.*AArch64'; then
+            echo "ERROR: $(basename "$so") no es AArch64" >&2
+            return 1
+        fi
+    done
+}

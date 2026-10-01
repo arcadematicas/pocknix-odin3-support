@@ -1,0 +1,70 @@
+# plutovg — PlutoVG, la libreria 2D vectorial en C de sammycage.
+# ---------------------------------------------------------------------------
+# POR QUE EXISTE ESTE PAQUETE:
+#   Los cores libretro PRECOMPILADOS de terceros que usamos (los de
+#   christianhaitian / set de ArkOS) piden librerias que ALARM no trae. Concreto:
+#   `armsx2_libretro.so` (el emulador de PS2) enlaza contra
+#       libplutovg.so.1  +  libplutosvg.so.0   (este paquete y `plutosvg`)
+#   y en una instalacion limpia de la Odin el RetroArch no podia cargarlo
+#   ("error while loading shared libraries: libplutovg.so.1"). Solo funcionaba
+#   porque las .so se copiaron a mano al rootfs.
+#   Nota: ARMSX2 tambien necesita libSDL3/libsharpyuv/libwebp — de eso ya se
+#   encarga `libretro-cores-pocknix` via sus propios depends upstream; aqui solo
+#   cubrimos lo que no venia en ninguna parte.
+#
+# QUE INSTALA:
+#   /usr/lib/libplutovg.so.1 -> libplutovg.so.1.3.3  (SOVERSION = MAJOR = 1).
+#   Upstream marca SOVERSION ${PLUTOVG_VERSION_MAJOR} = 1, asi que el soname es
+#   `libplutovg.so.1`; ese numero NO debe cambiar aunque subamos de version.
+#   Ademas deja el .pc y el modulo CMake (`/usr/lib/cmake/plutovg/`) para que
+#   `plutosvg` lo encuentre con `find_package(plutovg 1.0.0)`.
+#
+# CMAKE + NINJA (no autotools):
+#   El upstream trae ambos sistemas de build; usamos CMake porque es el que
+#   instala el config de CMake (imprescindible para el paquete siguiente) y
+#   porque `makepkg -s` ya nos da cmake+ninja de makedepends.
+#
+# PLUTOVG_BUILD_EXAMPLES=OFF:
+#   Los ejemplos necesitan libpng/libjpeg de desarrollo para las capturas; no
+#   los queremos en la imagen.
+#
+# SHARED, no SoC:
+#   No hay nada que tunear por SoC (es codigo C puro, sin JIT ni asm especifico),
+#   asi que va a packages/shared/ y se compila UNA vez para todos los SoC.
+pkgname=plutovg
+pkgver=1.3.3
+pkgrel=1
+pkgdesc="Tiny 2D vector graphics library in C (MIT)"
+arch=('aarch64')
+url="https://github.com/sammycage/plutovg"
+license=('MIT')
+depends=('glibc')
+makedepends=('cmake' 'ninja')
+source=("https://github.com/sammycage/plutovg/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('2b0d17a6e016f47b86f9c00e2cb82600041b1ea1f7d2a00c2d46ae542cbfed3c')
+
+build() {
+    cmake -B build -S "${srcdir}/plutovg-${pkgver}" -GNinja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=ON \
+        -DPLUTOVG_BUILD_EXAMPLES=OFF \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DCMAKE_INSTALL_LIBDIR=lib
+    cmake --build build
+}
+
+package() {
+    DESTDIR="${pkgdir}" cmake --install build
+    # Comprobacion: el soname es la ABI que ARMSX2 pide (libplutovg.so.1). Si
+    # upstream cambiara SOVERSION, este paquete dejaria de servir y el fallo
+    # apareceria en tiempo de carga del core, no en el build -> que aqui reviente.
+    if [ ! -e "${pkgdir}/usr/lib/libplutovg.so.1" ]; then
+        echo "ERROR: no se instalo usr/lib/libplutovg.so.1 (cambio el SOVERSION en upstream?)" >&2
+        return 1
+    fi
+    # Y que sea de verdad una ELF de aarch64, no un binario cruzado por error.
+    if ! readelf -h "${pkgdir}/usr/lib/libplutovg.so.1" | grep -q 'Machine:.*AArch64'; then
+        echo "ERROR: libplutovg.so.1 no es AArch64" >&2
+        return 1
+    fi
+}
