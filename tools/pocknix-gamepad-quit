@@ -113,14 +113,141 @@ def descendientes(pid, vistos=None):
 
 
 # ------------------------------------------------------------------------ la accion
+APPS_ROOT = "/opt/deckstation"
+
+
+def _es_de_deckstation(pid):
+    """¿El proceso vive bajo /opt/deckstation? (los emuladores y nuestras apps, si)"""
+    cmdline = exe = ""
+    try:
+        with open("/proc/%d/cmdline" % pid, "rb") as f:
+            cmdline = f.read().replace(b"\0", b" ").decode("utf-8", "replace")
+    except OSError:
+        return False
+    try:
+        exe = os.readlink("/proc/%d/exe" % pid)
+    except OSError:
+        pass
+    return APPS_ROOT in cmdline or exe.startswith(APPS_ROOT)
+
+
+def _bajo_su_arbol(pid, saltos=6):
+    """El proceso, o alguno de sus padres, vive bajo /opt/deckstation.
+
+    Los emuladores van dentro de un AppImage: el binario que abre la ventana vive
+    en /tmp/.mount_XXXX (extraido), asi que mirando solo su exe/cmdline se
+    descarta. Su padre, en cambio, es el AppImage, que si esta en /opt/deckstation.
+    """
+    actual = pid
+    for _ in range(saltos + 1):
+        if _es_de_deckstation(actual):
+            return True
+        try:
+            with open("/proc/%d/stat" % actual) as f:
+                ppid = int(f.read().split(") ")[1].split()[1])
+        except (OSError, IndexError, ValueError):
+            return False
+        if ppid <= 1:
+            return False
+        actual = ppid
+    return False
+
+
+def pids_de_ventanas(esde=None, excluir=()):
+    """PIDs de las ventanas X visibles que son de DeckStation.
+
+    Hace falta porque la app puede NO colgar de ES-DE: si ES-DE ya no esta
+    corriendo (o el lanzador se desengancha), el arbol de procesos no sirve y la
+    ventana es lo unico que queda.
+
+    FILTRO IMPORTANTE: solo se aceptan procesos que vivan bajo /opt/deckstation.
+    Sin esto se colaba cualquier ventana visible (Steam, el compositor...) y el
+    daemon las cerraba tambien. Aprendido a base de cerrar ventanas de Steam.
+    """
+    vistos = set()
+    for display in (os.environ.get("DISPLAY"), ":1", ":0"):
+        if not display:
+            continue
+        try:
+            ids = subprocess.run(["xdotool", "search", "--onlyvisible", "--name", ".*"],
+                                 capture_output=True, text=True, timeout=5,
+                                 env=dict(os.environ, DISPLAY=display)).stdout.split()
+        except Exception:
+            continue
+        for wid in ids:
+            try:
+                nombre = subprocess.run(["xdotool", "getwindowname", wid],
+                                        capture_output=True, text=True, timeout=3,
+                                        env=dict(os.environ, DISPLAY=display)).stdout.strip()
+                pid = subprocess.run(["xdotool", "getwindowpid", wid],
+                                     capture_output=True, text=True, timeout=3,
+                                     env=dict(os.environ, DISPLAY=display)).stdout.strip()
+            except Exception:
+                continue
+            if not pid or not pid.isdigit():
+                continue
+            p = int(pid)
+            if p == esde or p in excluir or "ES-DE" in nombre:
+                continue
+            if not _bajo_su_arbol(p):
+                log("  (salto la ventana «%s» pid %d: no es de DeckStation)" % (nombre[:40], p))
+                continue
+            vistos.add(p)
+    return sorted(vistos)
+
+
+def con_ascendientes(objetivos, esde=None):
+    """Sube por el arbol hasta la RAIZ de la aplicacion y anade los eslabones.
+
+    Los emuladores van dentro de un AppImage y ademas algunos (PPSSPP) usan un
+    proceso hijo para renderizar: si solo se mata al de la ventana, el principal
+    lo relanza y la app "revive". Hay que cerrar la cadena entera hasta arriba
+    (sin llegar a ES-DE ni a Steam).
+    """
+    extra = set()
+    for p in list(objetivos):
+        actual = p
+        for _ in range(8):
+            try:
+                with open("/proc/%d/stat" % actual) as f:
+                    ppid = int(f.read().split(") ")[1].split()[1])
+            except (OSError, IndexError, ValueError):
+                break
+            if ppid <= 1 or ppid == esde or ppid in objetivos or ppid in extra:
+                break
+            if not _bajo_su_arbol(ppid):
+                break
+            extra.add(ppid)
+            actual = ppid
+    todos = set(objetivos) | extra
+    # y tambien sus descendientes, por si alguno relanza al cerrarse
+    for p in list(todos):
+        todos.update(descendientes(p))
+    return sorted(todos)
+
+
 def cerrar_app(esde, timeout=TIMEOUT):
-    if esde is None:
-        log("  no encuentro ES-DE corriendo; nada que cerrar")
-        return False
-    objetivos = descendientes(esde)
+    objetivos = []
+
+    # 1) lo que cuelga de ES-DE (el caso normal)
+    if esde:
+        objetivos = descendientes(esde)
+    else:
+        log("  ES-DE no esta corriendo; tiro por ventana")
+
+    # 2) ventanas X que no son ES-DE (cubre el caso de arriba y los desenganchados)
+    por_ventana = pids_de_ventanas(esde, excluir=set(objetivos))
+    if por_ventana:
+        log("  ventanas de aplicacion: %s" % " ".join(map(str, por_ventana)))
+        objetivos.extend(por_ventana)
+
+    objetivos = [p for p in objetivos if p != os.getpid()]
     if not objetivos:
-        log("  ES-DE (pid %d) no tiene nada abierto; nada que cerrar" % esde)
+        log("  no encuentro ninguna aplicacion que cerrar (ni hijo de ES-DE ni ventana)")
         return False
+
+    # 3) con sus padres: el runner del AppImage tambien hay que cerrarlo
+    objetivos = con_ascendientes(objetivos, esde)
 
     log("  cerrando %d proceso(s): %s" % (len(objetivos), " ".join(map(str, objetivos))))
     for p in objetivos:
