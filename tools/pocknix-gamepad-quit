@@ -113,7 +113,9 @@ def descendientes(pid, vistos=None):
 
 
 # ------------------------------------------------------------------------ la accion
-APPS_ROOT = "/opt/deckstation"
+# Raiz de DeckStation: configurable, como en los lanzadores. Nada de rutas de una
+# maquina concreta (mismo criterio que los arreglos de DaViDuSkY en tools/).
+APPS_ROOT = os.environ.get("DECKSTATION_ROOT") or "/opt/deckstation"
 
 
 def _es_de_deckstation(pid):
