@@ -8,7 +8,8 @@
 
 | Orden | Fichero | Qué hace | Riesgo |
 |---|---|---|---|
-| **Fase 0** | — | Descubrimiento: extraer `audio_platform.xml` + topología del Android del AYN | 0 |
+| **Fase 0** | [`00-fase0-extraer-android.sh`](00-fase0-extraer-android.sh) | Descubrimiento: extrae `audio_platform.xml` + topología del Android del AYN (solo lectura) y **dice qué camino toca** | 0 |
+| — | [`05-analisis-topologias.md`](05-analisis-topologias.md) | Censo de todas las topologías disponibles (02/10): **ninguna** tiene VA **y** Secondary MI2S, y los AYN con micro funcionando lo llevan en el **WCD** | 0 |
 | **Fase 1** | [`04-obtener-topologia-va.md`](04-obtener-topologia-va.md) | Sustituir `SM8750-AYN-tplg.bin` por una con `VA_CODEC_DMA_TX_0` **y** Secondary MI2S | 🔴 ALTO |
 | **Fase 2** | [`01-dts-va-dai-link.patch`](01-dts-va-dai-link.patch) + [guía](01-dts-va-dai-link.md) | Habilitar `lpass_vamacro`/`lpass_tlmm` + pinctrl + mic-bias + `va-dai-link` | 🟡 MEDIO |
 | **Fase 3** | [`02-ucm-section-mic.conf`](02-ucm-section-mic.conf.md) y/o [`03-servicio-mic-route.md`](03-servicio-mic-route.md) | Encender la ruta en el mixer | 🟡 MEDIO |
