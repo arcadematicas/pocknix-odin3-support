@@ -14,7 +14,8 @@ set -euo pipefail
 VER="${1:?uso: flash-kernel.sh <version> [--reboot]}"
 REBOOT="${2:-}"
 ODIN="${ODIN_HOST:-odin-local}"
-P=/home/fransis/pocknix-odin3-project/pocknix-os
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+P="${POCKNIX_OS_DIR:-${HERE}/../pocknix-os}"
 KERNEL="${P}/build/image/sm8750/KERNEL"
 MODROOT="${P}/build/kernel/sm8750/out/modroot/lib/modules/${VER}"
 STAMP="$(date +%Y%m%d-%H%M)"
