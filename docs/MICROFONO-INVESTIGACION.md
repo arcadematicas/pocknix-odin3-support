@@ -7,6 +7,22 @@
 
 ---
 
+> ## ⚠️ CORRECCIÓN (02/10/2026) — LEER ANTES QUE NADA
+>
+> La conclusión principal de este documento (§2.C: "el micro va por el **VA macro**") **es
+> incorrecta**. Se ha medido en el Android stock del AYN (Fase 0) y el micrófono interno va por el
+> **códec WCD939x** (`primary_in` → `SWR_MIC` / `TX DMIC MUX`), no por el LPASS VA macro.
+>
+> Consecuencias:
+> - **B5 (la topología DSP) NO bloquea nada**: no hace falta sustituir `SM8750-AYN-tplg.bin`.
+> - **La Fase 2 (DTS del va-macro + recompilar kernel) no hace falta.**
+> - El camino bueno es el del **Odin 2** (WCD): UCM + routing, y si no aparece captura, el
+>   **reloj DMIC del WCD** (§8.4).
+>
+> Evidencia y resultado completo: [`microfono-borradores/06-fase0-resultado-android.md`](microfono-borradores/06-fase0-resultado-android.md).
+> Las secciones B1-B4 siguen siendo ciertas como descripción del estado del VA macro en el DT, pero
+> son **irrelevantes para el micrófono interno**.
+
 ## 0. TL;DR
 
 En el Odin 3 **el micrófono interno no tiene ninguna ruta de captura en Linux**, y la causa **no es
