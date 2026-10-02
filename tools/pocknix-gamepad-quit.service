@@ -1,0 +1,16 @@
+[Unit]
+Description=Pocknix: cerrar la app en curso con START+SELECT (emuladores standalone y GUIs de ES-DE)
+Documentation=https://github.com/arcadematicas/pocknix-odin3-support
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/pocknix-gamepad-quit --quiet
+Restart=always
+RestartSec=3
+# NOTA: nada de IOSchedulingClass/Nice/SupplementaryGroups: es un servicio de
+# USUARIO y el kernel no permite esas directivas sin privilegios (falla con
+# status=211/IOPRIO). El acceso al mando lo da el grupo 'input', que 'deck' ya
+# tiene.
+
+[Install]
+WantedBy=default.target

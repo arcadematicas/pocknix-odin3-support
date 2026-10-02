@@ -1,0 +1,241 @@
+#!/usr/bin/env python3
+# ===========================================================================
+#  pocknix-gamepad-quit — cerrar la app en curso desde el mando
+# ===========================================================================
+#  PROBLEMA: los emuladores standalone y las GUIs lanzadas desde ES-DE no
+#  tienen forma de cerrarse. Con teclado seria Alt+F4, pero **no hay gestor de
+#  ventanas** (gamescope es solo compositor, sin WM), asi que Alt+F4 no llega y
+#  el usuario acaba tirando del boton de encendido.
+#
+#  COMPROBADO EN LA ODIN (02/10/2026, PPSSPP):
+#    - Alt+F4 (xdotool key --window ... alt+F4) ....... NO cierra
+#    - WM_DELETE (xdotool windowclose) ................. NO cierra
+#    - SIGTERM ........................................ CIERRA ORDENADO  <-- este
+#
+#  QUE HACE
+#    Escucha el mando fisico (sin capturarlo: el emulador sigue recibiendo sus
+#    botones) y, al detectar START+SELECT, cierra la aplicacion que ES-DE haya
+#    lanzado: primero SIGTERM (para que guarde), y si en TIMEOUT segundos sigue
+#    viva, SIGKILL.
+#
+#  POR QUE "EL HIJO DE ES-DE" Y NO "LA VENTANA ACTIVA"
+#    Porque el foco se queda en ES-DE; la ventana del emulador puede no tenerlo.
+#    ES-DE lanza los emuladores con `Apps/<X>/lanzar.sh` (que hace exec), asi que
+#    la app cuelga de ES-DE en el arbol de procesos. Se cierra TODO lo que cuelgue
+#    de ES-DE, menos ES-DE.
+#
+#  USO
+#    pocknix-gamepad-quit              # servicio: escucha el mando
+#    pocknix-gamepad-quit --status     # que mando usa, que hijo cerraria
+#    pocknix-gamepad-quit --once       # cierra ahora (sin mando, para probar)
+#    pocknix-gamepad-quit --combo START+SELECT
+#    pocknix-gamepad-quit --device "AYN Odin3 Gamepad"
+# ===========================================================================
+import argparse
+import os
+import signal
+import struct
+import subprocess
+import sys
+import time
+
+# input_event: struct timeval (2 x long) + u16 type + u16 code + s32 value
+# En aarch64 long = 8 bytes -> 8+8+2+2+4 = 24
+EVENT_FMT = "llHHi"
+EVENT_SIZE = struct.calcsize(EVENT_FMT)
+EV_SYN, EV_KEY = 0x00, 0x01
+
+# Cdigos de boton (linux/input-event-codes.h)
+BOTONES = {
+    "A": 304, "B": 305, "X": 307, "Y": 308,
+    "SELECT": 314, "START": 315, "MODE": 316,
+    "L1": 310, "R1": 311, "L2": 312, "R2": 313,
+}
+
+TIMEOUT = 5.0          # segundos de cortesia antes del SIGKILL
+ESDE_RE = "usr/bin/es-de"
+VERBOSE = True
+
+
+def log(*a):
+    if VERBOSE:
+        print(*a, flush=True)
+
+
+# ---------------------------------------------------------------- busqueda del mando
+def evento_del_mando(nombres):
+    """Devuelve /dev/input/eventN del primer mando cuyo nombre case."""
+    candidatos = []
+    for entrada in sorted(os.listdir("/sys/class/input")):
+        if not entrada.startswith("event"):
+            continue
+        ruta_nombre = "/sys/class/input/%s/device/name" % entrada
+        try:
+            with open(ruta_nombre) as f:
+                nombre = f.read().strip()
+        except OSError:
+            continue
+        if any(n.lower() in nombre.lower() for n in nombres):
+            candidatos.append(("/dev/input/%s" % entrada, nombre))
+    return candidatos
+
+
+def pid_de_esde():
+    try:
+        salida = subprocess.run(["pgrep", "-f", ESDE_RE], capture_output=True,
+                                text=True, timeout=5).stdout.split()
+        return int(salida[0]) if salida else None
+    except Exception:
+        return None
+
+
+def descendientes(pid, vistos=None):
+    """Todos los procesos que cuelgan de `pid` (BFS)."""
+    if vistos is None:
+        vistos = set()
+    cola = [pid]
+    salida = []
+    while cola:
+        actual = cola.pop(0)
+        try:
+            hijos = subprocess.run(["pgrep", "-P", str(actual)], capture_output=True,
+                                   text=True, timeout=5).stdout.split()
+        except Exception:
+            hijos = []
+        for h in hijos:
+            hp = int(h)
+            if hp in vistos:
+                continue
+            vistos.add(hp)
+            salida.append(hp)
+            cola.append(hp)
+    return salida
+
+
+# ------------------------------------------------------------------------ la accion
+def cerrar_app(esde, timeout=TIMEOUT):
+    if esde is None:
+        log("  no encuentro ES-DE corriendo; nada que cerrar")
+        return False
+    objetivos = descendientes(esde)
+    if not objetivos:
+        log("  ES-DE (pid %d) no tiene nada abierto; nada que cerrar" % esde)
+        return False
+
+    log("  cerrando %d proceso(s): %s" % (len(objetivos), " ".join(map(str, objetivos))))
+    for p in objetivos:
+        try:
+            os.kill(p, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+
+    fin = time.time() + timeout
+    while time.time() < fin:
+        vivos = [p for p in objetivos if os.path.exists("/proc/%d" % p)]
+        if not vivos:
+            log("  cerrado ordenadamente ✓")
+            return True
+        time.sleep(0.25)
+
+    vivos = [p for p in objetivos if os.path.exists("/proc/%d" % p)]
+    if vivos:
+        log("  no respondieron a SIGTERM en %ss; SIGKILL a: %s"
+            % (timeout, " ".join(map(str, vivos))))
+        for p in vivos:
+            try:
+                os.kill(p, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    return True
+
+
+# ------------------------------------------------------------------------- el bucle
+def escuchar(ruta, combo, esde=None):
+    pulsados = set()
+    log("  escuchando %s  (combo: %s)" % (ruta, "+".join(combo)))
+    log("  pulsa %s para cerrar (Ctrl+C para salir)" % "+".join(combo))
+    with open(ruta, "rb", buffering=0) as f:
+        ultimo_disparo = 0.0
+        while True:
+            datos = f.read(EVENT_SIZE)
+            if not datos or len(datos) < EVENT_SIZE:
+                continue
+            _s, _us, tipo, codigo, valor = struct.unpack(EVENT_FMT, datos)
+            if tipo != EV_KEY:
+                continue
+            if valor == 1:
+                pulsados.add(codigo)
+            elif valor == 0:
+                pulsados.discard(codigo)
+
+            if all(BOTONES.get(b, -1) in pulsados for b in combo):
+                ahora = time.time()
+                if ahora - ultimo_disparo > 1.5:      # anti-rebote
+                    ultimo_disparo = ahora
+                    log("\n  COMBO detectado (%s)" % "+".join(combo))
+                    esde = pid_de_esde()
+                    cerrar_app(esde)
+
+
+def main():
+    global VERBOSE, TIMEOUT
+
+    ap = argparse.ArgumentParser(add_help=True)
+    ap.add_argument("--device", action="append", default=None,
+                    help="nombre del mando (por defecto: AYN Odin3 y el virtual de InputPlumber)")
+    ap.add_argument("--combo", default="START+SELECT", help="botones que disparan (por defecto START+SELECT)")
+    ap.add_argument("--timeout", type=float, default=TIMEOUT, help="segundos antes de SIGKILL")
+    ap.add_argument("--status", action="store_true", help="informa y sale")
+    ap.add_argument("--once", action="store_true", help="cierra ahora, sin escuchar el mando")
+    ap.add_argument("--quiet", action="store_true")
+    args = ap.parse_args()
+
+    VERBOSE = not args.quiet
+    TIMEOUT = args.timeout
+    combo = [c.strip().upper() for c in args.combo.split("+")]
+    for c in combo:
+        if c not in BOTONES:
+            print("boton desconocido: %s (validos: %s)" % (c, ", ".join(sorted(BOTONES))))
+            return 2
+
+    nombres = args.device or ["AYN Odin", "Generic Steam Controller", "Microsoft X-Box"]
+    encontrados = evento_del_mando(nombres)
+
+    esde = pid_de_esde()
+
+    if args.status:
+        print("mandos encontrados:")
+        for ruta, nombre in encontrados:
+            print("   %-22s %s" % (ruta, nombre))
+        print("ES-DE: %s" % ("pid %d" % esde if esde else "no esta corriendo"))
+        if esde:
+            print("cerraria: %s" % (" ".join(map(str, descendientes(esde))) or "(nada)"))
+        return 0
+
+    if args.once:
+        print("cerrando lo que cuelgue de ES-DE (pid %s)..." % esde)
+        cerrar_app(esde, TIMEOUT)
+        return 0
+
+    if not encontrados:
+        print("no encuentro ningun mando con esos nombres. Prueba --status")
+        print("  (¿estas en el grupo 'input'? Hace falta leer /dev/input/event*)")
+        return 1
+
+    # si hay varios, se escuchan todos (el fisico y el virtual de InputPlumber)
+    import threading
+    hilos = []
+    for ruta, nombre in encontrados:
+        h = threading.Thread(target=escuchar, args=(ruta, combo, esde), daemon=True)
+        h.start()
+        hilos.append(h)
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n  fuera")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
