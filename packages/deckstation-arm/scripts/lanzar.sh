@@ -104,5 +104,14 @@ elif [ -n "$DISPLAY" ] && [ -z "$SDL_VIDEODRIVER" ]; then
   export SDL_VIDEODRIVER=x11
 fi
 
+# 4b. UI de ESCRITORIO: Plasma Mobile no tiene gestor de ventanas, asi que un
+#     dialogo mas grande que la pantalla no se puede arrastrar (le pasa a los
+#     ajustes de Azahar, Cemu y compania). Se escala la interfaz hacia abajo SOLO
+#     en esa sesion, para no tocar el modo juego.
+if [ -n "${QT_QUICK_CONTROLS_MOBILE:-}" ] || pgrep -f startplasmamobile >/dev/null 2>&1; then
+  export QT_SCALE_FACTOR="${QT_SCALE_FACTOR:-0.8}"
+  export QT_AUTO_SCREEN_SCALE_FACTOR="${QT_AUTO_SCREEN_SCALE_FACTOR:-0}"
+fi
+
 # 5. Lanzamos
 exec "$EXEC_TARGET" "$@"
