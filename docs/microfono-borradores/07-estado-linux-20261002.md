@@ -93,3 +93,44 @@ arecord -D hw:0,2 -f S16_LE -c 2 -r 48000 -d 3 /tmp/mic.wav && echo "GRABA"
 wpctl status | sed -n '/Sources:/,/Filters:/p'      # ¿aparece alguna fuente?
 amixer -c 0 sget 'ADC2 MUX'                          # ¿sigue en CH2_AMIC2?
 ```
+
+---
+
+## 8. Cierre (02/10/2026)
+
+**Estado: APARCADO por decisión de Fransis** — *"dejemos que el resto de la gente vaya aportando
+soluciones"*. No se sigue trabajando en el `EIO`.
+
+### Lo que se ha aportado
+
+Comentario en la **issue de ArmadaOS #362** (la del Odin 3, que llevaba un mes con **cero
+comentarios**) con todo lo medido:
+https://github.com/armada-os/armada/issues/362#issuecomment-5949639809
+
+Incluye: la ruta real del micro (WCD939x / AMIC2, no el VA macro), el PCM de captura que sí existe,
+el `EIO`, **todo lo descartado** (estado del mixer, conexión FE↔BE, perfil de tarjeta) para que nadie
+repita pruebas, la **discrepancia AMIC vs DMIC** como siguiente hipótesis, y el ruido del ADSP en
+`dmesg`. También nos ofrecemos a compartir la extracción del Android.
+
+### Para quien lo retome
+
+1. **Hipótesis DMIC vs AMIC** (la más concreta): nuestro DTS enruta `AMIC2`; el Android del mismo
+   aparato, el Odin 2 y el KONKR usan rutas **DMIC/SWR_MIC**. Cambiar el `audio-routing` del
+   `sound` en `cq8725s-ayn-common.dtsi` y recompilar/flashear es **un ciclo de ~45 min**.
+2. **El `EIO` del q6apm** en la captura: es donde está la incertidumbre real. Si es del driver/DSP en
+   sm8750, es cosa de upstream.
+3. Con el PCM funcionando, la sección de Mic de la UCM son 2-4 horas (con backup, porque exponer un
+   PCM que falla puede tumbar el perfil de audio).
+
+### Estado de la consola
+
+**Nada instalado ni modificado.** Solo se tocaron 3-4 controles de **mixer** a mano (ruta de
+captura), que son volátiles: se pierden al reiniciar y no afectan a la reproducción. El audio
+(altavoz y auriculares) sigue igual.
+
+### Material guardado
+
+- Android: `~/odin3-android-audio/` en el PC + `odin3-android-audio-20261002.tar.zst` (también en
+  `~/odin-backups/` del portátil).
+- Documentos: `05-analisis-topologias.md`, `06-fase0-resultado-android.md`, este `07`.
+- Aviso de corrección en la cabecera de `../MICROFONO-INVESTIGACION.md`.
