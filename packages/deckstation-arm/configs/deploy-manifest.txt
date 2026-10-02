@@ -17,6 +17,11 @@
 # El destino puede ser un fichero o un directorio (se copia su contenido).
 # ======================================================================
 
+# --- Lanzadores de utilidades en ES-DE ----------------------------------
+# Entradas del sistema "Desktop Applications": scripts sueltos que ES-DE lanza
+# con el shell del sistema (acepta .sh). force: son 100% nuestros.
+roms/desktop/Updater.sh|ROMs/desktop/Updater.sh|force
+
 # --- ES-DE (frontend) ---------------------------------------------------
 es-de/custom_systems/es_find_rules.xml|DeckStation.AppImage.home/ES-DE/custom_systems/es_find_rules.xml|keep
 es-de/custom_systems/es_systems.xml|DeckStation.AppImage.home/ES-DE/custom_systems/es_systems.xml|keep
