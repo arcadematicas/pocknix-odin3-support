@@ -24,10 +24,13 @@
 
 set -euo pipefail
 
-IMG="/home/fransis/pocknix-odin3-project/pocknix-os/build/image/sm8750/pocknix-sm8750-sd.img"
-KERNEL="/home/fransis/pocknix-odin3-project/pocknix-os/build/image/sm8750/KERNEL"
-MODROOT="/home/fransis/pocknix-odin3-project/pocknix-os/build/kernel/sm8750/out/modroot"
-BACKUP="/run/media/fransis/ROMS16TB/proyectos Alfred/pocknix-odin3/backup-sd-2026-09-18"
+# Rutas derivadas del propio repo (portable). Override: POCKNIX_OS_DIR / POCKNIX_SD_BACKUP.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+P="${POCKNIX_OS_DIR:-${HERE}/../pocknix-os}"
+IMG="${P}/build/image/sm8750/pocknix-sm8750-sd.img"
+KERNEL="${P}/build/image/sm8750/KERNEL"
+MODROOT="${P}/build/kernel/sm8750/out/modroot"
+BACKUP="${POCKNIX_SD_BACKUP:-/run/media/fransis/ROMS16TB/proyectos Alfred/pocknix-odin3/backup-sd-2026-09-18}"
 
 DEV="${1:-}"
 if [ -z "$DEV" ]; then echo "USO: sudo $0 /dev/sdX"; exit 1; fi
