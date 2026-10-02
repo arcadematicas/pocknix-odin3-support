@@ -1,0 +1,4 @@
+# Steam needs group access to the deck-uhid hidraw node.
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", KERNELS=="0003:28DE:12F0.*", GROUP="input", MODE="0660"
+
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT}=="1", ATTRS{name}=="pmi8998_haptics", TAG+="uaccess", ENV{FEEDBACKD_TYPE}="vibra"
