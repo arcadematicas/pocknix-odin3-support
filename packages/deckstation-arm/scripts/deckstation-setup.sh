@@ -304,9 +304,9 @@ deploy_lanzar_sh() {
 # Bajarlo de la fuente oficial evita depender de un binario que no esta publicado
 # en ningun sitio (el repo de DeckStation no tiene releases): sin este paso, una
 # instalacion limpia se queda SIN front-end y `deckstation` no arranca.
-ESDE_VERSION="${ESDE_VERSION:-3.4.1}"
-ESDE_URL="${ESDE_URL:-https://gitlab.com/es-de/emulationstation-de/-/package_files/326321114/download}"
-ESDE_MD5="${ESDE_MD5:-9e459692ebd86dc5f0524f4c2bbad3b3}"
+ESDE_VERSION="${ESDE_VERSION:-3.5.0}"
+ESDE_URL="${ESDE_URL:-https://gitlab.com/es-de/emulationstation-de/-/package_files/357718204/download}"
+ESDE_MD5="${ESDE_MD5:-540f1aa13c34779a48cc66fc56df0966}"
 
 setup_esde() {
     local destino="${DECKSTATION_ROOT}/DeckStation.AppImage"
