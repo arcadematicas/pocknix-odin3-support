@@ -278,30 +278,40 @@ def cerrar_app(esde, timeout=TIMEOUT):
 
 # ------------------------------------------------------------------------- el bucle
 def escuchar(ruta, combo, esde=None):
+    """Lee un mando hasta que su nodo desaparece.
+
+    IMPORTANTE: los nodos de /dev/input cambian de numero al cambiar de sesion
+    (InputPlumber recrea los virtuales, gamescope entra y sale...). Cuando eso
+    pasa, f.read() lanza OSError: [Errno 19] No such device y, si el hilo se
+    muere, el demonio se queda sordo para siempre. Aqui simplemente se devuelve y
+    el vigilante de main() lo vuelve a levantar, apuntando al nodo nuevo.
+    """
     pulsados = set()
     log("  escuchando %s  (combo: %s)" % (ruta, "+".join(combo)))
-    log("  pulsa %s para cerrar (Ctrl+C para salir)" % "+".join(combo))
-    with open(ruta, "rb", buffering=0) as f:
-        ultimo_disparo = 0.0
-        while True:
-            datos = f.read(EVENT_SIZE)
-            if not datos or len(datos) < EVENT_SIZE:
-                continue
-            _s, _us, tipo, codigo, valor = struct.unpack(EVENT_FMT, datos)
-            if tipo != EV_KEY:
-                continue
-            if valor == 1:
-                pulsados.add(codigo)
-            elif valor == 0:
-                pulsados.discard(codigo)
+    ultimo_disparo = 0.0
+    try:
+        with open(ruta, "rb", buffering=0) as f:
+            while True:
+                datos = f.read(EVENT_SIZE)
+                if not datos or len(datos) < EVENT_SIZE:
+                    continue
+                _s, _us, tipo, codigo, valor = struct.unpack(EVENT_FMT, datos)
+                if tipo != EV_KEY:
+                    continue
+                if valor == 1:
+                    pulsados.add(codigo)
+                elif valor == 0:
+                    pulsados.discard(codigo)
 
-            if all(BOTONES.get(b, -1) in pulsados for b in combo):
-                ahora = time.time()
-                if ahora - ultimo_disparo > 1.5:      # anti-rebote
-                    ultimo_disparo = ahora
-                    log("\n  COMBO detectado (%s)" % "+".join(combo))
-                    esde = pid_de_esde()
-                    cerrar_app(esde)
+                if all(BOTONES.get(b, -1) in pulsados for b in combo):
+                    ahora = time.time()
+                    if ahora - ultimo_disparo > 1.5:      # anti-rebote
+                        ultimo_disparo = ahora
+                        log("\n  COMBO detectado (%s)" % "+".join(combo))
+                        cerrar_app(pid_de_esde())
+    except OSError as e:
+        log("  %s ya no existe (%s); toca volver a buscar los mandos" % (ruta, e))
+        return
 
 
 def main():
@@ -349,16 +359,22 @@ def main():
         print("  (¿estas en el grupo 'input'? Hace falta leer /dev/input/event*)")
         return 1
 
-    # si hay varios, se escuchan todos (el fisico y el virtual de InputPlumber)
+    # Vigilante: un hilo por cada mando que exista AHORA. Como los nodos cambian
+    # de numero al cambiar de sesion, cada pocos segundos se vuelve a enumerar y
+    # se levantan los que falten. Sin esto el demonio se queda sordo (paso el
+    # 02/10: el hilo murio con "No such device" y no volvio).
     import threading
-    hilos = []
-    for ruta, nombre in encontrados:
-        h = threading.Thread(target=escuchar, args=(ruta, combo, esde), daemon=True)
-        h.start()
-        hilos.append(h)
+    vivos = {}
+    log("  vigilando mandos (se re-escanean cada 5 s)")
     try:
         while True:
-            time.sleep(1)
+            for ruta, nombre in evento_del_mando(nombres):
+                h = vivos.get(ruta)
+                if h is None or not h.is_alive():
+                    h = threading.Thread(target=escuchar, args=(ruta, combo, None), daemon=True)
+                    h.start()
+                    vivos[ruta] = h
+            time.sleep(5)
     except KeyboardInterrupt:
         print("\n  fuera")
     return 0
