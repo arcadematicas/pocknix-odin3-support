@@ -23,9 +23,13 @@
 #   - Los cores que crashean NO deben estar en DEST (ver smoke-cores-es-de.sh).
 # ============================================================================
 """v4 (final): añade cores como alternativas en es_systems.xml. Ancla = último <command>, o antes de <platform>."""
-import re, shutil, xml.etree.ElementTree as ET
+import os, re, shutil, xml.etree.ElementTree as ET
 
-F = '/home/fransis/deckstation-arm/configs/es-de/custom_systems/es_systems.xml'
+# Ruta derivada de la ubicacion del propio script (portable); override: ES_SYSTEMS_XML.
+_PKG = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+F = os.environ.get('ES_SYSTEMS_XML',
+                   os.path.join(_PKG, 'configs', 'es-de', 'custom_systems', 'es_systems.xml'))
 META = '/tmp/opencode/cores-meta.txt'
 TM = '<command label="{lab}">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/{core}_libretro.so %ROM%</command>'
 
