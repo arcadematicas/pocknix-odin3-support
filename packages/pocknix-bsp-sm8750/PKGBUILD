@@ -13,9 +13,12 @@
 # (mem_sleep_default=s2idle, see kernel-cmdline) — the only safe suspend mode on this SoC (deep
 # wedges it) — so no sleep.conf.d drop-in is needed (unlike sm8550, whose s2idle pin lives in the BSP).
 #
-# No pocknix-firmware-sm8750 dep: the Odin 3's proprietary firmware blobs (adsp.mbn / adsp_dtb.mbn
-# charger firmware, etc.) are NOT in this repo — build-image.sh's install_firmware() applies them
-# to the image rootfs from devices/sm8750/firmware/ (see its README).
+# pocknix-firmware-sm8750 is a REAL dep (mirrors pocknix-bsp-sm8550): it rides this dep edge to
+# the fleet. `-Syu` never installs a package NAME that is not in the dependency graph, so the
+# firmware blobs (the battery-auth ADSP pair, the WCN7860 wifi stack, the audio topology, the VPU
+# and CDSP blobs) update on the device instead of only ever helping a freshly flashed card.
+# build-image.sh's install_firmware() no longer rsyncs them into the rootfs for this SoC — see
+# devices/sm8750/firmware/README.md for provenance and the `updates/` rationale.
 #
 # THE DAEMONS BELOW ARE OURS (arcadematicas/pocknix-odin3-support). Until 15/09/2026 they were
 # installed BY HAND on the device and existed only in the support repo, so a freshly built image
@@ -23,14 +26,15 @@
 # session-manager shim, no Steam UI watchdog). They are packaged here so pacman tracks them.
 pkgname=pocknix-bsp-sm8750
 pkgver=0.2.0
-pkgrel=5
+pkgrel=6
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
 license=('GPL2')
 # python is for the button/OLED/pergame/MangoHud daemons and the session-manager shim; sudo is
 # for the sudoers.d drop-in that lets the shim switch power profiles without a password.
-depends=('pocknix-bsp-common' 'python' 'sudo' 'sdl2')
+# pocknix-firmware-sm8750 is ours (pocknix-os localrepo), so it is visible to the build chroot.
+depends=('pocknix-bsp-common' 'pocknix-firmware-sm8750' 'python' 'sudo' 'sdl2')
 # gcc + SDL2 headers to build the OLED pixel refresher (see build()).
 makedepends=('sdl2')
 # Exactly one device BSP may be installed (wrong-device guard for a shared repo).

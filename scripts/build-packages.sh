@@ -219,16 +219,32 @@ build_one() {
     fi
     cp -a "${kout}" "${BROOT}/build/${name}/staged"
   ;; esac
-  # pocknix-firmware-<soc> is thin too: it packages vendor overlay blobs listed in
-  # its ./paths. Staged here because the gitignored vendor/ tree exists only on the
-  # build host, never inside the chroot.
+  # pocknix-firmware-<soc> is thin too: it packages firmware blobs listed in its ./paths.
+  # Staged here because vendor/ lives only on the build host, never inside the chroot.
+  # Blob sources, searched in this order (first hit wins, so a committed override always
+  # beats the vendor copy of the same path):
+  #   1. devices/<device>/firmware/  — our own committed overrides. Only the sm8750 family
+  #      has one: the AYN Odin 3 battery-auth ADSP pair, whose qcom/sm8750/*.mbn copy in
+  #      ROCKNIX/extra-firmware lacks the battery-authentication config (see that dir's README).
+  #   2. FW_EXTRA_SRC_REL           — ROCKNIX/extra-firmware, where the sm8750 blobs that
+  #      upstream linux-firmware does not have at all live (only sm8750's profile sets it).
+  #   3. FW_SRC_REL                 — ROCKNIX's kernel-overlays firmware overlay (sm8550's).
+  local -a fwroots=()
+  if [ -d "${DEVICE_DIR}/firmware" ]; then fwroots+=("${DEVICE_DIR}/firmware"); fi
+  if [ -n "${FW_EXTRA_SRC_REL:-}" ]; then fwroots+=("${VENDOR_DIR}/${FW_EXTRA_SRC_REL}"); fi
+  fwroots+=("${VENDOR_DIR}/${FW_SRC_REL}")
   case "${name}" in pocknix-firmware-*)
-    local fwsrc="${POCKNIX_ROOT}/vendor/rocknix-${name#pocknix-firmware-}/filesystem/usr/lib/kernel-overlays/base/lib/firmware"
-    local fwp
+    local fwp fwroot fwfrom
     while IFS= read -r fwp; do
       [ -n "${fwp}" ] || continue
-      [ -f "${fwsrc}/${fwp}" ] || die "${name}: ${fwp} missing from ${fwsrc} — vendor overlay incomplete (make sync?)"
-      install -Dm644 "${fwsrc}/${fwp}" "${BROOT}/build/${name}/staged/${fwp}"
+      fwfrom=""
+      for fwroot in "${fwroots[@]}"; do
+        if [ -f "${fwroot}/${fwp}" ]; then fwfrom="${fwroot}/${fwp}"; break; fi
+      done
+      [ -n "${fwfrom}" ] || die "${name}: ${fwp} is in no firmware source — searched: ${fwroots[*]}
+  Run 'make sync' (vendor/ is gitignored and is only on the build host), or fix ./paths /
+  devices/${DEVICE}/firmware/. Without it the image would ship with missing firmware."
+      install -Dm644 "${fwfrom}" "${BROOT}/build/${name}/staged/${fwp}"
     done < "${pkgdir}/paths"
   ;; esac
   # Drift guard: a device BSP's committed kernel-cmdline must byte-match its own device

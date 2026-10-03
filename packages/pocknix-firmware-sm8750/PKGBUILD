@@ -1,0 +1,51 @@
+# The SM8750 family's vendor firmware as a PACKAGE (same contract as pocknix-firmware-sm8550).
+#
+# WHY a package (build-image.sh used to rsync these blobs into the image rootfs):
+#   1. -Syu. An rsync only ever helps a freshly flashed card: an installed device could not
+#      update its firmware without a reflash, so every firmware fix needed a new image. As a
+#      package the fleet gets firmware updates like everything else (pocknix-bsp-sm8750 depends
+#      on it, and -Syu never installs a new package name without a dep edge).
+#   2. updates/. Every blob lands in /usr/lib/firmware/updates/, which the kernel searches
+#      BEFORE /usr/lib/firmware/ (fw_path[] in drivers/base/firmware_loader/main.c) and which
+#      no other package owns. That is the whole point here: upstream linux-firmware DOES ship
+#      the bare qcom/sm8750/{adsp,cdsp,gen80000_zap}.mbn paths (verified 03/10/2026 against
+#      git.kernel.org/.../linux-firmware.git/tree/qcom/sm8750) and ALARM's linux-firmware-qcom
+#      (in base.list) lays them down at exactly those bare paths. An override installed at the
+#      bare path is therefore silently reverted to stock by any linux-firmware transaction,
+#      and the stock adsp_dtb.mbn carries no battery-authentication config: the ADSP charger
+#      firmware falls into TEST MODE (state 9) and the battery stops charging. That is the
+#      same trap pocknix-firmware-sm8550 exists for (see its comment).
+#
+# WHERE THE BLOBS COME FROM (nothing is fetched at pacman time; scripts/build-packages.sh
+# stages every entry of ./paths into ./staged, searching these roots in this order):
+#   1. devices/sm8750/firmware/ (COMMITTED, see its README) — our two charger blobs, the ADSP
+#      pair that carries the battery-authentication config ROCKNIX's copy lacks. First in the
+#      search order, so our copy wins over any vendor copy of the same path.
+#   2. vendor/rocknix-extra-firmware/SM8750/ (gitignored; ROCKNIX/extra-firmware pinned to
+#      commit 30c56e2, downloaded by `make sync`) — the blobs upstream linux-firmware does not
+#      have at all: the ath12k WCN7860 wifi stack, the board-namespaced ayn/odin3 + konkr/pfe
+#      ADSP/CDSP, the ASoC topologies, the ADSP .jsn service configs, the BT and VPU blobs.
+pkgname=pocknix-firmware-sm8750
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="SM8750 family vendor firmware (AYN Odin 3: WCN7860 wifi, battery-auth ADSP charger, CDSP, audio topology, VPU; KONKR PF Elite), immune to linux-firmware updates"
+arch=('any')
+url="https://github.com/shuuri-labs/pocknix-os"
+license=('custom:qcom-firmware')
+# firmware blobs must ship byte-identical; some parse as ELF and strip would alter them
+options=('!strip')
+source=('paths')
+sha256sums=('SKIP')
+
+package() {
+  local staged="${startdir}/staged"   # populated by scripts/build-packages.sh (vendor/ + devices/<dev>/firmware)
+  local p
+  while IFS= read -r p; do
+    [ -n "${p}" ] || continue
+    if [ ! -f "${staged}/${p}" ]; then
+      echo "${pkgname}: ${p} not staged — build via 'make packages' (vendor/ lives on the build host)." >&2
+      return 1
+    fi
+    install -Dm644 "${staged}/${p}" "${pkgdir}/usr/lib/firmware/updates/${p}"
+  done < "${srcdir}/paths"
+}

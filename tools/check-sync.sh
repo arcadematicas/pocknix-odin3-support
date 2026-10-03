@@ -48,6 +48,11 @@ cmp_tree() {
 echo "check-sync: comparing ${HERE} -> ${OS}"
 cmp_tree "${HERE}/packages/pocknix-bsp-sm8750"    "${OS}/devices/sm8750/packages/pocknix-bsp-sm8750"
 cmp_tree "${HERE}/packages/pocknix-device-sm8750" "${OS}/devices/sm8750/packages/pocknix-device-sm8750"
+# El firmware del SoC como PAQUETE: PKGBUILD + ./paths. Si este PKGBUILD se queda atras, la
+# imagen sale con el firmware viejo (o sin el) SIN QUE NADA LO DIGA — y el par ADSP del cargador
+# es justo lo que evita que la bateria vuelva a TEST MODE. Los blobs no se comprueban aqui: los
+# stagea build-packages.sh desde devices/<dev>/firmware/ y vendor/ (gitignored, en el host).
+cmp_tree "${HERE}/packages/pocknix-firmware-sm8750" "${OS}/devices/sm8750/packages/pocknix-firmware-sm8750"
 cmp_tree "${HERE}/packages/linux-pocknix-sm8750"      "${OS}/packages/soc/linux-pocknix-sm8750"
 cmp_tree "${HERE}/packages/pocknix-bootloader-sm8750" "${OS}/packages/soc/pocknix-bootloader-sm8750"
 cmp_tree "${HERE}/packages/pocknix-bsp-common"    "${OS}/packages/shared/pocknix-bsp-common"

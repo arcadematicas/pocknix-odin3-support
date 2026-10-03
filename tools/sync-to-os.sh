@@ -49,6 +49,12 @@ overlay() {
 # --- our own device packages (whole directories) -----------------------------
 mirror "packages/pocknix-bsp-sm8750"    "devices/sm8750/packages/pocknix-bsp-sm8750"
 mirror "packages/pocknix-device-sm8750" "devices/sm8750/packages/pocknix-device-sm8750"
+# El firmware del SoC como PAQUETE (mismo contrato que pocknix-firmware-sm8550): sin esto solo
+# se actualizaba en una tarjeta recien flasheada (install_firmware() hacia rsync), y el par ADSP
+# con la autenticacion de bateria podia revertirse en silencio con cualquier transaccion de
+# linux-firmware. El PKGBUILD + ./paths viven aqui; los blobs los.stagea build-packages.sh desde
+# devices/<dev>/firmware/ y vendor/rocknix-extra-firmware/ (NINGUN binario en git).
+mirror "packages/pocknix-firmware-sm8750" "devices/sm8750/packages/pocknix-firmware-sm8750"
 
 # --- the SoC packages our branch was missing entirely ------------------------
 # Without these two the image could not rebuild its own kernel or bootloader: it silently kept
@@ -102,8 +108,11 @@ overlay "config" "config"
 # ⚠️ AQUI ESTABA EL BUG DEL 25/09: `rootflags=nologreplay` vivia en profile.conf, que solo
 # existia en el arbol y no lo vigilaba check-sync.sh -> se compilo y la imagen no arrancaba.
 # Ahora el cmdline es del centro. Solo van NUESTROS ficheros (profile.conf, packages.list,
-# firmware/README.md): la subcarpeta packages/ la trae su propio mirror de arriba, y los blobs
-# de firmware (.mbn) NO van a git (se bajan de ROCKNIX/extra-firmware).
+# firmware/README.md): la subcarpeta packages/ la traen sus propios mirrors de arriba.
+# OJO con los blobs: de devices/sm8750/firmware/ van a git SOLO los dos del cargador
+# (qcom/sm8750/adsp.mbn + adsp_dtb.mbn, el par con la autenticacion de bateria); el resto del
+# arbol SM8750 se baja de ROCKNIX/extra-firmware en `make sync` a vendor/ (gitignored). Los
+# entrega el paquete pocknix-firmware-sm8750, no este overlay.
 overlay "devices/sm8750" "devices/sm8750"
 
 # --- per-SoC package overrides -----------------------------------------------
