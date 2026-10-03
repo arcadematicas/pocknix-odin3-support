@@ -112,6 +112,13 @@ fi
 if [ -x "$DECKSTATION_ROOT/scripts/deckstation-cores-sync.sh" ]; then
     DECKSTATION_ROOT="$DECKSTATION_ROOT" "$DECKSTATION_ROOT/scripts/deckstation-cores-sync.sh" >/dev/null 2>&1 || true
 fi
+# ES-DE: dejar solo los EMULADORES realmente instalados (Citra, Cemu,
+# PPSSPP, Xenia...): quita del es_systems.xml activo los <command> cuyo
+# %EMULATOR_X% no esta. Va DESPUES del de cores porque los dos podan el
+# mismo fichero y el ultimo que escribe es el que manda.
+if [ -x "$DECKSTATION_ROOT/scripts/deckstation-emulators-sync.sh" ]; then
+    DECKSTATION_ROOT="$DECKSTATION_ROOT" "$DECKSTATION_ROOT/scripts/deckstation-emulators-sync.sh" >/dev/null 2>&1 || true
+fi
 
 # 8. FORZAR SDL AL COMPOSITOR (gamescope / Plasma)
 #    Sin esto, ES-DE puede quedarse en NEGRO al lanzarse desde el modo juego de

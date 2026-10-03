@@ -262,6 +262,19 @@ deploy_cores_sync() {
     fi
 }
 
+# ES-DE: dejar solo los EMULADORES realmente instalados (Citra, Cemu,
+# PPSSPP, Xenia...). Quita del es_systems.xml activo los <command> cuyo
+# %EMULATOR_X% no resuelve a ninguna ruta de es_find_rules.xml, que antes se
+# ofrecian y al elegirlos no pasaba nada. Filtra el ACTIVO (no lo regenera
+# desde el source), asi que VA DESPUES de deploy_cores_sync: si fuera antes,
+# el de cores volvería a poner los comandos con cores que faltan.
+deploy_emulators_sync() {
+    if [ -x "${SCRIPTS_DIR}/deckstation-emulators-sync.sh" ]; then
+        log "Filtrando en ES-DE los emuladores no instalados..."
+        "${SCRIPTS_DIR}/deckstation-emulators-sync.sh" || log_warn "Fallo al filtrar los emuladores de ES-DE"
+    fi
+}
+
 # Despliega el wrapper portable lanzar.sh a cada carpeta de emulador que contenga
 # un AppImage. ES-DE (es_find_rules.xml) apunta a ./Apps/*/lanzar.sh en vez del
 # AppImage directo, así que el wrapper debe existir para que el lanzamiento sea
@@ -528,6 +541,11 @@ main() {
     # con RetroArch ya instalado y las configs desplegadas (es cuando el
     # es_systems.xml activo existe y la carpeta de cores tiene su contenido).
     deploy_cores_sync
+
+    # ES-DE: quitar del selector los EMULADORES que no estan instalados (Citra,
+    # Cemu, PPSSPP...). Despues del de cores y por el mismo motivo: ambos
+    # podan el mismo fichero activo y el que va ultimo manda.
+    deploy_emulators_sync
 
     # Transparente: añadir DeckStation a Steam con sus imágenes, sin preguntar.
     # Solo funciona desde el modo Escritorio; si no, avisa y sigue.
