@@ -1,17 +1,23 @@
 # The Wind Waker HD Recomp para Linux — análisis y veredicto
 
 **Fecha**: 3 de octubre de 2026
-**Alcance**: el fork `misael-urquidez/ZeldaWWHDRecomp-Linux`, su rama `linux-port`, y si el
-conjunto tiene sentido para la **Odin 3** (aarch64).
-**Estado**: 🗄️ **APARCADO**. No se ha hecho nada con él en la Odin. El motivo está en §6.
+**Alcance**: el fork `misael-urquidez/ZeldaWWHDRecomp-Linux` (rama `linux-port`), el upstream
+`ZeldaWWHDRecomp/ZeldaWWHDRecomp` (rama `linux`), y si el conjunto tiene sentido para la
+**Odin 3** (aarch64).
+**Estado**: 🗄️ **APARCADO**, pero ya **con el banco de pruebas pasado**: la rama `linux` del
+upstream (Vulkan + SDL3) **compila y su `--renderer-smoke` pasa** en el PC (§6). El escollo que
+quedaba en pie —el backend OpenGL— está en §5, y es un **callejón sin salida** para nosotros.
 
-Todo lo que aquí va marcado como **verificado** se obtuvo el 3/10/2026 de dos fuentes:
+Todo lo que aquí va marcado como **verificado** se obtuvo el 3/10/2026 de tres fuentes:
 
 - la **API de GitHub** (repo, ramas, commits, releases, contenido de ficheros), consultada desde
   el PC de Fransis;
 - el **análisis del PC de Fransis** del `.wua` de Batocera y del clon del repo en la rama
-  `linux-port` (§6, §7). Las rutas que aparecen ahí (`/run/media/fransis/...`, `/tmp/opencode/...`)
-  son **de la máquina de Fransis**, no del repo ni de la consola.
+  `linux-port` (§7, §8). Las rutas que aparecen ahí (`/run/media/fransis/...`, `/tmp/opencode/...`)
+  son **de la máquina de Fransis**, no del repo ni de la consola;
+- la **compilación y ejecución reales** del upstream, rama `linux`, HEAD `026c71e6a3`, en el PC de
+  Fransis (CachyOS, x86-64) (§6). Todo lo que sale de ahí es **verificado**; lo que **no** se ha
+  ejecutado se dice explícitamente como **sin verificar**.
 
 Lo que no se pudo comprobar se dice explícitamente como **sin verificar**. Ningún fichero del
 juego, ni claves, ni texturas se han copiado a este repo.
@@ -147,6 +153,11 @@ played is untested"**.
 
 ## 3. Requisitos (según el README de `linux-port`)
 
+> ⚠️ **Esta § es del `linux-port` del fork, que es el camino DESCARTADO (§9).** Se deja tal cual
+> porque es el README que evaluamos, pero para lo nuestro **no cuentan ni el SDL2 ni el
+> OpenGL 4.3**: el camino bueno pide **Vulkan 1.3 + SDL3** (§5, §6). Lo del **juego** (`.wud`/
+> `.wux` + claves) es **igual en los dos** y es lo que de verdad bloquea.
+
 **Toolchain**:
 
 | Qué | Detalle |
@@ -183,18 +194,27 @@ cmake --build build -j$(nproc)
 
 ## 4. Estado del PC donde se probó
 
-Ya estaba instalado: **clang 22.1.8, cmake 4.4.3, ninja 1.13.2, SDL2 2.32.72, zlib,
-Python 3.14.7, Mesa 3:26.2.3**. Se instaló para esta prueba: **`python-pycryptodome` 3.23.0** y
-**`python-capstone` 5.0.7**.
+**CachyOS, x86-64** (portátil). GPU: **AMD Radeon RX 6750 XT** (RADV, **NAVI22**).
 
-Es decir: **la cadena de herramientas no es el bloqueo**. Falta el juego.
+Para el análisis del `.wua` ya estaba instalado: **clang 22.1.8, cmake 4.4.3, ninja 1.13.2,
+SDL2 2.32.72, zlib, Python 3.14.7, Mesa 3:26.2.3**. Se instaló para esa prueba:
+**`python-pycryptodome` 3.23.0** y **`python-capstone` 5.0.7**.
+
+Para el build del upstream (§6) **casi todo estaba ya instalado**: `clang` 22.1.8,
+`cmake` 4.4.3, `ninja` 1.13.2, `vulkan-headers`/`vulkan-icd-loader` **1.4.357**, `vulkan-radeon`,
+`glslang`, **`sdl3` 3.4.16**, `mesa` 26.2.3, `lz4`, `zlib`. Lo **único** que se tuvo que instalar
+fue **`vulkan-validation-layers`** (ojo: en Arch el paquete va **con guiones**, no con guion bajo).
+**No hizo falta compilar SDL3 desde fuente** — en Ubuntu 24.04 sí hay que hacerlo (§5).
+
+Es decir: **la cadena de herramientas no es el bloqueo**. Falta el juego (§7).
 
 ---
 
-## 5. ⚠️ Lo que nadie miraba: el upstream tiene una rama `linux` con **Vulkan**
+## 5. 🔑 El upstream tiene una rama `linux` con **Vulkan** — el camino bueno (lo que nadie miraba)
 
-Esto es **nuevo** respecto a la evaluación del port del fork, y cambia el panorama. **Verificado** por
-API el 3/10/2026 sobre la rama `linux` del upstream:
+Esto es **nuevo** respecto a la evaluación del port del fork, y cambia el panorama. Leído por
+API el 3/10/2026 sobre la rama `linux` del upstream, y **después confirmado compilando y
+ejecutando** (§6):
 
 - HEAD = **`026c71e6a3`** (2026-10-03 06:43:53 UTC),
   *"Build on Linux: Vulkan/SDL3 executable links, tests and renderer smoke pass"*, 8 ficheros, +201.
@@ -222,19 +242,90 @@ API el 3/10/2026 sobre la rama `linux` del upstream:
 - Su README avisa de que **SDL3 no está empaquetado en Ubuntu 24.04** (hay que compilarlo del
   release 3.2.x).
 
-**Qué NO se ha hecho**: **no se ha compilado ni ejecutado nada** de esta rama `linux` del
-upstream. Lo anterior es lectura de `CMakeLists.txt`, README y mensajes de commit vía API.
-**Sin verificar**: si compila en aarch64, si el `--renderer-smoke` pasa sobre Turnip, si SDL3
-está disponible en los repos de Arch ARM, y si la capa Vulkan rinde en la Odin.
+**Qué NO se había hecho (y ya sí)**: el análisis original fue **todo lectura** de
+`CMakeLists.txt`, README y mensajes de commit vía API. Después **se compiló y se ejecutó** en el
+PC: **§6**. Es decir, todo lo que aquí se dedujo se comprobó — compila, enlaza y el
+`--renderer-smoke` **pasa sobre la GPU de verdad**. Lo que **sigue** sin verificar es **aarch64**
+(§8): si compila en ARM, si Turnip aguanta el smoke y si SDL3 está en Arch ARM.
 
-**Por qué importa**: la rama del fork pide **OpenGL 4.3 de escritorio**, que en la Odin no hay
-(Mali/Panfrost → GLES 3.x). La del upstream pide **Vulkan 1.3**, que en la Odin **sí tenemos y
-funciona** (Turnip, `vulkaninfo` verificado con Adreno 830). Para nosotros el backend Vulkan es
-el camino bueno, no el malo. El vigilante (§8) vigila esa rama por eso.
+**Por qué importa (esto es lo que decide el veredicto)**: la rama del fork pide **OpenGL 4.3 de
+escritorio**, que en la Odin no hay (Mali/Panfrost → GLES 3.x) → para nosotros es un **callejón
+sin salida**: habría que **escribir** el paso GL→GLES, no "solo compilar". La del upstream pide
+**Vulkan 1.3**, que en la Odin **sí tenemos y funciona** (Turnip, `vulkaninfo` verificado con
+Adreno 830) → **el camino bueno, no el malo**. El vigilante (§10) vigila esa rama por eso.
 
 ---
 
-## 6. El bloqueo: por qué no se pudo probar
+## 6. ✅ COMPILADO Y PROBADO EN EL PC
+
+**Verificado, todo medido — nada deducido.** Se compiló y se ejecutó el upstream en el PC de
+Fransis (CachyOS, x86-64, clang 22) el 3/10/2026.
+
+**Repo y rama**: `ZeldaWWHDRecomp/ZeldaWWHDRecomp`, rama **`linux`**, HEAD
+**`026c71e6a33c31d5b585286279de98ddc19e7bf2`**. Árbol **limpio**: **sin un solo parche** nuestro.
+
+### ⚠️ El build del README falla tal cual (y no es culpa del x86)
+
+```
+runtime/third_party/cemu/Common/betype.h:13:23: error: use of undeclared identifier 'CHAR_BIT'
+   (2 errores, x12 ficheros de cemu_latte)
+```
+
+**Causa**: `betype.h` usa `CHAR_BIT` y solo hace `#include <type_traits>`. En Ubuntu 24.04 (el CI
+de ellos) los headers de libstdc++ arrastran `<limits.h>` y cuela; con **clang 22 + libstdc++ de
+GCC 16** no cuela. **No es un problema de x86** — es de libstdc++.
+
+**Solución probada** — sin tocar el código, y en un directorio de build aparte:
+
+```sh
+cmake -S . -B build/linux-climits -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DGEN_DIR=$PWD/build/gen-stub -DCMAKE_CXX_FLAGS="-include climits"
+cmake --build build/linux-climits
+```
+
+**El arreglo de verdad es una línea**: `#include <climits>` en `betype.h`. Lo que se ha hecho
+aquí es el rodeo con `-include climits`, que es lo que permite construir sin ensuciar el clon.
+
+### Resultado
+
+| Qué | Resultado **verificado** |
+|---|---|
+| `configure` | OK — `-- WWHD renderers: VULKAN`, **Vulkan 1.4.357**, `glslc` + `glslangValidator` |
+| `cmake --build` | **15 s con 16 hilos**, **0 warnings**, **0 errores** |
+| Binario | ELF x86-64 de **18 MB** |
+| Enlaza | `libvulkan.so.1`, `libSDL3.so.0`, `libglslang.so.16`, `libSPIRV.so.16`, `liblz4.so.1`, `libz.so.1` |
+| `stubgen.py` | **116 stub functions, 113 hooks, 85 sites** |
+| `--renderer-smoke` | **PASS (exit 0)**, y **por tres caminos**: X11/XWayland, Wayland, y con **validation layers** (`WWHD_VK_VALIDATION=1`) → **0 VUID, 0 errores** |
+| GPU usada | **AMD Radeon RX 6750 XT** (RADV, **NAVI22**) — la de verdad, no lavapipe |
+| `ctest` | **4/4 passed** |
+| PNG del smoke | **triángulo rojo, 1352 píxeles rojos** — coincide con el readback → **renderizado por la GPU real** |
+
+### Tropiezos que hay que conocer antes de intentarlo
+
+- **Sin `XAUTHORITY` falla**: `Authorization required…` + `Vulkan could not start: No available
+  video device`. Solución: `export XAUTHORITY=/run/user/1000/xauth_XXXXXX` (sale de
+  `Xwayland :0 -auth …`).
+- **Headless puro no vale**: `xvfb-run` + RADV da `No DRI3 support detected - required for
+  presentation`. Su CI pasa porque usa **lavapipe** (software). Es **requisito de presentación**,
+  no un bug.
+- **`--help` no existe**: cae al arranque normal → `FATAL: cannot load game/code/cking.rpx`
+  (esperado, sin juego).
+- **Dependencias**: casi todo ya estaba en CachyOS (§4). Lo único instalado:
+  **`vulkan-validation-layers`** (en Arch, con guiones). **No hizo falta compilar SDL3 de fuente**
+  (en Ubuntu sí: su README lo avisa, 3.2.x).
+- **Nota Arch**: no hay `VulkanConfig.cmake` (Arch lo parte en `VulkanLoaderConfig.cmake` +
+  `VulkanHeadersConfig.cmake`), pero CMake cae a su módulo `FindVulkan` **y funciona**.
+- **Evidencia**: `~/wwhd-linux-evidencia/` — captura de la ventana con el PASS, los PNGs del
+  triángulo, el log completo y un README. **Está en el home, no en tmpfs**, así que no se pierde al
+  reiniciar el PC.
+
+### ⚠️ Qué NO prueba esto
+
+Prueba **el backend**, no **el juego**. Ver §11.
+
+---
+
+## 7. El bloqueo: por qué no se pudo probar el juego
 
 ### El disco que había no era un WUD
 
@@ -282,54 +373,82 @@ Resultado final, sin adornos:
 
 - **Nunca se generó `build/gen`.**
 - **`cmake --build` no llegó a lanzarse.**
-- **Cero frames renderizados. Nunca se vio un frame de este juego en ningún sitio.**
+- **Cero frames renderizados. Nunca se vio un frame de este juego en ningún sitio.** El único
+  frame que existe en todo el proyecto es el **triángulo rojo del smoke** del upstream (§6), y no
+  es del juego.
 
 ---
 
-## 7. Portabilidad a aarch64 (AYN Odin 3) — el estudio que sí vale
+## 8. Portabilidad a aarch64 (AYN Odin 3) — análisis
 
-### El código está limpio
+> 🔴 **TODO ESTA SECCIÓN ES ANÁLISIS, NO PRUEBA.** Se lee sobre el clon del upstream, rama `linux`
+> (HEAD `026c71e6a3`). **No se ha cross-compilado, no se ha ejecutado nada en ARM, y no se ha
+> tocado la Odin.** Lo verificado (§6) es **solo x86-64**. Cada punto va marcado: *verificado por
+> lectura* ≠ *probado en ARM*.
 
-Verificado sobre el clon de la rama `linux-port`:
+### El código está limpio — a favor
 
-- **Cero assembly x86.**
-- **Cero `#ifdef __x86_64__`** en `runtime/` (lo único es `#if defined(__APPLE__)`).
-- Toda la capa portable está en **`runtime/src/platform.cpp`**:
-  `mmap(..., MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE|MAP_FIXED_NOREPLACE)` para la ventana de
-  4 GiB del invitado, `__executable_start`, pthreads, directorios XDG.
-- Dependencias multiplataforma: **OpenGL** (no Metal), **SDL2**, zlib, LZ4, ImGui.
+Verificado por lectura sobre la rama `linux` del upstream:
 
-### Qué habría que tocar
+- **NO existe `-march=x86-64-v3`.** El único `-mcpu`/`-march`/`-mavx`/`-msse` de todo el árbol es
+  `CMakeLists.txt:63: -mcpu=apple-m1`, y está guardado con
+  `if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")` → **en Linux no se aplica
+  nunca**. *(El punto 1 de la versión anterior de este doc, que pedía tocar esa línea, era del
+  port del fork y **ya no aplica**.)*
+- **Cero ensamblador en línea** en `runtime/src`, `tools/` y `runtime/third_party/cemu` (grep de
+  `asm` / `__asm__` / sintaxis Intel: **0**).
+- Las únicas macros x86 están en `runtime/third_party/metal-cpp`, que **no se compila en Linux**.
+- Requisito de CPU: **solo `musttail`** (`runtime/include/ppc.h:42:
+  #define MUSTTAIL __attribute__((musttail))`). Clang lo soporta en AArch64 igual que en x86-64.
+- Host = **SDL3 puro**, sin `dlopen` ni drivers forzados.
+- Requisitos de Vulkan **mínimos y genéricos** (`backend.cpp:1385`): **`apiVersion >= 1.3`** y
+  **`dynamicRendering`**. **No** pide descriptor indexing, ni buffer device address, ni
+  synchronization2, ni portability subset. **Turnip da 1.3 + dynamic rendering** en Adreno
+  6xx/7xx con Mesa actual → **viable, pero NO verificado.**
+- Compilar con **clang** (rechaza GCC, por `musttail`). En Arch ARM, `clang` está en `extra`.
 
-1. **`CMakeLists.txt`, target `gamecode`** (línea 33): `-march=x86-64-v3` es de x86 → poner
-   `-mcpu=native` o quitarlo en aarch64. El `if(APPLE)` ya hace el equivalente con
-   `-mcpu=apple-m1`. **Es el único punto duro del código.**
-2. Compilar con **clang** (rechaza GCC).
-3. ⚠️ **El riesgo grande**: pide **OpenGL 4.3 de escritorio** y la Odin va con **Mali/Panfrost**,
-   que da **GLES 3.x**. El decompilador de Cemu emite **GLSL** (`ENABLE_OPENGL`) → habría que
-   **adaptar el backend a GLES**. Esto **no es "solo compilar"**, es trabajo de portabilidad.
-   → Salida: §5. **El upstream ya está en Vulkan**, que es lo que sí tenemos.
-4. Verificar que `runtime/third_party/cemu` compila limpio en aarch64 (C++ moderno; en principio
-   sí, pero **sin verificar**).
+### Riesgos y pendiente
+
+1. El fallo de **`CHAR_BIT`** (§6) **también pega en Arch ARM**: es de **libstdc++**, no de x86 →
+   mismo rodeo (`-DCMAKE_CXX_FLAGS="-include climits"`) o el `#include <climits>` de una línea.
+2. ⚠️ **Riesgo real de semántica FP — es lo que más preocupa**: `gamecode` compila con `-O3
+   -ffp-contract=off -fno-strict-aliasing`, pero la FP del Wii U es **PowerPC/Espresso**. El código
+   **no toca `fesetround` ni denormales** (grep: **0**) y en AArch64 el **FPCR por defecto difiere
+   del de x86-64** → **el resultado podría diferir aunque compile**. **No probado.** Si esto falla,
+   no se arregla tocando CMake: hay que tocar la ejecución.
+3. **`sdl3` debería existir en `extra` de Arch ARM**, pero **sin comprobar**.
+4. **Turnip** se selecciona con `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/radeon_icd.aarch64.json`.
+   **Sin comprobar.**
 5. **Rendimiento**: en el M3 de referencia el código gasta ~**4 ms de CPU/frame**. En la Odin el
-   presupuesto para 30 fps (33,3 ms) es una **incógnita** — depende del Vulkan/GLES que toque y
-   del TDP. **Sin medir.**
+   presupuesto para 30 fps (33,3 ms) es una **incógnita** — depende de Turnip y del TDP.
+   **Sin medir.**
 
 ---
 
-## 8. Veredicto
+## 9. Veredicto
 
-# 🗄️ APARCADO
+# 🗄️ APARCADO — pero el camino ya no es una incógnita
 
-Dos bloqueos, y son independientes:
+**Lo que cambia respecto a la versión anterior de este doc**: el veredicto "el backend gráfico es el
+escollo" era cierto **solo para el port del fork**. La rama buena es la del **upstream**:
+
+| | Rama | Backend | Para la Odin |
+|---|---|---|---|
+| ❌ **Descartado** | `misael-urquidez/…` → `linux-port` | **OpenGL 4.3 de escritorio** | **Callejón sin salida**: la Odin da **GLES 3.x**. Habría que *escribir* el paso GL→GLES. |
+| ✅ **El bueno** | `ZeldaWWHDRecomp/…` → **`linux`** | **Vulkan 1.3 + SDL3** | **Compilado y probado en x86-64** (§6); en ARM es **viable por lectura**, **sin probar** (§8). |
+
+El bloqueo real que queda **es uno solo**, y no es nuestro:
 
 1. **Falta el juego.** Para que funcione hace falta **una** de estas dos:
    - (a) un dump **`.wud`/`.wux` válido + disc key + Wii U common key** sacados de **una consola
      y un disco propios**, o
    - (b) una carpeta ya extraída en **formato Cemu** (`code/`, `content/`, `meta/`).
-   El **`.wua` de Batocera no sirve**, y el repo no sabe leerlo.
-2. **Para la Odin falta además el backend gráfico.** El port del fork pide **OpenGL 4.3 de
-   escritorio** y la Odin da **GLES 3.x** → hay que adaptar GL→GLES. **No es "solo compilar".**
+   El **`.wua` de Batocera no sirve**, y el repo no sabe leerlo (§7).
+
+Lo que **ya no** es un bloqueo: el backend gráfico. En la Odin tenemos **Vulkan funcionando**
+(Turnip, `vulkaninfo` verificado con Adreno 830) y el upstream pide **Vulkan 1.3 + dynamic
+rendering**, que es lo mínimo y lo genérico (§8). **Ojo**: es una *deducción*, no una prueba — el
+smoke **nunca se ha corrido en la Odin**.
 
 **Se retoma cuando:**
 
@@ -337,17 +456,19 @@ Dos bloqueos, y son independientes:
 - el upstream siga madurando (los 60 fps, la resolución y el shader cache viven **allí**, no en el
   fork).
 
-**Reabrir antes** solo en un caso concreto: cuando se quiera **validar el camino Vulkan**
-(rama `linux` del upstream), porque ahí **no hace falta dump** para construir (`stubgen.py`) ni
-para arrancar el renderer (`--renderer-smoke`). Eso se podría probar en la Odin **sin tocar nada
-del juego** — pero es una prueba de humo del renderer, **no** el juego.
+**Reabrir antes** en un caso concreto: **cross-compilar la rama `linux` del upstream para aarch64** y
+correr allí el `--renderer-smoke` sobre Turnip. Ahí **no hace falta dump** ni para construir
+(`stubgen.py`) ni para arrancar el renderer (`--renderer-smoke`) → se podría probar en la Odin
+**sin tocar nada del juego**. Es una **prueba de humo del renderer, no el juego** — y hay que
+aceptar que, aun pasando, **la semántica FP en AArch64 sigue sin verificar** (§8, riesgo 2), que es
+el punto que más preocupa.
 
 **No se ha distribuido nada del juego**: ni discos, ni texturas, ni claves, ni el RPX
 extraído. Este documento solo describe; el repo no contiene nada de eso.
 
 ---
 
-## 9. Seguimiento: el vigilante
+## 10. Seguimiento: el vigilante
 
 Hay un guardian: **`tools/watch-wwhd-recomp-linux.sh`**. Se dejó puesto para lo que pidió Fransis
 (*"dejalo apuntado y estemos al tanto de ese repositorio y sus novedades"*).
@@ -383,22 +504,36 @@ Notas de uso:
 
 ---
 
-## 10. Lo que NO se ha hecho ni verificado
+## 11. Lo que NO se ha hecho ni verificado
 
-- **No se ha compilado nada** del port. Ni `cmake -B build` llegó a ejecutarse en el flujo real.
-- **No se ha visto un frame.** Ni en el PC ni en la Odin.
-- **No se ha obtenido ningún dump válido** ni ninguna clave. Sin ellas el proyecto no puede
-  arrancar por diseño (el README lo dice).
-- **No se ha analizado el contenido del `.wua` más allá de lo del §6**, ni se ha intentado
+### No se puede jugar (y por eso el smoke no es el juego)
+
+- **No se ha obtenido ningún dump válido** ni ninguna clave. Sin ellas el binario muere en
+  `FATAL: cannot load game/code/cking.rpx` (§6), por diseño. Sigue haciendo falta un **`.wud`/`.wux`
+  válido + disc key + Wii U common key** — el **`.wua` de Batocera no vale** (§7).
+- El `--renderer-smoke` que pasa (§6) prueba **el backend**, **no el juego**. Es el único frame que
+  existe del proyecto, y es un **triángulo**.
+- **`shadertest` es Metal-only** (`if(WWHD_HAS_METAL)`): **no existe en Linux**. Y
+  `WWHD_RENDERER=METAL` en Linux **se rechaza a propósito**.
+- **Sin probar**: audio, GamePad y táctil, save states, mods, 2x/3x, FXAA, 60 fps.
+
+### Nada de ARM
+
+- **Nada de aarch64 está probado.** Ni cross-compile, ni SDL3 en Arch ARM, ni Turnip con el smoke,
+  ni el coste por frame en la Odin.
+- ⚠️ **La semántica FP en AArch64 sigue sin verificar** (§8, riesgo 2) — es el punto que más
+  preocupa: **podría fallar aunque compile**.
+
+### Lo que sigue pendiente de mirar en el PC
+
+- **No se ha compilado el port del fork** (`linux-port`): ni `cmake -B build` llegó a ejecutarse en
+  el flujo real. Y ya no interesa: es **el camino equivocado** (§9).
+- **No se ha analizado el contenido del `.wua`** más allá de lo del §7, ni se ha intentado
   convertirlo a formato Cemu. **No está claro que se pueda**: el `.wua` no tiene firma ni tabla
   de particiones, que es justo lo que `wudextract.py` necesita.
-- **La rama `linux` del upstream no se ha compilado ni ejecutado** (§5). Es todo lectura de
-  ficheros y mensajes de commit por API.
-- **Sin verificar** para aarch64: si `runtime/third_party/cemu` compila limpio, si SDL3 está en
-  los repos de Arch ARM, si el `--renderer-smoke` pasa sobre Turnip, y el coste real por frame en
-  la Odin (los ~4 ms son del M3 de referencia).
 - **No se ha contactado** con el autor del fork ni con el upstream (0 issues, 0 stars: no hay por
   dónde).
-- **Las rutas del PC que se citan** (`/run/media/fransis/...`, `/tmp/opencode/wwhd/...`) son de la
-  máquina de Fransis. `/tmp` es **tmpfs (RAM)**: si se reinicia el PC, `/tmp/opencode/wwhd/`
-  desaparece entero.
+- **Las rutas del PC que se citan** (`/run/media/fransis/...`, `/tmp/opencode/wwhd/...`,
+  `~/wwhd-linux-evidencia/`) son de la máquina de Fransis. `/tmp` es **tmpfs (RAM)**: si se
+  reinicia el PC, `/tmp/opencode/wwhd/` desaparece entero — por eso la evidencia del build **se
+  dejó en el home**, no ahí.
