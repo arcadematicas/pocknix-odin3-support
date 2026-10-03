@@ -261,3 +261,144 @@ locales de otra sesion de trabajo.
 | `packages/deckstation-arm/scripts/deckstation-setup.sh` | llama a `deploy_emulators_sync` tras `deploy_cores_sync` |
 | `packages/deckstation-arm/scripts/deckstation-launcher.sh` | lo llama tras `deckstation-cores-sync.sh` |
 | `packages/deckstation-arm/PKGBUILD` | instala el script nuevo (`pkgrel` 11) |
+
+---
+
+# Parte 2 (2026-10-03): los 9 sistemas que se quedan SIN comandos
+
+## El fallo que quedaba: 9 sistemas visibles y jugablemente muertos
+
+La parte 1 quitaba los comandos con emulador ausente pero, para no perder un
+sistema, **conservaba el primer `<command>` de cada sistema** "por si acaso".
+Eso era un fallo: ese comando era justamente el que **no estaba instalado**, asi
+que quedaban 9 sistemas que se ven en ES-DE y **no se pueden jugar**:
+
+    chihiro  mame-advmame  ngage  samcoupe  solarus  symbian  trs-80  vpinball  zxnext
+
+Cada uno se quedaba con **exactamente 1 comando**, y ese comando apuntaba a un
+emulador inexistente. En `es_log.txt` sale como aviso de arranque:
+
+    Warn:  Unknown platform "chihiro" defined for system "chihiro"
+
+## Por que ES-DE no puede "esconder" un sistema (leido del codigo de ES-DE 3.5.0)
+
+No existe ningun interruptor de "oculto" en `es_systems.xml`: `SystemData.h` no
+tiene `isEnabled` ni equivalente. Ademas, un `<system>` **sin ningun `<command>`**
+es un error de carga, no un sistema oculto:
+
+* `es-app/src/SystemData.cpp:1111-1117` -> `LogError("is missing the fullname,
+  path, extension, or command tag, skipping entry")`.
+
+Y como `parseGamelist()` se llama **desde el constructor** de `SystemData`
+(`SystemData.cpp:568`), el gamelist de un sistema que no esta en
+`es_systems.xml` **no se parsea nunca**.
+
+**Conclusion: quitar el `<system>` entero del `<systemList>` es la unica forma
+limpia de que no salga.** Por eso el arreglo va en `deckstation-emulators-sync.sh`
+y **no** en el source: si algun dia aparece un emulador ARM (Chihiro, SimCoupé,
+Solarus, sdl2trs, #CSpect, EKA2L1...), el sistema **vuelve solo** en el siguiente
+arranque, sin tocar nada a mano. El source manda siempre.
+
+## El aviso de arranque: la etiqueta huerfana de los gamelist
+
+Este es el otro fallo, y es el que puede **volver**. ES-DE guarda el emulador
+elegido por el usuario como una **etiqueta de texto**, no como una ruta:
+
+```xml
+<alternativeEmulator><label>GooseStation</label></alternativeEmulator>
+<game>
+  <altemulator>DuckStation (Standalone)</altemulator>
+```
+
+`es-app/src/GamelistFileParser.cpp:190-217`: si esa etiqueta ya no corresponde a
+ningun `<command label="...">` del sistema, hace
+`setAlternativeEmulator("<INVALID>" + etiqueta)` y escribe un `LogWarning`.
+Despues `es-app/src/main.cpp:1201-1209` saca un **dialogo modal en CADA
+arranque** (`ViewController::invalidAlternativeEmulatorDialog()`,
+`views/ViewController.cpp:410`):
+
+> AT LEAST ONE OF YOUR SYSTEMS HAS AN INVALID ALTERNATIVE EMULATOR CONFIGURED
+> WITH NO MATCHING ENTRY IN THE SYSTEMS CONFIGURATION FILE, PLEASE REVIEW YOUR
+> SETUP USING THE 'ALTERNATIVE EMULATORS' INTERFACE IN THE 'OTHER SETTINGS' MENU
+
+Detalles que importan:
+
+* Solo lo dispara el **`<alternativeEmulator>` de nivel documento/`gameList`**
+  (`GamelistFileParser.cpp:191`). El `<altemulator>` de cada juego **no** pone
+  nada a nivel de sistema: `FileData.cpp:979` hereda el valor del sistema y, si
+  no cuadra, solo avisa por juego y cae a `mLaunchCommands.front()`
+  (`FileData.cpp:982-1006`). Por eso un `<altemulator>` por juego **no** genera
+  el dialogo de arranque (aunque si conviene repararlo).
+* ES-DE hace lo mismo que este script: solo quita lo que dejo de ser valido
+  (`GamelistFileParser.cpp:452-454` borra `<alternativeEmulator>` cuando no hay
+  emulador alternativo).
+* **El peligro es real y recurrente**: al filtrar el `es_systems.xml` se
+  deshacen **82** de las 423 etiquetas distintas del source (comprobado: 423 en
+  el source, 341 en el activo, 0 ganadas), asi que en cuanto el usuario elija una de
+  esas para un juego y luego se filtre ese comando, el aviso reaparece. Por eso
+  la reparacion de gamelist va en el script y no como parche manual.
+
+## Red de seguridad del script
+
+Antes de escribir nada, el script aborta si el resultado no cuadra:
+
+| Guarda | Valor | Para que |
+|---|---|---|
+| `EMUS_MAX_SISTEMAS_FUERA` | 25 (env) | No borrar mas sistemas de los previstos: el `find` habria encontrado emuladores que no |
+| `EMUS_MAX_COMANDOS_PCT` | 80 (env) | No quedarse con menos del 20% de comandos: el `find` de rutas habria fallado |
+| validacion XML | activa | Un `</system>` descolocado daria XML roto -> `AVISO ... no se puede borrar entero` y no escribe |
+| backups | `es_systems.xml.bak-emus`, `gamelist.xml.bak-emus` | Siempre se puede volver atras |
+
+Los gamelist de los sistemas **borrados** se dejan **intactos** a proposito: no
+se parsean, y su etiqueta vuelve a ser valida si el emulador reaparece.
+
+## Aplicado y medido en la Odin (2026-10-03)
+
+Backup del antes: `/home/deck/backup-esde-20261003-185826/`
+(`deckstation-emulators-sync.sh`, `es_systems.xml.ACTIVO`, `es_systems.xml.BUENO-221`).
+
+Simulacion del arranque real en la consola (`cores-sync` y luego
+`emulators-sync`, igual que `deckstation-launcher.sh`):
+
+| Paso | Sistemas | Comandos | md5 del activo |
+|---|---|---|---|
+| source (`configs/es-de/custom_systems/es_systems.xml`) | 230 | 1109 | `91c97a6b...` |
+| tras `cores-sync` (8 cores ausentes fuera) | 230 | 1101 | `68e71e6c...` |
+| tras `emulators-sync` | **221** | **912** | **`c6424a28...`** |
+
+El `md5` final es **identico** al de la maquina local y al de la 2a pasada: el
+resultado es reproducible y el script es idempotente.
+
+Comprobado en la Odin:
+
+| Comprobacion | Resultado |
+|---|---|
+| XML resultante | valido |
+| Sistemas con **0** comandos | **0** |
+| Los 9 sistemas fuera del `<systemList>` | si, los 9 |
+| Etiquetas huerfanas en gamelists | **ninguna** (`check_altemu.py`: OK) |
+| Idempotencia | 2a pasada: `nada que hacer`, md5 sin cambios |
+| Sistemas con emulador real | `snes`, `psx`, `n3ds`, `msx2`, `nes`, `scummvm`... conservan sus comandos |
+
+### Lo que **no** se ha podido verificar
+
+* El dialogo en pantalla **no** se ha podido ver (hace falta alguien delante de
+  la consola). Y en los dos logs que hay (`es_log.txt.bak` 18:08-18:14 y
+  `es_log.txt` 18:26-18:29) **no aparece** ni el `LogWarning` de etiqueta
+  huerfana ni el `LogError` de sistema sin `<command>`: en ambos arranques ya
+  no habia `alternativeEmulator` a nivel documento en ningun gamelist vivo (solo
+  en backups `.bak-altemu`). Osea que ese dialogo **no salia ya** antes de este
+  arreglo; lo que se arregla es la **causa**, para que no pueda volver.
+* Que un emulador concreto funcione se comprueba launching un juego, no leyendo
+  ficheros.
+
+### Hallazgo colateral (NO arreglado, es otro problema)
+
+17 logos SVG del tema `linear-es-de` fallan al cargar, desde dentro del AppImage:
+
+    Error: TextureData::initSVGFromMemory(): Couldn't parse SVG image
+      ".../themes/linear-es-de/system/logos/{3do,amstradcpc,pc,fmtowns,dos,doom,...}.svg"
+
+Va dentro de `/tmp/.mount_DeckSrempXXXX/usr/share/es-de/...`, osea del AppImage
+montado, no de `custom_systems`. No se ha tocado: es independiente del filtro de
+emuladores y requiere su propia sesion.
