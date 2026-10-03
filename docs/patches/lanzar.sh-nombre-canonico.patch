@@ -1,0 +1,203 @@
+Subject: [PATCH] lanzar.sh: nombre canonico por app (symlink) para que un
+ renombrado del AppImage no rompa nada
+
+PROPOSITO. NO APLICADO. Este fichero es la PROPUESTA para revision.
+
+Por que:
+  El nombre del AppImage no lo pone DeckStation: lo pone el upstream, y el
+  Updater lo renombra cuando cambia el asset. Todo lo que apunte a
+  "<App>-<version>-<arquitectura>.AppImage" se rompe en la siguiente
+  actualizacion. Ya paso con Xenia Edge (commit 3d5aa63 en el centro).
+
+  Y no es un caso suelto: 27 de los 29 AppImages instalados llevan
+  informacion de auto-actualizacion embebida (.upd_info con zsync de
+  pkgforge), o sea que pueden renombrarse solos en cualquier momento.
+  tools/check-appimage-nombres.sh lo lista.
+
+Que hace:
+  Inserta en la PLANTILLA (apps/*/lanzar.sh, los 31 emuladores de golpe, mismo
+  patron que el arreglo del PATH que ya tiene):
+
+    1) canon_symlink(): mantiene Apps/<App>/<App>.AppImage como symlink al
+       AppImage real mas reciente (excluye .bak/.old). Nombre canonico que no
+       cambia nunca. Symlink relativo para que sobreviva a mover la carpeta.
+
+    2) migrar_home_canonico(): mueve el .home viejo al nombre canonico solo si
+       el canonico no existe (no se fusionan dos .home con datos: se avisa).
+       Sin esto, un reinstalar desde cero dejaria ajustes y partidas en un
+       directorio que ya no usa nadie.
+
+    3) Lanza POR EL SYMLINK, con caida al AppImage real si el symlink no se
+       pudo crear. Nombre de invocacion estable => .home estable.
+
+    4) Mensaje de diagnostico cuando no hay nada que lanzar: el Updater
+       renombra el AppImage viejo a .bak antes de escribir el nuevo, y si la
+       actualizacion se queda a medias solo queda el .bak (caso real: BigPEmu
+       en la consola ahora mismo, Apps/BigPEmu/BigPEmu-1.221-....AppImage.bak
+       sin su .AppImage).
+
+Regla de oro:
+  NADA de esto puede impedir que un emulador arranque. Todo el bloque va
+  envuelto con "|| true" y cae al comportamiento de siempre. Es fontaneria.
+
+Como probarlo (NO lo apliques a la consola sin revisar):
+  patch -p1 --dry-run < docs/patches/lanzar.sh-nombre-canonico.patch
+  cp scripts/lanzar.sh /tmp/lanzar.sh.nuevo   # el diff completo esta en el doc
+  bash -n /tmp/lanzar.sh.nuevo
+  # y en una maquina de pruebas:
+  tools/deploy-schedulers.sh ...   (o copia a mano) y
+  tools/check-appimage-rutas.sh --ssh <host>
+
+Nota sobre el .home (importante, matiz real):
+  En DeckStation el .home portable NO lo crea el runtime de AppImage: lo
+  exporta lanzar.sh (export HOME=<lo que encuentre *.home>), y por eso
+  lanzar.sh y deckstation-configs.sh:resolve_home() ya localizan el .home por
+  PATRON y no por nombre. Eso ya blinda la mayoria de los casos. Lo que queda
+  roto son las rutas por nombre (Xenia, MAME) y el .bak huerfano, que es
+  justo lo que este parche y el guardian cubren. Detalle y pruebas:
+  docs/APPIMAGE-NOMBRES-Y-AUTOACTUALIZACION.md
+
+---
+--- a/packages/deckstation-arm/scripts/lanzar.sh
++++ b/packages/deckstation-arm/scripts/lanzar.sh
+@@ -31,7 +31,108 @@
+ unset APPDIR
+ unset OWD
+ 
+-# 2. Buscamos que lanzar: el AppImage, o un arbol ya extraido.
++# 1b. NOMBRE CANONICO — symlink <App>.AppImage al AppImage real.
++#
++#     POR QUE ESTA AQUI (el fallo de Xenia Edge, commit 3d5aa63):
++#
++#     El nombre del AppImage no lo pone DeckStation: lo pone el upstream, y el
++#     Updater lo cambia de nombre cuando cambia el asset (asi se quedo
++#     "xenia_edge_linux.AppImage" cuando el upstream paso a publicar
++#     "xenia_edge_linux_aarch64.AppImage"). Todo lo que apunte a
++#     "<App>-<version>-<arquitectura>.AppImage" se rompe en la siguiente
++#     actualizacion. Y no es un caso suelto: 27 de los 29 AppImages que hay
++#     instalados llevan informacion de auto-actualizacion embebida (.upd_info
++#     con zsync de pkgforge), o sea que pueden renombrarse solos.
++#
++#     QUE HACE, en este orden y en CADA arranque (por eso da igual quien
++#     renombre el fichero: el siguiente arranque lo arregla):
++#
++#       (a) Calcula un nombre canonico POR APP que no cambia nunca:
++#           Apps/<App>/<App>.AppImage.
++#       (b) Lo mantiene apuntando al AppImage real mas reciente (symlink
++#           RELATIVO, para que sobreviva a mover la carpeta entera).
++#       (c) Lanza POR EL SYMLINK. Asi el nombre con el que se invoca el
++#           AppImage es siempre el mismo, y el .home que el runtime deriva de
++#           ahi es estable. El .home portable real lo exporta el paso 3.
++#       (d) Migra el .home viejo al nombre canonico, para que ningun
++#           emulador se quede con ajustes y partidas en un directorio que ya
++#           no usa nadie.
++#
++#     REGLA DE ORO: NADA de esto puede impedir que un emulador arranque. Todo
++#     el bloque va envuelto con "|| true" y cualquier fallo cae al AppImage
++#     real de siempre. Es fontaneria, no es condicion de arranque.
++#
++#     Detalle completo y herramientas de comprobacion:
++#       docs/APPIMAGE-NOMBRES-Y-AUTOACTUALIZACION.md
++
++# El AppImage real mas reciente de la carpeta (excluye el canonico y los
++# retazos .bak/.old que deja el Updater cuando una actualizacion se queda a
++# medias). El criterio es la fecha de modificacion: no hay un numero de
++# version fiable en el nombre.
++appimage_real() {
++    local dir="$1"
++    find "$dir" -maxdepth 1 -type f \
++         \( -iname "*.AppImage" -o -iname "*.appimage" \) \
++         ! -name "$(basename "$dir").AppImage" \
++         ! -name "*.AppImage.bak" \
++         ! -name "*.AppImage.old" \
++         ! -name "*.AppImage.1" \
++         2>/dev/null \
++    | while IFS= read -r f; do
++          printf '%s\t%s\n' "$(stat -c %Y "$f" 2>/dev/null || echo 0)" "$f"
++      done \
++    | sort -rn \
++    | cut -f2- \
++    | head -n 1
++}
++
++# (a)+(b): asegura el symlink canonico apuntando al AppImage real mas nuevo.
++canon_symlink() {
++    local dir="$1" app canon real
++
++    app="$(basename "$dir")"
++    canon="${dir}/${app}.AppImage"
++
++    real="$(appimage_real "$dir")"
++    [ -n "$real" ] || return 1
++
++    # Ya apunta a algo que existe: no se toca (asi solo cambia cuando hace
++    # falta, y no en cada arranque).
++    [ -L "$canon" ] && [ -e "$canon" ] && return 0
++
++    ln -sfn "$(basename "$real")" "$canon" 2>/dev/null || return 1
++    return 0
++}
++
++# (d): el .home portable al nombre canonico. Solo migra si el canonico NO
++# existe todavia, o sea, cuando no hay nada que perder. Si ya hubiera los
++# dos, no se fusiona nada: se avisa y se respeta lo que hubiera. Para
++# hacerlo a mano: mover el .home viejo encima del canonico a mano.
++migrar_home_canonico() {
++    local dir="$1" app canon_home viejo
++
++    app="$(basename "$dir")"
++    canon_home="${dir}/${app}.AppImage.home"
++
++    [ -d "$canon_home" ] && return 0
++
++    viejo="$(find "$dir" -maxdepth 3 -type d -name "*.home" 2>/dev/null | head -1)"
++    [ -n "$viejo" ] || return 0
++    [ "$viejo" = "$canon_home" ] && return 0
++
++    mv "$viejo" "$canon_home" 2>/dev/null || {
++        echo "[lanzar.sh] AVISO: no he podido migrar $(basename "$viejo") -> $(basename "$canon_home")" >&2
++        return 0
++    }
++    echo "[lanzar.sh] .home migrado a $(basename "$canon_home")" >&2
++    return 0
++}
++
++# La fontaneria no puede romper el arranque: si algo falla, seguimos.
++canon_symlink "$DIR" 2>/dev/null || true
++migrar_home_canonico "$DIR" 2>/dev/null || true
++
++# 2. Buscamos que lanzar: el AppImage canonico, o un arbol ya extraido.
+ #
+ #    Por que el arbol extraido: algunos AppImages traen el AppRun MAL generado y
+ #    buscan el binario en ruta absoluta del sistema (p. ej. `exec /usr/bin/retroarch`)
+@@ -39,7 +140,13 @@
+ #    extrae con `--appimage-extract` y se deja el resultado en `app/`; aqui se
+ #    detecta y se lanza igual.
+ EXEC_TARGET=""
+-APPIMAGE_FILE=$(find "$DIR" -maxdepth 1 \( -iname "*.AppImage" -o -iname "*.appimage" \) | head -n 1)
++# (c) Se lanza POR EL SYMLINK canonico: nombre estable aunque el fichero
++#     real se llame de otra manera. Si el symlink no se pudo crear, se cae al
++#     AppImage real de toda la vida (comportamiento de siempre).
++APPIMAGE_FILE="$DIR/$(basename "$DIR").AppImage"
++if [ ! -e "$APPIMAGE_FILE" ]; then
++  APPIMAGE_FILE=$(find "$DIR" -maxdepth 1 \( -iname "*.AppImage" -o -iname "*.appimage" \) | head -n 1)
++fi
+ if [ -n "$APPIMAGE_FILE" ]; then
+   EXEC_TARGET="$APPIMAGE_FILE"
+ elif [ -x "$DIR/app/AppRun" ]; then
+@@ -58,6 +165,15 @@
+ fi
+ if [ -z "$EXEC_TARGET" ]; then
+   echo "[lanzar.sh] No se encontro ni AppImage ni arbol extraido en $DIR" >&2
++  # AYUDA PARA DIAGNOSTICAR: el Updater renombra el AppImage viejo a ".bak"
++  # antes de escribir el nuevo. Si una actualizacion se quedo a medias queda
++  # solo el ".bak" y la plantilla (que no lo mira) no encuentra nada.
++  for retazo in "$DIR"/*.AppImage.bak "$DIR"/*.AppImage.old; do
++    [ -e "$retazo" ] || continue
++    echo "[lanzar.sh]   hay un retazo sin restaurar: $(basename "$retazo")" >&2
++    echo "[lanzar.sh]   reinstala ese emulador desde el Updater, o:" >&2
++    echo "[lanzar.sh]     mv '$retazo' '${retazo%.bak}'" >&2
++  done
+   exit 1
+ fi
+ 
