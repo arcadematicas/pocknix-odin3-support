@@ -1,0 +1,26 @@
+# Pocknix / AYN Odin 3 (SM8750) — permite flushes de IOMMU encolados en el WiFi.
+#
+# Adaptado de steamos-customizations-deckard 20261002.1
+# (commit a8a2a8faaeed54c18827fdbab8ce3ee2ab61a0fe, "Address poor ath12k performance
+# during multi-link streaming", Elliot Saba). Upstream lo trae en
+# `misc/rules.d/60-ath12k-iommu-fq.rules`.
+#
+# ⚠️ ÚNICA DIFERENCIA con el original de Valve: ATTR{device}=="0x110e", no "0x1107".
+#    0x1107 es el identificador del módulo WiFi del Steam Frame/Deckard; el del
+#    Odin 3 es 0x110e (WCN7860). Con el ID de Valve la regla NO habría hecho match.
+#
+# Con CONFIG_IOMMU_DEFAULT_DMA_STRICT=y (el caso de nuestro kernel), cada unmap del
+# buffer de RX hace un sync SÍNCRONO de la TLB de la SMMU con las IRQs apagadas
+# (~32% de las muestras de NET_RX, según la medición de Valve). DMA-FQ agrupa esos
+# unmap en un solo flush por cada 256 unmap y por CPU, o cada 10 ms.
+# Valve midió ~30% más rápido el softirq NET_RX.
+#
+# Trade-off (el del propio comentario de Valve): hasta ese flush el dispositivo
+# todavía puede alcanzar páginas recién desmapeadas (ya reutilizadas por el kernel).
+# Un bug de write-after-unmap corrompería memoria en silencio en vez de levantar un
+# fallo de SMMU. Valve lo considera aceptable porque ath12k no está generando faults.
+#
+# DMA -> DMA-FQ se permite en caliente, con el driver bindeado o no
+# (drivers/iommu/iommu.c:3111). Para volver a estricto hace falta un unbind del
+# driver, o reiniciar sin esta regla.
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x17cb", ATTR{device}=="0x110e", ATTR{iommu_group/type}="DMA-FQ"
