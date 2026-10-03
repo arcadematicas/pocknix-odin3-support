@@ -1430,8 +1430,8 @@
         <fullname>MSX2</fullname>
         <path>%ROMPATH%/msx2</path>
         <extension>.cas .CAS .col .COL .di1 .DI1 .di2 .DI2 .dmk .DMK .dsk .DSK .fd1 .FD1 .fd2 .FD2 .m3u .M3U .mx1 .MX1 .mx2 .MX2 .ogv .OGV .ri .RI .rom .ROM .sc .SC .sg .SG .wav .WAV .xsa .XSA .7z .7Z .zip .ZIP</extension>
-        <command label="blueMSX">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bluemsx_libretro.so %ROM%</command>
         <command label="fMSX">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/fmsx_libretro.so %ROM%</command>
+        <command label="blueMSX">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/bluemsx_libretro.so %ROM%</command>
         <command label="openMSX (Standalone)">%EMULATOR_OPENMSX% -machine Panasonic_FS-A1WSX %INJECT%=%BASENAME%.commands %ROM%</command>
         <command label="openMSX No Machine (Standalone)">%EMULATOR_OPENMSX% %INJECT%=%BASENAME%.commands %ROM%</command>
         <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "MSX2" %ROM%</command>
@@ -1473,13 +1473,13 @@
         <fullname>Nintendo 3DS</fullname>
         <path>%ROMPATH%/n3ds</path>
         <extension>.3ds .3DS .3dsx .3DSX .app .APP .axf .AXF .cci .CCI .cxi .CXI .elf .ELF .7z .7Z .zip .ZIP .sh .zcci .ZCCI</extension>
+        <command label="Azahar">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/azahar_libretro.so %ROM%</command>
         <command label="Azahar (Standalone)">%EMULATOR_AZAHAR% -f %ROM%</command>
         <command label="Citra">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/citra_libretro.so %ROM%</command>
         <command label="Citra 2018">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/citra2018_libretro.so %ROM%</command>
         <command label="Citra (Standalone)">%EMULATOR_CITRA% %ROM%</command>
         <command label="Shortcut or script">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
 
-        <command label="Azahar">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/azahar_libretro.so %ROM%</command>
         <platform>n3ds</platform>
         <theme>n3ds</theme>
 
