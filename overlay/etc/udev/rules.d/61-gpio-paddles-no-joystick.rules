@@ -1,0 +1,6 @@
+# Las paletas traseras (gpio-keys-paddles) NO son un mando, pero udev las marcaba
+# como joystick. Con eso SDL/RetroArch veian TRES mandos (el fisico, el virtual y
+# las paletas), elegian mal y el juego se quedaba sin control.
+#
+# Se detecto el 03/10/2026 y era el aviso que teniamos desde el 24/09.
+SUBSYSTEM=="input", ATTRS{name}=="gpio-keys-paddles", ENV{ID_INPUT_JOYSTICK}="0", ENV{ID_INPUT}="0"

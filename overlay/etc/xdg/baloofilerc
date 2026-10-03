@@ -1,0 +1,11 @@
+# Baloo (el indexador de ficheros de KDE) DESACTIVADO por defecto.
+#
+# POR QUE: en la Odin va en bucle de SIGABRT (baloo_file_extractor crasheando
+# una y otra vez), y ademas indexa la carpeta personal: ROMs, los *.AppImage.home
+# de los emuladores... Todo eso en la microSD es presion de E/S constante.
+#
+# No aporta nada al usuario de un handheld (sirve para la busqueda de ficheros
+# del escritorio), asi que se apaga de fabrica. Quien lo quiera:
+#   balooctl6 enable
+[Basic Settings]
+Indexing-Enabled=false

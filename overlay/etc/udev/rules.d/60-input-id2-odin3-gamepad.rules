@@ -1,0 +1,7 @@
+# El mando fisico de la Odin 3 (vendor 2020 / product 3001) NO lleva
+# ID_INPUT_JOYSTICK por defecto: udev lo clasifica como raton, y SDL filtra la
+# enumeracion por esa variable -> SDL no ve el mando y los emuladores se quedan
+# sin control. Con esta regla SDL pasa de 0 a 1 mando.
+#
+# Ver docs/MANDO-ODIN3-RETROARCH.md y docs/MANDOS-DE-OTROS-SISTEMAS.md
+SUBSYSTEM=="input", ATTRS{name}=="AYN Odin3 Gamepad", ENV{ID_INPUT_JOYSTICK}="1"
