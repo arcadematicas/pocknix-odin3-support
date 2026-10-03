@@ -190,6 +190,69 @@ Salida sobre el arbol real (maqueta con las 34 apps instaladas en la consola):
 **103 emuladores leidos, 70 ausentes, 255 comandos a quitar, 0 reglas rotas**,
 1110 comandos -> 855.
 
+## Salida real en la Odin (03/10/2026)
+
+Copias previas, **antes** de tocar nada:
+
+| Donde | Que |
+|---|---|
+| `/opt/deckstation/DeckStation.AppImage.home/ES-DE/custom_systems/es_systems.xml.bak-pre-emus` | en la consola |
+| `…/es_find_rules.xml.bak-pre-emus` | en la consola |
+| `/tmp/opencode/odin-pre-emus/es_systems.xml.bak-pre-emus` | en el PC (184525 bytes) |
+| `/tmp/opencode/odin-pre-emus/es_find_rules.xml.bak-pre-emus` | en el PC (38632 bytes) |
+| `/opt/deckstation/scripts/deckstation-launcher.sh.bak-pre-emus` | launcher de la consola, antes de cablear el script |
+
+`--dry-run` en la consola (34 apps instaladas):
+
+```
+  [emus-sync] reglas leidas: 103 emuladores
+  [emus-sync] AUSENTES (ninguna de sus rutas existe): 68
+  [emus-sync]    (en uso)  CITRA                      ninguna de sus 4 rutas existe
+  [emus-sync]    (en uso)  MEDNAFEN                   ninguna de sus 3 rutas existe
+  [emus-sync]    (en uso)  MESEN                      ninguna de sus 2 rutas existe
+  [emus-sync]    (en uso)  GOPHER2600                 sin ninguna regla en es_find_rules.xml
+  [emus-sync]    (nunca)  CITRON                     ninguna de sus 2 rutas existe
+  ...
+  [emus-sync] reglas rotas: ninguna
+  [emus-sync] definidos pero no usados por ningun comando: 2 (normal)
+  [emus-sync] comandos a quitar: 180
+  [emus-sync]    n3ds         Citra (Standalone)           (%CITRA% no instalado)
+  [emus-sync]    snes         Mednafen (Standalone)        (%MEDNAFEN% no instalado)
+  [emus-sync]    AVISO: ngage se quedaba sin comandos; se conserva el primero
+  [emus-sync] SIMULACION: no se ha escrito nada
+```
+
+Aplicado de verdad: **1067 -> 887 comandos**, `quitados 180 comandos | backup en
+es_systems.xml.bak-emus`.
+
+Como se comprobo que no rompe nada:
+
+| Comprobacion | Resultado |
+|---|---|
+| `diff` del activo contra el backup | **180 lineas borradas, 0 anadidas, 0 lineas que no sean `<command>`** |
+| XML resultante (`ElementTree`) | valido |
+| Sistemas con `<command>` | 197 antes, **197 despues**; **ninguno se queda con 0** |
+| Sistemas cuyo nº de comandos no cambia | **94 de 197** (intactos) |
+| Comandos que quedan | **todos identicos** a los que habia (0 comandos nuevos) |
+| Emuladores instalados | mismos numeros antes/despues: RETROARCH 605/605, MAME 84/84, FLYCAST 8/8, DOLPHIN 3/3, RPCS3 3/3, PPSSPP 2/2, BIGPEMU 2/2, AZAHAR 1/1, XENIA-EDGE 1/1, CEMU 1/1, SCUMMVM 1/1, PCSX-REDUX 1/1, VITA3K 1/1, MELONDS 1/1 |
+| Cruce: emuladores usados por los 180 comandos borrados | **todos** estan en la lista de ausentes (ninguno instalado se ha tocado) |
+| Idempotencia | 2a pasada: `nada que hacer (el activo ya esta filtrado)`, no reescribe |
+| `n3ds` | `Citra (Standalone)` fuera; `Azahar (Standalone)`, `Shortcut or script` y los comandos con core (Citra, Citra 2018, Azahar) siguen |
+| `xbox360` | `Xenia Edge (Standalone)` sigue (la regla rota de `3d5aa63` esta bien) |
+
+### ⚠️ El `es_systems.xml` activo se regenera: los arreglos manuales no sobreviven
+
+`deckstation-cores-sync.sh` **regenera el activo desde el source** en cada
+arranque, asi que cualquier retoque a mano del `es_systems.xml` de
+`…/DeckStation.AppImage.home/ES-DE/custom_systems/` se pierde en el siguiente
+arranque de DeckStation. Para que un cambio sea permanente va en el **source**,
+`configs/es-de/custom_systems/es_systems.xml` (que es lo que edita
+`inserta-cores-es-de.py`).
+
+Por eso en la consola solo se cableo el `deckstation-launcher.sh` (backup en
+`.bak-pre-emus`) y **no** el `deckstation-setup.sh`, que tenia otros cambios
+locales de otra sesion de trabajo.
+
 ## Ficheros
 
 | Fichero | Que es |
