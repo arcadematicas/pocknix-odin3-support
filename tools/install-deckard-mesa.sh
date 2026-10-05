@@ -26,6 +26,7 @@
 #   --file RUTA        usa ese .pkg.tar.zst en vez de buscar la ultima version en el repo
 #   --keep RUTA        guarda una copia del paquete descargado en RUTA
 #   --prune            borra los otros directorios *-valve (deja el nuevo y su .prev)
+#   --force            escribe aunque la ruta ya la posea un paquete instalado (pruebas)
 #   --no-verificar     no lanza vulkaninfo al final (util sin GPU visible)
 #   -h, --help         esta ayuda
 #
@@ -52,6 +53,8 @@ FILE=""
 KEEP=""
 PRUNE=0
 VERIFICAR=1
+# escribir aunque la ruta ya pertenezca a un paquete instalado (ver exigir_sin_dueno)
+FORCE=0
 WORK=""
 
 # symlinks del sistema que ha hecho este script (para poder deshacerlos si algo falla)
@@ -166,6 +169,51 @@ extraer_miembros() {  # $1 = paquete, $2 = destino, $3... = miembros
     else
         zstd -dc "$pkg" | tar --no-same-owner -xf - -C "$dest" "$@"
     fi
+}
+
+# --- guardar: nada que pacman ya posee ----------------------------------------------
+# Este script escribe FUERA de pacman (install -Dm755 / ln -s / mv / rm -rf). Por eso,
+# cuando una ruta que el script creó acaba entrando en un paquete, en los equipos ya
+# instalados queda una copia SIN dueño, y el siguiente `pacman -Syu` aborta la transacción
+# entera por "archivos en conflicto" hasta que alguien la borra a mano. Ocurrió con
+# /usr/share/pocknix/vk-arm (hoy pocknix-vk-valve) y con libdisplay-info.so.1.
+# Si la ruta ya la posee un paquete, la escritura que toca es la de pacman: actualiza el
+# paquete. --force existe para el caso de verdad (un laboratorio) y avisa de las consecuencias.
+duenos_en_conflicto() {  # $@ = rutas -> imprime "<ruta>: <paquete-version>" de las que TIENEN dueño
+    local r out
+    for r in "$@"; do
+        [ -e "$r" ] || [ -L "$r" ] || continue
+        if out="$(pacman -Qo -- "$r" 2>/dev/null)"; then
+            printf '     %s: %s\n' "$r" "${out##* }"
+        fi
+    done
+}
+
+exigir_sin_dueno() {  # $1 = etiqueta, $@ = rutas que se van a escribir/borrar
+    local etiqueta="$1"; shift
+    [ "$(id -u)" -eq 0 ] || return 0            # sin root no se puede preguntar a pacman
+    local chocados
+    chocados="$(duenos_en_conflicto "$@")"
+    [ -n "$chocados" ] || return 0
+    if [ "$FORCE" -eq 1 ]; then
+        warn "--force: escribo igualmente sobre ficheros de un paquete (${etiqueta}):"
+        printf '%s\n' "$chocados"
+        warn "  quedarán SIN dueño otra vez: ese es justo lo que rompe 'pacman -Syu'."
+        return 0
+    fi
+    if [ "$DRY_RUN" -eq 1 ]; then
+        warn "${etiqueta} tocaría ficheros que YA SON de un paquete:"
+        printf '%s\n' "$chocados"
+        warn " así que después pacman no podría actualizar ese paquete. Usa --force si es a propósito."
+        return 0
+    fi
+    printf '\nME PARO: no escribo sobre ficheros que ya pertenecen a un paquete instalado (${etiqueta}):\n' >&2
+    printf '%s\n' "$chocados" >&2
+    printf '   Si lo que quieres es una version nueva del driver, actualiza el PAQUETE que lo\n' >&2
+    printf '   posee (p. ej. pocknix-vk-valve); escribir aquí lo dejaría sin dueño otra vez y\n' >&2
+    printf '   el próximo pacman -Syu abortaría entero por ficheros en conflicto.\n' >&2
+    printf '   --force lo permite aun así (solo para pruebas).\n\n' >&2
+    exit 1
 }
 
 # ¿El driver necesita libgallium? Miramos NEEDED y ademas la cadena "libgallium" en el .so,
@@ -353,6 +401,7 @@ while [ $# -gt 0 ]; do
         --file)    FILE="${2:?--file necesita una ruta}"; shift 2 ;;
         --keep)    KEEP="${2:?--keep necesita un directorio}"; shift 2 ;;
         --prune)   PRUNE=1; shift ;;
+        --force)   FORCE=1; shift ;;
         --no-verificar) VERIFICAR=0; shift ;;
         -h|--help) usage ;;
         *)         die "opcion desconocida: $1 (--help para la ayuda)" ;;
@@ -520,6 +569,7 @@ for soname in ${FALTAN[@]+"${FALTAN[@]}"}; do
                 if [ "$DRY_RUN" -eq 1 ]; then
                     log "   [dry-run] ln -sfn ${src##*/} ${LIB_DIR}/${soname}"
                 else
+                    exigir_sin_dueno "symlink de compatibilidad en ${LIB_DIR}" "${LIB_DIR}/${soname}"
                     [ -w "$LIB_DIR" ] || die "no puedo escribir en ${LIB_DIR}: hace falta root"
                     # relativa si la gemela esta en el mismo directorio (enlazado en cadena),
                     # absoluta si vino de otro sitio
@@ -590,6 +640,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
     fi
 else
     [ "$(id -u)" -eq 0 ] || die "instalar en ${DEST_ROOT} necesita root (usa sudo, o --dry-run)"
+    exigir_sin_dueno "payload en ${DEST_ROOT}" "$DEST" "$PREV"
     mkdir -p "$DEST_ROOT"
     # idempotente: si ya estaba ESTA version, se aparta a .prev antes de escribir la nueva
     if [ -e "$DEST" ]; then
@@ -627,6 +678,7 @@ else
     if [ "$PRUNE" -eq 1 ]; then
         for d in "$DEST_ROOT"/*"${SUFFIX}" "$DEST_ROOT"/*"${SUFFIX}.prev"; do
             if [ -d "$d" ] && [ "$d" != "$DEST" ] && [ "$d" != "$PREV" ]; then
+                exigir_sin_dueno "--prune borraria ${d}" "$d"
                 log "   --prune: borro ${d}"
                 rm -rf "$d"
             fi
