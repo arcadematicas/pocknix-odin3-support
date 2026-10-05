@@ -1,4 +1,5 @@
 import re
+import shlex
 import threading
 from pathlib import Path
 
@@ -10,6 +11,39 @@ UNIT = "pocknix-qam-update"
 # Lives in /run so a reboot clears the finished/failed state together with the log.
 LOG = Path("/run/pocknix-update.log")
 EXIT_MARK = "POCKNIX_UPDATE_EXIT:"
+
+# ONE updater, one policy: pocknix-base owns the update engine and the --overwrite rules, so
+# this module only CALLS it. It used to build its own `pacman -Syu` here, which is why the
+# "Pocknix Updater" entry and the QAM button could disagree about the same problem.
+# Absolute paths: this python is an x86_64 FEX guest, so a bare "pocknix-update"/"pacman"
+# resolves into the FEX rootfs overlay (a foreign pacman on a stock pacman.conf whose
+# download sandbox also dies under emulation) instead of the host's.
+UPDATER = "/usr/bin/pocknix-update"
+PACMAN = "/usr/bin/pacman"
+
+# Degraded fallback ONLY, for a system where pocknix-base is somehow absent: run pacman
+# directly instead of refusing to update at all. Same bounded list of OUR paths as the
+# engine's, kept as GLOBS because there is no self-heal here to narrow them from pacman's
+# output. It can never authorise taking a file away from another installed package, and it
+# covers the leftovers pocknix itself created (plutovg/plutosvg/libFLAC.so.8/
+# libpcap.so.0.8 headers+sonames, and the Valve Turnip payload under /usr/share/pocknix/vk-arm).
+# ⚠ Keep in step with OVERWRITE_BASE in pocknix-base's pocknix-update; that script is the
+# source of truth. One line per path GROUP; the exact file list is `bsdtar -tf` of the four
+# packages (plutovg, plutosvg, pocknix-soname-compat, pocknix-vk-valve).
+OVERWRITE_BASE = (
+    "/usr/include/plutovg/*",
+    "/usr/include/plutosvg/*",
+    "/usr/lib/cmake/plutovg/*",
+    "/usr/lib/cmake/plutosvg/*",
+    "/usr/lib/pkgconfig/plutovg.pc",
+    "/usr/lib/pkgconfig/plutosvg.pc",
+    "/usr/lib/libplutovg.so*",
+    "/usr/lib/libplutosvg.so*",
+    "/usr/lib/libFLAC.so.8*",
+    "/usr/lib/libpcap.so.0.8*",
+    "/usr/lib/libdisplay-info.so.1*",
+    "/usr/share/pocknix/vk-arm/*",
+)
 
 # checkupdates(8) trick without pacman-contrib: refresh a THROWAWAY sync db copy and query
 # against it, so the real db is never -Sy'd without -u (partial-upgrade setup).
@@ -27,7 +61,7 @@ def _pacman(args, timeout):
     # resolves into the FEX rootfs overlay - a foreign pacman on a stock pacman.conf (no
     # [pocknix] repo, so pins vanish) whose download sandbox also dies under emulation.
     return run_cmd(
-        ["systemd-run", "--quiet", "--collect", "--wait", "--pipe", "/usr/bin/pacman", *args],
+        ["systemd-run", "--quiet", "--collect", "--wait", "--pipe", PACMAN, *args],
         timeout=timeout,
     )
 
@@ -91,18 +125,34 @@ def _check_updates_locked():
     ]
 
 
+def _update_script():
+    # sh -c runs on the HOST (systemd-run's binary), so the -x test and the --overwrite globs
+    # below are evaluated by the host's /bin/sh and the host's pacman, not by FEX.
+    ow = " ".join(f"--overwrite {shlex.quote(p)}" for p in OVERWRITE_BASE)
+    return "\n".join([
+        f"if [ -x {shlex.quote(UPDATER)} ]; then",
+        f"  {shlex.quote(UPDATER)} --noninteractive",
+        "else",
+        f"  printf '%s\\n' {shlex.quote('pocknix-update is missing (pocknix-base not installed?); running pacman directly with the leftover-file policy.')}",
+        f"  {shlex.quote(PACMAN)} -Syu --noconfirm --noprogressbar {ow}",
+        "fi",
+        f'echo "{EXIT_MARK}$?"',
+    ])
+
+
 def start_update():
     if _unit_running():
         raise RuntimeError("An update is already running")
     LOG.unlink(missing_ok=True)
-    # --noprogressbar keeps the log line-oriented; the exit marker is how status() learns
-    # the result after --collect has reaped the unit.
-    script = f'pacman -Syu --noconfirm --noprogressbar; echo "{EXIT_MARK}$?"'
+    # The exit marker is how status() learns the result after --collect has reaped the unit,
+    # and it must be the LAST thing written, so stderr goes to the same log (appending, not
+    # inheriting the unit's own stderr): otherwise the conflict/error lines race ahead of the
+    # marker and the user sees a log that ends on an error even after a successful retry.
     proc = run_cmd(
         ["systemd-run", "--quiet", "--collect", "--unit", UNIT,
          "--property", f"StandardOutput=append:{LOG}",
-         "--property", "StandardError=inherit",
-         "/bin/sh", "-c", script],
+         "--property", f"StandardError=append:{LOG}",
+         "/bin/sh", "-c", _update_script()],
         timeout=15,
     )
     if proc is None or proc.returncode != 0:

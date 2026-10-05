@@ -4,7 +4,12 @@
 # The plugin frontend (dist/index.js) is prebuilt and committed — no node at package build time.
 pkgname=pocknix-decky
 pkgver=0.1.0
-pkgrel=47
+# 48: the QAM update button no longer builds its own bare `pacman -Syu`; it calls
+#     /usr/bin/pocknix-update (pocknix-base, now the single updater engine and owner of the
+#     --overwrite policy), with a degraded in-module pacman fallback. Also appends the unit's
+#     stderr to /run/pocknix-update.log so the log cannot end on an error line ahead of the
+#     POCKNIX_UPDATE_EXIT marker.
+pkgrel=48
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control QAM plugin"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
