@@ -1,7 +1,8 @@
 # El actualizador del QAM se quedaba atascado para siempre (2026-10-05)
 
-**Estado:** fase 1 PUBLICADA y verificada. Fase 2 pendiente de que Fransis pulse el botón
-una vez y reinicie. Nada de esto se ha publicado en `shuuri-labs/pocknix-os`.
+**Estado:** fase 1 PUBLICADA y verificada (con una republicación, ver §5.1). Fase 2
+pendiente de que Fransis pulse el botón una vez y reinicie. Nada de esto se ha publicado en
+`shuuri-labs/pocknix-os`.
 
 ---
 
@@ -61,14 +62,15 @@ Es decir: pocknix fabricó sus propios huérfanos. **Por eso el arreglo es segur
 | Fichero | Dónde | Cambio | pkgrel |
 |---|---|---|---|
 | `packages/shared/pocknix-base/pocknix-update` | árbol `pocknix-os` | el motor: `--overwrite` acotado + autorreparación | — |
-| `packages/shared/pocknix-base/PKGBUILD` | árbol `pocknix-os` | comentario del bump | **5 → 6** |
+| `packages/shared/pocknix-base/PKGBUILD` | árbol `pocknix-os` | comentario del bump | **5 → 7** (el 6 se publicó roto, §5.1) |
 | `packages/pocknix-decky/pocknix-control/py_modules/pocknix_control/updates.py` | centro | el QAM llama a `pocknix-update`; stderr al log | — |
 | `packages/pocknix-decky/PKGBUILD` | centro | comentario del bump | **47 → 48** |
 | `tools/install-deckard-mesa.sh` | centro | deja de fabricar huérfanos | — |
 | `scripts/stage-check.sh` | árbol `pocknix-os` | `POCKNIX_STAGE_CHECK_TEMP_DROP`, `POCKNIX_STAGE_CHECK_SOCS` | — |
 
-Commits: `pocknix-os` `b7a5516` (rama `odin3-sm8750` de nuestro fork), centro `f28ecdb`
-(`master`). Pushados **solo a `arcadematicas/*`**. `shuuri-labs/pocknix-os` intacto.
+Commits: `pocknix-os` `b7a5516` y `7e2dff1` (rama `odin3-sm8750` de nuestro fork), centro
+`f28ecdb` y `f08b6e3` (`master`). Pushados **solo a `arcadematicas/*`**.
+`shuuri-labs/pocknix-os` intacto.
 
 `pocknix-decky` es del centro y se copia al árbol con `tools/sync-to-os.sh`; `pocknix-base`
 solo vive en el árbol. El diff completo está en los dos commits.
@@ -112,7 +114,9 @@ no hay reintento y se devuelve el código original.
 Publicado a `r2:pocknix/shared` (= `https://pub-fd47305874674bf597b27eb7f880e73b.r2.dev/shared`),
 **sin sudo**, desde el espejo de staging, nunca con `POCKNIX_PUBLISH_FROM=localrepo`:
 
-- **Añadidos:** `pocknix-base 0.2.0-6`, `pocknix-decky 0.1.0-48` (y fuera `-5` y `-47`).
+- **Añadidos:** `pocknix-base 0.2.0-7`, `pocknix-decky 0.1.0-48` (y fuera `-5`, `-6` y `-47`).
+  El `-7` es una republicación: el `-6` se publicó con las rutas del banco de pruebas
+  metidas dentro del script. Ver §5.1.
 - **Retirados temporalmente:** `plutovg`, `plutosvg`, `pocknix-soname-compat`,
   `pocknix-vk-valve`, `pocknix-steam-full`, `libretro-cores-pocknix`.
   Los dos últimos también, porque arrastran a los otros cuatro como `depends`: si se
@@ -120,28 +124,74 @@ Publicado a `r2:pocknix/shared` (= `https://pub-fd47305874674bf597b27eb7f880e73b
   la transacción por dependencia insatisfecha — el mismo fallo con otro mensaje.
 - `r2:pocknix/sm8750` **intacto** (11 paquetes).
 
-**Verificación real (no "publish OK"):**
+**Verificación real (no "publish OK"), repetida el 05/10 contra el bucket vivo:**
 
-1. HTTP público: `pocknix-shared.db` 200, `pocknix-base-0.2.0-6` 200 (14052 B),
-   `pocknix-decky-0.1.0-48` 200 (27277932 B), `pocknix-repo.gpg` 200;
+1. HTTP público por ranged GET: `pocknix-shared.db` 200 (9774 B),
+   `pocknix-base-0.2.0-7-any.pkg.tar.xz` 200 (14040 B),
+   `pocknix-decky-0.1.0-48-any.pkg.tar.xz` 200 (27277932 B), `pocknix-repo.gpg` 200
+   (1290 B); `pocknix-base-0.2.0-6`, `pocknix-base-0.2.0-5`, `pocknix-decky-0.1.0-47`,
    `plutovg-1.3.3-1` y `libretro-cores-pocknix-0.1.0-7` → **404**.
-2. El `.db` que sirve el CDN contiene `pocknix-base-0.2.0-6` y `pocknix-decky-0.1.0-48`, y
-   ningún nombre retirado.
-3. Resolviendo contra lo que la Odin tiene instalado (db desechable en `/tmp`,
+2. El `.db` que sirve el CDN contiene `pocknix-base-0.2.0-7` y `pocknix-decky-0.1.0-48`,
+   **cero** entradas de los seis nombres retirados, 39 entradas en total.
+3. El `.db` descargado, suscripto y extraído: el `pocknix-update` de dentro lleva
+   `SELF=/usr/bin/pocknix-update`, `PACMAN=/usr/bin/pacman`, **0** rutas del banco de
+   pruebas, newline final y las 12 líneas de `OVERWRITE_BASE`; `bash -n` limpio; y sus
+   bytes md5 casan con el fichero del árbol (`6b5241effacbcf05ad1066eefaba62f7`).
+4. Resolviendo contra lo que la Odin tiene instalado (db desechable en `/tmp`,
    `--logfile /dev/null`, **nada instalado**):
 
    ```
    $ pacman -Sup --dbpath /tmp/... --print-format '%n %v'
    f2fs-tools 1.17.0-1
-   pocknix-base 0.2.0-6
+   pocknix-base 0.2.0-7
    pocknix-decky 0.1.0-48
    ```
 
    Idéntico con y sin el `--overwrite` acotado (ya no hay nada que entre en conflicto).
    `f2fs-tools` viene de ALARM y no estorba en el conflicto.
-4. La Odin **no se ha tocado**: db de sincronización real, `/var/log/pacman.log` y el
+5. La Odin **no se ha tocado**: db de sincronización real, `/var/log/pacman.log` y el
    conjunto de paquetes instalados, con md5 antes y después, **sin cambios**. El askpass
    temporal se borró al salir.
+
+### 5.1 Lo que salió mal por el camino: el `-6` se publicó con rutas del banco de pruebas
+
+La primera publicación de `pocknix-base` salió como `0.2.0-6` y **no era utilizable**: un
+`sed -i` del arnés de pruebas reescribió el fichero fuente del motor *antes* de empaquetarlo,
+de modo que el paquete llevaba
+
+```
+SELF=/tmp/opencode/test/root/bin/pocknix-update
+PACMAN=/tmp/opencode/test/bin/pacman
+```
+
+y ningún newline final. En el Odin eso no es un fallback inocuo: el script se re-ejecuta a
+sí mismo por una ruta que no existe y llama a un pacman que no existe, así que la
+actualización falla siempre. La política de `--overwrite` (las dos capas) era correcta y no
+cambió ni una coma: lo que se había llevado por delante eran dos variables y un byte.
+
+Dos consecuencias que hay que tener presentes:
+
+- **No se puede republicar `-6` con otros bytes.** El nombre de fichero es la clave de caché
+  de los clientes: un equipo que ya descargó el `-6` roto se quedaría con él. Por eso el
+  arreglo es un **`pkgrel` nuevo, `7`**, no una republicación con el mismo nombre. El `-6`
+  queda además retirado del bucket (404), así que no hay dos copias distintas del mismo
+  nombre sirviéndose.
+- **Comprobación obligatoria antes de publicar cualquier fichero que venga de una máquina
+  con tests:**
+
+  ```bash
+  grep -c '/tmp/opencode' <fichero>   # -> 0
+  tail -c1 <fichero> | od -c          # -> \n
+  bash -n <fichero>                   # -> ok
+  ```
+
+- La republicación (`-7`) **sí** necesitó `POCKNIX_STAGE_CHECK_TEMP_DROP` declarado, porque
+  para entonces los seis paquetes ya estaban retirados y el gate los tenía por un retiro
+  olvidado. Ese `TEMP_DROP` es solo de la republicación: **la fase 2 (§7) no lo lleva**, y su
+  `PKG=` tiene que traer los seis nombres, porque en la fase 2 no se retira nada.
+
+El commit `b7a5516` (el que llevó el arreglo al árbol) arrastraba la corrupción; el
+siguiente, `7e2dff1`, la quita y sube `pkgrel` a 7.
 
 ## 6. Qué tiene que hacer Fransis (en orden)
 
@@ -188,6 +238,10 @@ export POCKNIX_STAGE_CHECK_SOCS="sm8750"
 make stage-shared PKG="plutovg plutosvg pocknix-soname-compat pocknix-vk-valve pocknix-steam-full libretro-cores-pocknix"
 make publish-shared
 ```
+
+**Los seis nombres en `PKG`, ni uno menos.** Si se publica solo un subconjunto, el gate ve
+los otros como un retiro olvidado y para; declarar `TEMP_DROP` para tapar eso dejaría la
+release a medias, que es justo lo que la fase 1 evitó a propósito.
 
 Por qué `POCKNIX_STAGE_CHECK_*` (tres cosas que hubo que arreglar para poder publicar, y
 que hay que saber para no volver a tropezar):
@@ -280,10 +334,14 @@ Preparado, sin enviar. Enviar solo cuando Fransis haya confirmado el paso 6.
 1. **`config/pocknix.conf:130`**: `POCKNIX_REPO_RCLONE_REMOTE:=r2:pocknix/repo` no
    corresponde al bucket real (`r2:pocknix/{shared,sm8750}`). Publicar sin la variable
    explícita sube a un prefijo que nadie lee y no da error.
-2. **Rama local del OS tree**: `odin3-sm8750` está 1 commit por delante y **3 por detrás**
-   de `arcadematicas/odin3-sm8750`, con 35 ficheros sin marcar de otra sesión. No se ha
-   tocado nada de eso: el commit se rebasó y empujó desde un worktree desechable. Quien
-   tenga esa sesión abierta necesitará un `git rebase` antes de seguir.
+2. **Rama local del OS tree** (`pc-local`): `odin3-sm8750` está **1 commit por delante y 5
+   por detrás** de `arcadematicas/odin3-sm8750` (el `90e4686` viejo frente al `7e2dff1`
+   publicado), con 37 ficheros sin marcar de otra sesión. No se ha tocado nada de eso: los
+   commits se llevaron y se empujaron desde un worktree desechable, que ya se ha borrado. Los
+   seis ficheros nuestros del árbol de trabajo sí se han alineado **en contenido** con la
+   punta del fork (así no queda el motor roto en ningún disco), pero la rama sigue
+   divergiendo: quien tenga esa sesión abierta necesitará un `git fetch arcadematicas &&
+   git rebase arcadematicas/odin3-sm8750` antes de seguir.
 3. **Deriva centro ↔ árbol**: `check-sync.sh` falla con 3 ficheros distintos
    (`devices/sm8750/firmware/README.md`, `devices/sm8750/packages/pocknix-bsp-sm8750/PKGBUILD`,
    `scripts/build-packages.sh`). En el árbol son **más nuevos** que en el centro, así que un
