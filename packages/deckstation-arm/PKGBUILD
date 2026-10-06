@@ -3,7 +3,7 @@
 # Proyecto independiente. Versión original (x86_64): deckstation-x86_64.
 pkgname=deckstation-arm
 pkgver=1.0.0
-pkgrel=13
+pkgrel=14
 pkgdesc="Sistema de emulación portable para ARM (aarch64/armv7h)"
 arch=('aarch64' 'armv7h')
 url="https://github.com/stshunz/deckstation-arm"
@@ -12,6 +12,7 @@ depends=(
     'python'
     'python-requests'
     'python-pygame'
+    'wproton-arm'    # WProton = companero de DeckStation (lanzador de juegos en ARM)
 )
 makedepends=()
 optdepends=(

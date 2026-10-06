@@ -9,7 +9,7 @@
 # desplegados. Si upstream toca este fichero, re-mergear (esta copia es solo el PKGBUILD).
 pkgname=pocknix-steam-full
 pkgver=0.1.0
-pkgrel=3
+pkgrel=4
 pkgdesc="pocknix optional layer: Steam gamescope session, FEX x86 runtime, Decky"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -24,7 +24,8 @@ depends=('pocknix-steam'
          'fex-rootfs'
          'pocknix-turnip-arm'
          'pocknix-turnip-x86'
-         'pocknix-vk-valve')    # Turnip de Valve como payload 26.3.0-valve (+13,4% FPS medido)
+         'pocknix-vk-valve'    # Turnip de Valve como payload 26.3.0-valve (+13,4% FPS medido)
+         'gamescope-session-steam')  # sesion Steam estandar en gamescope (cubre gamescope-session y gamescope-session-steam)
 
 package() {
   :   # pure metapackage
