@@ -1,0 +1,116 @@
+:root {
+  --ecl-twinkle-a:
+    radial-gradient(2.1px 2.1px at 17.5% 15.6%, rgba(210, 228, 255, 0.73), transparent),
+    radial-gradient(6.3px 6.3px at 17.5% 15.6%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 89.4% 60.9%, rgba(210, 228, 255, 0.7), transparent),
+    radial-gradient(5.4px 5.4px at 89.4% 60.9%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 3.3% 81.1%, rgba(255, 236, 214, 0.67), transparent),
+    radial-gradient(5.4px 5.4px at 3.3% 81.1%, rgba(255, 236, 214, 0.12), transparent),
+    radial-gradient(1.6px 1.6px at 51.6% 48.6%, rgba(255, 255, 255, 0.87), transparent),
+    radial-gradient(4.8px 4.8px at 51.6% 48.6%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1.7px 1.7px at 84.4% 71.1%, rgba(255, 255, 255, 0.95), transparent),
+    radial-gradient(5.1px 5.1px at 84.4% 71.1%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 90.4% 15.8%, rgba(210, 228, 255, 0.69), transparent),
+    radial-gradient(5.4px 5.4px at 90.4% 15.8%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 48.4% 71.8%, rgba(255, 236, 214, 0.84), transparent),
+    radial-gradient(5.4px 5.4px at 48.4% 71.8%, rgba(255, 236, 214, 0.12), transparent),
+    radial-gradient(1.6px 1.6px at 20.0% 80.5%, rgba(255, 255, 255, 0.88), transparent),
+    radial-gradient(4.8px 4.8px at 20.0% 80.5%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(2.0px 2.0px at 47.5% 91.5%, rgba(255, 255, 255, 0.94), transparent),
+    radial-gradient(6.0px 6.0px at 47.5% 91.5%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1.9px 1.9px at 70.4% 7.2%, rgba(255, 255, 255, 0.79), transparent),
+    radial-gradient(5.7px 5.7px at 70.4% 7.2%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1.9px 1.9px at 24.7% 33.1%, rgba(255, 236, 214, 0.7), transparent),
+    radial-gradient(5.7px 5.7px at 24.7% 33.1%, rgba(255, 236, 214, 0.12), transparent),
+    radial-gradient(2.1px 2.1px at 45.0% 66.1%, rgba(255, 236, 214, 0.83), transparent),
+    radial-gradient(6.3px 6.3px at 45.0% 66.1%, rgba(255, 236, 214, 0.12), transparent),
+    radial-gradient(1.6px 1.6px at 8.1% 59.5%, rgba(255, 255, 255, 0.94), transparent),
+    radial-gradient(4.8px 4.8px at 8.1% 59.5%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(2.1px 2.1px at 14.2% 8.2%, rgba(255, 236, 214, 0.63), transparent),
+    radial-gradient(6.3px 6.3px at 14.2% 8.2%, rgba(255, 236, 214, 0.12), transparent);
+  --ecl-twinkle-b:
+    radial-gradient(1.7px 1.7px at 16.0% 12.2%, rgba(210, 228, 255, 0.76), transparent),
+    radial-gradient(5.1px 5.1px at 16.0% 12.2%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(1.9px 1.9px at 5.6% 42.1%, rgba(255, 236, 214, 0.79), transparent),
+    radial-gradient(5.7px 5.7px at 5.6% 42.1%, rgba(255, 236, 214, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 39.7% 36.9%, rgba(210, 228, 255, 0.77), transparent),
+    radial-gradient(5.4px 5.4px at 39.7% 36.9%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(2.1px 2.1px at 81.3% 37.5%, rgba(255, 255, 255, 0.79), transparent),
+    radial-gradient(6.3px 6.3px at 81.3% 37.5%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(2.2px 2.2px at 87.0% 46.5%, rgba(210, 228, 255, 0.61), transparent),
+    radial-gradient(6.6px 6.6px at 87.0% 46.5%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(2.0px 2.0px at 23.5% 53.3%, rgba(255, 255, 255, 0.64), transparent),
+    radial-gradient(6.0px 6.0px at 23.5% 53.3%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1.6px 1.6px at 41.3% 75.3%, rgba(255, 236, 214, 0.75), transparent),
+    radial-gradient(4.8px 4.8px at 41.3% 75.3%, rgba(255, 236, 214, 0.12), transparent),
+    radial-gradient(2.2px 2.2px at 16.3% 83.7%, rgba(255, 236, 214, 0.6), transparent),
+    radial-gradient(6.6px 6.6px at 16.3% 83.7%, rgba(255, 236, 214, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 49.5% 30.7%, rgba(210, 228, 255, 0.91), transparent),
+    radial-gradient(5.4px 5.4px at 49.5% 30.7%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(2.1px 2.1px at 82.4% 75.1%, rgba(210, 228, 255, 0.75), transparent),
+    radial-gradient(6.3px 6.3px at 82.4% 75.1%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 22.1% 29.7%, rgba(210, 228, 255, 0.87), transparent),
+    radial-gradient(5.4px 5.4px at 22.1% 29.7%, rgba(210, 228, 255, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 81.8% 39.4%, rgba(255, 255, 255, 0.92), transparent),
+    radial-gradient(5.4px 5.4px at 81.8% 39.4%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1.7px 1.7px at 9.5% 17.8%, rgba(255, 255, 255, 0.88), transparent),
+    radial-gradient(5.1px 5.1px at 9.5% 17.8%, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1.8px 1.8px at 32.3% 55.7%, rgba(210, 228, 255, 0.8), transparent),
+    radial-gradient(5.4px 5.4px at 32.3% 55.7%, rgba(210, 228, 255, 0.12), transparent);
+}
+
+@keyframes ecl-twinkle-a {
+  0%, 100% { opacity: 0.12; }
+  18% { opacity: 0.85; }
+  31% { opacity: 0.3; }
+  52% { opacity: 1; }
+  64% { opacity: 0.18; }
+  83% { opacity: 0.7; }
+}
+
+@keyframes ecl-twinkle-b {
+  0%, 100% { opacity: 0.7; }
+  14% { opacity: 0.15; }
+  37% { opacity: 0.95; }
+  49% { opacity: 0.25; }
+  71% { opacity: 0.8; }
+  88% { opacity: 0.1; }
+}
+
+#Main .gamepadhome_RecentSection_39tNv,
+#Main .ZBBhezbBR4VJYysmVhF3_,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u {
+  isolation: isolate;
+}
+
+#Main .gamepadhome_RecentSection_39tNv::before,
+#Main .gamepadhome_RecentSection_39tNv::after,
+#Main .ZBBhezbBR4VJYysmVhF3_::before,
+#Main .ZBBhezbBR4VJYysmVhF3_::after,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG::before,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG::after,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u::before,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+#Main .gamepadhome_RecentSection_39tNv::before,
+#Main .ZBBhezbBR4VJYysmVhF3_::before,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG::before,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u::before {
+  background: var(--ecl-twinkle-a);
+  animation: ecl-twinkle-a 9.7s ease-in-out infinite;
+}
+
+#Main .gamepadhome_RecentSection_39tNv::after,
+#Main .ZBBhezbBR4VJYysmVhF3_::after,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG::after,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u::after {
+  background: var(--ecl-twinkle-b);
+  animation: ecl-twinkle-b 13.3s ease-in-out -4.1s infinite;
+}

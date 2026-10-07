@@ -1,0 +1,54 @@
+/* ============================================================================
+   ZZZ Eclipse Odin 1080p — capa de ajuste para la Odin 3 (pantalla 1920x1080)
+   ============================================================================
+   ADVERTENCIA: esto es una PLANTILLA, no un "fix" verificado. El tema eclipse
+   se diseñó para Steam Deck (1280x800). En la Odin hay que MIRAR primero cómo
+   renderiza Steam el gamepadui a 1080p:
+
+     - Si Steam renderiza el gamepadui a resolución lógica 1280x800 y lo escala
+       (caso habitual en Deck dockeada y en muchas configs), este fichero NO
+       hace falta: el CSS del tema ya usa unidades vh/vw relativas al viewport
+       lógico y se ve igual que en la Deck.
+     - Si el viewport CSS real es 1920x1080 (native), los valores vh/vw del
+       tema crecen un ~35% y los px fijos se quedan pequeños. Entonces se
+       ajustan los knobs de abajo.
+
+   Cómo usarlo:
+     1. Copia la carpeta "ZZZ Eclipse Odin 1080p" a ~/homebrew/themes/ en la
+        Odin (mismo sitio que "Hooandee Eclipse").
+     2. Ábrela en CSS Loader (QAM) y actívala DESPUÉS de "Hooandee Eclipse".
+        El prefijo ZZZ garantiza que se inyecta al final y gana la cascada.
+     3. Descomenta y ajusta solo lo que haga falta. CSS Loader vigila la
+        carpeta y recarga en caliente (watchdog), así que editas y ves el
+        resultado al momento. Si algo se ve mal: desactiva esta capa sola.
+   ============================================================================ */
+
+/* Todos los valores del tema viven como variables en :root (tokens.css,
+   home.css, orbit.css, qam.css). Aquí solo se re-declaran las que tocan la
+   geometría de 1080p. Por defecto NO se cambia nada (comentado). */
+
+:root {
+  /* --- Home: geometría de la "luna" y el horizonte (home.css) ---
+     Deck 1280x800: 1vh = 8px. Odin native 1920x1080: 1vh = 10.8px.
+     Si el carrusel de juegos queda muy abajo/arriba o la luna muy grande: */
+  /* --ecl-home-horizon: 71vh;   */ /* horizonte del fondo */
+  /* --ecl-home-moon: 13vh;      */ /* tamaño luna (reposo) */
+  /* --ecl-home-moon-lit: 20vh;  */ /* tamaño luna (enfocada) */
+  /* --ecl-home-headroom: 6.5vh; */ /* margen superior del carrusel */
+  /* --ecl-home-row-offset: 42px;*/ /* px fijos: offset de fila del carrusel */
+
+  /* --- Home: máscara del amanecer (si el degradado se ve distinto) --- */
+  /* --ecl-home-dawn: 40vh; */
+
+  /* --- QAM: radio del dial decorativo (qam.css) --- */
+  /* --ecl-qdial-r: 1800px; */ /* círculo decorativo; en 1080p native revisar */
+}
+
+/* Ejemplo práctico de override puntual (descomentar solo lo necesario).
+   Regla: siempre con !important y mismo nivel de especificidad o mayor que
+   la del tema, para que gane la carga posterior. */
+
+/* #Main ._282X0J4BtrSF1IXctmOe-X [role="listitem"] ._1pwP4eeP1zQD7PEgmsep0W > [role="link"] {
+     width: 220px !important;
+     height: 220px !important;
+   } */

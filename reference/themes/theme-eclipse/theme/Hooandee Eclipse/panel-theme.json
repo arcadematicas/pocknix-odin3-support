@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 2,
+  "catalogId": "hooandee-eclipse",
+  "labels": {
+    "Ahorro OLED": {
+      "name": {
+        "es": "Ahorro en OLED",
+        "en": "OLED power saving",
+        "it": "Risparmio OLED",
+        "de": "OLED-Stromsparen",
+        "pt-BR": "Economia em OLED"
+      },
+      "values": {
+        "Máximo": {
+          "es": "Máximo",
+          "en": "Maximum",
+          "it": "Massimo",
+          "de": "Maximal",
+          "pt-BR": "Máximo"
+        },
+        "Normal": {
+          "es": "Equilibrado",
+          "en": "Balanced",
+          "it": "Bilanciato",
+          "de": "Ausgewogen",
+          "pt-BR": "Equilibrado"
+        }
+      }
+    },
+    "Acento": {
+      "name": {
+        "es": "Color del tema",
+        "en": "Theme color",
+        "it": "Colore del tema",
+        "de": "Designfarbe",
+        "pt-BR": "Cor do tema"
+      },
+      "values": {
+        "Venus": {
+          "es": "Venus",
+          "en": "Venus",
+          "it": "Venere",
+          "de": "Venus",
+          "pt-BR": "Vênus"
+        },
+        "Mercurio": {
+          "es": "Mercurio",
+          "en": "Mercury",
+          "it": "Mercurio",
+          "de": "Merkur",
+          "pt-BR": "Mercúrio"
+        },
+        "Tierra": {
+          "es": "Tierra",
+          "en": "Earth",
+          "it": "Terra",
+          "de": "Erde",
+          "pt-BR": "Terra"
+        },
+        "Marte": {
+          "es": "Marte",
+          "en": "Mars",
+          "it": "Marte",
+          "de": "Mars",
+          "pt-BR": "Marte"
+        },
+        "Júpiter": {
+          "es": "Júpiter",
+          "en": "Jupiter",
+          "it": "Giove",
+          "de": "Jupiter",
+          "pt-BR": "Júpiter"
+        },
+        "Saturno": {
+          "es": "Saturno",
+          "en": "Saturn",
+          "it": "Saturno",
+          "de": "Saturn",
+          "pt-BR": "Saturno"
+        },
+        "Urano": {
+          "es": "Urano",
+          "en": "Uranus",
+          "it": "Urano",
+          "de": "Uranus",
+          "pt-BR": "Urano"
+        },
+        "Neptuno": {
+          "es": "Neptuno",
+          "en": "Neptune",
+          "it": "Nettuno",
+          "de": "Neptun",
+          "pt-BR": "Netuno"
+        },
+        "Plutón": {
+          "es": "Plutón",
+          "en": "Pluto",
+          "it": "Plutone",
+          "de": "Pluto",
+          "pt-BR": "Plutão"
+        }
+      }
+    },
+    "Acceso rápido": {
+      "name": {
+        "es": "Menú rápido al elegir un juego",
+        "en": "Quick menu when picking a game",
+        "it": "Menu rapido alla scelta di un gioco",
+        "de": "Schnellmenü bei der Spielauswahl",
+        "pt-BR": "Menu rápido ao escolher um jogo"
+      }
+    },
+    "Corona de foco": {
+      "name": {
+        "es": "Brillo de la selección",
+        "en": "Selection glow",
+        "it": "Bagliore della selezione",
+        "de": "Leuchten der Auswahl",
+        "pt-BR": "Brilho da seleção"
+      }
+    },
+    "Movimiento": {
+      "name": {
+        "es": "Animaciones",
+        "en": "Animations",
+        "it": "Animazioni",
+        "de": "Animationen",
+        "pt-BR": "Animações"
+      }
+    },
+    "Estrellas titilantes": {
+      "name": {
+        "es": "Estrellas titilantes",
+        "en": "Twinkling stars",
+        "it": "Stelle scintillanti",
+        "de": "Funkelnde Sterne",
+        "pt-BR": "Estrelas cintilantes"
+      }
+    },
+    "Contenido del header": {
+      "name": {
+        "es": "Barra superior",
+        "en": "Top bar",
+        "it": "Barra superiore",
+        "de": "Obere Leiste",
+        "pt-BR": "Barra superior"
+      },
+      "values": {
+        "Completo": {
+          "es": "Completa",
+          "en": "Full",
+          "it": "Completa",
+          "de": "Vollständig",
+          "pt-BR": "Completa"
+        },
+        "Solo indicadores": {
+          "es": "Solo indicadores",
+          "en": "Indicators only",
+          "it": "Solo indicatori",
+          "de": "Nur Anzeigen",
+          "pt-BR": "Só indicadores"
+        },
+        "Oculto": {
+          "es": "Oculta",
+          "en": "Hidden",
+          "it": "Nascosta",
+          "de": "Ausgeblendet",
+          "pt-BR": "Oculta"
+        }
+      }
+    },
+    "Indicadores del header": {
+      "name": {
+        "es": "Indicadores de la barra superior",
+        "en": "Top bar indicators",
+        "it": "Indicatori della barra superiore",
+        "de": "Anzeigen der oberen Leiste",
+        "pt-BR": "Indicadores da barra superior"
+      },
+      "values": {
+        "Batería y hora": {
+          "es": "Batería y hora",
+          "en": "Battery and time",
+          "it": "Batteria e ora",
+          "de": "Akku und Uhrzeit",
+          "pt-BR": "Bateria e hora"
+        },
+        "Solo batería": {
+          "es": "Solo la batería",
+          "en": "Battery only",
+          "it": "Solo batteria",
+          "de": "Nur Akku",
+          "pt-BR": "Só a bateria"
+        },
+        "Solo hora": {
+          "es": "Solo la hora",
+          "en": "Time only",
+          "it": "Solo ora",
+          "de": "Nur Uhrzeit",
+          "pt-BR": "Só a hora"
+        },
+        "Ninguno": {
+          "es": "Ninguno",
+          "en": "None",
+          "it": "Nessuno",
+          "de": "Keine",
+          "pt-BR": "Nenhum"
+        }
+      }
+    },
+    "Contenido del footer": {
+      "name": {
+        "es": "Ayuda de botones",
+        "en": "Button hints",
+        "it": "Legenda dei tasti",
+        "de": "Tastenhinweise",
+        "pt-BR": "Legenda dos botões"
+      },
+      "values": {
+        "Completo": {
+          "es": "Completa",
+          "en": "All",
+          "it": "Completa",
+          "de": "Alle",
+          "pt-BR": "Completa"
+        },
+        "Esencial": {
+          "es": "Solo lo esencial",
+          "en": "Essentials only",
+          "it": "Solo l'essenziale",
+          "de": "Nur das Wichtigste",
+          "pt-BR": "Só o essencial"
+        },
+        "Oculto": {
+          "es": "Oculta",
+          "en": "Hidden",
+          "it": "Nascosta",
+          "de": "Ausgeblendet",
+          "pt-BR": "Oculta"
+        }
+      }
+    },
+    "Iconos del footer": {
+      "name": {
+        "es": "Estilo de los botones",
+        "en": "Button style",
+        "it": "Stile dei tasti",
+        "de": "Tastenstil",
+        "pt-BR": "Estilo dos botões"
+      },
+      "values": {
+        "Eclipse": {
+          "es": "Eclipse",
+          "en": "Eclipse",
+          "it": "Eclipse",
+          "de": "Eclipse",
+          "pt-BR": "Eclipse"
+        },
+        "Steam": {
+          "es": "Steam",
+          "en": "Steam",
+          "it": "Steam",
+          "de": "Steam",
+          "pt-BR": "Steam"
+        }
+      }
+    },
+    "Sección inferior de la Home": {
+      "name": {
+        "es": "Contenido bajo los juegos recientes",
+        "en": "Content below recent games",
+        "it": "Contenuti sotto i giochi recenti",
+        "de": "Inhalte unter den letzten Spielen",
+        "pt-BR": "Conteúdo abaixo dos jogos recentes"
+      },
+      "values": {
+        "Oculta": {
+          "es": "Oculto",
+          "en": "Hidden",
+          "it": "Nascosti",
+          "de": "Ausgeblendet",
+          "pt-BR": "Oculto"
+        },
+        "Visible": {
+          "es": "Visible",
+          "en": "Shown",
+          "it": "Visibili",
+          "de": "Sichtbar",
+          "pt-BR": "Visível"
+        }
+      }
+    },
+    "Estrellas": {
+      "name": {
+        "es": "Estrellas del fondo",
+        "en": "Background stars",
+        "it": "Stelle sullo sfondo",
+        "de": "Sterne im Hintergrund",
+        "pt-BR": "Estrelas no fundo"
+      },
+      "values": {
+        "Sin estrellas": {
+          "es": "Ninguna",
+          "en": "None",
+          "it": "Nessuna",
+          "de": "Keine",
+          "pt-BR": "Nenhuma"
+        },
+        "Pocas": {
+          "es": "Pocas",
+          "en": "A few",
+          "it": "Poche",
+          "de": "Wenige",
+          "pt-BR": "Poucas"
+        },
+        "Muchas": {
+          "es": "Muchas",
+          "en": "Lots",
+          "it": "Tante",
+          "de": "Viele",
+          "pt-BR": "Muitas"
+        }
+      }
+    }
+  },
+  "extension": {
+    "abiVersion": 2,
+    "entrypoint": "panel-extension.js",
+    "size": 19096,
+    "sha256": "1f467c8246a0aead910fdad51f72840c0b86643fabe93d06886d236cce7707b8"
+  }
+}

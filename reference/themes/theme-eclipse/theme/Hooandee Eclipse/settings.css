@@ -1,0 +1,328 @@
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG,
+.gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o,
+.gamepadpagedsettings_PagedSettingDialog_ContentColumn_3JPle,
+#Main ._2FqpD91Xarb7f0uIOuXFOR {
+  background: var(--ecl-void) !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o {
+  position: relative;
+  box-shadow: none !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r {
+  border-left: 0 !important;
+  position: relative;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ecl-text-3) !important;
+  transition: color var(--ecl-ignite);
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r * {
+  color: inherit !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r.gamepadpagedsettings_Active_22LLB {
+  color: var(--ecl-text) !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r.gpfocus {
+  color: var(--ecl-corona) !important;
+}
+
+
+@keyframes ecl-orbit-slot {
+  0% { scale: 0.55; opacity: 0.18; }
+  30% { scale: 0.8; opacity: 0.5; }
+  50% { scale: 1; opacity: 1; }
+  70% { scale: 0.8; opacity: 0.5; }
+  100% { scale: 0.55; opacity: 0.18; }
+}
+
+@keyframes ecl-card-rise {
+  from { opacity: 0; translate: -50% 6px; }
+  to { opacity: 1; translate: -50% 0; }
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG {
+  --ecl-slot: 58px;
+  --ecl-orbit-h: 112px;
+  flex-direction: column !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o {
+  flex: 0 0 var(--ecl-orbit-h) !important;
+  margin-top: 40px !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: var(--ecl-orbit-h) !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o > [role="tablist"] {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  height: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  scroll-padding-inline: calc(50% - var(--ecl-slot) / 2);
+  background:
+    linear-gradient(90deg, transparent, rgba(var(--ecl-corona-rgb), 0.28) 30%, rgba(var(--ecl-corona-rgb), 0.28) 70%, transparent)
+    0 34px / 100% 1px no-repeat;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o > [role="tablist"]::-webkit-scrollbar {
+  display: none;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o > [role="tablist"]::before,
+.gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o > [role="tablist"]::after {
+  content: "";
+  flex: 0 0 calc(50% - var(--ecl-slot) / 2);
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o > [role="tablist"] > :not(.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r) {
+  display: none !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r {
+  flex: 0 0 var(--ecl-slot) !important;
+  width: var(--ecl-slot) !important;
+  height: var(--ecl-orbit-h) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  animation: ecl-orbit-slot linear both;
+  animation-timeline: view(inline 0px);
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child {
+  position: static !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child > :first-child {
+  position: absolute !important;
+  left: 50% !important;
+  top: 34px !important;
+  margin: 0 !important;
+  translate: -50% -50%;
+  background: var(--ecl-void);
+  border-radius: 50%;
+  padding: 5px;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child > :last-child {
+  position: absolute !important;
+  left: 50%;
+  top: 64px;
+  translate: -50% 0;
+  margin: 0 !important;
+  padding: 6px 14px !important;
+  border-radius: 999px;
+  white-space: nowrap !important;
+  font-size: 13px !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--ecl-veil);
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r.gamepadpagedsettings_Active_22LLB > :first-child > :last-child {
+  opacity: 0.55;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r.gpfocus > :first-child > :last-child {
+  opacity: 1;
+  color: var(--ecl-corona) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.55),
+    0 0 14px rgba(var(--ecl-corona-rgb), 0.22);
+  animation: ecl-card-rise var(--ecl-ignite) both;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r.gpfocus > :first-child > :last-child::before {
+  content: "✦ ";
+  text-shadow: 0 0 8px rgba(var(--ecl-corona-rgb), 0.6);
+}
+
+.gamepadpagedsettings_PagedSettingDialog_ContentColumn_3JPle {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  border: 0 !important;
+}
+
+.gamepadpagedsettings_PagedSettingDialog_ContentColumn_3JPle .DialogContent,
+.gamepadpagedsettings_PagedSettingDialog_ContentColumn_3JPle > * {
+  max-width: min(1040px, 100%) !important;
+  margin-inline: auto !important;
+}
+
+.gamepadpagedsettings_PagedSettingDialog_ContentColumn_3JPle .DialogContent {
+  scroll-padding-block: 24px 96px !important;
+  padding-bottom: 96px !important;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px;
+  padding-bottom: 8px !important;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_Title_1Px9u {
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: center;
+  font-size: 20px !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ecl-text-2) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o > [role="tablist"] {
+  height: auto !important;
+  align-items: center !important;
+  gap: 18px;
+  padding-block: 6px !important;
+  scroll-padding-inline: 40%;
+  background:
+    linear-gradient(90deg, transparent, rgba(var(--ecl-corona-rgb), 0.22) 30%, rgba(var(--ecl-corona-rgb), 0.22) 70%, transparent)
+    50% 50% / 100% 1px no-repeat;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o > [role="tablist"]::before,
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListColumn_2EZ3o > [role="tablist"]::after {
+  flex-basis: 24px;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: auto !important;
+  animation: none;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r::after,
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child > :first-child::after,
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r.gpfocus > :first-child > :last-child::before {
+  content: none !important;
+  display: none !important;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child > :last-child {
+  position: static !important;
+  translate: none;
+  display: block;
+  opacity: 0.6;
+  padding: 7px 16px !important;
+  background: var(--ecl-void);
+  animation: none !important;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r.gamepadpagedsettings_Active_22LLB > :first-child > :last-child {
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.4);
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r.gpfocus > :first-child > :last-child {
+  opacity: 1;
+}
+
+.appproperties_AppProperties_1FyBL .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child {
+  transform: none !important;
+}
+
+/* Segmented choices (notification visibility, chat text size) */
+.Shared_Radio_Group {
+  background: transparent !important;
+  border-radius: 17px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+  padding: 3px !important;
+}
+
+.Shared_Radio_Group .RadioButton {
+  background: transparent !important;
+  border-radius: 14px !important;
+  color: var(--ecl-text-2) !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+.Shared_Radio_Group .RadioButton::before {
+  display: none !important;
+}
+
+.Shared_Radio_Group .RadioButton.Selected,
+.Shared_Radio_Group .RadioButton[aria-checked="true"] {
+  background: rgba(var(--ecl-corona-rgb), 0.12) !important;
+  color: var(--ecl-corona) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.7) !important;
+}
+
+/* Steam draws its own focus ring over these radios. */
+.Shared_Radio_Group .RadioButton.gpfocus {
+  color: var(--ecl-text) !important;
+}
+
+/* Option cards (game recording mode) */
+.DialogBody [role="radiogroup"]:not(.Shared_Radio_Group) > [role="radio"] {
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+}
+
+.DialogBody [role="radiogroup"]:not(.Shared_Radio_Group) > [role="radio"][aria-checked="true"] {
+  background: rgba(var(--ecl-corona-rgb), 0.06) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.5) !important;
+}
+
+.DialogBody [role="radiogroup"]:not(.Shared_Radio_Group) > [role="radio"].gpfocus {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+.DialogBody [role="radiogroup"]:not(.Shared_Radio_Group) > [role="radio"] > :first-child {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  box-shadow: inset 0 0 0 1.5px var(--ecl-line-strong) !important;
+}
+
+.DialogBody [role="radiogroup"]:not(.Shared_Radio_Group) > [role="radio"][aria-checked="true"] > :first-child {
+  background: radial-gradient(circle, var(--ecl-corona) 0 38%, transparent 42%) !important;
+  box-shadow: inset 0 0 0 1.5px var(--ecl-corona), 0 0 8px rgba(var(--ecl-corona-rgb), 0.4) !important;
+}
+
+/* Explanatory boxes (game update timing) and family member rows */
+.DialogBody ._3Vl2zkYPoCpw1q_1n28D3z,
+.familysharedcomponents_FamilyMemberRow_3QkkY {
+  background: transparent !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+}
+
+.familysharedcomponents_FamilyMemberRow_3QkkY.gpfocus,
+.familysharedcomponents_FamilyMemberRow_3QkkY.gpfocuswithin {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}

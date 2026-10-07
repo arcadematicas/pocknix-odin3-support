@@ -1,0 +1,67 @@
+.steamavatar_avatarHolder_1YGAH {
+  position: relative;
+  overflow: visible !important;
+}
+
+.steamavatar_avatarHolder_1YGAH > img,
+.steamavatar_avatarHolder_1YGAH img.avatar {
+  border-radius: 50% !important;
+}
+
+.steamavatar_avatarHolder_1YGAH > .steamavatar_avatarStatus_1yIzy {
+  position: absolute !important;
+  z-index: 2;
+  inset: -2px !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 50% !important;
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  mask-image: radial-gradient(circle closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+.standardtemplates_StandardTemplate_3e_DB {
+  position: relative;
+}
+
+.standardtemplates_StandardLogoDimensions_28AhG,
+.standardtemplates_StandardLogoDimensions_28AhG > img {
+  border-radius: 50% !important;
+  overflow: hidden;
+}
+
+.standardtemplates_StandardTemplate_3e_DB > .standardtemplates_AvatarStatus_2yhOC {
+  position: absolute !important;
+  left: 8px;
+  top: 11px;
+  width: 48px !important;
+  height: 48px !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+  mask-image: radial-gradient(circle closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px));
+}
+
+@keyframes ecl-avatar-comet {
+  from { rotate: 0deg; }
+  to { rotate: 360deg; }
+}
+
+#header .steamavatar_avatarHolder_1YGAH > .steamavatar_avatarStatus_1yIzy::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 70%, rgba(255, 255, 255, 0.35) 88%, #fff 96%, transparent 100%);
+  animation: ecl-avatar-comet 6s linear infinite;
+}
+
+#header .steamavatar_avatarHolder_1YGAH > .steamavatar_avatarStatus_1yIzy {
+  inset: -4px !important;
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px), #000 calc(100% - 0.5px), transparent 100%);
+  mask-image: radial-gradient(circle closest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2px), #000 calc(100% - 0.5px), transparent 100%);
+}
+
+.steamavatar_avatarFrame_3atbN {
+  display: none !important;
+}

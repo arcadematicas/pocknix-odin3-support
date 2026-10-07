@@ -1,0 +1,161 @@
+#QuickAccess-Menu {
+  --ecl-ignite: 0ms;
+}
+
+#QuickAccess-NA,
+#QuickAccess-Menu,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u,
+#QuickAccess-Menu .quickaccessmenu_Tabs_3Ag1w {
+  background: var(--ecl-void) !important;
+  box-shadow: none !important;
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tabs_3Ag1w {
+  border-right: 1px solid var(--ecl-line) !important;
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tab_1S76C {
+  position: relative;
+  background: transparent !important;
+  color: var(--ecl-text-3) !important;
+  transition: color var(--ecl-ignite);
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tab_1S76C svg {
+  color: inherit !important;
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tab_1S76C.quickaccessmenu_Selected_2QHMu {
+  color: var(--ecl-text) !important;
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tab_1S76C.gpfocus {
+  color: var(--ecl-corona) !important;
+}
+
+#QuickAccess-Menu .quickaccessmenu_Title_34nl5 {
+  background: var(--ecl-void) !important;
+  box-shadow: none !important;
+  color: var(--ecl-text) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em;
+}
+
+#QuickAccess-Menu .quickaccesscontrols_PanelSection_2C0g0 .quickaccesscontrols_Text_1hJkB {
+  color: var(--ecl-corona) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.18em;
+}
+
+/* Only the Decky plugin list reads as a borderless list; buttons inside plugins stay buttons. */
+#QuickAccess-Menu #quickaccess_content_999 [style="padding-top: 16px;"] > ._3gY0aBuNR8_NPTpXIYfkby .DialogButton {
+  justify-content: flex-start !important;
+  text-align: left !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+}
+
+#QuickAccess-Menu #quickaccess_content_999 [style="padding-top: 16px;"] > ._3gY0aBuNR8_NPTpXIYfkby .DialogButton > * {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+}
+
+#QuickAccess-Menu #quickaccess_content_999 .DialogButton.gpfocus {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+#QuickAccess-Menu #quickaccess_content_999 .quickaccessmenu_Title_34nl5 .DialogButton {
+  justify-content: center !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+}
+
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u {
+  background: var(--ecl-starfield), var(--ecl-void) !important;
+}
+
+#QuickAccess-Menu .quickaccesscontrols_PanelSection_2C0g0 .quickaccesscontrols_Text_1hJkB::before {
+  content: "✦";
+  margin-right: 0.8em;
+  font-size: 0.9em;
+  text-shadow: 0 0 8px rgba(var(--ecl-corona-rgb), 0.6);
+}
+
+#QuickAccess-NA,
+#QuickAccess-Menu,
+#QuickAccess-Menu > .Panel {
+  background: transparent !important;
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tabs_3Ag1w {
+  --ecl-qdial-r: 1800px;
+  --ecl-qdial-limb: 14px;
+  position: relative;
+  overflow: hidden !important;
+  border-right: 0 !important;
+  box-shadow: none !important;
+  background: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.75) 12px, #000 26px) !important;
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tabs_3Ag1w::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: calc(var(--ecl-qdial-limb) - 2 * var(--ecl-qdial-r));
+  top: calc(50% - var(--ecl-qdial-r));
+  width: calc(2 * var(--ecl-qdial-r));
+  height: calc(2 * var(--ecl-qdial-r));
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 1px rgba(var(--ecl-corona-rgb), 0.6),
+    0 0 16px rgba(var(--ecl-corona-rgb), 0.18),
+    inset -10px 0 22px rgba(var(--ecl-corona-rgb), 0.07);
+  -webkit-mask-image: linear-gradient(90deg, transparent calc(100% - var(--ecl-qdial-limb)), #000 calc(100% - var(--ecl-qdial-limb) + 10px));
+  mask-image: linear-gradient(90deg, transparent calc(100% - var(--ecl-qdial-limb)), #000 calc(100% - var(--ecl-qdial-limb) + 10px));
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tabs_3Ag1w > [role="tablist"] {
+  position: relative;
+  z-index: 1;
+  overflow-x: hidden !important;
+}
+
+@keyframes ecl-qtab-arc {
+  0%, 100% { translate: -16.1px 0; opacity: 0.5; }
+  12.5%, 87.5% { translate: -9.0px 0; opacity: 0.62; }
+  25%, 75% { translate: -4.0px 0; opacity: 0.78; }
+  37.5%, 62.5% { translate: -1.0px 0; opacity: 0.92; }
+  50% { translate: 0px 0; opacity: 1; }
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tabs_3Ag1w > [role="tablist"] > .quickaccessmenu_Tab_1S76C {
+  animation: ecl-qtab-arc linear both;
+  animation-timeline: view(block 0px);
+  transition: color var(--ecl-ignite);
+}
+
+#QuickAccess-Menu .quickaccessmenu_Tabs_3Ag1w > [role="tablist"] > .quickaccessmenu_Tab_1S76C.quickaccessmenu_Selected_2QHMu,
+#QuickAccess-Menu .quickaccessmenu_Tabs_3Ag1w > [role="tablist"] > .quickaccessmenu_Tab_1S76C.gpfocus {
+  opacity: 1 !important;
+}
+
+#QuickAccess-Menu #quickaccess_content_999 [style="padding-top: 16px;"] > ._3gY0aBuNR8_NPTpXIYfkby .DialogButton > div[style*="space-between"] {
+  justify-content: flex-start !important;
+  gap: 16px;
+}
+
+/* CSS Loader's own height fix targets an older Decky nesting; keep its collapse control a slim pill. */
+#QuickAccess-Menu .CSSLoader_QAM_CollapseButton_Container .DialogButton {
+  display: flex !important;
+  align-items: center;
+  justify-content: center !important;
+  height: 28px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+
+#QuickAccess-Menu .CSSLoader_QAM_CollapseButton_Container .DialogButton svg {
+  transform: none !important;
+}

@@ -1,0 +1,405 @@
+#MainNavMenuContainer,
+#MainNavMenuContainer > [role="menu"] {
+  background: var(--ecl-void) !important;
+  box-shadow: none !important;
+}
+
+#MainNavMenuContainer > [role="menu"] {
+  border-right: 1px solid var(--ecl-line) !important;
+}
+
+#MainNavMenuContainer [role="menuitem"] {
+  position: relative;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ecl-text-2) !important;
+  transition: color var(--ecl-ignite);
+}
+
+#MainNavMenuContainer [role="menuitem"] * {
+  color: inherit !important;
+}
+
+#MainNavMenuContainer [role="menuitem"] ._2ADpTpv53dcY1uFpMWO1KT {
+  font-size: 17px !important;
+  letter-spacing: 0.04em;
+}
+
+#MainNavMenuContainer [role="menuitem"] svg {
+  color: inherit !important;
+  opacity: 0.7;
+}
+
+#MainNavMenuContainer [role="menuitem"].gpfocus {
+  color: var(--ecl-corona) !important;
+}
+
+#MainNavMenuContainer [role="menuitem"].gpfocus::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: var(--ecl-corona);
+  box-shadow: var(--ecl-halo);
+}
+
+
+
+#MainNavMenuContainer::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: calc(var(--ecl-disc-rim) - 2 * var(--ecl-disc-r));
+  top: calc(50% - var(--ecl-disc-r));
+  width: calc(2 * var(--ecl-disc-r));
+  height: calc(2 * var(--ecl-disc-r));
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 1px rgba(var(--ecl-corona-rgb), 0.3),
+    0 0 14px rgba(var(--ecl-corona-rgb), 0.1),
+    inset -6px 0 18px rgba(var(--ecl-corona-rgb), 0.08);
+}
+
+#MainNavMenuContainer [role="menuitem"].gpfocus::before {
+  left: 0.5px;
+}
+
+#MainNavMenuContainer {
+  background: rgba(0, 0, 0, 0) !important;
+  transition: background-color 300ms ease;
+}
+
+#MainNavMenuContainer.mainmenu_Open_3apLK {
+  background: var(--ecl-void) !important;
+}
+
+#MainNavMenuContainer > [role="menu"] {
+  background: var(--ecl-starfield) !important;
+}
+
+#MainNavMenuContainer > [role="menu"] {
+  background: transparent !important;
+}
+
+#MainNavMenuContainer [role="menuitem"] > :first-child:empty {
+  display: none !important;
+}
+
+
+@keyframes ecl-dial-item {
+  0% { translate: -55.3px 0; opacity: 0.30; }
+  10% { translate: -34.7px 0; opacity: 0.44; }
+  20% { translate: -19.3px 0; opacity: 0.58; }
+  30% { translate: -8.5px 0; opacity: 0.72; }
+  40% { translate: -2.1px 0; opacity: 0.86; }
+  50% { translate: -0.0px 0; opacity: 1.00; }
+  60% { translate: -2.1px 0; opacity: 0.86; }
+  70% { translate: -8.5px 0; opacity: 0.72; }
+  80% { translate: -19.3px 0; opacity: 0.58; }
+  90% { translate: -34.7px 0; opacity: 0.44; }
+  100% { translate: -55.3px 0; opacity: 0.30; }
+}
+
+@keyframes ecl-dial-flatten {
+  to { translate: 0 0; }
+}
+
+@keyframes ecl-dial-unflatten {
+  from { translate: 0 0; }
+}
+
+@keyframes ecl-dial-spin {
+  from { rotate: 60deg; }
+  to { rotate: -60deg; }
+}
+
+#MainNavMenuContainer {
+  --ecl-disc-r: 600px;
+  --ecl-disc-rim: 44px;
+  position: relative;
+  timeline-scope: --ecl-dial;
+  overflow: hidden !important;
+}
+
+#MainNavMenuContainer > [role="menu"] {
+  position: relative;
+  z-index: 1;
+  display: block !important;
+  height: calc(100vh - 80px) !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  scroll-padding-block: calc(50vh - 64px);
+  padding-block: 0 !important;
+  box-sizing: border-box;
+  scroll-timeline: --ecl-dial block;
+}
+
+#MainNavMenuContainer > [role="menu"]::before,
+#MainNavMenuContainer > [role="menu"]::after {
+  content: "";
+  display: block;
+  height: calc(50vh - 64px);
+}
+
+#MainNavMenuContainer > [role="menu"]::-webkit-scrollbar {
+  display: none;
+}
+
+#MainNavMenuContainer > [role="menu"] > :not(:last-child) {
+  margin-left: var(--ecl-disc-rim) !important;
+  width: calc(100% - var(--ecl-disc-rim)) !important;
+  box-sizing: border-box;
+  animation: ecl-dial-item linear both;
+  animation-timeline: view(block 0px);
+}
+
+#MainNavMenuContainer::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: calc(var(--ecl-disc-rim) - 2 * var(--ecl-disc-r));
+  top: calc(50% - var(--ecl-disc-r));
+  width: calc(2 * var(--ecl-disc-r));
+  height: calc(2 * var(--ecl-disc-r));
+  border-radius: 50%;
+  pointer-events: none;
+  background: repeating-conic-gradient(
+    from 89.7deg,
+    rgba(var(--ecl-corona-rgb), 0.5) 0 0.18deg,
+    transparent 0.18deg 2.5deg
+  );
+  -webkit-mask-image: radial-gradient(circle, transparent calc(var(--ecl-disc-r) - 9px), #000 calc(var(--ecl-disc-r) - 8px), #000 calc(var(--ecl-disc-r) - 3px), transparent calc(var(--ecl-disc-r) - 2px));
+  mask-image: radial-gradient(circle, transparent calc(var(--ecl-disc-r) - 9px), #000 calc(var(--ecl-disc-r) - 8px), #000 calc(var(--ecl-disc-r) - 3px), transparent calc(var(--ecl-disc-r) - 2px));
+  animation: ecl-dial-spin linear both;
+  animation-timeline: --ecl-dial;
+}
+
+#MainNavMenuContainer [role="menuitem"] > :last-child {
+  max-width: calc(240px - 100px) !important;
+  overflow: hidden;
+}
+
+#MainNavMenuContainer > [role="menu"] > .mainmenu_RunnningAppSeparator_33RkH {
+  height: 1px !important;
+  margin-block: 6px !important;
+  background: linear-gradient(90deg, rgba(var(--ecl-corona-rgb), 0.5), transparent 80%) !important;
+  box-shadow: none !important;
+}
+
+#MainNavMenuContainer > [role="menu"] > .mainmenu_RunnningAppSeparator_33RkH ~ * [role="menuitem"] > :last-child {
+  opacity: 0;
+  transition: opacity var(--ecl-ignite);
+}
+
+#MainNavMenuContainer > [role="menu"] > .mainmenu_RunnningAppSeparator_33RkH ~ * [role="menuitem"].gpfocus > :last-child {
+  opacity: 1;
+}
+
+.mainmenuapprunning_ScrollMask_322FV {
+  background: transparent !important;
+}
+
+.mainmenuapprunning_NavigationColumn_27FEg {
+  background:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(var(--ecl-corona-rgb), 0.1), transparent 70%),
+    rgba(0, 0, 0, 0.94) !important;
+  border-left: 0 !important;
+  box-shadow: inset 1px 0 0 rgba(var(--ecl-corona-rgb), 0.35), -24px 0 40px rgba(0, 0, 0, 0.8) !important;
+}
+
+.mainmenuapprunning_NavigationColumn_27FEg::before {
+  opacity: 0.12 !important;
+  filter: grayscale(1);
+}
+
+.mainmenuapprunning_NavigationColumn_27FEg::before {
+  opacity: 0.12 !important;
+  filter: grayscale(1);
+}
+
+.mainmenuapprunning_NavigationColumn_27FEg .tU_uH7d5O7tQ4j1WWQhY- {
+  opacity: 0.16 !important;
+  -webkit-mask-image: linear-gradient(#000, transparent 70%);
+  mask-image: linear-gradient(#000, transparent 70%);
+}
+
+.mainmenuapprunning_CurrentGameLogo_3V3VK {
+  filter: drop-shadow(0 0 14px rgba(var(--ecl-corona-rgb), 0.18));
+}
+
+.mainmenuapprunning_NavigationColumn_27FEg > :last-child {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  padding-inline: 16px !important;
+}
+
+.mainmenuapprunning_NavigationMenuItem_1G0K4 {
+  position: relative;
+  margin-inline: 14px !important;
+  width: calc(100% - 28px) !important;
+  box-sizing: border-box !important;
+  padding-left: 26px !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  animation: none !important;
+  transform: none !important;
+  color: var(--ecl-text-2) !important;
+  font-size: 15px !important;
+  letter-spacing: 0.04em;
+}
+
+.mainmenuapprunning_NavigationMenuItem_1G0K4.gpfocus {
+  background: var(--ecl-veil) !important;
+  color: var(--ecl-corona) !important;
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+.mainmenuapprunning_NavigationMenuItem_1G0K4.gpfocus::before {
+  content: "✦";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  translate: 0 -50%;
+  font-size: 10px;
+  text-shadow: 0 0 8px rgba(var(--ecl-corona-rgb), 0.7);
+}
+
+.mainmenuapprunning_NavigationMenuItem_1G0K4._1ohf4AlKV4zSfOZQpqEIEN {
+  color: var(--ecl-text-3) !important;
+}
+
+.mainmenuapprunning_NavigationMenuItemSeparator_l7dF3 {
+  background: var(--ecl-line) !important;
+  margin-inline: 24px !important;
+}
+
+.mainmenuapprunning_NavigationColumn_27FEg,
+.mainmenuapprunning_AppColumn_3FAI9 {
+  border: 0 !important;
+}
+
+.mainmenuapprunning_NavigationColumn_27FEg,
+.mainmenuapprunning_AppColumn_3FAI9 {
+  border: 0 !important;
+}
+
+.mainmenuapprunning_AppColumn_3FAI9 {
+  background: var(--ecl-starfield), rgba(0, 0, 0, 0.94) !important;
+  box-shadow: inset 1px 0 0 var(--ecl-line) !important;
+}
+
+.mainmenuapprunning_AppColumn_3FAI9 .controllerconfiguratorsummary_BackgroundController_rlz-U {
+  opacity: 0.45;
+}
+
+.mainmenuapprunning_AppColumn_3FAI9 .controllerconfiguratorsummary_ConfigButton_1T2Rs {
+  background: transparent !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+  color: var(--ecl-text-2) !important;
+}
+
+.mainmenuapprunning_AppColumn_3FAI9 .controllerconfiguratorsummary_ConfigButton_1T2Rs.gpfocus {
+  color: var(--ecl-corona) !important;
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+#MainNavMenuContainer {
+  --ecl-ignite: 0ms;
+}
+
+#MainNavMenuContainer > [role="menu"] > .mainmenu_RunnningAppSeparator_33RkH,
+#MainNavMenuContainer > [role="menu"] > .mainmenu_RunnningAppSeparator_33RkH ~ :not(:last-child) {
+  animation: ecl-dial-item linear both, ecl-dial-unflatten 480ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  animation-timeline: view(block 0px), auto;
+}
+
+#MainNavMenuContainer > [role="menu"] > :first-child:focus-within,
+#MainNavMenuContainer > [role="menu"] > :first-child:focus-within + .mainmenu_RunnningAppSeparator_33RkH,
+#MainNavMenuContainer > [role="menu"] > :first-child:focus-within + .mainmenu_RunnningAppSeparator_33RkH ~ :not(:last-child),
+#MainNavMenuContainer > [role="menu"]:not(:focus-within) > :first-child,
+#MainNavMenuContainer > [role="menu"]:not(:focus-within) > .mainmenu_RunnningAppSeparator_33RkH,
+#MainNavMenuContainer > [role="menu"]:not(:focus-within) > .mainmenu_RunnningAppSeparator_33RkH ~ :not(:last-child) {
+  animation: ecl-dial-item linear both, ecl-dial-flatten 480ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  animation-timeline: view(block 0px), auto;
+}
+
+#MainNavMenuContainer > [role="menu"] > :last-child {
+  position: sticky !important;
+  top: auto !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  display: block !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+#MainNavMenuContainer > [role="menu"] > :last-child::before,
+#MainNavMenuContainer > [role="menu"] > :last-child::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  height: calc(100vh - 80px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 480ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#MainNavMenuContainer > [role="menu"] > :last-child::before {
+  z-index: -1;
+  left: 0;
+  width: calc(var(--ecl-disc-rim) + 2px);
+  background: var(--ecl-void);
+}
+
+#MainNavMenuContainer > [role="menu"] > :last-child::after {
+  z-index: -1;
+  left: calc(var(--ecl-disc-rim) - 9px);
+  width: 9px;
+  background:
+    linear-gradient(rgba(var(--ecl-corona-rgb), 0.6), rgba(var(--ecl-corona-rgb), 0.6)) 100% 0 / 1px 100% no-repeat,
+    repeating-linear-gradient(transparent 0 18px, rgba(var(--ecl-corona-rgb), 0.5) 18px 19.5px, transparent 19.5px 38px) 100% 0 / 6px 100% no-repeat;
+  filter: drop-shadow(0 0 4px rgba(var(--ecl-corona-rgb), 0.35));
+}
+
+#MainNavMenuContainer > [role="menu"] > :first-child:focus-within + .mainmenu_RunnningAppSeparator_33RkH ~ :last-child::before,
+#MainNavMenuContainer > [role="menu"] > :first-child:focus-within + .mainmenu_RunnningAppSeparator_33RkH ~ :last-child::after,
+#MainNavMenuContainer > [role="menu"]:not(:focus-within) > .mainmenu_RunnningAppSeparator_33RkH ~ :last-child::before {
+  opacity: 1;
+}
+
+#MainNavMenuContainer > [role="menu"]:not(:focus-within) > .mainmenu_RunnningAppSeparator_33RkH ~ :last-child::before {
+  width: 96px;
+}
+
+#MainNavMenuContainer > [role="menu"] > :not(:last-child) {
+  justify-content: flex-start !important;
+}
+
+#MainNavMenuContainer::before,
+#MainNavMenuContainer::after {
+  transition: transform 300ms cubic-bezier(0.16, 0.86, 0.43, 0.99), opacity 140ms ease;
+}
+
+#MainNavMenuContainer:not(.mainmenu_Open_3apLK)::before,
+#MainNavMenuContainer:not(.mainmenu_Open_3apLK)::after {
+  transform: translateX(-240px);
+  opacity: 0;
+}
+
+#MainNavMenuContainer > [role="menu"][role="menu"] {
+  background: var(--ecl-starfield) !important;
+}

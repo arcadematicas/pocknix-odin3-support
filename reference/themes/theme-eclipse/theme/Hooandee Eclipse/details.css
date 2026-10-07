@@ -1,0 +1,141 @@
+:root {
+  --ecl-details-limb: 8vh;
+  --ecl-details-art: 0.72;
+  --ecl-details-overscan: 12vh;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._1IX7FPSY9Jb82KhBVBSkZa img {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: 50% 30%;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw {
+  background: var(--ecl-void) !important;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._3_IUVzR9tpG_JKEjhwXEAb,
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._1Qa-Aq8WFiF9584yU_1xuC,
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._1IWSiRVmH1DlNlWSaBeUuZ {
+  display: none !important;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._1IX7FPSY9Jb82KhBVBSkZa {
+  box-sizing: content-box !important;
+  padding-bottom: var(--ecl-details-overscan) !important;
+  margin-bottom: calc(var(--ecl-details-overscan) * -1) !important;
+  opacity: var(--ecl-details-art);
+  -webkit-mask-image: radial-gradient(
+    ellipse calc(95vw + 20vh) calc(65vh * 1.5) at 50% calc(100% - var(--ecl-details-overscan) - var(--ecl-details-limb) + 65vh),
+    #000 66.7%,
+    rgba(0, 0, 0, 0.4) 80%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse calc(95vw + 20vh) calc(65vh * 1.5) at 50% calc(100% - var(--ecl-details-overscan) - var(--ecl-details-limb) + 65vh),
+    #000 66.7%,
+    rgba(0, 0, 0, 0.4) 80%,
+    transparent 100%
+  );
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw > ._1_cYNJSvS6IXs9vLTEYjy5 {
+  position: relative;
+  z-index: 1;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw > ._1_cYNJSvS6IXs9vLTEYjy5::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -45vw;
+  top: calc(var(--ecl-details-limb) * -1);
+  width: 190vw;
+  height: 130vh;
+  border-radius: 50%;
+  background: var(--ecl-void);
+  box-shadow:
+    0 0 0 1px rgba(var(--ecl-corona-rgb), 0.45),
+    0 -0.4vh 1.6vh rgba(var(--ecl-corona-rgb), 0.12),
+    inset 0 0.6vh 1.6vh rgba(var(--ecl-corona-rgb), 0.22),
+    inset 0 3vh 8vh rgba(var(--ecl-corona-rgb), 0.09);
+  pointer-events: none;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._3fp5y6tdU77MdrCQZt_aS9,
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._3scbHORkYB7utTUGfkMCC_ {
+  background: transparent !important;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw .QsZdWtHTlIK9KIKbscNTt {
+  background: transparent !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1.5px var(--ecl-corona-soft);
+  overflow: hidden;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw .QsZdWtHTlIK9KIKbscNTt > [role="button"] {
+  background: transparent !important;
+  color: var(--ecl-corona) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  letter-spacing: 0.08em;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw .QsZdWtHTlIK9KIKbscNTt > [role="button"] svg {
+  color: var(--ecl-corona) !important;
+  fill: currentColor;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw .QsZdWtHTlIK9KIKbscNTt.gpfocuswithin {
+  box-shadow: var(--ecl-ring), var(--ecl-halo);
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._3qDWQGB0rtwM3qpXTb11Q- {
+  background: transparent !important;
+  border-radius: 50% !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+  color: var(--ecl-text-2) !important;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._3qDWQGB0rtwM3qpXTb11Q-.gpfocus {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+  color: var(--ecl-corona) !important;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._34lrt5-Fc3usZU6trA1P0- {
+  color: var(--ecl-text-3) !important;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._2TYVGoD27ZMfjRirKQNLfk {
+  color: var(--ecl-text) !important;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._31ptFGGMZrSQc5BCX1e5lm,
+#Main ._1SvpjsckP9cPRxO6gCBHrw .QCKBqF2k_sRLcXJ5qQIEl,
+#Main ._1SvpjsckP9cPRxO6gCBHrw .NEMXhMlqXOCJwfgWlHXhT,
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._1JlC29Ic6L-QvL-39X_d-X {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+  border-radius: 14px;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw .By7D93oEZkZtBeg23NDoR,
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._1HZy7BvOZuPT8feUwadL4W {
+  background: transparent !important;
+}
+
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._3qDWQGB0rtwM3qpXTb11Q- svg,
+#Main ._1SvpjsckP9cPRxO6gCBHrw ._3qDWQGB0rtwM3qpXTb11Q- svg * {
+  color: currentColor !important;
+  fill: currentColor !important;
+}
+
+#Main .appactionbutton_PlayButton_3ydig::after {
+  border-radius: 999px !important;
+  background: linear-gradient(75deg, transparent 30%, rgba(var(--ecl-corona-rgb), 0.22) 50%, transparent 70%) !important;
+  background-size: 250% 100% !important;
+}

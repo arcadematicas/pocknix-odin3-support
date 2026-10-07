@@ -1,0 +1,131 @@
+.gamepaddialog_Field_S-_La {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-bottom: 1px solid var(--ecl-line);
+}
+
+.gamepaddialog_Field_S-_La.gpfocus,
+.gamepaddialog_Field_S-_La.gpfocuswithin {
+  background: transparent !important;
+}
+
+.gamepaddialog_Field_S-_La .gamepaddialog_FieldLabel_3b0U- {
+  color: var(--ecl-text-2) !important;
+  transition: color var(--ecl-ignite);
+}
+
+.gamepaddialog_Field_S-_La.gpfocus .gamepaddialog_FieldLabel_3b0U-,
+.gamepaddialog_Field_S-_La.gpfocuswithin .gamepaddialog_FieldLabel_3b0U- {
+  color: var(--ecl-text) !important;
+}
+
+.gamepadslider_SliderControl_3o137 {
+  clip-path: inset(-40px 0 -40px 0);
+}
+
+.gamepadslider_SliderTrack_Mq25N {
+  background: linear-gradient(transparent calc(50% - 1px), var(--ecl-line-strong) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)) !important;
+  box-shadow: none !important;
+}
+
+.gamepadslider_SliderTrack_Mq25N::before {
+  display: none !important;
+}
+
+.gamepadslider_SliderHandle_2yVKj {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  margin: 0 !important;
+  animation: none !important;
+}
+
+.gamepadslider_SliderHandle_2yVKj::before {
+  content: "";
+  position: absolute;
+  right: 50%;
+  top: 50%;
+  width: 4000px;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--ecl-corona);
+  box-shadow: 0 0 6px rgba(var(--ecl-corona-rgb), 0.45);
+}
+
+.gamepadslider_SliderHandle_2yVKj::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: var(--ecl-void);
+  box-shadow: inset 0 0 0 2px var(--ecl-corona), var(--ecl-halo);
+  transition: transform var(--ecl-ignite);
+}
+
+.gpfocus .gamepadslider_SliderHandle_2yVKj::after,
+.gpfocuswithin > .gamepadslider_SliderControl_3o137 .gamepadslider_SliderHandle_2yVKj::after {
+  transform: scale(1.35);
+  background: rgba(var(--ecl-corona-rgb), 0.25);
+}
+
+.gamepaddialog_Toggle_24G4g .gamepaddialog_ToggleRail_2JtC3 {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16) !important;
+}
+
+.gamepaddialog_Toggle_24G4g .gamepaddialog_ToggleSwitch_3__OD {
+  background: radial-gradient(circle, #a3a3a3 0 49%, transparent 51%) !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+.gamepaddialog_Toggle_24G4g.gamepaddialog_On_3ld7T .gamepaddialog_ToggleRail_2JtC3 {
+  background: rgba(var(--ecl-corona-rgb), 0.2) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.85) !important;
+}
+
+.gamepaddialog_Toggle_24G4g.gamepaddialog_On_3ld7T .gamepaddialog_ToggleSwitch_3__OD {
+  background: radial-gradient(circle, var(--ecl-corona) 0 49%, transparent 51%) !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 0 4px rgba(var(--ecl-corona-rgb), 0.55));
+}
+
+.gamepaddialog_Toggle_24G4g.gpfocus .gamepaddialog_ToggleRail_2JtC3 {
+  box-shadow: inset 0 0 0 1.5px var(--ecl-corona), 0 0 10px rgba(var(--ecl-corona-rgb), 0.35) !important;
+}
+
+.gamepaddialog_Toggle_24G4g .gamepaddialog_ToggleRail_2JtC3::before {
+  display: none !important;
+}
+
+.DialogButton {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+  color: var(--ecl-text-2) !important;
+  border-radius: 999px !important;
+  transition: color var(--ecl-ignite), box-shadow var(--ecl-ignite);
+}
+
+.DialogButton.gpfocus {
+  color: var(--ecl-corona) !important;
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+.gamepaddialog_Toggle_24G4g::after {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+.gamepaddialog_Toggle_24G4g.gpfocus::after {
+  box-shadow:
+    0 0 0 1px rgba(var(--ecl-corona-rgb), 0.55),
+    0 0 12px rgba(var(--ecl-corona-rgb), 0.3) !important;
+}

@@ -1,0 +1,386 @@
+#GamepadUI_Full_Root {
+  color: var(--ecl-text);
+}
+
+#GamepadUI_Full_Root.gamepadui_OpaqueBackground_b084m {
+  background: var(--ecl-void) !important;
+}
+
+#MainNavMenu-Rest > ._3rsrz7BYWjqGBhzcpn-Auo {
+  background: rgba(0, 0, 0, 0.82) !important;
+}
+
+#header {
+  background: var(--ecl-void) !important;
+  box-shadow: none !important;
+}
+
+#Footer {
+  background: var(--ecl-void) !important;
+  border-top: 1px solid var(--ecl-line);
+  box-shadow: none !important;
+}
+
+#Footer > ._2JJDHoMl4ArT89aNzlYM3N {
+  background: transparent !important;
+  color: var(--ecl-text-2);
+}
+
+#Footer ._31JnnWnVv7U4VrSuta5yWO {
+  color: var(--ecl-text-2) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em;
+}
+
+#header ._2HnVd7wV6yVaTiXfrBe3gq,
+#header ._17M8gvakqjyaw_cLo6ntdl {
+  color: var(--ecl-text-2) !important;
+}
+
+#header ._2HnVd7wV6yVaTiXfrBe3gq:not(._3xy45At7o_lkxcLoSTF6e0) svg {
+  color: var(--ecl-text-2) !important;
+}
+
+/* Long page titles (controller settings) would run under the centred clock. */
+#header ._17M8gvakqjyaw_cLo6ntdl > :not([class]) {
+  max-width: calc(50vw - 88px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+
+._3FIjYetykQsFYR08l1v7Ls > ._1wPplsegQqCoe06wXPhzKT {
+  outline: 1.5px solid var(--ecl-corona) !important;
+  outline-offset: 0 !important;
+  border-radius: 14px;
+  background: transparent !important;
+  box-shadow: var(--ecl-halo);
+}
+
+#header ._17M8gvakqjyaw_cLo6ntdl,
+#header input._2a1-sPpExCp24Q8dfImB0a {
+  background: var(--ecl-void) !important;
+  color: var(--ecl-text) !important;
+  box-shadow: none !important;
+}
+
+#header input._2a1-sPpExCp24Q8dfImB0a {
+  background: transparent !important;
+  border-bottom: 0 !important;
+  caret-color: var(--ecl-corona);
+  letter-spacing: 0.03em;
+}
+
+#header input._2a1-sPpExCp24Q8dfImB0a::placeholder {
+  color: var(--ecl-text-3) !important;
+  font-style: normal !important;
+  letter-spacing: 0.06em;
+}
+
+#header ._2HnVd7wV6yVaTiXfrBe3gq._1HhLUvHH6BZLIOyOE80TVh {
+  color: var(--ecl-text) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.06em;
+}
+
+#header .X_mJE4BYV5StDPwZhSiAu {
+  display: none !important;
+}
+
+#header ._3h-QRJGxnVOIExtHD1R0f2 {
+  border-radius: 50% !important;
+  opacity: 0.8;
+  box-shadow: 0 0 0 1px var(--ecl-line-strong);
+}
+
+#header ._38sNQt6oEVaeO9D-gI_Lhl,
+#header [class*="Badge"] {
+  background: transparent !important;
+  color: var(--ecl-flare) !important;
+  box-shadow: none !important;
+}
+
+#Footer {
+  border-top: 0 !important;
+}
+
+#Footer ._3Jfd85nK4bKoNf_gCSTX6U > img,
+#Footer ._3Jfd85nK4bKoNf_gCSTX6U > svg {
+  opacity: var(--ecl-dim);
+}
+
+#Footer ._31JnnWnVv7U4VrSuta5yWO {
+  color: var(--ecl-text-3) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#header ._17M8gvakqjyaw_cLo6ntdl svg {
+  color: var(--ecl-text-2) !important;
+}
+
+#header ._3alLbwNuYFj9rbo1Lh31eQ {
+  display: none !important;
+}
+
+#header ._2HnVd7wV6yVaTiXfrBe3gq._1HhLUvHH6BZLIOyOE80TVh {
+  position: absolute !important;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  transform: translateX(-50%);
+  color: var(--ecl-text) !important;
+  font-size: 15px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.22em !important;
+}
+
+#header ._1_6kL0vUt78Sy-ZAp63E3e {
+  position: absolute !important;
+  left: calc(50% + 60px);
+  top: 0;
+  height: 100%;
+  opacity: 0.75;
+  transform: scale(0.85);
+}
+
+#header ._8sPcK-HDVUh0QbFshamLa:not(._1_6kL0vUt78Sy-ZAp63E3e),
+#header .friendsui-container {
+  opacity: 0.55;
+  transition: opacity var(--ecl-ignite);
+}
+
+#header ._8sPcK-HDVUh0QbFshamLa.gpfocus,
+#header .friendsui-container.gpfocuswithin {
+  opacity: 1;
+}
+
+#Footer > ._2JJDHoMl4ArT89aNzlYM3N {
+  justify-content: center !important;
+  flex-wrap: nowrap !important;
+  gap: clamp(4px, 1.4vw, 28px);
+  overflow: hidden;
+}
+
+#Footer > ._2JJDHoMl4ArT89aNzlYM3N > .MbyhbxIetM7FOAmCQSW83 {
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+#Footer > ._2JJDHoMl4ArT89aNzlYM3N > :not(.MbyhbxIetM7FOAmCQSW83) {
+  display: none !important;
+}
+
+#header ._3F4YRi5x8CjExTV0rOdSL- {
+  inset: 5px 10px !important;
+  width: auto !important;
+  height: auto !important;
+  background: var(--ecl-veil) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+  transition: box-shadow var(--ecl-ignite);
+}
+
+#header .searchbar_SearchAndTitleContainer_17M8g.gpfocuswithin ._3F4YRi5x8CjExTV0rOdSL-,
+#header .searchbar_SearchAndTitleContainer_17M8g:focus-within ._3F4YRi5x8CjExTV0rOdSL- {
+  box-shadow:
+    inset 0 0 0 1px var(--ecl-corona),
+    0 0 14px rgba(var(--ecl-corona-rgb), 0.22) !important;
+}
+
+#header .searchbar_SearchAndTitleContainer_17M8g.gpfocuswithin .searchbar_SearchIconLeft_2Ya83,
+#header .searchbar_SearchAndTitleContainer_17M8g:focus-within .searchbar_SearchIconLeft_2Ya83 {
+  background: var(--ecl-corona) !important;
+  color: var(--ecl-corona) !important;
+}
+
+.gamepadcontextmenu_BasicContextMenuModal_2xS2_ [role="menu"],
+.gamepadcontextmenu_BasicContextMenuModal_2xS2_ [role="listbox"] {
+  background: var(--ecl-veil) !important;
+  border-radius: 18px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong), 0 0 0 100vmax rgba(0, 0, 0, 0.4) !important;
+  overflow: hidden;
+}
+
+.gamepadcontextmenu_contextMenuItem_1sdvo {
+  position: relative;
+  padding-left: 26px !important;
+  background: transparent !important;
+  color: var(--ecl-text-2) !important;
+  box-shadow: none !important;
+  transition: color var(--ecl-ignite);
+}
+
+.gamepadcontextmenu_contextMenuItem_1sdvo * {
+  color: inherit !important;
+  fill: currentColor;
+}
+
+.gamepadcontextmenu_contextMenuItem_1sdvo.gpfocus,
+.gamepadcontextmenu_contextMenuItem_1sdvo.gamepadcontextmenu_Focused_X813r {
+  color: var(--ecl-corona) !important;
+}
+
+.gamepadcontextmenu_contextMenuItem_1sdvo.gpfocus::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: var(--ecl-corona);
+  box-shadow: var(--ecl-halo);
+}
+
+.gamepadcontextmenu_BasicContextMenuModal_2xS2_ [role="separator"] {
+  background: var(--ecl-line) !important;
+  height: 1px !important;
+}
+
+.gamepaddialog_ModalPosition_30VHl .gamepaddialog_GamepadDialogContent_3joNk {
+  background:
+    radial-gradient(ellipse 70% 38% at 50% -14%, rgba(var(--ecl-corona-rgb), 0.16), transparent 72%),
+    var(--ecl-starfield),
+    var(--ecl-void) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--ecl-corona-rgb), 0.45),
+    inset 0 0 0 1px var(--ecl-line-strong),
+    0 24px 60px #000 !important;
+  border-radius: 24px !important;
+}
+
+.DialogHeader {
+  color: var(--ecl-text) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em;
+}
+
+.gamepaddialog_ModalPosition_30VHl .DialogHeader::before {
+  content: "✦ ";
+  color: var(--ecl-corona);
+  text-shadow: 0 0 10px rgba(var(--ecl-corona-rgb), 0.6);
+}
+
+.K078lLw-1HGvDqnqRKnzG {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+  border: 0 !important;
+  border-radius: 6px !important;
+}
+
+.K078lLw-1HGvDqnqRKnzG::before,
+.K078lLw-1HGvDqnqRKnzG::after {
+  display: none !important;
+}
+
+.K078lLw-1HGvDqnqRKnzG {
+  padding: 0 6px !important;
+  min-width: 22px;
+  justify-content: center;
+}
+
+.K078lLw-1HGvDqnqRKnzG ._69cJpzjXh7_ZFKUnWABhe {
+  color: var(--ecl-text-2) !important;
+  font-size: 0.78em !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em;
+}
+
+._1jGkuUHTcd0kTwEZrq3VYX ._1E5qiPfvfaym9T9k8BxdVh {
+  color: var(--ecl-text-3) !important;
+}
+
+.gamepadtabbedpage_Glyphs_N-f57:not(:empty) {
+  border-radius: 50%;
+  background: linear-gradient(var(--ecl-corona), var(--ecl-corona)) 7px 10px / 19px 14px no-repeat;
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.45),
+    0 0 10px rgba(var(--ecl-corona-rgb), 0.18);
+}
+
+.gamepadtabbedpage_Glyphs_N-f57 img {
+  opacity: 1 !important;
+  filter: brightness(0);
+  clip-path: circle(15px);
+}
+
+#header .searchbar_SearchAndTitleContainer_17M8g.searchbar_ForceExpanded_1bmuJ,
+#header .searchbar_SearchAndTitleContainer_17M8g.gpfocuswithin {
+  flex: 0 1 calc(50% - 92px) !important;
+  max-width: calc(50% - 92px) !important;
+  margin-right: auto !important;
+}
+
+.gamepadtabbedpage_TabRowTabs_2VQFn {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+}
+
+.gamepadtabbedpage_Glyphs_N-f57 {
+  margin-inline: 6px;
+}
+
+/* A universal selector here restyles the whole tree mid-slide; list only the infinite animations. */
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .gamepadhome_RecentSection_39tNv::before,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .gamepadhome_RecentSection_39tNv::after,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .ZBBhezbBR4VJYysmVhF3_::before,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .ZBBhezbBR4VJYysmVhF3_::after,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .gamepadpagedsettings_PagedSettingsDialog_2P_CG::before,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .gamepadpagedsettings_PagedSettingsDialog_2P_CG::after,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .steamavatar_avatarStatus_1yIzy::before,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .steamavatar_avatarStatus_1yIzy::after,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root ._1pwP4eeP1zQD7PEgmsep0W::before,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root ._1pwP4eeP1zQD7PEgmsep0W::after,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child > :first-child::before,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root .gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child > :first-child::after,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root [data-ecl-satellite-orbit] > div::before,
+#MainNavMenu-Rest > .backgroundglass_Visible_fSM7w ~ #GamepadUI_Full_Root [data-ecl-satellite-orbit] > div::after {
+  animation-play-state: paused !important;
+}
+
+#header .header_Clickable_8sPcK.gpfocus,
+#header .header_Clickable_8sPcK:hover {
+  background: transparent !important;
+  border-radius: 50% !important;
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+  color: var(--ecl-corona) !important;
+}
+
+.gamepadcontextmenu_BasicContextMenuHeader_2Jp8B {
+  color: var(--ecl-corona) !important;
+  font-size: 15px !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase;
+}
+
+.gamepadcontextmenu_BasicContextMenuHeader_2Jp8B::before {
+  content: "✦ ";
+  text-shadow: 0 0 8px rgba(var(--ecl-corona-rgb), 0.6);
+}
+
+/* Steam lets a tall dialog grow past the screen and scrolls its whole overlay, gluing the box to the
+   header and footer; cap it to the overlay and scroll inside instead. */
+:is(#GamepadUI_Full_Root, [id^="GamepadUI_ControllerConfigurator_"]) .ModalOverlayContent .GenericDialogBase {
+  box-sizing: border-box;
+  display: flex !important;
+  flex-direction: column;
+  max-block-size: 100%;
+  min-block-size: 0;
+}
+
+:is(#GamepadUI_Full_Root, [id^="GamepadUI_ControllerConfigurator_"]) .ModalOverlayContent .GenericDialogBase > .DialogContent_InnerWidth {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+  margin: -4px;
+  scroll-padding-block: 16px;
+}

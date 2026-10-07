@@ -1,0 +1,19 @@
+:root {
+  --ecl-void: #000;
+  --ecl-veil: #060606;
+  --ecl-line: #1a1a1a;
+  --ecl-line-strong: #2a2a2a;
+  --ecl-text: #c9c9c9;
+  --ecl-text-2: #7a7a7a;
+  --ecl-text-3: #474747;
+  --ecl-corona-rgb: 95, 242, 176;
+  --ecl-corona: rgb(var(--ecl-corona-rgb));
+  --ecl-corona-soft: rgba(var(--ecl-corona-rgb), 0.35);
+  --ecl-flare: #ff7a59;
+  --ecl-dim: 0.32;
+  --ecl-halo: 0 0 14px rgba(var(--ecl-corona-rgb), 0.25);
+  --ecl-ring: inset 0 0 0 1.5px var(--ecl-corona);
+  --ecl-ignite: 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --pdc-theme-accent: var(--ecl-corona-rgb);
+}
+

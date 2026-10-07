@@ -1,0 +1,286 @@
+/* Panel de Control and Colores paint with inline styles from their design tokens; these selectors match
+   that serialized contract and fail open to the plugins' own look. Only their default blue accents
+   follow the theme; an accent the user picked stays theirs. */
+
+.pdc-root[style*="--pdc-accent-rgb: 78,161,255"] {
+  --pdc-accent-rgb: var(--ecl-corona-rgb) !important;
+}
+
+.colores-root[style*="--colores-accent-rgb: 91,140,255"] {
+  --colores-accent-rgb: var(--ecl-corona-rgb) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) {
+  --ecl-plate: linear-gradient(180deg, rgba(var(--ecl-corona-rgb), 0.05), rgba(255, 255, 255, 0.012) 42%, transparent 100%), #020203;
+  --ecl-plate-edge: inset 0 0 0 1px rgba(255, 255, 255, 0.07), inset 0 1px 0 rgba(var(--ecl-corona-rgb), 0.14);
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) [style*="background: rgb(12, 12, 16)"],
+:is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) [style*="background: linear-gradient(145deg, rgb(12, 12, 16), rgb(6, 6, 8))"],
+:is(#QuickAccess-Menu, .ModalOverlayContent) .colores-root [style*="rgba(0, 0, 0, 0) 60%), rgb(6, 6, 8)"] {
+  background: var(--ecl-plate) !important;
+  border-radius: 18px !important;
+  box-shadow: var(--ecl-plate-edge) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) [style*="rgba(255, 255, 255, 0.06) 0px 0px 0px 1px inset"]:not([style*="background: rgb(12, 12, 16)"]) {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) [style*="border-top: 1px solid rgba(255, 255, 255, 0.06)"] {
+  border-top-color: rgba(var(--ecl-corona-rgb), 0.1) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) [style*="text-transform: uppercase"][style*="letter-spacing: 0.5px"]:not([data-testid="device-pill"] *) {
+  color: rgba(var(--ecl-corona-rgb), 0.82) !important;
+  letter-spacing: 0.16em !important;
+}
+
+/* Colores writes its selected scope in a fixed blue, not its accent. */
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="background: rgb(78, 161, 255)"],
+:is(#QuickAccess-Menu, .ModalOverlayContent) .colores-root [style*="background: rgb(var(--colores-accent-rgb"],
+:is(#QuickAccess-Menu, .ModalOverlayContent) .colores-root [style*="background: rgba(80, 160, 255, 0.28)"] {
+  color: var(--ecl-corona) !important;
+  -webkit-text-fill-color: var(--ecl-corona);
+  background: rgba(var(--ecl-corona-rgb), 0.12) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.78), 0 0 16px rgba(var(--ecl-corona-rgb), 0.16) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="background: rgb(78, 161, 255)"] *,
+:is(#QuickAccess-Menu, .ModalOverlayContent) .colores-root [style*="background: rgb(var(--colores-accent-rgb"] * {
+  color: var(--ecl-corona) !important;
+  -webkit-text-fill-color: var(--ecl-corona);
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="background: rgba(78, 161, 255,"] {
+  background: rgba(var(--ecl-corona-rgb), 0.1) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="linear-gradient(135deg, rgba(78, 161, 255"],
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="linear-gradient(155deg, rgba(78, 161, 255"],
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="linear-gradient(160deg, rgba(78, 161, 255"] {
+  background: radial-gradient(120% 90% at 0% 0%, rgba(var(--ecl-corona-rgb), 0.16), transparent 62%), #020203 !important;
+  border-radius: 18px !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.28) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="color: rgb(78, 161, 255)"] {
+  color: var(--ecl-corona) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="rgba(78, 161, 255, 0.35) 0px 0px 0px 1px inset"] {
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.42) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="rgb(78, 161, 255) 0px 0px 0px 1px inset"] {
+  box-shadow: inset 0 0 0 1px var(--ecl-corona), 0 0 14px rgba(var(--ecl-corona-rgb), 0.22) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [stroke="#4ea1ff"] {
+  stroke: var(--ecl-corona);
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [fill="#4ea1ff"] {
+  fill: var(--ecl-corona);
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [data-testid="device-pill"] {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Steam rows inside Panel cards keep Steam's -16 px bleed, 4 px wider than the card's 12 px padding. */
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="background: rgb(12, 12, 16)"] .gamepaddialog_Field_S-_La {
+  margin-inline: -12px !important;
+  padding-inline: 12px !important;
+}
+
+/* Steam pins slider rows at 270 px, wider than a Panel card; Panel only fixes its own sliders. */
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [style*="background: rgb(12, 12, 16)"] .gamepaddialog_FieldChildrenWithIcon_2ZQ9w {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root [data-testid$="-action-surface"][style*="background: rgba(255, 255, 255, 0.08)"] {
+  background: transparent !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .colores-root [style*="color: rgb(88, 166, 255)"] {
+  color: var(--ecl-corona) !important;
+}
+
+/* Focus: the theme's ring and halo; set after every box-shadow above and heavier than them */
+html:root :is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) .gpfocus.gpfocus[class]:not(.pdc-dashboard-card) {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+  filter: none !important;
+}
+
+/* Panel's focus rule squares any focused control to 10 px; buttons keep the theme's pill shape. */
+html:root :is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) .DialogButton.DialogButton.gpfocus.gpfocus[class] {
+  border-radius: 999px !important;
+}
+
+/* Sliders and switches show focus on their knob or rail alone; a ring around the whole row reads as clutter. */
+html:root :is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) .SliderControlPanelGroup.SliderControlPanelGroup.gpfocus.gpfocus[class],
+html:root :is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) .SliderControlPanelGroup .gpfocus.gpfocus.gpfocus[class],
+html:root :is(#QuickAccess-Menu, .ModalOverlayContent) :is(.pdc-root, .colores-root) .gamepaddialog_Toggle_24G4g.gamepaddialog_Toggle_24G4g.gpfocus.gpfocus[class] {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card > .pdc-dashboard-card-surface {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card .pdc-dashboard-card-icon {
+  border-radius: 50% !important;
+  background:
+    radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--pdc-card-accent) 42%, #fff) 0%, var(--pdc-card-accent) 40%, color-mix(in srgb, var(--pdc-card-accent) 28%, #000) 100%) !important;
+  box-shadow:
+    inset -5px -7px 12px rgba(0, 0, 0, 0.5),
+    0 0 16px color-mix(in srgb, var(--pdc-card-accent) 24%, transparent) !important;
+  transform: none !important;
+  scale: 0.92;
+  transition: none !important;
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card .pdc-dashboard-card-icon > svg {
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card .pdc-dashboard-card-icon::before,
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card .pdc-dashboard-card-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 76px;
+  height: 22px;
+  margin: -11px 0 0 -38px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--pdc-card-accent) 50%, transparent);
+  rotate: -18deg;
+  pointer-events: none;
+}
+
+/* Back half of the ring hides behind the planet; the front half crosses over it. */
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card .pdc-dashboard-card-icon::before {
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 21px, #000 21.5px);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 21px, #000 21.5px);
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card .pdc-dashboard-card-icon::after {
+  clip-path: inset(50% 0 0 0);
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card:is(.gpfocus, .pdc-dashboard-card-focused) > .pdc-dashboard-card-surface {
+  background: radial-gradient(closest-side at 50% 30%, color-mix(in srgb, var(--pdc-card-accent) 22%, transparent), transparent) !important;
+  border-radius: 24px !important;
+  box-shadow: none !important;
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card:is(.gpfocus, .pdc-dashboard-card-focused) .pdc-dashboard-card-icon {
+  box-shadow:
+    inset -5px -7px 12px rgba(0, 0, 0, 0.5),
+    0 0 22px color-mix(in srgb, var(--pdc-card-accent) 55%, transparent) !important;
+  scale: 1.06;
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card:is(.gpfocus, .pdc-dashboard-card-focused) .pdc-dashboard-card-icon::before,
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card:is(.gpfocus, .pdc-dashboard-card-focused) .pdc-dashboard-card-icon::after {
+  border-color: var(--pdc-card-accent);
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card .pdc-dashboard-card-label {
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card:is(.gpfocus, .pdc-dashboard-card-focused) .pdc-dashboard-card-label {
+  color: #fff !important;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--pdc-card-accent) 60%, transparent);
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card:not(.gpfocus):not(.pdc-dashboard-card-focused) .pdc-dashboard-card-icon {
+  opacity: 0.62;
+}
+
+/* The planet hides the satellite on the far side because the surface pseudo paints before the icon. */
+@keyframes ecl-pdc-satellite {
+  0% { transform: rotate(-18deg) scaleY(0.29) rotate(40deg) translateX(40px) rotate(-40deg) scaleY(3.45) rotate(18deg); z-index: 2; }
+  38.8% { z-index: 2; }
+  38.9% { z-index: 0; }
+  88.8% { z-index: 0; }
+  88.9% { z-index: 2; }
+  100% { transform: rotate(-18deg) scaleY(0.29) rotate(400deg) translateX(40px) rotate(-400deg) scaleY(3.45) rotate(18deg); z-index: 2; }
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card:is(.gpfocus, .pdc-dashboard-card-focused) > .pdc-dashboard-card-surface::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 29px;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--ecl-corona);
+  box-shadow: 0 0 6px rgba(var(--ecl-corona-rgb), 0.9), 0 0 12px rgba(var(--ecl-corona-rgb), 0.45);
+  pointer-events: none;
+  animation: ecl-pdc-satellite 4.8s linear infinite;
+}
+
+#QuickAccess-Menu .quickaccessmenu_Title_34nl5 {
+  background: transparent !important;
+}
+
+#QuickAccess-Menu [id^="quickaccess_content_"] {
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16px);
+  mask-image: linear-gradient(180deg, transparent 0, #000 16px);
+}
+
+/* TDP dial: the unlit track becomes quiet instrument ticks and the centre a dark disc ringed in the zone
+   colour (currentColor of the zone label); every sector keeps its colour. Panel's dial is a 200x180
+   viewBox centred at (100, 100) with an 80-unit radius. */
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root svg[viewBox="0 0 200 180"] > path[stroke="rgba(255,255,255,0.08)"] {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-dasharray: 0.8 6.4;
+  stroke-linecap: butt;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root svg[viewBox="0 0 200 180"] > path[stroke-width="14"] {
+  stroke-width: 10;
+  filter: none !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root svg[viewBox="0 0 200 180"] > path[data-testid="auto-tdp-halo"] {
+  stroke-width: 16;
+  stroke-opacity: 0.16;
+  filter: none !important;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root svg[viewBox="0 0 200 180"] + div {
+  padding-top: 10%;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root svg[viewBox="0 0 200 180"] + div > div:last-child::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 55.6%;
+  z-index: -1;
+  width: 56%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  translate: -50% -50%;
+  background: #000;
+  box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 35%, transparent);
+  pointer-events: none;
+}
+
+:is(#QuickAccess-Menu, .ModalOverlayContent) .pdc-root svg[viewBox="0 0 200 180"] + div > div[style*="font-size: 32px"] {
+  font-weight: 300 !important;
+}

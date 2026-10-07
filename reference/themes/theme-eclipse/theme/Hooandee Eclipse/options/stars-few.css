@@ -1,0 +1,30 @@
+:root:root {
+  --ecl-starfield:
+    radial-gradient(0.9px 0.9px at 89.6% 66.9%, rgba(255, 255, 255, 0.37), transparent),
+    radial-gradient(1.1px 1.1px at 51.5% 22.2%, rgba(255, 255, 255, 0.30), transparent),
+    radial-gradient(0.9px 0.9px at 12.3% 41.3%, rgba(210, 230, 255, 0.26), transparent),
+    radial-gradient(0.9px 0.9px at 80.2% 15.2%, rgba(255, 255, 255, 0.34), transparent),
+    radial-gradient(1.0px 1.0px at 97.6% 81.7%, rgba(255, 236, 214, 0.35), transparent),
+    radial-gradient(0.8px 0.8px at 53.1% 21.4%, rgba(255, 255, 255, 0.37), transparent),
+    radial-gradient(0.8px 0.8px at 68.6% 35.1%, rgba(255, 236, 214, 0.29), transparent),
+    radial-gradient(0.8px 0.8px at 46.5% 13.5%, rgba(210, 230, 255, 0.35), transparent),
+    radial-gradient(0.9px 0.9px at 24.2% 55.0%, rgba(210, 230, 255, 0.22), transparent),
+    radial-gradient(0.9px 0.9px at 58.0% 77.4%, rgba(255, 255, 255, 0.26), transparent),
+    radial-gradient(0.9px 0.9px at 72.3% 31.1%, rgba(210, 230, 255, 0.30), transparent),
+    radial-gradient(0.9px 0.9px at 50.1% 62.1%, rgba(210, 230, 255, 0.33), transparent),
+    radial-gradient(1.1px 1.1px at 31.3% 54.0%, rgba(210, 230, 255, 0.31), transparent),
+    radial-gradient(1.0px 1.0px at 20.5% 48.6%, rgba(210, 230, 255, 0.29), transparent),
+    radial-gradient(1.0px 1.0px at 12.2% 92.6%, rgba(255, 255, 255, 0.25), transparent),
+    radial-gradient(1.1px 1.1px at 21.4% 70.5%, rgba(255, 255, 255, 0.36), transparent),
+    radial-gradient(1.4px 1.4px at 59.2% 59.5%, rgba(255, 255, 255, 0.42), transparent),
+    radial-gradient(1.4px 1.4px at 52.3% 7.7%, rgba(210, 230, 255, 0.57), transparent),
+    radial-gradient(1.2px 1.2px at 67.7% 1.7%, rgba(255, 236, 214, 0.48), transparent),
+    radial-gradient(1.2px 1.2px at 66.2% 82.1%, rgba(210, 230, 255, 0.45), transparent),
+    radial-gradient(1.2px 1.2px at 92.5% 6.1%, rgba(255, 236, 214, 0.57), transparent),
+    radial-gradient(1.5px 1.5px at 60.4% 44.1%, rgba(210, 230, 255, 0.53), transparent);
+  --ecl-starfield-bright:
+    radial-gradient(1.7px 1.7px at 51.9% 80.9%, rgba(200, 255, 236, 0.64), transparent),
+    radial-gradient(1.6px 1.6px at 29.1% 13.1%, rgba(200, 255, 236, 0.76), transparent),
+    radial-gradient(1.5px 1.5px at 70.3% 32.4%, rgba(200, 255, 236, 0.67), transparent);
+  --ecl-twinkle-b: none;
+}

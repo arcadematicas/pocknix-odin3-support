@@ -1,0 +1,8 @@
+#header > .header_Clock_1HhLU {
+  display: none !important;
+}
+
+#header > .header_BatteryIcon_1_6kL {
+  left: 50% !important;
+  transform: translateX(-50%) scale(0.85) !important;
+}

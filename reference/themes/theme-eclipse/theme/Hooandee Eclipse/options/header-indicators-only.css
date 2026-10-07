@@ -1,0 +1,17 @@
+#header > .header_NotificationsIcon_cieWw,
+#header > .header_HeaderItem_2HnVd:not(.header_Clickable_8sPcK):not(.header_Clock_1HhLU),
+#header > [role="button"].header_Clickable_8sPcK,
+#header > #header_profile {
+  display: none !important;
+}
+
+#header > .searchbar_SearchAndTitleContainer_17M8g {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ecl-ignite);
+}
+
+#header > .searchbar_SearchAndTitleContainer_17M8g.gpfocuswithin {
+  opacity: 1;
+  pointer-events: auto;
+}

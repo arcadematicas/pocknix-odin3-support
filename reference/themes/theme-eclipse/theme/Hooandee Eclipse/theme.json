@@ -1,0 +1,335 @@
+{
+  "name": "Hooandee Eclipse",
+  "display_name": "Eclipse",
+  "author": "Hooandee",
+  "version": "0.2.5",
+  "description": "Negro OLED absoluto y luz solo donde miras: cada juego es un astro que se enciende al enfocarlo.",
+  "target": "System-Wide",
+  "manifest_version": 9,
+  "inject": {
+    "tokens.css": [
+      "bigpicture",
+      "QuickAccess",
+      "MainMenu",
+      "notificationtoasts.*"
+    ],
+    "starfield.css": [
+      "bigpicture",
+      "QuickAccess",
+      "MainMenu"
+    ],
+    "twinkle.css": [
+      "bigpicture",
+      "QuickAccess"
+    ],
+    "controls.css": [
+      "bigpicture",
+      "QuickAccess"
+    ],
+    "system.css": [
+      "bigpicture"
+    ],
+    "home.css": [
+      "bigpicture"
+    ],
+    "library.css": [
+      "bigpicture"
+    ],
+    "details.css": [
+      "bigpicture"
+    ],
+    "qam.css": [
+      "QuickAccess"
+    ],
+    "main-menu.css": [
+      "MainMenu"
+    ],
+    "settings.css": [
+      "bigpicture"
+    ],
+    "notifications.css": [
+      "notificationtoasts.*"
+    ],
+    "cosmos.css": [
+      "bigpicture"
+    ],
+    "rings.css": [
+      "bigpicture",
+      "QuickAccess",
+      "MainMenu"
+    ],
+    "storage.css": [
+      "bigpicture"
+    ],
+    "windows.css": [
+      "bigpicture"
+    ],
+    "friends.css": [
+      "bigpicture",
+      "QuickAccess"
+    ],
+    "surfaces.css": [
+      "bigpicture",
+      "QuickAccess"
+    ],
+    "avatars.css": [
+      "bigpicture",
+      "QuickAccess",
+      "notificationtoasts.*"
+    ],
+    "header-icons.css": [
+      "bigpicture"
+    ],
+    "orbit.css": [
+      "bigpicture"
+    ],
+    "plugins.css": [
+      "bigpicture",
+      "QuickAccess"
+    ]
+  },
+  "patches": {
+    "Ahorro OLED": {
+      "default": "Máximo",
+      "type": "dropdown",
+      "values": {
+        "Máximo": {},
+        "Normal": {
+          "options/saving-normal.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        }
+      }
+    },
+    "Acento": {
+      "default": "Venus",
+      "type": "dropdown",
+      "values": {
+        "Venus": {},
+        "Mercurio": {
+          "options/accent-mercury.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Tierra": {
+          "options/accent-earth.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Marte": {
+          "options/accent-mars.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Júpiter": {
+          "options/accent-jupiter.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Saturno": {
+          "options/accent-saturn.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Urano": {
+          "options/accent-uranus.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Neptuno": {
+          "options/accent-neptune.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Plutón": {
+          "options/accent-pluto.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        }
+      }
+    },
+    "Acceso rápido": {
+      "default": "Yes",
+      "type": "checkbox",
+      "values": {
+        "No": {
+          "options/orbit-menu-off.css": [
+            "bigpicture"
+          ]
+        },
+        "Yes": {}
+      }
+    },
+    "Corona de foco": {
+      "default": "Yes",
+      "type": "checkbox",
+      "values": {
+        "No": {
+          "options/corona-off.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Yes": {}
+      }
+    },
+    "Movimiento": {
+      "default": "Yes",
+      "type": "checkbox",
+      "values": {
+        "No": {
+          "options/motion-off.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu",
+            "notificationtoasts.*"
+          ]
+        },
+        "Yes": {}
+      }
+    },
+    "Estrellas titilantes": {
+      "default": "Yes",
+      "type": "checkbox",
+      "values": {
+        "No": {
+          "options/twinkle-off.css": [
+            "bigpicture",
+            "QuickAccess"
+          ]
+        },
+        "Yes": {}
+      }
+    },
+    "Contenido del header": {
+      "default": "Completo",
+      "type": "slider",
+      "values": {
+        "Completo": {},
+        "Solo indicadores": {
+          "options/header-indicators-only.css": [
+            "bigpicture"
+          ]
+        },
+        "Oculto": {
+          "options/header-hidden.css": [
+            "bigpicture"
+          ]
+        }
+      }
+    },
+    "Indicadores del header": {
+      "default": "Batería y hora",
+      "type": "slider",
+      "values": {
+        "Batería y hora": {},
+        "Solo batería": {
+          "options/header-only-battery.css": [
+            "bigpicture"
+          ]
+        },
+        "Solo hora": {
+          "options/header-only-time.css": [
+            "bigpicture"
+          ]
+        },
+        "Ninguno": {
+          "options/header-no-indicators.css": [
+            "bigpicture"
+          ]
+        }
+      }
+    },
+    "Contenido del footer": {
+      "default": "Completo",
+      "type": "slider",
+      "values": {
+        "Completo": {},
+        "Esencial": {
+          "options/footer-essential.css": [
+            "bigpicture"
+          ]
+        },
+        "Oculto": {
+          "options/footer-hidden.css": [
+            "bigpicture"
+          ]
+        }
+      }
+    },
+    "Iconos del footer": {
+      "default": "Eclipse",
+      "type": "slider",
+      "values": {
+        "Eclipse": {
+          "options/footer-icons-eclipse.css": [
+            "bigpicture"
+          ]
+        },
+        "Steam": {}
+      }
+    },
+    "Sección inferior de la Home": {
+      "default": "Oculta",
+      "type": "slider",
+      "values": {
+        "Oculta": {
+          "options/home-lower-hidden.css": [
+            "bigpicture"
+          ]
+        },
+        "Visible": {}
+      }
+    },
+    "Estrellas": {
+      "default": "Muchas",
+      "type": "slider",
+      "values": {
+        "Sin estrellas": {
+          "options/stars-none.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu"
+          ]
+        },
+        "Pocas": {
+          "options/stars-few.css": [
+            "bigpicture",
+            "QuickAccess",
+            "MainMenu"
+          ]
+        },
+        "Muchas": {}
+      }
+    }
+  }
+}

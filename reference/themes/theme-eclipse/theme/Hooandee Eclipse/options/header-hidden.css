@@ -1,0 +1,14 @@
+#header > :not(.searchbar_SearchAndTitleContainer_17M8g) {
+  display: none !important;
+}
+
+#header > .searchbar_SearchAndTitleContainer_17M8g {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ecl-ignite);
+}
+
+#header > .searchbar_SearchAndTitleContainer_17M8g.gpfocuswithin {
+  opacity: 1;
+  pointer-events: auto;
+}

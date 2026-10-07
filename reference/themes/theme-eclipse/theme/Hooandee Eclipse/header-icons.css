@@ -1,0 +1,68 @@
+:root {
+  --ecl-icon-search: url("/themes_custom/Hooandee%20Eclipse/icons/search.png");
+  --ecl-icon-updates: url("/themes_custom/Hooandee%20Eclipse/icons/updates.png");
+  --ecl-icon-notifications: url("/themes_custom/Hooandee%20Eclipse/icons/notifications.png");
+  --ecl-icon-chat: url("/themes_custom/Hooandee%20Eclipse/icons/chat.png");
+}
+
+#header .searchbar_SearchIconLeft_2Ya83,
+#header .searchbar_SearchIconRight_1Ka4T,
+#header .header_NotificationsIcon_cieWw > svg,
+#header .unreadchatmessagesheadersteamdeck_NotificationUnreadMentionContainer_336WN > svg {
+  -webkit-mask: var(--ecl-glyph) center / contain no-repeat;
+  mask: var(--ecl-glyph) center / contain no-repeat;
+  background: currentColor;
+  border-radius: 0;
+}
+
+#header .searchbar_SearchIconLeft_2Ya83 *,
+#header .searchbar_SearchIconRight_1Ka4T *,
+#header .header_NotificationsIcon_cieWw > svg *,
+#header .unreadchatmessagesheadersteamdeck_NotificationUnreadMentionContainer_336WN > svg * {
+  opacity: 0;
+}
+
+#header .searchbar_SearchIconLeft_2Ya83,
+#header .searchbar_SearchIconRight_1Ka4T {
+  --ecl-glyph: var(--ecl-icon-search);
+}
+
+#header .header_NotificationsIcon_cieWw > svg {
+  --ecl-glyph: var(--ecl-icon-notifications);
+}
+
+#header .unreadchatmessagesheadersteamdeck_NotificationUnreadMentionContainer_336WN > svg {
+  --ecl-glyph: var(--ecl-icon-chat);
+}
+
+#header .header_UpdatesIcon_33cHT {
+  position: relative;
+}
+
+#header .header_UpdatesIcon_33cHT > svg > :first-child {
+  opacity: 0;
+}
+
+#header .header_UpdatesIcon_33cHT::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  background: currentColor;
+  -webkit-mask: var(--ecl-icon-updates) center / contain no-repeat;
+  mask: var(--ecl-icon-updates) center / contain no-repeat;
+  pointer-events: none;
+}
+
+#header .header_Clickable_8sPcK.gpfocus,
+#header .header_Clickable_8sPcK.gpfocus svg {
+  color: var(--ecl-corona) !important;
+}
+
+#header .header_Clickable_8sPcK.gpfocus svg,
+#header .header_Clickable_8sPcK.gpfocus::before {
+  filter: drop-shadow(0 0 4px rgba(var(--ecl-corona-rgb), 0.6));
+}

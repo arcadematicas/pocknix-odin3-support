@@ -1,0 +1,18 @@
+:root:root {
+  --ecl-starfield: none;
+  --ecl-starfield-bright: none;
+  --ecl-twinkle-a: none;
+  --ecl-twinkle-b: none;
+}
+
+#Main .gamepadhome_RecentSection_39tNv::before,
+#Main .gamepadhome_RecentSection_39tNv::after,
+#Main .ZBBhezbBR4VJYysmVhF3_::before,
+#Main .ZBBhezbBR4VJYysmVhF3_::after,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG::before,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG::after,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u::before,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u::after {
+  display: none !important;
+  animation: none !important;
+}

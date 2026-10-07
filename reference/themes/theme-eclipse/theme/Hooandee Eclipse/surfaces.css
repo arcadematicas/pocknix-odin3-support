@@ -1,0 +1,381 @@
+.unreadchatmessagesheadersteamdeck_Header_NotificationUnreadMention_ASion,
+.friendslist_NotificationUnreadMention_1PBUf,
+.gamepadtabbedpage_TabCountBadge_19sQx {
+  background: var(--ecl-flare) !important;
+  color: #000 !important;
+}
+
+.gamepadtabbedpage_TabCount_1ui4I {
+  color: var(--ecl-text-3) !important;
+}
+
+.SettingsDialogSubHeader,
+.DialogControlsSectionHeader {
+  color: var(--ecl-corona) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase;
+}
+
+.Evi7gq_iuz9HbjzrCjgUG {
+  background: transparent !important;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+.updaterfield_PostedTime_3lI6D,
+.updaterfield_EventDetailsSubTitle_2OIjm {
+  color: var(--ecl-text-3) !important;
+}
+
+.updaterfield_EventDetailTitle_1suo0 {
+  color: var(--ecl-text) !important;
+}
+
+.networksettings_Checkmark_x5D0R,
+.customizationsettings_Checkmark_2XRQA,
+.networksettings_Checkmark_x5D0R *,
+.customizationsettings_Checkmark_2XRQA * {
+  color: var(--ecl-corona) !important;
+  fill: var(--ecl-corona) !important;
+}
+
+.networksettings_LockIcon_1oafX,
+.networksettings_LockIcon_1oafX * {
+  color: var(--ecl-text-3) !important;
+  fill: var(--ecl-text-3) !important;
+}
+
+.kkA7z2zc_MeBadge,
+._2W_HQa5Rhf-hHITgV5H0bu {
+  background: var(--ecl-corona) !important;
+  color: #000 !important;
+}
+
+.contentmanagement_DriveSize_5bG9I,
+.contentmanagement_AppHeaderValue_3X3BB,
+.contentmanagement_AppUsageValue_2B8dj {
+  color: var(--ecl-text-2) !important;
+}
+
+.contentmanagement_DriveName_1rihl {
+  color: var(--ecl-text-3) !important;
+}
+
+.customizationsettings_StartupMoviesSelectionDesc_gfecK,
+.dropdownlabel_DropDownLabelDescription_1JPcb,
+.gamepaddialog_FieldDescription_2OJfk,
+.DialogBody {
+  color: var(--ecl-text-2) !important;
+}
+
+.DialogCheckbox_Container {
+  background: transparent !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+.DialogCheckbox_Container.gpfocus,
+.DialogCheckbox_Container.gpfocuswithin {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+.DialogCheckbox {
+  background: var(--ecl-void) !important;
+  border-radius: 6px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+.DialogCheckbox svg {
+  fill: var(--ecl-corona) !important;
+  color: var(--ecl-corona) !important;
+}
+
+.DialogCheckbox svg path {
+  stroke: var(--ecl-corona) !important;
+  filter: none !important;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  accent-color: var(--ecl-corona);
+}
+
+.X3pN_ESh0aoxmm2nK65Hu,
+.appproperties_DlcHeader_1SKB0 {
+  background: transparent !important;
+  color: var(--ecl-text-3) !important;
+  letter-spacing: 0.14em;
+  box-shadow: inset 0 -1px 0 var(--ecl-line-strong) !important;
+}
+
+._3jWpi0kJp_piNEvdMufMmy {
+  border-color: var(--ecl-line) !important;
+  box-shadow: none !important;
+}
+
+._1LCoWsUrJmZHr7SVX0luaG {
+  background: transparent !important;
+  border-radius: 12px;
+}
+
+._1LCoWsUrJmZHr7SVX0luaG.appproperties_Selected_dB7T- {
+  background: var(--ecl-veil) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.45) !important;
+}
+
+._2d_FE9TOpHt1FsYhLEpjCp {
+  border-left-color: var(--ecl-corona) !important;
+}
+
+.appproperties_DlcGrid_3sXdO {
+  background: transparent !important;
+  border-color: var(--ecl-line) !important;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+.appdetailsfriendssection_FriendsPlayingNowBadge_38sNQ {
+  background: transparent !important;
+  color: var(--ecl-corona) !important;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.6) !important;
+}
+
+.appdetailsfriendssection_FriendsPlayingNowBadge_38sNQ * {
+  color: inherit !important;
+  fill: currentColor !important;
+}
+
+.appdetailsfriendssection_FriendsSectionSubHeading_30EfX {
+  color: var(--ecl-text-3) !important;
+}
+
+.shared_svg_library_SteamDeckCompatVerified_3mvZq,
+.shared_svg_library_SteamDeckCompatVerified_3mvZq * {
+  color: var(--ecl-corona) !important;
+  fill: var(--ecl-corona) !important;
+}
+
+.appdetailssection_Highlight_38t1m,
+.appdetailstradingcardssection_BadgeSection_3g3jm,
+.appdetailscommunityfeed_CommunityItem_3QS6O {
+  background: var(--ecl-veil) !important;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+}
+
+.appdetails_ScrollContainer_2l416 {
+  background: var(--ecl-void) !important;
+}
+
+.ingame .personanameandstatus_playerName_r62qz {
+  color: var(--ecl-corona) !important;
+}
+
+.ingame .personanameandstatus_richPresenceLabel_1k82N,
+.ingame .personanameandstatus_gameName_2wpap,
+.friendGroup .count,
+.SteamPlayerGroupFooterLabel,
+.ingame .friendsnooze_SnoozeZ_1DArl {
+  color: rgba(var(--ecl-corona-rgb), 0.7) !important;
+}
+
+.SteamPlayerGroupLines {
+  border-color: rgba(var(--ecl-corona-rgb), 0.45) !important;
+}
+
+.friendslist_LastMessage_3iGtS,
+.recentchatssteamdeck_Time_2rH8q {
+  color: var(--ecl-text-3) !important;
+}
+
+.friendGroup,
+.friend.offline {
+  border-color: var(--ecl-line) !important;
+}
+
+.standardtemplates_Timestamp_2vSvC,
+.standardtemplates_StandardNotificationSubText_2XcN2,
+.systemmanagement_Text_a7zm3 {
+  color: var(--ecl-text-3) !important;
+}
+
+.insetshadow_FriendListInsetShadowTop_2-sgw {
+  background: linear-gradient(#000, transparent) !important;
+}
+
+.friendslist_UnreadAlert_1XZAD,
+.FriendMessageCount {
+  background: var(--ecl-flare) !important;
+  color: #000 !important;
+}
+
+.controllerconfigurator_ControllerConfiguratorMain_APY6j {
+  background: var(--ecl-starfield), var(--ecl-void) !important;
+}
+
+.controllerconfigurator_TopSection_20sN9 {
+  background: radial-gradient(ellipse 70% 120% at 50% -30%, rgba(var(--ecl-corona-rgb), 0.08), transparent 70%) !important;
+  box-shadow: inset 0 -1px 0 var(--ecl-line) !important;
+}
+
+.controllerconfigurator_BottomSection_3RsRf {
+  background: transparent !important;
+}
+
+.dropdownlabel_DropDownLabelUpperDescription_2_JN3 {
+  color: var(--ecl-text-3) !important;
+}
+
+.dropdownlabel_DropDownLabelTitle_uDBZW {
+  color: var(--ecl-text) !important;
+}
+
+.controllerconfiguratorsummary_ControllerConfiguratorSummary_3TvBV {
+  background: var(--ecl-starfield), var(--ecl-void) !important;
+}
+
+.controllerconfiguratorsummary_Title_12Taa {
+  color: var(--ecl-corona) !important;
+  letter-spacing: 0.18em;
+}
+
+.controllerconfiguratorsummary_TitleLabel_3ViNI {
+  color: var(--ecl-text-3) !important;
+}
+
+.controllerconfiguratorsummary_BackgroundController_rlz-U {
+  opacity: 0.55;
+}
+
+#Main .gamepadhomewhatsnew_EventType_1f0dZ {
+  color: var(--ecl-corona) !important;
+  letter-spacing: 0.16em;
+}
+
+/* Game properties */
+.appproperties_BlueHighlight_1KmR8 {
+  color: var(--ecl-corona) !important;
+}
+
+.appproperties_SteamInputStatusGrid_3lj3- {
+  background: transparent !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+}
+
+.appproperties_ControllerConnected_11Gq_ {
+  background: var(--ecl-corona) !important;
+  box-shadow: 0 0 6px rgba(var(--ecl-corona-rgb), 0.6) !important;
+}
+
+/* Game page */
+.appdetailsgameinfopanel_DeckVerifiedInfo_IIJei {
+  background: transparent !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+}
+
+.appdetailsgameinfopanel_Details_3sfpA,
+.posttextentry_PostButton_2JSyA {
+  background: transparent !important;
+  color: var(--ecl-text-2) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+.appdetailsgameinfopanel_Details_3sfpA.gpfocus,
+.posttextentry_PostButton_2JSyA.gpfocus {
+  color: var(--ecl-corona) !important;
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+._2EspjUGvVbAC5UqXtS_G8F {
+  background: transparent !important;
+  color: var(--ecl-text-2) !important;
+  border-radius: 50% !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+.appdetailstradingcardssection_CardContainer_2DUDv {
+  background: var(--ecl-veil) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+}
+
+.appdetailsachievementssection_AchievementProgressContainer_3ns91 {
+  background: var(--ecl-line-strong) !important;
+}
+
+.appdetails_ScrollContainer_2l416 .personanameandstatus_playerName_r62qz {
+  color: var(--ecl-text) !important;
+}
+
+.appdetailscommunityfeed_BottomSection_3uabi {
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85)) !important;
+}
+
+/* Library filters */
+.steamdeckcompatfilter_CompatFilterDialog_21qvB {
+  background: var(--ecl-starfield), var(--ecl-void) !important;
+  border-radius: 24px !important;
+  box-shadow: inset 0 1px 0 rgba(var(--ecl-corona-rgb), 0.45), inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+.appfilterpane_FilterBucket_1axoi {
+  background: transparent !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line) !important;
+}
+
+.appfilterpane_FilterBucket_1axoi .DialogCheckbox_Container {
+  padding-inline-start: 6px !important;
+}
+
+.steamdeckcompatfilter_CompatFilterDialogRow_O7cW3.steamdeckcompatfilter_Active_2wFsa,
+.steamdeckcompatfilter_CompatFilterDialogRow_O7cW3.steamdeckcompatfilter_Active_2wFsa * {
+  color: var(--ecl-text) !important;
+}
+
+.steamdeckcompatfilter_CompatFilterDialogRow_O7cW3.steamdeckcompatfilter_Active_2wFsa .steamdeckcompatfilter_CompatFilterLabel_1qhp8 {
+  color: var(--ecl-corona) !important;
+}
+
+/* Controller binding picker */
+#Main :is(._2MjBd1kKOEyVfqBN5OQOb1, ._2swvcAycL4d0UoHFDoe6-d, ._3i-XV362MvNEX3j_oWQDmQ, ._3s28A0XlOXUOAWRIuBKHuH, .NoRFSLSfwRijJQt7R51OT, ._19SMSHLlXqSLnXM3NjDNBS, ._3yP_pf4vx1Q4W0mt2DR32P, ._1Ze1RZ7I8e5cSlaWAl48bh) {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--ecl-text-2) !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+/* Steam draws its own focus ring over these. */
+#Main :is(._2MjBd1kKOEyVfqBN5OQOb1, ._2swvcAycL4d0UoHFDoe6-d, ._3i-XV362MvNEX3j_oWQDmQ, ._3s28A0XlOXUOAWRIuBKHuH, .NoRFSLSfwRijJQt7R51OT, ._19SMSHLlXqSLnXM3NjDNBS, ._3yP_pf4vx1Q4W0mt2DR32P, ._1Ze1RZ7I8e5cSlaWAl48bh).gpfocus {
+  color: var(--ecl-corona) !important;
+  box-shadow: none !important;
+}
+
+#Main ._4nzjXgyjln-Smt1E17DVF .eUq_I0gb5u7xNXESXeTsl {
+  color: var(--ecl-text-2) !important;
+}
+
+#Main :is(._2MjBd1kKOEyVfqBN5OQOb1, ._2swvcAycL4d0UoHFDoe6-d, ._3i-XV362MvNEX3j_oWQDmQ, ._3s28A0XlOXUOAWRIuBKHuH, .NoRFSLSfwRijJQt7R51OT, ._19SMSHLlXqSLnXM3NjDNBS, ._3yP_pf4vx1Q4W0mt2DR32P, ._1Ze1RZ7I8e5cSlaWAl48bh) .eUq_I0gb5u7xNXESXeTsl {
+  color: inherit !important;
+}
+
+#Main ._4nzjXgyjln-Smt1E17DVF.CX4Dp8XyHswkGEEnWeUpq .eUq_I0gb5u7xNXESXeTsl,
+#Main ._4nzjXgyjln-Smt1E17DVF.gpfocus .eUq_I0gb5u7xNXESXeTsl {
+  color: var(--ecl-corona) !important;
+  filter: drop-shadow(0 0 6px rgba(var(--ecl-corona-rgb), 0.5));
+}
+
+#Main ._3-2qPlSL8zwX9qNG6uOwd0::before {
+  border-color: var(--ecl-line-strong) !important;
+}
+
+#Main ._3-2qPlSL8zwX9qNG6uOwd0.gpfocus::before {
+  border-color: var(--ecl-corona) !important;
+  box-shadow: var(--ecl-halo) !important;
+}

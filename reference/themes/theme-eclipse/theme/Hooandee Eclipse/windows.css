@@ -1,0 +1,319 @@
+.downloads_DownloadsPage_1bq4x,
+.gamepadsearch_GamepadSearch_P_AlE,
+.achievementspage_Page_3FQHg,
+.friendinvites_InvitesList_16fuv {
+  background: var(--ecl-starfield), var(--ecl-void) !important;
+  background-attachment: fixed, scroll !important;
+}
+
+.downloads_Section_3Mbhn.downloads_Active_IbePL,
+.achievementslist_AchievementList_1UXC2,
+.achievementspage_HeaderImage_294HV,
+.achievementsheader_Portrait_2SjmZ .libraryassetimage_Container_1R9r2 {
+  background: transparent !important;
+}
+
+.downloads_SectionTitle_qq2xI,
+.achievementslist_ListTitle_IM0uE,
+.friendinvites_InvitesSectionHeader_1FU-5 {
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.downloads_Title_TK9wv,
+.achievementslist_ListTitle_IM0uE,
+.friendinvites_Text_479gT {
+  color: var(--ecl-corona) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase !important;
+}
+
+.downloads_Title_TK9wv::before,
+.achievementslist_ListTitle_IM0uE::before,
+.friendinvites_Text_479gT::before {
+  content: "✦  ";
+  text-shadow: 0 0 8px rgba(var(--ecl-corona-rgb), 0.6);
+}
+
+.downloads_Count_1CGnw,
+.downloads_AutoUpdate_qrwf3 {
+  color: var(--ecl-text-3) !important;
+}
+
+.downloads_SectionTitle_qq2xI::after,
+.downloads_TitleAndCount_ROxNr::after {
+  background: var(--ecl-line) !important;
+}
+
+.downloads_SectionItem_1VNuY,
+.achievementslist_AchievementListItemBase_2Kmn7,
+.friendinvites_InvitesRow_3bWSC {
+  background: transparent !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 -1px 0 var(--ecl-line) !important;
+  transition: box-shadow var(--ecl-ignite), background var(--ecl-ignite);
+}
+
+.downloads_SectionItemWrapper_21P7c.gpfocus .downloads_SectionItem_1VNuY,
+.downloads_SectionItemWrapper_21P7c.gpfocuswithin .downloads_SectionItem_1VNuY,
+.achievementslist_AchievementListItemBase_2Kmn7.gpfocus,
+.friendinvites_InvitesRow_3bWSC.gpfocuswithin {
+  background: var(--ecl-veil) !important;
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+.downloads_AppPortrait_2pjdg,
+.achievementiconbase_AchievementIconWrapper_373lE {
+  opacity: 0.55;
+  transition: opacity var(--ecl-ignite);
+}
+
+.downloads_SectionItemWrapper_21P7c.gpfocuswithin .downloads_AppPortrait_2pjdg,
+.achievementslist_AchievementListItemBase_2Kmn7.gpfocus .achievementiconbase_AchievementIconWrapper_373lE {
+  opacity: 1;
+}
+
+.downloads_Name_35eOQ,
+.achievementslist_AchievementTitle_17dhG,
+.achievementsheader_Title_3wNyl {
+  color: var(--ecl-text) !important;
+}
+
+.downloads_ProgressDetails_sv3ZH,
+.downloads_Value_1dHjj,
+.achievementslist_AchievementDescription_1WP2Y,
+.friendinvites_Description_25JZu {
+  color: var(--ecl-text-2) !important;
+}
+
+.o3QomEE0_RemoteClientManagementBackground {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong);
+  border-radius: 999px;
+}
+
+.achievementspage_Blur_3Fjw7 {
+  background: linear-gradient(rgba(0, 0, 0, 0.2), #000 92%) !important;
+}
+
+.achievementspage_HeaderImage_294HV img {
+  opacity: 0.45;
+}
+
+.sTODxRjF_StatsBlock {
+  background: transparent !important;
+  border-radius: 18px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+.progressbar_ProgressBar_1-nHj {
+  height: 3px !important;
+  background: var(--ecl-line-strong) !important;
+  border-radius: 999px !important;
+  overflow: hidden;
+}
+
+.progressbar_ProgressBar_1-nHj > * {
+  background: var(--ecl-corona) !important;
+  box-shadow: 0 0 8px rgba(var(--ecl-corona-rgb), 0.6);
+}
+
+.achievementiconbase_HiddenLabel_2yMyP {
+  background: var(--ecl-veil) !important;
+  color: var(--ecl-text-3) !important;
+}
+
+.friendinvites_FriendCode_23ZXE {
+  background: transparent !important;
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.45), 0 0 18px rgba(var(--ecl-corona-rgb), 0.12);
+}
+
+.friendinvites_Code_w9qJc {
+  color: var(--ecl-corona) !important;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 12px rgba(var(--ecl-corona-rgb), 0.45);
+}
+
+.DialogInput.DialogTextInputBase {
+  background: var(--ecl-veil) !important;
+  color: var(--ecl-text) !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+  padding-inline: 18px !important;
+}
+
+.DialogInput.DialogTextInputBase.gpfocus,
+.DialogInput.DialogTextInputBase:focus {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+.allcollections_Collection_3IWn- {
+  background: radial-gradient(circle at 50% 120%, rgba(var(--ecl-corona-rgb), 0.16), transparent 62%), var(--ecl-veil) !important;
+  border-radius: 14px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+  transition: box-shadow var(--ecl-ignite);
+}
+
+.allcollections_Collection_3IWn-.gpfocus {
+  box-shadow: var(--ecl-halo) !important;
+}
+
+.allcollections_Collection_3IWn- .libraryassetimage_Container_1R9r2 {
+  background: transparent !important;
+}
+
+.allcollections_CollectionImage_2ERAQ,
+.allcollections_CollectionBG_akZKn {
+  opacity: 0.4;
+  transition: opacity var(--ecl-ignite);
+}
+
+.allcollections_Collection_3IWn-.gpfocus .allcollections_CollectionImage_2ERAQ,
+.allcollections_Collection_3IWn-.gpfocus .allcollections_CollectionBG_akZKn {
+  opacity: 0.85;
+}
+
+.allcollections_CollectionLabel_1J1LQ {
+  color: var(--ecl-text) !important;
+  letter-spacing: 0.14em;
+  text-shadow: 0 1px 8px #000, 0 0 2px #000;
+}
+
+.allcollections_Collection_3IWn-.gpfocus .allcollections_CollectionLabel_1J1LQ {
+  color: var(--ecl-corona) !important;
+}
+
+.allcollections_CollectionLabelCount_36QQL {
+  color: var(--ecl-text-2) !important;
+}
+
+.downloads_Section_3Mbhn.downloads_Empty_2KB3y {
+  background:
+    radial-gradient(ellipse 70% 46% at 50% 128%, transparent 96%, rgba(var(--ecl-corona-rgb), 0.5) 97%, transparent 99%),
+    radial-gradient(ellipse 70% 46% at 50% 128%, rgba(var(--ecl-corona-rgb), 0.1), transparent 70%) !important;
+}
+
+._1bZTWHCV-uVaS5pEQLn-0Z {
+  color: var(--ecl-corona) !important;
+}
+
+.gamepadsearch_ResultTemplate_2Aspd .libraryassetimage_Container_1R9r2 {
+  background: var(--ecl-veil) !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.gamepadsearch_ResultTemplate_2Aspd .libraryassetimage_Container_1R9r2 {
+  opacity: 0.5;
+  transition: opacity var(--ecl-ignite);
+}
+
+.gamepadsearch_ResultTemplate_2Aspd.gpfocuswithin .libraryassetimage_Container_1R9r2 {
+  opacity: 1;
+}
+
+.gamepadsearch_ResultTemplateImage_3K3Bx {
+  border-radius: 12px;
+  transition: box-shadow var(--ecl-ignite);
+}
+
+.gamepadsearch_ResultTemplateImage_3K3Bx.gpfocus {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+.gamepadsearch_Description_3RDew {
+  color: var(--ecl-text-3) !important;
+  letter-spacing: 0.14em;
+}
+
+.gamepadsearch_Icon_3hAUu {
+  position: relative;
+  flex: 0 0 auto;
+  width: 18px !important;
+  height: 18px !important;
+  --ecl-search-glyph: var(--ecl-text-3);
+}
+
+.gamepadsearch_Icon_3hAUu > svg {
+  opacity: 0 !important;
+}
+
+.gamepadsearch_Icon_3hAUu::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--ecl-text-2), var(--ecl-search-glyph));
+}
+
+.gamepadsearch_Icon_3hAUu::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 18px;
+  height: 5px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--ecl-search-glyph);
+  rotate: -18deg;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 45%, #000 45%), linear-gradient(to right, #000 0 26%, transparent 26% 74%, #000 74%);
+  mask-image: linear-gradient(to bottom, transparent 45%, #000 45%), linear-gradient(to right, #000 0 26%, transparent 26% 74%, #000 74%);
+}
+
+.gamepadsearch_ResultTemplate_2Aspd.gpfocuswithin .gamepadsearch_Icon_3hAUu {
+  --ecl-search-glyph: var(--ecl-corona);
+}
+
+.gamepadsearch_ResultTemplate_2Aspd.gpfocuswithin .gamepadsearch_Description_3RDew {
+  color: var(--ecl-corona) !important;
+}
+
+#Main ._2-7fqz03LhYHKEBI-HwIPq {
+  border-color: transparent !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+#Main ._2-7fqz03LhYHKEBI-HwIPq.gpfocus {
+  box-shadow: 0 0 0 1.5px var(--ecl-corona), var(--ecl-halo) !important;
+}
+
+/* Steam's focus glow is a 50px blur copy of every screenshot; the ring replaces it. */
+#Main ._2eM3gFnue51wDs1za_fdyJ {
+  display: none !important;
+}
+
+#Main ._28eIRmQ229ntDIyQXTn3Ub {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: var(--ecl-text) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+}
+
+#Main ._28eIRmQ229ntDIyQXTn3Ub svg {
+  fill: currentColor !important;
+}
+
+#Main ._28eIRmQ229ntDIyQXTn3Ub.gpfocus {
+  color: var(--ecl-corona) !important;
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+#Main .mZYRu1dN5Q9aQ1r3Cq_NE {
+  color: var(--ecl-text-2) !important;
+}
+
+#Main ._3qU1y0b7iBL_tHtWv97ff9 {
+  color: var(--ecl-corona) !important;
+}
+
+#Main ._3qU1y0b7iBL_tHtWv97ff9 path[fill^="#"] {
+  fill: currentColor !important;
+}

@@ -1,0 +1,3 @@
+#Footer > :first-child > [data-ecl-action]:not([data-ecl-action="a"]):not([data-ecl-action="b"]):not([data-ecl-action="x"]) {
+  display: none !important;
+}

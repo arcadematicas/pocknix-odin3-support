@@ -1,0 +1,84 @@
+[role="alert"] > div {
+  position: relative;
+  background: var(--ecl-void) !important;
+  border-radius: 999px !important;
+  box-shadow:
+    inset 0 0 0 1px var(--ecl-corona-soft),
+    var(--ecl-halo) !important;
+  padding-left: 30px !important;
+  overflow: hidden;
+}
+
+[role="alert"] > div::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--ecl-corona);
+  box-shadow: var(--ecl-halo);
+}
+
+[role="alert"] > div * {
+  background: transparent !important;
+  color: var(--ecl-text-2) !important;
+}
+
+[role="alert"] > div > :first-child > :first-child,
+[role="alert"] > div > :first-child > :first-child * {
+  color: var(--ecl-text) !important;
+  font-weight: 500 !important;
+}
+
+.gamepadtoasts_GamepadToastPopup_3YTh8 {
+  inset: 0 12px 0 20px !important;
+}
+
+.standardtemplates_StandardLogoDimensions_28AhG,
+.shorttemplates_StandardLogoDimensions_2D2Mo {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.shorttemplates_ShortLogoDimensions_3JWai {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.standardtemplates_StandardTemplate_3e_DB > .standardtemplates_AvatarStatus_2yhOC {
+  top: 16px !important;
+  width: 38px !important;
+  height: 38px !important;
+}
+
+.shorttemplates_ShortLogoDimensions_3JWai,
+.notificationcontent_ShortLogoDimensions_1lmV2,
+.notificationcontent_AppLogo_3qFX5 {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.notificationcontent_AppLogo_3qFX5 {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.notificationcontent_AppLogo_3qFX5 > .libraryassetimage_Container_1R9r2 {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+}
+
+.shorttemplates_ShortLogoDimensions_3JWai img,
+.standardtemplates_StandardLogoDimensions_28AhG img,
+.shorttemplates_StandardLogoDimensions_2D2Mo img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}

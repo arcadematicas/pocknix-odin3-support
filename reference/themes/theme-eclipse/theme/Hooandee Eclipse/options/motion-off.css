@@ -1,0 +1,63 @@
+:root {
+  --ecl-ignite: 0ms;
+}
+
+#Main ._282X0J4BtrSF1IXctmOe-X [role="listitem"] ._1pwP4eeP1zQD7PEgmsep0W.gpfocuswithin::after {
+  animation: none !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r::after,
+#MainNavMenuContainer [role="menuitem"]::after,
+#QuickAccess-Menu .quickaccessmenu_Tab_1S76C::before {
+  animation: none !important;
+}
+
+.gamepadpagedsettings_PagedSettingsDialog_PageListItem_1ix7r > :first-child > :first-child::after,
+#MainNavMenuContainer [role="menuitem"] > :nth-last-child(2)::after,
+#QuickAccess-Menu .quickaccessmenu_Tab_1S76C::after {
+  animation: none !important;
+  transform: rotate(-24deg) scaleY(0.32) rotate(40deg) translateX(18px) rotate(-40deg) scaleY(3.125) rotate(24deg);
+}
+
+#Main [role="grid"] [role="gridcell"] > ._1pwP4eeP1zQD7PEgmsep0W::after {
+  animation: none !important;
+  transform: rotate(-12deg) scaleY(0.26) rotate(30deg) translateX(88px) rotate(-30deg) scaleY(3.846) rotate(12deg);
+}
+
+#header .steamavatar_avatarHolder_1YGAH > .steamavatar_avatarStatus_1yIzy::after {
+  animation: none !important;
+}
+
+[data-pdc-ecl-orbit-action],
+[data-pdc-ecl-orbit-moon],
+[data-pdc-ecl-orbit-planet] {
+  animation: none !important;
+}
+
+[data-pdc-ecl-orbit-sky] {
+  transition: none !important;
+}
+
+#Main .gamepadhome_RecentSection_39tNv::before,
+#Main .gamepadhome_RecentSection_39tNv::after,
+#Main .ZBBhezbBR4VJYysmVhF3_::before,
+#Main .ZBBhezbBR4VJYysmVhF3_::after,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG::before,
+.gamepadpagedsettings_PagedSettingsDialog_2P_CG::after,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u::before,
+#QuickAccess-Menu .quickaccessmenu_PanelOuterNav_2BB6u::after {
+  animation: none !important;
+}
+
+[data-ecl-satellite-orbit],
+[data-ecl-satellite-orbit] > div,
+[data-ecl-satellite-orbit] > div::before {
+  animation: none !important;
+  transition: none !important;
+}
+
+html:root #QuickAccess-Menu .pdc-root .pdc-dashboard-card:is(.gpfocus, .pdc-dashboard-card-focused) > .pdc-dashboard-card-surface::before {
+  animation: none !important;
+  transform: rotate(-18deg) scaleY(0.29) rotate(40deg) translateX(40px) rotate(-40deg) scaleY(3.45) rotate(18deg);
+  z-index: 2;
+}

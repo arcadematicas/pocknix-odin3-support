@@ -1,0 +1,18 @@
+{
+  "name": "ZZZ Eclipse Odin 1080p",
+  "display_name": "ZZZ Eclipse Odin 1080p",
+  "author": "Fransis (preparación PC)",
+  "version": "0.1.0",
+  "description": "Capa de ajuste 1080p para 'Hooandee Eclipse' en la Odin 3. No hace nada por defecto: editar override.css y el watchdog de CSS Loader lo recarga solo. Se llama 'ZZZ' para inyectarse DESPUÉS de 'Hooandee Eclipse' y ganar la cascada con !important.",
+  "target": "System-Wide",
+  "manifest_version": 9,
+  "inject": {
+    "override.css": [
+      "bigpicture",
+      "QuickAccess",
+      "MainMenu",
+      "notificationtoasts.*"
+    ]
+  },
+  "patches": {}
+}

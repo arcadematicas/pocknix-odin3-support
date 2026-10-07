@@ -1,0 +1,350 @@
+@keyframes ecl-orbit-float {
+  from { translate: 0 -4px; }
+  to { translate: 0 4px; }
+}
+
+@keyframes ecl-orbit-moon {
+  0% { transform: rotate(-18deg) scaleY(0.2533) rotate(0deg) translateX(calc(var(--ecl-orbit-size) * 0.75)) rotate(0deg) scaleY(3.948) rotate(18deg); opacity: 1; }
+  47% { opacity: 1; }
+  53% { opacity: 0; }
+  97% { opacity: 0; }
+  100% { transform: rotate(-18deg) scaleY(0.2533) rotate(360deg) translateX(calc(var(--ecl-orbit-size) * 0.75)) rotate(-360deg) scaleY(3.948) rotate(18deg); opacity: 1; }
+}
+
+@keyframes ecl-orbit-liftoff {
+  from { box-shadow: 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.4), 0 0 30px rgba(var(--ecl-corona-rgb), 0.18); }
+  to { box-shadow: 0 0 0 2px rgba(var(--ecl-corona-rgb), 0.9), 0 0 70px rgba(var(--ecl-corona-rgb), 0.45); }
+}
+
+@keyframes ecl-orbit-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes ecl-orbit-fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes ecl-orbit-warp-in {
+  from { transform: scale(0.45); opacity: 0; }
+  35% { opacity: 1; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ecl-orbit-warp-out {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.55); opacity: 0; }
+}
+
+@keyframes ecl-orbit-fly-in {
+  from { transform: translate(var(--ecl-from-x, 0px), var(--ecl-from-y, 0px)) scale(var(--ecl-from-s, 0.3)); }
+  to { transform: none; }
+}
+
+@keyframes ecl-orbit-fly-out {
+  from { transform: none; }
+  to { transform: translate(var(--ecl-to-x, 0px), var(--ecl-to-y, 0px)) scale(var(--ecl-to-s, 0.3)); }
+}
+
+@keyframes ecl-orbit-ring-in {
+  from { opacity: 0; scale: 0.55; }
+  to { opacity: 1; scale: 1; }
+}
+
+[data-pdc-ecl-orbit] {
+  --ecl-orbit-size: min(46vh, 30vw);
+  --ecl-orbit-y: 44%;
+  --ecl-orbit-in: 640ms;
+  --ecl-orbit-out: 440ms;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ecl-text);
+  font-family: inherit;
+  outline: none;
+}
+
+[data-pdc-ecl-orbit]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.97);
+  animation: ecl-orbit-fade-in 420ms ease-out both;
+}
+
+[data-pdc-ecl-orbit-sky] {
+  position: absolute;
+  inset: 0;
+  background: var(--ecl-starfield-bright), var(--ecl-starfield);
+  animation: ecl-orbit-warp-in 1100ms cubic-bezier(0.16, 0.8, 0.2, 1) both;
+}
+
+[data-pdc-ecl-orbit-system] {
+  position: absolute;
+  z-index: 2;
+  left: calc(50% - var(--ecl-orbit-size) / 2);
+  top: calc(var(--ecl-orbit-y) - var(--ecl-orbit-size) / 2);
+  width: var(--ecl-orbit-size);
+  height: var(--ecl-orbit-size);
+  animation: ecl-orbit-fly-in var(--ecl-orbit-in) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+[data-pdc-ecl-orbit-state="closing"]::before {
+  animation: ecl-orbit-fade-out var(--ecl-orbit-out) ease-in both;
+}
+
+[data-pdc-ecl-orbit-state="closing"] [data-pdc-ecl-orbit-sky] {
+  animation: ecl-orbit-warp-out var(--ecl-orbit-out) cubic-bezier(0.5, 0, 0.8, 0.4) both;
+}
+
+[data-pdc-ecl-orbit-state="closing"] [data-pdc-ecl-orbit-system] {
+  animation: ecl-orbit-fly-out var(--ecl-orbit-out) cubic-bezier(0.5, 0, 0.3, 1) both;
+}
+
+[data-pdc-ecl-orbit-planet] {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.4), 0 0 30px rgba(var(--ecl-corona-rgb), 0.18);
+}
+
+[data-pdc-ecl-orbit-planet] img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+[data-pdc-ecl-orbit-planet]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255, 255, 255, 0.18), transparent 40%),
+    radial-gradient(circle at 40% 36%, transparent 46%, rgba(0, 0, 0, 0.55) 72%, rgba(0, 0, 0, 0.92) 100%);
+}
+
+[data-pdc-ecl-orbit-state="launching"] [data-pdc-ecl-orbit-planet] {
+  animation: ecl-orbit-liftoff 700ms ease-in-out infinite alternate;
+}
+
+[data-pdc-ecl-orbit-ring],
+[data-pdc-ecl-orbit-moon] {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+
+[data-pdc-ecl-orbit-ring] {
+  width: calc(var(--ecl-orbit-size) * 1.5);
+  height: calc(var(--ecl-orbit-size) * 0.38);
+  margin: calc(var(--ecl-orbit-size) * -0.19) 0 0 calc(var(--ecl-orbit-size) * -0.75);
+  border-radius: 50%;
+  rotate: -18deg;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(var(--ecl-corona-rgb), 0.7),
+    0 0 18px rgba(var(--ecl-corona-rgb), 0.22);
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 50%, #000 50%),
+    linear-gradient(to right, #000 0 17%, transparent 17% 83%, #000 83%);
+  mask-image:
+    linear-gradient(to bottom, transparent 50%, #000 50%),
+    linear-gradient(to right, #000 0 17%, transparent 17% 83%, #000 83%);
+  animation: ecl-orbit-ring-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 160ms both;
+}
+
+[data-pdc-ecl-orbit-moon] {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--ecl-corona);
+  box-shadow: 0 0 12px rgba(var(--ecl-corona-rgb), 0.9);
+  scale: 1;
+  transition: scale 160ms ease-in;
+  animation: ecl-orbit-moon 9s linear infinite;
+}
+
+[data-pdc-ecl-orbit-state="closing"] [data-pdc-ecl-orbit-ring] {
+  animation: ecl-orbit-fade-out 180ms ease-in both;
+}
+
+[data-pdc-ecl-orbit-state="closing"] [data-pdc-ecl-orbit-moon] {
+  scale: 0;
+}
+
+[data-pdc-ecl-orbit-title] {
+  position: absolute;
+  z-index: 4;
+  left: 10%;
+  right: 10%;
+  top: calc(var(--ecl-orbit-y) + var(--ecl-orbit-size) / 2 + 5vh);
+  text-align: center;
+  font-size: 4.2vh;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--ecl-text);
+  opacity: 0;
+  translate: 0 8px;
+  transition: opacity 420ms ease 200ms, translate 420ms ease 200ms;
+}
+
+[data-pdc-ecl-orbit-state="open"] [data-pdc-ecl-orbit-title],
+[data-pdc-ecl-orbit-state="launching"] [data-pdc-ecl-orbit-title] {
+  opacity: 1;
+  translate: 0 0;
+}
+
+[data-pdc-ecl-orbit-action] {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 13vw;
+  padding: 1.2vh 22px 1.2vh 1.2vh;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong);
+  color: var(--ecl-text-2);
+  font: inherit;
+  font-size: 2.3vh;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translate(var(--ecl-orbit-from-x), var(--ecl-orbit-from-y)) scale(0.4);
+  transition:
+    opacity 380ms ease var(--ecl-orbit-delay),
+    transform 520ms cubic-bezier(0.2, 0.9, 0.25, 1.2) var(--ecl-orbit-delay),
+    color var(--ecl-ignite),
+    box-shadow var(--ecl-ignite);
+  animation: ecl-orbit-float 3.6s ease-in-out var(--ecl-orbit-float-delay) infinite alternate;
+}
+
+[data-pdc-ecl-orbit-action] svg {
+  flex: 0 0 auto;
+  width: 4.4vh;
+  height: 4.4vh;
+  padding: 1vh;
+  border-radius: 50%;
+  box-sizing: border-box;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+[data-pdc-ecl-orbit-action="play"] svg path {
+  fill: currentColor;
+}
+
+[data-pdc-ecl-orbit-slot="0-0"] {
+  --ecl-orbit-from-x: 18vw;
+  --ecl-orbit-from-y: 8vh;
+  --ecl-orbit-delay: 120ms;
+  --ecl-orbit-float-delay: 0s;
+  right: calc(50% + var(--ecl-orbit-size) * 0.7);
+  top: calc(var(--ecl-orbit-y) - var(--ecl-orbit-size) * 0.36);
+}
+
+[data-pdc-ecl-orbit-slot="0-1"] {
+  --ecl-orbit-from-x: 18vw;
+  --ecl-orbit-from-y: -6vh;
+  --ecl-orbit-delay: 200ms;
+  --ecl-orbit-float-delay: -1.4s;
+  right: calc(50% + var(--ecl-orbit-size) * 0.86);
+  top: calc(var(--ecl-orbit-y) + var(--ecl-orbit-size) * 0.16);
+  flex-direction: row;
+}
+
+[data-pdc-ecl-orbit-slot="1-0"] {
+  --ecl-orbit-from-x: -18vw;
+  --ecl-orbit-from-y: 8vh;
+  --ecl-orbit-delay: 160ms;
+  --ecl-orbit-float-delay: -0.7s;
+  left: calc(50% + var(--ecl-orbit-size) * 0.7);
+  top: calc(var(--ecl-orbit-y) - var(--ecl-orbit-size) * 0.36);
+}
+
+[data-pdc-ecl-orbit-slot="1-1"] {
+  --ecl-orbit-from-x: -18vw;
+  --ecl-orbit-from-y: -6vh;
+  --ecl-orbit-delay: 240ms;
+  --ecl-orbit-float-delay: -2.1s;
+  left: calc(50% + var(--ecl-orbit-size) * 0.86);
+  top: calc(var(--ecl-orbit-y) + var(--ecl-orbit-size) * 0.16);
+}
+
+[data-pdc-ecl-orbit-state="open"] [data-pdc-ecl-orbit-action],
+[data-pdc-ecl-orbit-state="launching"] [data-pdc-ecl-orbit-action] {
+  opacity: 1;
+  transform: none;
+}
+
+[data-pdc-ecl-orbit-state="closing"] [data-pdc-ecl-orbit-action],
+[data-pdc-ecl-orbit-state="closing"] [data-pdc-ecl-orbit-title] {
+  transition-delay: 0s;
+  transition-duration: 200ms;
+}
+
+[data-pdc-ecl-orbit-action][data-pdc-ecl-selected="true"] {
+  color: var(--ecl-corona);
+  box-shadow:
+    inset 0 0 0 1.5px var(--ecl-corona),
+    0 0 22px rgba(var(--ecl-corona-rgb), 0.3);
+}
+
+[data-pdc-ecl-orbit-action][data-pdc-ecl-selected="true"] svg {
+  box-shadow: inset 0 0 0 1.5px currentColor, 0 0 10px rgba(var(--ecl-corona-rgb), 0.5);
+}
+
+[data-pdc-ecl-orbit-state="launching"] [data-pdc-ecl-orbit-action]:not([data-pdc-ecl-orbit-action="play"]) {
+  opacity: 0.25;
+}
+
+[data-pdc-ecl-orbit-source="true"] [role="link"] {
+  opacity: 0 !important;
+}
+
+@keyframes ecl-orbit-crew-in {
+  from { opacity: 0; translate: 0 10px; scale: 0.4; }
+  to { opacity: 1; translate: 0 0; scale: 1; }
+}
+
+[data-pdc-ecl-orbit-crew] {
+  --ecl-crew-size: 5.2vh;
+  --ecl-crew-r: calc(var(--ecl-orbit-size) / 2 + var(--ecl-crew-size) * 0.9);
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+
+[data-pdc-ecl-orbit-crew] img {
+  position: absolute;
+  left: calc(var(--ecl-crew-size) / -2);
+  top: calc(var(--ecl-crew-size) / -2);
+  width: var(--ecl-crew-size);
+  height: var(--ecl-crew-size);
+  border-radius: 50%;
+  object-fit: cover;
+  transform: rotate(var(--ecl-crew-angle)) translateY(calc(var(--ecl-crew-r) * -1)) rotate(calc(var(--ecl-crew-angle) * -1));
+  box-shadow:
+    0 0 0 2px #000,
+    0 0 0 3.5px rgba(var(--ecl-corona-rgb), 0.85),
+    0 0 14px rgba(var(--ecl-corona-rgb), 0.35);
+  animation: ecl-orbit-crew-in 480ms cubic-bezier(0.2, 0.9, 0.25, 1.2) calc(360ms + var(--ecl-crew-index) * 70ms) both;
+}
+
+[data-pdc-ecl-orbit-state="closing"] [data-pdc-ecl-orbit-crew] img {
+  animation: ecl-orbit-fade-out 160ms ease-in both;
+}

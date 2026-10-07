@@ -1,0 +1,61 @@
+.contentmanagement_InstallFolder_12aBP {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px var(--ecl-line-strong) !important;
+  transition: box-shadow var(--ecl-ignite);
+}
+
+.contentmanagement_InstallFolder_12aBP.contentmanagement_IsSelected_3VQeL {
+  box-shadow: inset 0 0 0 1px rgba(var(--ecl-corona-rgb), 0.5) !important;
+}
+
+.contentmanagement_InstallFolder_12aBP.gpfocus {
+  box-shadow: var(--ecl-ring), var(--ecl-halo) !important;
+}
+
+.contentmanagement_DriveUsageIndicator_1EubJ {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: var(--ecl-line) !important;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.contentmanagement_DriveUsageBar_wEM7Q {
+  border-radius: 999px !important;
+  opacity: 0.85;
+}
+
+.contentmanagement_DriveUsageGames_22KCi { background: var(--ecl-corona) !important; box-shadow: 0 0 8px rgba(var(--ecl-corona-rgb), 0.5); opacity: 1; }
+.contentmanagement_DriveUsageDLC_2W7tN { background: rgba(var(--ecl-corona-rgb), 0.45) !important; }
+.contentmanagement_DriveUsageWorkshop_1W6jW { background: #80e8e4 !important; }
+.contentmanagement_DriveUsageUpdates_3mzew { background: var(--ecl-flare) !important; }
+.contentmanagement_DriveUsageShader_1GOFG { background: #d6a8ff !important; }
+._2h-2O3n134sdwgtdM_Fuqr { background: #8092ff !important; }
+.contentmanagement_DriveUsageOther_1SwNA { background: #ecd696 !important; }
+.contentmanagement_DriveUsageFreeSpace_3Lz1R { background: transparent !important; }
+
+.contentmanagement_DriveUsageText_1DFCG {
+  color: var(--ecl-text-2) !important;
+  letter-spacing: 0.12em;
+}
+
+.contentmanagement_DriveUsageNumber_181OY {
+  color: var(--ecl-text) !important;
+}
+
+.contentmanagement_AppBodyPortrait_1O1Jq {
+  border-radius: 10px !important;
+  overflow: hidden;
+  opacity: var(--ecl-dim);
+  transition: opacity var(--ecl-ignite);
+}
+
+.gpfocus .contentmanagement_AppBodyPortrait_1O1Jq,
+.gpfocuswithin > .contentmanagement_AppBody_2RCSU .contentmanagement_AppBodyPortrait_1O1Jq {
+  opacity: 1;
+  box-shadow: var(--ecl-ring), var(--ecl-halo);
+}
+
+.contentmanagement_LibraryHeader_3rGEU {
+  border-bottom: 1px solid var(--ecl-line) !important;
+}
