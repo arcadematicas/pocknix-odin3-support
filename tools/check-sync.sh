@@ -42,7 +42,9 @@ cmp_tree() {
       echo "  DIFFERS  ${dst#${OS}/}/${rel}"
       drift=$((drift + 1))
     fi
-  done < <(find "${src}" \( -type f -o -type l \) -print0)
+  done < <(find "${src}" \( -type f -o -type l \) ! -path '*/__pycache__/*' -print0)
+  # (el ! -path '__pycache__' es para que el .pyc de pocknix-control, que se genera al
+  # ejecutar el backend localmente, no rompa el gate del build: ya paso el 07/10.)
 }
 
 echo "check-sync: comparing ${HERE} -> ${OS}"

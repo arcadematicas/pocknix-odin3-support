@@ -247,9 +247,9 @@ Por qué `POCKNIX_STAGE_CHECK_*` (tres cosas que hubo que arreglar para poder pu
 que hay que saber para no volver a tropezar):
 
 - `POCKNIX_REPO_RCLONE_REMOTE="r2:pocknix"` **obligatorio**: el default de
-  `config/pocknix.conf` es `r2:pocknix/repo`, que **no existe**. Con el default, el
-  staging se espeja de una ruta vacía y publicaría en un prefijo que ningún dispositivo
-  lee. Es un fallo silencioso: `rclone sync` de un origen inexistente no da error.
+  `config/pocknix.conf` era `r2:pocknix/repo`, que **no existe**, y el fetch del gate se
+  espejaba de una ruta vacía sin dar error. **Arreglado 07/10**: el default del centro es ya
+  `r2:pocknix` (el bucket real, con `shared/` y `sm8750/`).
 - `POCKNIX_STAGE_CHECK_OFFLINE=1` con `build/stage/.dbcache/base.db` ya descargado: el gate
   pide la db del base congelado, y `[pocknix-base]` de los equipos apunta a
   `https://pocknix.shuuri.net/repo/base`, no a nuestro bucket (y el gate lo pide por
@@ -332,8 +332,9 @@ Preparado, sin enviar. Enviar solo cuando Fransis haya confirmado el paso 6.
 ## 10. Colateral que conviene mirar
 
 1. **`config/pocknix.conf:130`**: `POCKNIX_REPO_RCLONE_REMOTE:=r2:pocknix/repo` no
-   corresponde al bucket real (`r2:pocknix/{shared,sm8750}`). Publicar sin la variable
-   explícita sube a un prefijo que nadie lee y no da error.
+   correspondía al bucket real (`r2:pocknix/{shared,sm8750}`) y publicar sin la variable
+   explícita subía a un prefijo que nadie lee, sin dar error. **Arreglado 07/10**: el
+   default ahora es `r2:pocknix`.
 2. **Rama local del OS tree** (`pc-local`): `odin3-sm8750` está **1 commit por delante y 5
    por detrás** de `arcadematicas/odin3-sm8750` (el `90e4686` viejo frente al `7e2dff1`
    publicado), con 37 ficheros sin marcar de otra sesión. No se ha tocado nada de eso: los

@@ -23,7 +23,7 @@ DRY=0
 
 [ -d "${OS}" ] || { echo "ERROR: pocknix-os not found at ${OS} (set POCKNIX_OS_DIR)" >&2; exit 1; }
 
-RSYNC=(rsync -a --itemize-changes)
+RSYNC=(rsync -a --itemize-changes --exclude='__pycache__/')
 [ "${DRY}" = 1 ] && RSYNC+=(--dry-run)
 
 log() { printf '  %s\n' "$*"; }
