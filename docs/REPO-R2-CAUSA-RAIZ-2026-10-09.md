@@ -83,3 +83,18 @@ POCKNIX_REPO_GPG_KEY=85C433EE12621EED POCKNIX_REPO_RCLONE_REMOTE=r2:pocknix make
   kernel sino de los **paquetes mezclados** (chimera). Con el repo ya consistente (base pinneada +
   `[pocknix]`/`[pocknix-shared]`/`[pocknix-base]` publicadas y firmadas), un `pacman -Syu` en la Odin
   ya no mezcla versiones.
+
+## 🚀 ACTUALIZACIÓN REAL EN LA ODIN — VERIFICADA (09-oct-2026)
+- `sudo pacman -Syu --noconfirm` en la Odin (SSH 192.168.4.22, tarjeta mmcblk0 119G, imagen 26-sep).
+- El repo funcionó como debía: **sin "signature invalid"**, **sin mezcla con ALARM**, **sin errores BTF**.
+- Subieron 14 paquetes: `linux-pocknix-sm8750 7.2.6-1`, `mesa 26.3.0`, `gamescope` (nuestro),
+  `pocknix-bsp-sm8750 0.2.0-6`, `pocknix-base 0.2.0-7`, `deckstation-arm`, `pocknix-decky`,
+  `pocknix-steam`, `libretro-cores-pocknix`, `pocknix-desktop-full`… y **se instaló
+  `pocknix-firmware-sm8750 0.1.0-2`** (ADSP, que antes no estaba).
+- El hook `90-linux-pocknix.hook` **regeneró `/flash/KERNEL`** (7.2.6) + `KERNEL.md5` (md5 OK);
+  dejó `KERNEL.bak` = 7.2.4. Snapshot btrfs pre-transacción creado antes de tocar nada.
+- **Reinició y volvió** (~1,5 min): kernel en uso **7.2.6**, **0 servicios fallidos**, WiFi UP,
+  inputplumber activo, `vhci_hcd` cargado, zram 10,7 G, `pacman -Qu` = **0**.
+- **Confirmado por Fransis ("funciona todo bien")**: el fallo histórico **NO era el kernel-7.2.6**
+  (va bien) sino la **mezcla de paquetes**. La AVISO de "no actualizar" queda **levantada**: ya se
+  puede `pacman -Syu` con normalidad.
