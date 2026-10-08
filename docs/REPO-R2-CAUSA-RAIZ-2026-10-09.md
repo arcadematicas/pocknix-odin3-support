@@ -42,8 +42,10 @@ POCKNIX_REPO_GPG_KEY=85C433EE12621EED POCKNIX_REPO_RCLONE_REMOTE=r2:pocknix make
 
 ## ESTADO DE LAS TARJETAS
 - **128 GB**: sistema del 26-sep (kernel 7.2.4) — **FUNCIONA** ✓ (es la buena; NO tocar sin backup)
-- **1 TB**: sistema inconsistente ✗ (kernel 7.2.4 → llega al login pero no arranca sesión; con 7.2.6/7.2.9
-  → bucle del ADSP). La imagen del 26-sep (`build/image/sm8750/pocknix-sm8750-sd.img`) la restaura ✓
+- **1 TB**: sistema inconsistente ✗ (chimera: mezcla de paquetes). Con 7.2.4 llega al login pero no
+  arranca sesión; con 7.2.6/7.2.9 salía un bucle del ADSP — **CORRECCIÓN (Fransis, 09-oct): el kernel
+  7.2.6 funcionaba bien; el bucle era por los paquetes mezclados, NO del kernel.** La imagen del 26-sep
+  (`build/image/sm8750/pocknix-sm8750-sd.img`) la restaura ✓
 - Imagen del 26-sep = `~/pocknix-odin3-project/pocknix-os/build/image/sm8750/pocknix-sm8750-sd.img` (25,6 GB)
 
 ## VER TAMBIÉN
@@ -76,3 +78,8 @@ POCKNIX_REPO_GPG_KEY=85C433EE12621EED POCKNIX_REPO_RCLONE_REMOTE=r2:pocknix make
   `/etc/pacman.conf.bak-20261009-004420`). Ahora `pacman -Syy` resuelve la base
   (systemd/glibc/openssl) desde **`pocknix-base`** → un `-Syu` ya NO tira de la ALARM viva.
   `POCKNIX_REPO_URL` y `POCKNIX_ALARM_TARBALL_URL` apuntan ya al r2.dev (centro+árbol).
+
+- **ACLARACIÓN (Fransis, 09-oct)**: **el kernel 7.2.6 es correcto** — los bucles del ADSP no eran del
+  kernel sino de los **paquetes mezclados** (chimera). Con el repo ya consistente (base pinneada +
+  `[pocknix]`/`[pocknix-shared]`/`[pocknix-base]` publicadas y firmadas), un `pacman -Syu` en la Odin
+  ya no mezcla versiones.
