@@ -67,4 +67,12 @@ POCKNIX_REPO_GPG_KEY=85C433EE12621EED POCKNIX_REPO_RCLONE_REMOTE=r2:pocknix make
 - **Para las imágenes**: `devices/sm8750/profile.conf` tenía `POCKNIX_SHIP_SOC_REPO=0`
   (de cuando sm8750 no se publicaba) → las imágenes NO traían la stanza. **Cambiado a `1`**
   (centro+árbol) para que las imágenes nuevas la traigan.
-- **PENDIENTE**: `[pocknix-base]` sin reponer (nuestro R2 no tiene `/base`).
+- **`[pocknix-base]` REPUESTO**: la base de upstream SÍ estaba viva
+  (`https://pocknix.shuuri.net/repo/base`, 893 paquetes, MISMO snapshot que nuestro lockfile
+  `20260826.2`: 0 derivas de versión). Espejada a **`r2:pocknix/base`** (893 pkg + `.sig` +
+  `pocknix-base.db`/`.files` + el tarball ALARM `ArchLinuxARM-aarch64-20260826.tar.gz`;
+  checksums verificados) y añadida la stanza `[pocknix-base]`
+  (`SigLevel = Required DatabaseOptional`, `Server = …r2.dev/base`) en la Odin (backup
+  `/etc/pacman.conf.bak-20261009-004420`). Ahora `pacman -Syy` resuelve la base
+  (systemd/glibc/openssl) desde **`pocknix-base`** → un `-Syu` ya NO tira de la ALARM viva.
+  `POCKNIX_REPO_URL` y `POCKNIX_ALARM_TARBALL_URL` apuntan ya al r2.dev (centro+árbol).
