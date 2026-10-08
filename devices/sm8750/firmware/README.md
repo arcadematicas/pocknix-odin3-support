@@ -95,11 +95,10 @@ so the charger drops back into TEST MODE with no error anywhere. Same trap
 
 ## Caveat: `-Syu` on the device (do not flip it silently)
 
-`devices/sm8750/profile.conf` sets `POCKNIX_SHIP_SOC_REPO=0`, so no `sm8750` repo is published
-yet. The package is built into the image and pacman-tracked (updatable the moment the repo
-exists), but until then a device cannot fetch a *new* package version on its own — the firmware
-still reaches it with a reflash, exactly as before. Making it real means publishing the sm8750
-repo; that is a separate decision and it is not flipped by this package.
+`devices/sm8750/profile.conf` sets `POCKNIX_SHIP_SOC_REPO=1`: our `sm8750` repo is published
+ on R2, so the image ships the `[pocknix]` stanza and a device fetches new package versions
+ with plain `pacman -Syu`. (Historically `0` while sm8750 was unpublished; flipped
+ 09-oct-2026 once the repo + key were live.)
 
 ## Guard rails
 
