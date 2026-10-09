@@ -6,8 +6,10 @@
 #   `steam` del PATH). La nuestra:
 #     - arranca el cliente NATIVO ARM64 con nuestro wrapper `pocknix-steam-client` (no `steam`),
 #     - fija la geometria del panel leyendo /usr/lib/pocknix/device.conf (POCKNIX_PANEL_*),
-#     - y monta GAMESCOPECMD a mano con los flags de la Odin: SIEMPRE --force-composition y
-#       --rotated-output-max-height, y SIN -e/splash (el splash es de pocknix-steam).
+#     - y monta GAMESCOPECMD a mano con los flags de la Odin: --rotated-output-max-height, y
+#       SIN -e/splash (el splash es de pocknix-steam). NO usa --force-composition (quitado el
+#       09/10/2026: con la base gamescope de OGC forzaba la composicion y dejaba el QAM DETRAS;
+#       ver docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md).
 #   El resto de los ficheros de usr/ son los de upstream sin tocar.
 #
 # ⚠️ SHIMS DE STEAMOS QUE NO SE INSTALAN (y por que)
@@ -23,7 +25,7 @@
 pkgname=gamescope-session-steam
 _commit=82c45fc112775e3fa927d5c326c39b21f1761cc1
 pkgver=20260928
-pkgrel=2
+pkgrel=3
 pkgdesc="gamescope-session-plus de OGC + sesion steam para la Odin 3 (panel, flags de gamescope y cliente ARM64)"
 arch=('aarch64')
 url="https://github.com/OpenGamingCollective/gamescope-session-steam"
@@ -31,9 +33,10 @@ license=('MIT')
 # gamescope-session: el motor (el binario, la unidad de usuario y sessions.d/).
 # pocknix-steam: de ahi sale `pocknix-steam-client`, el wrapper que esta sesion lanza.
 depends=('gamescope-session' 'pocknix-steam')
-# xorg-xprop: lo usa el hook post_gamescope_start para mantener GAMESCOPE_COMPOSITE_FORCE=1.
-# pocknix-steam ya lo pide en depends, por eso va en optdepends y no en depends.
-optdepends=('xorg-xprop: el watcher de GAMESCOPE_COMPOSITE_FORCE que pone el QAM sobre el juego')
+# xorg-xprop: historico. El hook post_gamescope_start ya NO mantiene GAMESCOPE_COMPOSITE_FORCE=1
+# (se dejo de usar --force-composition el 09/10/2026; ver docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md).
+# pocknix-steam ya lo pide en depends, por eso sigue en optdepends y no en depends.
+optdepends=('xorg-xprop: sin uso desde que se quito --force-composition (pocknix-steam ya lo trae en depends)')
 source=("https://github.com/OpenGamingCollective/gamescope-session-steam/archive/${_commit}.tar.gz")
 sha256sums=('SKIP')
 

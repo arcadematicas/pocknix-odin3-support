@@ -8,7 +8,7 @@
 #   - Las variables de GEOMETRIA y PANEL alimentan el GAMESCOPECMD por defecto del motor.
 #   - GAMESCOPECMD: si esta DEFINIDA, el motor NO arma su comando por defecto y solo le anade al
 #     final `-R $socket -T $stats`. Por eso aqui hay que escribir el comando COMPLETO (y por eso
-#     podemos meter flags que el motor no soporta, como --force-composition).
+#     podemos meter flags que el motor no soporta).
 #   - CLIENTCMD: el cliente que se arranca cuando gamescope ha avisado por el socket.
 #   - short_session_recover() / post_gamescope_start() / post_client_shutdown(): hooks.
 #
@@ -206,20 +206,22 @@ ${GS_OUTPUT[*]} \
 --fake-output-mm ${FAKE_OUTPUT_MM} \
 --default-touch-mode ${TOUCH_MODE} \
 --rotated-output-max-height ${_PN_ROTATE_MAX_H} \
---force-composition \
 --steam"
 
-# Justificacion de los dos flags que aqui SIEMPRE van (copiado de pocknix-steam):
+# Justificacion del flag que aqui SIEMPRE va (copiado de pocknix-steam):
 #  - --rotated-output-max-height: la rotacion en scanout (rotador inline del DPU) solo acepta un
 #    plano cuya altura PRE-rotada cabe en ese maximo (1088 lineas en el DPU del SM8750); passinglo
 #    limita la salida logica para que la rotacion siga siendo legal. Sin el, un panel que pase del
 #    limite escanea en negro. Por debajo del limite no hace nada.
-#  - --force-composition: en el MSM/Adreno de la Odin el scan-out directo NO compone los planos
-#    overlay, asi que la UI de gamescope (QAM, MangoHUD via mangoapp) quedaba DETRAS del juego.
-#    El parche de gamescope `0011` hace que este flag NO lo pueda cancelar la propiedad X11
-#    GAMESCOPE_COMPOSITE_FORCE (por eso ya no hay watcher; ver la nota mas abajo).
-# Coste, dicho claro: la pasada de composicion es trabajo de GPU por frame donde el scan-out
-# directo era un plane flip. Es el mismo trato que hace SteamOS cuando el QAM tiene que superponerse.
+#
+# ⛔ --force-composition: YA NO SE USA (quitado el 09/10/2026). Se metio para un gamescope ROCKNIX
+#    en el que el scan-out directo no componia los planos overlay y la UI de gamescope (QAM,
+#    MangoHUD via mangoapp) quedaba DETRAS del juego; el parche `0011` impedia cancelarlo desde X11.
+#    Con la base gamescope de OGC que usamos el problema es el CONTRARIO: forzar la composicion
+#    deja el QAM DETRAS, porque la base YA clasifica el overlay interactivo por root_width (y con
+#    un panel rotado de ancho logico <=1200 el QAM se clasificaba como notificacion: sin foco ni
+#    toque). armadaOS, la referencia, no usa el flag.
+#    Ver docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md.
 
 # ───────────────────────────────────────────────────────────────────────────────
 # 4. Hooks
@@ -242,9 +244,11 @@ post_gamescope_start() {
   fi
 }
 
-# NOTA (28/09/2026): aqui vivia el watcher `xprop -spy` de GAMESCOPE_COMPOSITE_FORCE.
-# YA NO HACE FALTA: el parche de gamescope `0011` hace que `--force-composition` (que va en
-# el GAMESCOPECMD) gane sobre la propiedad X11, asi que esta NO lo cancela.
+# NOTA (09/10/2026): aqui vivia un watcher `xprop -spy` de GAMESCOPE_COMPOSITE_FORCE, que
+# re-aseguraba la propiedad para que `--force-composition` no la pudiera cancelar (nuestro parche
+# gamescope `0011` lo forzaba). YA NO HACE FALTA, y el flag tampoco: se quito del GAMESCOPECMD
+# porque con la base gamescope de OGC forzar la composicion dejaba el QAM DETRAS del juego.
+# Ver docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md.
 
 # ───────────────────────────────────────────────────────────────────────────────
 # 6. Estado de arranque (de OGC; en Pocknix es inerte: no hay bootstrap tarball, porque el
