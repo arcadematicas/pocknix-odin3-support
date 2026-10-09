@@ -17,7 +17,7 @@
 #   root-level pkgver file, which is immutable. Refresh deliberately: bump _valve_pkg AND
 #   sha256sums together (tools/install-deckard-mesa.sh fetches the same file).
 pkgname=pocknix-vk-valve
-pkgver=20260927
+pkgver=20261009
 pkgrel=1
 pkgdesc="Valve's Turnip as a selectable aarch64 vk-arm payload (+13.4% FPS measured on the Odin 3)"
 arch=('aarch64')
@@ -30,19 +30,19 @@ depends=(expat glibc libdrm libdisplay-info libx11 libxcb libxshmfence spirv-too
          systemd-libs vulkan-icd-loader wayland zlib zstd)
 install=pocknix-vk-valve.install
 _valve_repo='https://holo-packages.steamos.cloud/archlinux-deckard-hotfixes'
-_valve_pkg='deckard-mesa-linux-aarch64-26.3.0_devel+gitabc426bb-1-aarch64.pkg.tar.zst'
+_valve_pkg='deckard-mesa-linux-aarch64-26.3.0_devel+gite07916b4-1-aarch64.pkg.tar.zst'
 source=("${_valve_repo}/${_valve_pkg}")
-sha256sums=('7b259d40d5b6845cad91b6cf991da34d6c8a146683fa6009336d3bc464028938')
+sha256sums=('1bc065a15026ff6888f3ae244c99cfe1a05b5201503ff677de55937d82fb8cc6')
 # El source es un .pkg.tar.zst: extraemos a mano en prepare() en vez de fiarnos del autodetect
 # de makepkg, y con noextract el tree de fuentes se queda en el tar tal cual.
 noextract=("${_valve_pkg}")
 
 # Directory name comes from Valve's pkgver, so bumping the source renames the payload: the tweak
 # keys "<series>-<suffix>" entries by directory name, and "<name>" has to start with a digit.
-#   deckard-...-26.3.0_devel+gitabc426bb-1-aarch64.pkg.tar.zst -> 26.3.0-valve
-_valve_srcver="${_valve_pkg#*-aarch64-}"     # 26.3.0_devel+gitabc426bb-1
+#   deckard-...-26.3.0_devel+gite07916b4-1-aarch64.pkg.tar.zst -> 26.3.0-valve
+_valve_srcver="${_valve_pkg#*-aarch64-}"     # 26.3.0_devel+gite07916b4-1
 _valve_srcver="${_valve_srcver%-aarch64.pkg.tar.zst}"
-_valve_srcver="${_valve_srcver%-*}"          # 26.3.0_devel+gitabc426bb
+_valve_srcver="${_valve_srcver%-*}"          # 26.3.0_devel+gite07916b4
 _mesa_series="${_valve_srcver%%+*}"          # 26.3.0_devel
 _mesa_series="${_mesa_series%%_*}"           # 26.3.0
 _payload="/usr/share/pocknix/vk-arm/${_mesa_series}-valve"
