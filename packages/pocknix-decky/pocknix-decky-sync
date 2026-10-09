@@ -3,6 +3,8 @@
 # Decky self-updates inside ~/homebrew, so the loader is replaced only when the OS bundles a
 # strictly newer version; a user's self-updated loader must never be downgraded. OS-shipped
 # plugins are system UI and get re-copied every boot; other plugin dirs are left alone.
+# EXCEPTION: "Panel de Control" self-updates (Hooandee ships releases almost daily), so it is
+# seeded ONLY when missing and never re-copied over the user's own update.
 set -euo pipefail
 
 user_name=deck
@@ -49,6 +51,11 @@ if [[ -d "$src" ]]; then
     for plugin in "$src"/*/; do
         [[ -d "$plugin" ]] || continue
         name=$(basename "$plugin")
+        # PANEL DE CONTROL exception (self-updating plugin): seed ONLY if missing, so a boot never
+        # reverts the version the user's own updater installed. All other plugins stay re-copied.
+        if [[ "$name" == "Panel de Control" ]]; then
+            [[ -d "${homebrew}/plugins/${name}" ]] && continue
+        fi
         rm -rf "${homebrew}/plugins/${name}"
         cp -a "$plugin" "${homebrew}/plugins/${name}"
     done

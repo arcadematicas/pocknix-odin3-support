@@ -1,0 +1,126 @@
+import os
+
+
+def _read_dmi(root: str, field: str) -> str:
+    try:
+        with open(os.path.join(root, "sys/class/dmi/id", field)) as handle:
+            return handle.read().strip()
+    except OSError:
+        return ""
+
+
+def is_gpd_win_mini_2025(device, root: str = "/") -> bool:
+    return (
+        getattr(device, "key", None) == "gpd_win_mini_2025"
+        and _read_dmi(root, "sys_vendor").casefold() == "gpd"
+        and _read_dmi(root, "product_name").casefold() == "g1617-02"
+    )
+
+
+def is_gpd_win_mini_2025_tdp_recovery(device, root: str = "/") -> bool:
+    return (
+        getattr(device, "key", None) == "gpd_win_mini_2025"
+        and _read_dmi(root, "sys_vendor").casefold() == "gpd"
+        and _read_dmi(root, "product_name").casefold()
+        in {"g1617-02", "g1617-02-l"}
+    )
+
+
+def is_msi_claw_8_ai_plus_a2vm(device, root: str = "/") -> bool:
+    return (
+        getattr(device, "key", None) == "msi_claw_8_ai_plus"
+        and _read_dmi(root, "sys_vendor").casefold()
+        == "micro-star international co., ltd."
+        and _read_dmi(root, "product_name").casefold() == "claw 8 ai+ a2vm"
+    )
+
+
+def asus_tdp_authoritative_reassert_s(device, root: str = "/") -> float | None:
+    vendor = _read_dmi(root, "sys_vendor").casefold()
+    product = _read_dmi(root, "product_name").casefold()
+    if (
+        getattr(device, "key", None) == "rog_xbox_ally_x"
+        and vendor == "asustek computer inc."
+        and product == "rog xbox ally x rc73xa_rc73xa"
+    ):
+        return 15.0
+    return None
+
+
+def legion_go_2_83n0_firmware_attr_quirks(device, root: str = "/") -> dict:
+    if (
+        getattr(device, "key", None) != "legion_go_2"
+        or _read_dmi(root, "sys_vendor").casefold() != "lenovo"
+        or _read_dmi(root, "product_name").casefold() != "83n0"
+    ):
+        return {}
+    return {
+        "readback_settle_delays": (0.25, 0.50, 1.0, 2.0),
+        "rearm_custom_on_unapplied_writes": True,
+        "named_profile_owns_rails": True,
+        "firmware_handoff_profile": "balanced",
+    }
+
+
+def lenovo_legion_firmware_attr_quirks(device, root: str = "/") -> dict:
+    product_by_key = {
+        "legion_go": {"83e1"},
+        "legion_go_s": {"83l3", "83n6"},
+        "legion_go_2": {"83n0", "83n1"},
+    }
+    products = product_by_key.get(getattr(device, "key", None), set())
+    if (
+        _read_dmi(root, "sys_vendor").casefold() != "lenovo"
+        or _read_dmi(root, "product_name").casefold() not in products
+    ):
+        return {}
+    return {"probe_live_max_on_ac": True}
+
+
+def is_legion_go_s_83n6(device, root: str = "/") -> bool:
+    return (
+        getattr(device, "key", None) == "legion_go_s"
+        and _read_dmi(root, "sys_vendor").casefold() == "lenovo"
+        and _read_dmi(root, "product_name").casefold() == "83n6"
+    )
+
+
+def legion_go_s_83l3_firmware_attr_quirks(device, root: str = "/") -> dict:
+    if (
+        getattr(device, "key", None) != "legion_go_s"
+        or _read_dmi(root, "sys_vendor").casefold() != "lenovo"
+        or _read_dmi(root, "product_name").casefold() != "83l3"
+    ):
+        return {}
+    return {
+        "readback_settle_delays": (0.05, 0.10, 0.20, 0.40),
+        "named_profile_owns_rails": True,
+        "rearm_custom_on_ignored_writes": True,
+    }
+
+
+def legion_go_s_83n6_rail_floors(device, root: str = "/") -> dict[str, int]:
+    if is_legion_go_s_83n6(device, root):
+        return {"pl2": 15, "pl3": 20}
+    return {}
+
+
+# 83N6 BIOS versions whose firmware holds boost rails below 15/20 W. Any other BIOS
+# keeps those floors in games too.
+_LEGION_GO_S_83N6_LOW_BOOST_BIOS = frozenset({"s0cn27ww"})
+
+
+def legion_go_s_83n6_boost_floors_menu_only(device, root: str = "/") -> bool:
+    return (
+        is_legion_go_s_83n6(device, root)
+        and _read_dmi(root, "bios_version").casefold() in _LEGION_GO_S_83N6_LOW_BOOST_BIOS
+    )
+
+
+def legion_go_s_83n6_firmware_attr_quirks(device, root: str = "/") -> dict:
+    if not is_legion_go_s_83n6(device, root):
+        return {}
+    return {
+        "cap_boost_to_active": True,
+        "readback_settle_delays": (0.05, 0.10, 0.20, 0.40),
+    }

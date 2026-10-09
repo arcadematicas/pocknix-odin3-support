@@ -1,0 +1,252 @@
+from dataclasses import dataclass, field
+from typing import Optional
+
+
+@dataclass(frozen=True)
+class DmiMatch:
+    product_name: Optional[str]
+    sys_vendor: str
+    board_names: tuple = field(default_factory=tuple)
+
+    def matches(self, product_name: str, sys_vendor: str, board_name: str) -> bool:
+        def normalise(value: str) -> str:
+            return (value or "").strip().casefold()
+
+        if self.product_name is not None and normalise(product_name) != normalise(self.product_name):
+            return False
+        if normalise(sys_vendor) != normalise(self.sys_vendor):
+            return False
+        return not self.board_names or normalise(board_name) in {
+            normalise(value) for value in self.board_names
+        }
+
+
+@dataclass(frozen=True)
+class DeviceProfile:
+    key: str                      # stable id, e.g. "rog_ally_x"
+    display_name: str             # shown in DeviceHeader, e.g. "ROG Ally X"
+    chip: str                     # e.g. "AMD Z1 Extreme"
+    vendor: str                   # "amd" | "intel" | "qualcomm" | other SoC vendor
+    tdp_min: int                  # watts
+    tdp_default: int              # watts (sensible nominal)
+    tdp_max: int                  # watts on battery
+    tdp_max_charger: int          # watts when a compatible charger is connected (== tdp_max if none)
+    # DMI product_name strings that identify this device (matched case-insensitively, substring)
+    match_names: tuple = field(default_factory=tuple)
+    # Defensive profiles use exact DMI tuples. When present, match_names is ignored.
+    dmi_matches: tuple[DmiMatch, ...] = field(default_factory=tuple)
+    is_generic: bool = False
+    # When set, the UI shows the experimental marker for this recognised model.
+    experimental: bool = False
+    # Panel technology. "oled" hides the "OLED look" color preset (a real OLED has
+    # nothing to emulate). A wrong guess only shows/hides a cosmetic button.
+    panel: str = "lcd"
+    # Known maximum refresh of the built-in panel. None keeps every common Auto-TDP
+    # target available for desktops, external displays and unverified panels.
+    display_refresh_hz: Optional[int] = None
+    # True on panels that support HDR output (gamescope can drive them in HDR). Gates
+    # the HDR sub-tab; on a non-HDR panel the toggle would be a no-op, so it's hidden.
+    hdr: bool = False
+    # Optional per-model calibrated "OLED look" color state. None => the generic look
+    # (display.oled_look.GENERIC_OLED_LOOK).
+    oled_look: Optional[dict] = None
+    # Curated quick-preset watts (quiet, balanced, turbo_battery, turbo_charger);
+    # empty → fall back to (min, default, max, max_ac).
+    tdp_presets: tuple = field(default_factory=tuple)
+    # Ceiling unlocked when the user confirms the external cooler is attached (Win 5).
+    cooler_max: Optional[int] = None
+    # The cooler ceiling applies on the charger only and never to presets or Auto-TDP
+    # (an accessory that cannot be detected and adds no battery).
+    cooler_charger_only: bool = False
+    # Unsupported-by-OEM ceiling exposed only after an explicit warning. This never
+    # raises the battery, preset, or Auto-TDP ceilings.
+    experimental_tdp_max_ac: Optional[int] = None
+    # Expose the firmware performance modes (platform_profile) as selectable presets.
+    # Only for models where we can't drive the fan curve and the modes are the sole
+    # fan lever (Legion Go original); models with real curve control keep custom TDP.
+    firmware_modes: bool = False
+    # The charger headroom is only reachable on the charger — the firmware refuses a
+    # higher sustained limit on battery (ROG Ally / Ally X). Hides the on-battery unlock
+    # toggle. Default False: the extra is unlockable on battery (Xbox Ally X, Legion).
+    charger_only_extra: bool = False
+    # Desktop topology: CPU package and discrete GPU are separate power/thermal
+    # domains. Automatic only for hardware that has been validated end-to-end;
+    # generic Linux hosts remain opt-in from Settings.
+    desktop_mode: bool = False
+    # "arm" profiles are matched by device-tree compatible strings and never reach
+    # x86-only paths (watt-based TDP backends, ryzenadj, amdgpu/i915 clocks).
+    arch: str = "x86"
+    dt_compatible: tuple[str, ...] = field(default_factory=tuple)
+
+
+# Conservative, safe fallback when detection fails - visibly generic.
+GENERIC = DeviceProfile(
+    key="generic",
+    display_name="Dispositivo genérico",
+    chip="Desconocido",
+    vendor="amd",
+    tdp_min=4,
+    tdp_default=10,
+    # Ceiling for an unrecognised handheld on the ryzenadj path (no firmware bounds to
+    # read). 30 W is the sustained max the modern AMD handheld category reaches with
+    # active cooling; 15 W stranded capable devices far below their real limit. Devices
+    # that go higher expose it via their firmware bounds once recognised.
+    tdp_max=30,
+    tdp_max_charger=30,
+    match_names=(),
+    is_generic=True,
+)
+
+DESKTOP_PC = DeviceProfile(
+    key="desktop_pc",
+    display_name="PC de sobremesa",
+    chip=GENERIC.chip,
+    vendor=GENERIC.vendor,
+    tdp_min=GENERIC.tdp_min,
+    tdp_default=GENERIC.tdp_default,
+    tdp_max=GENERIC.tdp_max,
+    tdp_max_charger=GENERIC.tdp_max_charger,
+    experimental=True,
+    desktop_mode=True,
+)
+
+GENERIC_ARM = DeviceProfile(
+    key="generic_arm",
+    display_name="Dispositivo ARM",
+    chip=GENERIC.chip,
+    vendor="arm",
+    tdp_min=1,
+    tdp_default=6,
+    tdp_max=10,
+    tdp_max_charger=10,
+    is_generic=True,
+    arch="arm",
+)
+
+ARM_DEVICE_TABLE = (
+    DeviceProfile("ayn_thor", "AYN Thor", "Snapdragon 8 Gen 2", "qualcomm",
+                  1, 6, 10, 10, dt_compatible=("ayn,thor",), experimental=True,
+                  panel="oled", arch="arm"),
+)
+
+# Ordered most-specific first (so "ROG Ally X" wins before "ROG Ally").
+DEVICE_TABLE = (
+    DeviceProfile("steam_machine", "Steam Machine", "AMD Custom CPU 1772", "amd",
+                  4, 23, 30, 30,
+                  dmi_matches=(DmiMatch("Fremont", "Valve", ("Fremont",)),),
+                  experimental=True, desktop_mode=True),
+    DeviceProfile("steam_deck_lcd", "Steam Deck", "AMD Van Gogh", "amd",
+                  3, 12, 15, 15, match_names=("Jupiter",), display_refresh_hz=60),
+    DeviceProfile("steam_deck_oled", "Steam Deck OLED", "AMD Sephiroth", "amd",
+                  3, 12, 15, 15, match_names=("Galileo",), panel="oled", hdr=True,
+                  display_refresh_hz=90),
+    DeviceProfile("rog_xbox_ally_x", "ROG Xbox Ally X", "AMD Ryzen AI Z2 Extreme", "amd",
+                  7, 17, 25, 35, match_names=("ROG Xbox Ally X",),
+                  tdp_presets=(13, 17, 25, 30)),
+    DeviceProfile("rog_xbox_ally", "ROG Xbox Ally", "AMD Ryzen Z2 A", "amd",
+                  5, 13, 17, 20, match_names=("RC73YA",), experimental=True,
+                  tdp_presets=(10, 15, 17, 20)),
+    DeviceProfile("rog_ally_x", "ROG Ally X", "AMD Z1 Extreme", "amd",
+                  7, 17, 25, 30, match_names=("ROG Ally X",),
+                  tdp_presets=(13, 17, 25, 30), charger_only_extra=True),
+    DeviceProfile("rog_ally", "ROG Ally", "AMD Z1 Extreme", "amd",
+                  7, 15, 25, 30, match_names=("ROG Ally RC71", "ROG Ally"),
+                  charger_only_extra=True),
+    DeviceProfile("legion_go_2", "Legion Go 2", "AMD Ryzen AI Z2 Extreme", "amd",
+                  5, 15, 30, 35, match_names=("83N0", "83N1", "Legion Go 2"),
+                  panel="oled", hdr=True),
+    # 83L3/83N6, Z1 Extreme or Z2 Go (real chip read live from cpuinfo; this is the
+    # fallback). PL1 33 W on battery, 40 W on charger — the extra is charger-only.
+    DeviceProfile("legion_go_s", "Legion Go S", "AMD Ryzen Z1 Extreme / Z2 Go", "amd",
+                  5, 15, 33, 40, match_names=("83L3", "83N6", "Legion Go S"),
+                  charger_only_extra=True),
+    DeviceProfile("legion_go", "Legion Go", "AMD Z1 Extreme", "amd",
+                  5, 15, 30, 30, match_names=("83E1", "Legion Go"), firmware_modes=True),
+    DeviceProfile("msi_claw_8_ai_plus", "MSI Claw 8 AI+", "Intel Core Ultra 7 258V", "intel",
+                  8, 17, 30, 35, match_names=("Claw 8 AI+", "Claw 8")),
+    # OneXPlayer OneXFly Apex (Strix Halo). The chip name is read live from
+    # cpuinfo; this string is only a fallback. OEM rates 80 W on air; 120 W needs
+    # the external Frost Bay liquid cooler, so it is only reachable through its opt-in.
+    DeviceProfile("onexplayer_apex", "OneXPlayer OneXFly Apex",
+                  "AMD Ryzen AI Max+ 395", "amd",
+                  5, 20, 55, 80, match_names=("ONEXPLAYER APEX",), experimental=True,
+                  charger_only_extra=True, cooler_max=120, cooler_charger_only=True),
+    DeviceProfile("onexplayer_superx", "OneXPlayer Super X",
+                  "AMD Ryzen AI Max+ 395", "amd",
+                  10, 30, 55, 75,
+                  dmi_matches=(DmiMatch(
+                      "ONEXPLAYER SUPER X", "ONE-NETBOOK", ("ONEXPLAYER SUPER X",)),),
+                  experimental=True, panel="oled", hdr=True, charger_only_extra=True),
+    # OEM rates 6-80 W on air; 120 W needs the external Frost Bay liquid cooler,
+    # so it is only reachable through the explicit "external cooler" opt-in.
+    DeviceProfile("onexplayer_x2_mini_pro", "OneXPlayer X2 Mini Pro",
+                  "AMD Ryzen AI Max+ 388", "amd",
+                  6, 30, 55, 80,
+                  dmi_matches=(DmiMatch(
+                      "ONEXPLAYER X2Mini PRO", "ONE-NETBOOK", ("ONEXPLAYER X2Mini PRO",)),),
+                  experimental=True, panel="oled", display_refresh_hz=144,
+                  charger_only_extra=True, cooler_max=120, cooler_charger_only=True),
+    # Intel rates Arc G3 Extreme at 8-35 W; the same chip runs at 45 W in the
+    # OneXFly Apex Air, offered only as a warned, charger-only opt-in.
+    DeviceProfile("onexplayer_3", "OneXPlayer 3", "Intel Arc G3 Extreme", "intel",
+                  8, 20, 35, 35, experimental_tdp_max_ac=45,
+                  dmi_matches=(DmiMatch("ONEXPLAYER 3", "ONE-NETBOOK", ("ONEXPLAYER 3",)),),
+                  experimental=True, panel="oled", hdr=True, display_refresh_hz=144),
+    DeviceProfile("zotac_gaming_zone", "Zotac Gaming Zone",
+                  "AMD Ryzen 7 8840U", "amd",
+                  8, 15, 28, 28,
+                  dmi_matches=(DmiMatch(None, "ZOTAC", ("G0A1W", "G1A1W")),),
+                  experimental=True, panel="oled", hdr=True),
+    DeviceProfile("rog_flow_z13", "ROG Flow Z13",
+                  "AMD Ryzen AI Max 390", "amd",
+                  5, 20, 54, 65,
+                  dmi_matches=(DmiMatch(
+                      None,
+                      "ASUSTeK COMPUTER INC.",
+                      ("GZ302EA",),
+                  ),),
+                  experimental=True, charger_only_extra=True),
+    DeviceProfile("onexplayer_f1", "OneXPlayer F1",
+                  "AMD Ryzen 7 7840U", "amd",
+                  15, 28, 30, 30,
+                  dmi_matches=tuple(
+                      DmiMatch(product, "ONE-NETBOOK")
+                      for product in (
+                          "ONEXPLAYER F1",
+                          "ONEXPLAYER F1 EVA-01",
+                          "ONEXPLAYER F1 EVA-02",
+                          "ONEXPLAYER F1 OLED",
+                      )
+                  ),
+                  experimental=True),
+    DeviceProfile("ayaneo_3", "AYANEO 3",
+                  "AMD Ryzen AI 9 HX 370 / Ryzen 7 8840U", "amd",
+                  8, 15, 35, 35,
+                  dmi_matches=(DmiMatch("AYANEO 3", "AYANEO"),),
+                  experimental=True),
+    DeviceProfile("aokzoe_a1x", "AOKZOE A1X", "AMD Ryzen AI 9 HX 370", "amd",
+                  4, 18, 30, 30, match_names=("AOKZOE A1X",), experimental=True,
+                  tdp_presets=(12, 18, 30, 30)),
+    DeviceProfile("gpd_win_mini_2025", "GPD Win Mini 2025",
+                  "AMD Ryzen AI 9 HX 370", "amd",
+                  20, 20, 35, 35,
+                  dmi_matches=(
+                      DmiMatch("G1617-02", "GPD"),
+                      DmiMatch("G1617-02-L", "GPD"),
+                  ),
+                  experimental=True,
+                  tdp_presets=(20, 25, 30, 35)),
+    DeviceProfile("msi_claw_a8", "MSI Claw A8", "AMD Ryzen Z2 Extreme", "amd",
+                  6, 17, 35, 35, match_names=("Claw A8",), experimental=True,
+                  tdp_presets=(10, 20, 33, 33)),
+    DeviceProfile("onexplayer_f1pro", "OneXPlayer F1 Pro",
+                  "AMD Ryzen AI 9 HX 370", "amd",
+                  5, 18, 30, 30, match_names=("ONEXPLAYER F1Pro",), experimental=True,
+                  tdp_presets=(12, 18, 30, 30)),
+    DeviceProfile("gpd_win5", "GPD Win 5", "AMD Ryzen AI Max 385", "amd",
+                  5, 25, 55, 55, match_names=("G1618-05",), experimental=True,
+                  tdp_presets=(15, 30, 50, 50), cooler_max=75),
+    DeviceProfile("gpd_win_max_2", "GPD Win Max 2", "AMD Ryzen 7 8840U", "amd",
+                  5, 20, 35, 35, match_names=("G1619-05",), experimental=True,
+                  tdp_presets=(12, 22, 32, 32)),
+)

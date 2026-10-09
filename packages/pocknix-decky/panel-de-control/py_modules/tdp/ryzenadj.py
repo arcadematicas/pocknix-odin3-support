@@ -1,0 +1,921 @@
+import os
+import re
+import shutil
+import subprocess
+import time
+
+from tdp.backend import TDPBackend
+from tdp.runtime_lock import RuntimeSafetyLock
+from tdp.types import RailReading, TdpLimits, TdpObservation, TdpResult
+
+# The sustained (STAPM) limit line of `ryzenadj -i`.
+_STAPM_RE = re.compile(r"STAPM LIMIT\s*\|\s*([\d.]+)", re.IGNORECASE)
+_FAST_RE = re.compile(r"PPT LIMIT FAST\s*\|\s*([\d.]+)", re.IGNORECASE)
+_SLOW_RE = re.compile(r"PPT LIMIT SLOW\s*\|\s*([\d.]+)", re.IGNORECASE)
+
+# Readback slack (W): the STAPM readback rounds, so treat a near-match as applied.
+_READBACK_TOLERANCE_W = 2
+_UNREADABLE_READS_TO_HIDE_AUTO = 2
+
+
+def _unreadable(applied):
+    # No STAPM limit to read back: absent (None) or a 0 that some APUs report even when
+    # the write applied.
+    return applied is None or applied == 0
+
+
+def _matches(applied, target):
+    return not _unreadable(applied) and abs(applied - target) <= _READBACK_TOLERANCE_W
+
+
+def _gpd_detail(*, variant, primary_exit, exit_code, readback):
+    return (
+        f"gpd recovery variant={variant} primary_exit={int(primary_exit)} "
+        f"exit={int(exit_code)} readback={readback}"
+    )
+
+
+def _parse_stapm(out: str) -> int | None:
+    m = _STAPM_RE.search(out)
+    if not m:
+        return None
+    try:
+        return round(float(m.group(1)))
+    except ValueError:
+        return None
+
+
+def _parse_snapshot(out: str) -> dict[str, int] | None:
+    values = {}
+    for key, pattern in (("stapm", _STAPM_RE), ("fast", _FAST_RE), ("slow", _SLOW_RE)):
+        match = pattern.search(out)
+        if not match:
+            return None
+        try:
+            value = round(float(match.group(1)))
+        except ValueError:
+            return None
+        if value <= 0:
+            return None
+        values[key] = value
+    return values
+
+
+def _snapshot_matches(snapshot, target):
+    return bool(snapshot) and all(_matches(value, target) for value in snapshot.values())
+
+
+def _ensure_executable(path: str) -> None:
+    """Make our bundled binary runnable. A plain zip extract (the self-updater) drops
+    the exec bit, so it can land mode 0o644, and execve gives EACCES even as root when
+    no exec bit is set. We own this file, so restore +x. Best-effort: never raise."""
+    try:
+        mode = os.stat(path).st_mode
+        if mode & 0o111 != 0o111:
+            os.chmod(path, mode | 0o111)
+    except OSError:
+        pass
+
+
+def _default_resolve():
+    found = shutil.which("ryzenadj")
+    if found:
+        return found
+    bundled = os.path.join(os.path.dirname(__file__), "..", "..", "bin", "ryzenadj")
+    bundled = os.path.abspath(bundled)
+    if not os.path.exists(bundled):
+        return None
+    _ensure_executable(bundled)
+    return bundled
+
+
+def _clean_env():
+    env = dict(os.environ)
+    env["LD_LIBRARY_PATH"] = ""
+    return env
+
+
+class RyzenadjBackend(TDPBackend):
+    """Generic AMD fallback via the ryzenadj binary. Never raises."""
+
+    name = "ryzenadj"
+    blocking = True
+    guard_interval_s = 15.0
+    read_tolerance_w = _READBACK_TOLERANCE_W
+
+    def __init__(self, fallback: TdpLimits, resolve=_default_resolve, runner=subprocess.run,
+                 write_max: int | None = None, write_max_ac: int | None = None,
+                 power_only_retry: bool = False,
+                 require_readback: bool = False,
+                 readback_fallback: bool = False,
+                 lock_experimental: bool = False,
+                 allow_unverified_hold: bool = False,
+                 unverified_hold_restore: dict[str, int] | None = None,
+                 safety_lock_path: str | None = None,
+                 hold_rail_floors: dict[str, int] | None = None):
+        self._fallback = fallback
+        self._write_limits = fallback.with_cooler(write_max).with_ac_max(write_max_ac)
+        self.manual_write_max_ac = self._write_limits.max_ac_w
+        self._runner = runner
+        self._bin = resolve()
+        self._power_only_retry = power_only_retry
+        self._require_readback = bool(require_readback)
+        self._readback_fallback = bool(readback_fallback)
+        self._lock_experimental = bool(lock_experimental)
+        self._allow_unverified_hold = bool(allow_unverified_hold)
+        self._unverified_hold_restore = (
+            {
+                rail: int(unverified_hold_restore[rail])
+                for rail in ("pl1", "pl2", "pl3")
+            }
+            if isinstance(unverified_hold_restore, dict)
+            and all(rail in unverified_hold_restore for rail in ("pl1", "pl2", "pl3"))
+            else None
+        )
+        self.auto_tdp_supported = not (
+            self._power_only_retry and not self._require_readback
+        )
+        self._hold_rail_floors = dict(hold_rail_floors or {})
+        self.low_battery_hold_capable = bool(
+            self._allow_unverified_hold and self._bin
+        )
+        self.low_battery_hold_strategy = (
+            "primary" if self._require_readback else None
+        )
+        self.auto_tdp_safe = self._require_readback or not self._power_only_retry
+        self._unreadable_reads = 0
+        self._auto_readback = (
+            "required" if self._require_readback
+            else "unsupported" if self._power_only_retry
+            else "unknown"
+        )
+        self._auto_readback_limits = None
+        self._safety_lock = RuntimeSafetyLock(safety_lock_path)
+        self.supported = self._bin is not None
+        self._runtime_lock_payload = (
+            self._safety_lock.load_payload()
+            if self._require_readback or self._power_only_retry or self._allow_unverified_hold
+            else None
+        )
+        self._hold_recovery_target = (
+            dict(self._unverified_hold_restore)
+            if isinstance(self._runtime_lock_payload, dict)
+            and self._runtime_lock_payload.get("state") == "low_battery_hold_active"
+            and self._allow_unverified_hold
+            and self._unverified_hold_restore is not None
+            else None
+        )
+        durable_lock = (
+            self._runtime_lock_payload.get("state")
+            if self._runtime_lock_payload
+            else None
+        )
+        if durable_lock and self.supported:
+            self._readback_state = durable_lock
+            self._last_readback_failure = "ryzenadj runtime safety lock active"
+            self.supported = False
+        else:
+            self._readback_state = (
+                "pending"
+                if self.supported and self._require_readback
+                else "not_required" if self.supported else "binary_missing"
+            )
+            self._last_readback_failure = None
+
+    def get_limits(self) -> TdpLimits:
+        return self._fallback
+
+    def _required_snapshot(self, retry_initial=False):
+        if not self.supported or self._readback_state.startswith("circuit_open"):
+            return None
+        recovery_pending = self._readback_state == "recovery_pending"
+        snapshot = self._read_snapshot(require_zero_exit=True)
+        if snapshot is None and retry_initial and self._readback_state == "pending":
+            time.sleep(0.05)
+            snapshot = self._read_snapshot(require_zero_exit=True)
+        if snapshot is None and self._readback_fallback and self._readback_state == "pending":
+            self._write_without_readback()
+            return None
+        if snapshot is None:
+            self._readback_state = "circuit_open_initial"
+            self._last_readback_failure = (
+                "ryzenadj required readback unavailable before write; circuit open"
+            )
+            self.supported = False
+            return None
+        if not recovery_pending:
+            self._readback_state = "ready"
+        return snapshot
+
+    def _is_experimental(self, target: int) -> bool:
+        # An opted-in experimental ceiling locks itself after a failed or interrupted
+        # write; the manual extra range just restores and reports the failure.
+        return self._lock_experimental and target > self._fallback.max_ac_w
+
+    def _write_without_readback(self) -> None:
+        # Some kernels let ryzenadj write but never read (no ryzen_smu, /dev/mem
+        # fallback). Only the first read decides; a later read failure still opens
+        # the circuit, because the limits were readable before.
+        self._require_readback = False
+        self._readback_state = "write_only"
+        self._last_readback_failure = "ryzenadj readback unavailable; writing without confirmation"
+        self._auto_readback = "unknown"
+        self.low_battery_hold_strategy = None
+        self.auto_tdp_safe = not self._power_only_retry
+
+    def probe(self) -> bool:
+        if not self._require_readback:
+            return bool(self.supported)
+        snapshot = self._required_snapshot(retry_initial=True)
+        return snapshot is not None or not self._require_readback
+
+    @property
+    def probe_pending(self) -> bool:
+        return self._readback_state == "pending"
+
+    @property
+    def safety_locked(self) -> bool:
+        return (
+            self._runtime_lock_payload is not None
+            or self._readback_state.startswith("circuit_open")
+        )
+
+    def set_tdp(self, watts: int, ac: bool) -> TdpResult:
+        if not self.supported:
+            detail = self._last_readback_failure or "ryzenadj binary not found"
+            return TdpResult(watts, None, False, detail)
+        target = self._write_limits.clamp(watts, on_ac=ac)
+        if (
+            self._readback_state == "recovery_pending"
+            and self._is_experimental(target)
+        ):
+            return TdpResult(
+                watts,
+                None,
+                False,
+                "ryzenadj safe-range recovery pending",
+            )
+        baseline = self._required_snapshot() if self._require_readback else None
+        if self._require_readback and baseline is None:
+            return TdpResult(watts, None, False, self._last_readback_failure)
+        lock_payload = {
+            "state": "circuit_open_transaction",
+            "detail": "ryzenadj transaction pending",
+            "baseline": baseline,
+            "target": target,
+            "experimental": self._is_experimental(target),
+        }
+        if self._require_readback and not self._safety_lock.persist_payload(lock_payload):
+            return TdpResult(
+                watts,
+                baseline["stapm"],
+                False,
+                "ryzenadj transaction safety lock unavailable; no writes performed",
+            )
+        if self._require_readback:
+            self._runtime_lock_payload = lock_payload
+        # amd_pmf (and the firmware on some Z2 handhelds) can silently clobber a single
+        # write, so the limit "doesn't always apply". Write, read back, and re-assert
+        # once. Then classify honestly:
+        #   - reads back the target (±slack) -> applied, confirmed.
+        #   - reads back a different real value -> the write was rejected/clamped -> fail
+        #     and report the value it actually holds (never fake success).
+        #   - can't read the limit at all (STAPM line absent or 0 -- a known quirk on
+        #     some APUs where the write still applies) -> assume applied, unconfirmed;
+        #     the re-assert is our best effort. Don't cry failure on a working device.
+        applied = None
+        for _ in range(2):
+            try:
+                primary_exit = self._apply(
+                    target,
+                    include_temp=not self._require_readback,
+                )
+            except (OSError, subprocess.SubprocessError) as e:
+                if self._require_readback:
+                    return self._handle_strict_failure(
+                        watts,
+                        baseline,
+                        f"ryzenadj apply failed ({type(e).__name__})",
+                        open_circuit=True,
+                    )
+                if self._power_only_retry:
+                    return TdpResult(
+                        watts, None, False,
+                        f"ryzenadj primary failed ({type(e).__name__})",
+                    )
+                return TdpResult(watts, None, False, f"ryzenadj failed: {e}")
+            if self._power_only_retry and primary_exit:
+                return self._recover_gpd(watts, target, primary_exit, baseline)
+            strict_snapshot = (
+                self._read_snapshot(require_zero_exit=True)
+                if self._require_readback
+                else None
+            )
+            if self._require_readback and strict_snapshot is None:
+                return self._handle_strict_failure(
+                    watts,
+                    baseline,
+                    "ryzenadj required readback lost",
+                    open_circuit=True,
+                )
+            applied = (
+                strict_snapshot["stapm"]
+                if strict_snapshot is not None
+                else self._read_applied()
+            )
+            if strict_snapshot is not None and _snapshot_matches(strict_snapshot, target):
+                return self._confirmed_result(watts, applied, target, "")
+            if _unreadable(applied):
+                continue  # re-assert once, then treat as unconfirmed
+            if strict_snapshot is None and _matches(applied, target):
+                return self._confirmed_result(watts, applied, target, "")
+        if _unreadable(applied):
+            if self._require_readback:
+                return TdpResult(
+                    watts,
+                    None,
+                    False,
+                    "ryzenadj required readback unavailable",
+                )
+            return TdpResult(watts, None, True, "applied (limit readback unavailable)")
+        if self._require_readback and strict_snapshot is not None:
+            held = ", ".join(
+                f"{rail}={value}" for rail, value in strict_snapshot.items()
+            )
+            mismatch = f"ryzenadj limits did not stick (wanted {target}, holds {held})"
+        else:
+            mismatch = f"ryzenadj limit did not stick (wanted {target}, holds {applied})"
+        if self._require_readback:
+            return self._handle_strict_failure(
+                watts,
+                baseline,
+                mismatch,
+                open_circuit=self._is_experimental(target),
+            )
+        return TdpResult(watts, applied, False, mismatch)
+
+    def hold_levels(self, levels: dict) -> TdpResult:
+        requested = {
+            rail: int(levels[rail])
+            for rail in ("pl1", "pl2", "pl3")
+        }
+        if not self._allow_unverified_hold:
+            return TdpResult(
+                requested["pl1"],
+                None,
+                False,
+                "ryzenadj write-only low-battery hold unavailable",
+            )
+        if not self.supported:
+            detail = self._last_readback_failure or "ryzenadj unavailable"
+            return TdpResult(requested["pl1"], None, False, detail)
+        lo = self._write_limits.min_w
+        hi = self._write_limits.max_ac_w
+        targets = {
+            rail: max(lo, min(value, hi))
+            for rail, value in requested.items()
+        }
+        if self._unverified_hold_restore is None:
+            return TdpResult(
+                requested["pl1"],
+                None,
+                False,
+                "low-battery hold restore target unavailable; no writes performed",
+            )
+        recovery_target = dict(self._unverified_hold_restore)
+        payload = {
+            "state": "low_battery_hold_active",
+            "detail": "low-battery TDP hold active without readback",
+            "recovery_target": recovery_target,
+            "target": targets,
+        }
+        if not self._safety_lock.persist_payload(payload):
+            return TdpResult(
+                requested["pl1"],
+                None,
+                False,
+                "low-battery hold safety lock unavailable; no writes performed",
+            )
+        self._runtime_lock_payload = payload
+        self._hold_recovery_target = recovery_target
+        try:
+            exit_code = self._apply_limits(
+                targets["pl1"],
+                targets["pl3"],
+                targets["pl2"],
+                include_temp=False,
+            )
+        except (OSError, subprocess.SubprocessError) as error:
+            return self._reject_unverified_hold(
+                requested["pl1"],
+                f"ryzenadj low-battery hold failed ({type(error).__name__})",
+            )
+        if exit_code:
+            return self._reject_unverified_hold(
+                requested["pl1"],
+                f"ryzenadj low-battery hold exit={exit_code}",
+            )
+        self._last_readback_failure = None
+        return TdpResult(
+            requested["pl1"],
+            None,
+            True,
+            "command accepted (limit readback unavailable)",
+        )
+
+    def _reject_unverified_hold(self, requested_watts: int, detail: str) -> TdpResult:
+        self.supported = False
+        restored = self.release_hold()
+        self.supported = False
+        outcome = "accepted" if restored else "unresolved"
+        self._last_readback_failure = f"{detail}; safe restore {outcome}"
+        if not restored and isinstance(self._runtime_lock_payload, dict):
+            self._runtime_lock_payload = {
+                **self._runtime_lock_payload,
+                "detail": self._last_readback_failure,
+            }
+            self._safety_lock.persist_payload(self._runtime_lock_payload)
+        return TdpResult(
+            requested_watts,
+            None,
+            False,
+            self._last_readback_failure,
+        )
+
+    def low_battery_level_limits(
+        self,
+        maximum: int | None = None,
+    ) -> dict[str, dict[str, int]]:
+        maximum = self._write_limits.clamp(
+            self._write_limits.max_w if maximum is None else maximum,
+            on_ac=True,
+        )
+        return {
+            rail: {
+                "min": min(maximum, max(self._write_limits.min_w, floor)),
+                "max": maximum,
+            }
+            for rail, floor in {
+                "pl1": self._write_limits.min_w,
+                "pl2": self._hold_rail_floors.get("pl2", self._write_limits.min_w),
+                "pl3": self._hold_rail_floors.get("pl3", self._write_limits.min_w),
+            }.items()
+        }
+
+    def observe_hold(self) -> TdpObservation:
+        return TdpObservation(readable=False)
+
+    def release_hold(self) -> bool:
+        if self._hold_recovery_target is None:
+            return True
+        target = self._hold_recovery_target
+        try:
+            exit_code = self._apply_limits(
+                target["pl1"],
+                target["pl3"],
+                target["pl2"],
+                include_temp=False,
+            )
+        except (KeyError, OSError, subprocess.SubprocessError):
+            exit_code = 1
+        if exit_code or not self._safety_lock.clear():
+            self.supported = False
+            self._readback_state = "circuit_open_low_battery_hold"
+            return False
+        self._hold_recovery_target = None
+        self._runtime_lock_payload = None
+        self._readback_state = "not_required"
+        self._last_readback_failure = None
+        return True
+
+    def _recover_gpd(
+        self,
+        watts: int,
+        target: int,
+        primary_exit: int,
+        baseline: dict[str, int] | None = None,
+    ) -> TdpResult:
+        strict_snapshot = (
+            self._read_snapshot(require_zero_exit=True)
+            if self._require_readback
+            else None
+        )
+        if self._require_readback and strict_snapshot is None:
+            return self._handle_strict_failure(
+                watts,
+                baseline,
+                "ryzenadj required readback lost",
+                open_circuit=True,
+            )
+        applied = (
+            strict_snapshot["stapm"]
+            if strict_snapshot is not None
+            else self._read_applied(require_zero_exit=True)
+        )
+        if strict_snapshot is not None and _snapshot_matches(strict_snapshot, target):
+            return self._confirmed_result(
+                watts,
+                applied,
+                target,
+                _gpd_detail(
+                    variant="primary",
+                    primary_exit=primary_exit,
+                    exit_code=primary_exit,
+                    readback="confirmed",
+                ),
+            )
+        if strict_snapshot is None and _matches(applied, target):
+            return self._confirmed_result(
+                watts,
+                applied,
+                target,
+                _gpd_detail(
+                    variant="primary",
+                    primary_exit=primary_exit,
+                    exit_code=primary_exit,
+                    readback="confirmed",
+                ),
+            )
+        try:
+            fallback_exit = self._apply(target, include_temp=False)
+        except (OSError, subprocess.SubprocessError) as e:
+            if self._require_readback:
+                return self._handle_strict_failure(
+                    watts,
+                    baseline,
+                    f"ryzenadj power-only failed ({type(e).__name__}) "
+                    f"primary_exit={int(primary_exit)}",
+                    open_circuit=True,
+                )
+            return TdpResult(
+                watts,
+                applied,
+                False,
+                f"ryzenadj power-only failed ({type(e).__name__}) "
+                f"primary_exit={int(primary_exit)}",
+            )
+        strict_snapshot = (
+            self._read_snapshot(require_zero_exit=True)
+            if self._require_readback
+            else None
+        )
+        if self._require_readback and strict_snapshot is None:
+            return self._handle_strict_failure(
+                watts,
+                baseline,
+                "ryzenadj required readback lost",
+                open_circuit=True,
+            )
+        applied = (
+            strict_snapshot["stapm"]
+            if strict_snapshot is not None
+            else self._read_applied(require_zero_exit=True)
+        )
+        if _unreadable(applied):
+            readback = "unavailable"
+        elif _matches(applied, target):
+            readback = "confirmed"
+        else:
+            readback = "mismatch"
+        detail = _gpd_detail(
+            variant="power-only",
+            primary_exit=primary_exit,
+            exit_code=fallback_exit,
+            readback=readback,
+        )
+        if fallback_exit:
+            if self._require_readback:
+                return self._handle_strict_failure(
+                    watts,
+                    baseline,
+                    detail,
+                    open_circuit=True,
+                )
+            return TdpResult(watts, applied, False, detail)
+        if _unreadable(applied):
+            return TdpResult(watts, None, not self._require_readback, detail)
+        confirmed = (
+            _snapshot_matches(strict_snapshot, target)
+            if strict_snapshot is not None
+            else _matches(applied, target)
+        )
+        if self._require_readback and not confirmed:
+            return self._handle_strict_failure(
+                watts,
+                baseline,
+                detail,
+                open_circuit=self._is_experimental(target),
+            )
+        if confirmed:
+            return self._confirmed_result(watts, applied, target, detail)
+        return TdpResult(watts, applied, False, detail)
+
+    def _confirmed_result(
+        self,
+        watts: int,
+        applied: int | None,
+        target: int,
+        detail: str,
+    ) -> TdpResult:
+        safe_recovery_confirmed = (
+            self._readback_state == "recovery_pending"
+            and applied is not None
+            and self._fallback.min_w <= applied <= self._fallback.max_ac_w
+            and target <= self._fallback.max_ac_w
+        )
+        if safe_recovery_confirmed:
+            self._readback_state = "ready"
+        if self._require_readback or safe_recovery_confirmed:
+            if self._safety_lock.clear():
+                self._runtime_lock_payload = None
+            else:
+                detail = f"{detail}; runtime lock clear failed" if detail else (
+                    "runtime lock clear failed"
+                )
+        return TdpResult(watts, applied, True, detail)
+
+    def _handle_strict_failure(
+        self,
+        watts: int,
+        baseline: dict[str, int] | None,
+        detail: str,
+        *,
+        open_circuit: bool,
+    ) -> TdpResult:
+        open_circuit = open_circuit or self._readback_state == "recovery_pending"
+        restore = self._restore_snapshot(baseline)
+        if open_circuit or restore != "confirmed":
+            self._readback_state = (
+                "circuit_open_restored"
+                if restore == "confirmed"
+                else "circuit_open_unresolved"
+            )
+            self.supported = False
+            suffix = "; circuit open"
+            payload = {
+                **(self._runtime_lock_payload or {}),
+                "state": self._readback_state,
+                "detail": f"{detail}; baseline restore {restore}",
+                "baseline": baseline,
+            }
+            self._runtime_lock_payload = payload
+            if not self._safety_lock.persist_payload(payload):
+                suffix += "; runtime lock persistence failed"
+        else:
+            if self._safety_lock.clear():
+                self._readback_state = "ready"
+                self._runtime_lock_payload = None
+                suffix = ""
+            else:
+                self._readback_state = "circuit_open_restored"
+                self.supported = False
+                suffix = "; circuit open; runtime lock clear failed"
+        self._last_readback_failure = f"{detail}; baseline restore {restore}{suffix}"
+        return TdpResult(watts, None, False, self._last_readback_failure)
+
+    def _restore_snapshot(self, baseline) -> str:
+        if not isinstance(baseline, dict):
+            return "unresolved"
+        try:
+            exit_code = self._apply_limits(
+                baseline["stapm"],
+                baseline["fast"],
+                baseline["slow"],
+                include_temp=False,
+            )
+        except (KeyError, OSError, subprocess.SubprocessError):
+            return "unresolved"
+        if exit_code:
+            return "unresolved"
+        restored = self._read_snapshot(require_zero_exit=True)
+        return "confirmed" if restored == baseline else "unresolved"
+
+    def _apply(self, target: int, *, include_temp: bool = True) -> int:
+        return self._apply_limits(
+            target,
+            target,
+            target,
+            include_temp=include_temp,
+        )
+
+    def _apply_limits(self, stapm: int, fast: int, slow: int, *, include_temp: bool) -> int:
+        argv = [
+            self._bin,
+            "--stapm-limit", str(stapm * 1000),
+            "--fast-limit", str(fast * 1000),
+            "--slow-limit", str(slow * 1000),
+        ]
+        if include_temp:
+            argv.extend(["--tctl-temp", "90"])
+        res = self._runner(argv, capture_output=True, text=True, timeout=5, env=_clean_env())
+        return int(getattr(res, "returncode", 0) or 0)
+
+    def read_applied(self) -> int | None:
+        return self._read_applied()
+
+    def observe(self) -> TdpObservation:
+        if not self._require_readback:
+            return self._observe_normal()
+        snapshot = self._read_snapshot(require_zero_exit=True)
+        if snapshot is None:
+            return TdpObservation(readable=False)
+        return self._snapshot_observation(snapshot)
+
+    def _observe_normal(self) -> TdpObservation:
+        exit_ok, out = self._read_info_result() if self.supported else (False, None)
+        if out is None:
+            return TdpObservation(readable=self.readback)
+        snapshot = self._note_auto_readback(out, exit_ok)
+        if snapshot is not None:
+            return self._snapshot_observation(snapshot)
+        applied = _parse_stapm(out)
+        surfaces = {self.name: {"pl1": RailReading(applied)}} if applied is not None else {}
+        return TdpObservation(readable=self.readback, surfaces=surfaces)
+
+    def _snapshot_observation(self, snapshot) -> TdpObservation:
+        return TdpObservation(
+            readable=True,
+            surfaces={
+                self.name: {
+                    "pl1": RailReading(snapshot["stapm"]),
+                    "pl2": RailReading(snapshot["slow"]),
+                    "pl3": RailReading(snapshot["fast"]),
+                },
+            },
+        )
+
+    def _note_auto_readback(self, out: str, exit_ok: bool) -> dict[str, int] | None:
+        # Auto-TDP only needs the STAPM readback to confirm each step; FAST/SLOW, when
+        # reported, are observed too. A failed or empty read keeps the last verdict, and
+        # one odd read without STAPM is not enough to hide Auto.
+        if self._power_only_retry or not exit_ok or not out.strip():
+            return None
+        if _unreadable(_parse_stapm(out)):
+            self._unreadable_reads += 1
+            if self._unreadable_reads >= _UNREADABLE_READS_TO_HIDE_AUTO:
+                self._auto_readback = "unreadable"
+                self._auto_readback_limits = None
+                self.auto_tdp_safe = False
+            return None
+        self._unreadable_reads = 0
+        snapshot = _parse_snapshot(out)
+        self._auto_readback = "three_rail" if snapshot is not None else "stapm_only"
+        self._auto_readback_limits = dict(snapshot) if snapshot is not None else None
+        self.auto_tdp_safe = True
+        return snapshot
+
+    def auto_physical_levels(self, levels: dict) -> dict[str, int]:
+        if not self._require_readback and self._auto_readback != "three_rail":
+            return super().auto_physical_levels(levels)
+        return {
+            rail: int(levels[rail])
+            for rail in ("pl1", "pl2", "pl3")
+        }
+
+    def diagnostics(self) -> dict:
+        return {
+            "readback_required": self._require_readback,
+            "unverified_hold_allowed": self._allow_unverified_hold,
+            "unverified_hold_restore": (
+                dict(self._unverified_hold_restore)
+                if self._unverified_hold_restore is not None
+                else None
+            ),
+            "readback_state": self._readback_state,
+            "auto_readback": self._auto_readback,
+            "auto_readback_limits": (
+                dict(self._auto_readback_limits)
+                if self._auto_readback_limits is not None
+                else None
+            ),
+            "last_readback_failure": self._last_readback_failure,
+            "low_battery_hold_active": self._hold_recovery_target is not None,
+        }
+
+    def recover_safe_range(self) -> bool:
+        degraded_recovery = (
+            self._power_only_retry
+            and not self._require_readback
+            and self._readback_state.startswith("circuit_open")
+        )
+        if (
+            self._readback_state != "circuit_open_restored"
+            and not degraded_recovery
+        ) or self._bin is None:
+            return bool(self.supported)
+        self.supported = True
+        self._readback_state = "recovery_pending"
+        return True
+
+    def recover_runtime_transaction(self) -> dict:
+        payload = self._runtime_lock_payload
+        if (
+            isinstance(payload, dict)
+            and payload.get("state") == "low_battery_hold_active"
+        ):
+            if (
+                not self._allow_unverified_hold
+                or self._unverified_hold_restore is None
+                or self._bin is None
+            ):
+                return {
+                    "ok": False,
+                    "detail": "ryzenadj low-battery hold recovery target invalid",
+                }
+            self._hold_recovery_target = dict(self._unverified_hold_restore)
+            self.supported = True
+            ok = self.release_hold()
+            return {
+                "ok": ok,
+                "detail": (
+                    "ryzenadj low-battery hold recovery accepted"
+                    if ok
+                    else "ryzenadj low-battery hold recovery failed"
+                ),
+            }
+        if (
+            isinstance(payload, dict)
+            and str(payload.get("state", "")).startswith("circuit_open")
+            and self._power_only_retry
+            and not self._require_readback
+            and self.recover_safe_range()
+        ):
+            return {"ok": True, "detail": "ryzenadj safe-range recovery pending"}
+        if (
+            not isinstance(payload, dict)
+            or payload.get("state") != "circuit_open_transaction"
+        ):
+            return {"ok": False, "detail": "ryzenadj recovery snapshot unavailable"}
+        baseline = payload.get("baseline")
+        if not isinstance(baseline, dict) or self._bin is None:
+            return {"ok": False, "detail": "ryzenadj recovery snapshot invalid"}
+        self.supported = True
+        restore = self._restore_snapshot(baseline)
+        if restore != "confirmed":
+            self._readback_state = "circuit_open_unresolved"
+            self.supported = False
+            payload = {
+                **payload,
+                "state": self._readback_state,
+                "detail": "ryzenadj interrupted transaction recovery failed",
+            }
+            self._runtime_lock_payload = payload
+            self._safety_lock.persist_payload(payload)
+            return {"ok": False, "detail": payload["detail"]}
+        if payload.get("experimental") is True:
+            self._readback_state = "circuit_open_restored"
+            self.supported = False
+            payload = {
+                **payload,
+                "state": self._readback_state,
+                "detail": "ryzenadj experimental transaction restored safely",
+            }
+            self._runtime_lock_payload = payload
+            self._safety_lock.persist_payload(payload)
+            return {"ok": True, "detail": payload["detail"]}
+        if not self._safety_lock.clear():
+            self._readback_state = "circuit_open_restored"
+            self.supported = False
+            return {
+                "ok": False,
+                "detail": "ryzenadj recovery confirmed; runtime lock clear failed",
+            }
+        self._runtime_lock_payload = None
+        self._readback_state = "ready"
+        self.supported = True
+        return {"ok": True, "detail": "ryzenadj transaction recovered"}
+
+    def _read_applied(self, *, require_zero_exit: bool = False) -> int | None:
+        if not self.supported:
+            return None
+        exit_ok, out = self._read_info_result()
+        if out is None or (require_zero_exit and not exit_ok):
+            return None
+        if not self._require_readback:
+            self._note_auto_readback(out, exit_ok)
+        return _parse_stapm(out)
+
+    def _read_snapshot(self, *, require_zero_exit: bool = False):
+        if not self.supported:
+            return None
+        out = self._read_info(require_zero_exit=require_zero_exit)
+        return _parse_snapshot(out) if out is not None else None
+
+    def _read_info(self, *, require_zero_exit: bool = False) -> str | None:
+        exit_ok, out = self._read_info_result()
+        if require_zero_exit and not exit_ok:
+            return None
+        return out
+
+    def _read_info_result(self) -> tuple[bool, str | None]:
+        try:
+            res = self._runner(
+                [self._bin, "-i"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                env=_clean_env(),
+            )
+        except (OSError, subprocess.SubprocessError):
+            return False, None
+        return not getattr(res, "returncode", 0), getattr(res, "stdout", "") or ""

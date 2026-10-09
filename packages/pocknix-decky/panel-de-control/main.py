@@ -1,0 +1,12995 @@
+import asyncio
+import copy
+import inspect
+import json
+import math
+import os
+import re
+import subprocess
+import sys
+import time
+from collections import deque
+from concurrent.futures import (
+    CancelledError as FutureCancelledError,
+    ThreadPoolExecutor,
+    TimeoutError as FutureTimeoutError,
+)
+from dataclasses import asdict, dataclass, replace
+from datetime import datetime
+from pathlib import Path
+from typing import Literal
+
+import decky
+
+# py_modules/ is on sys.path → import TOP-LEVEL (never `from py_modules.x import`).
+import auto_tdp
+from auto_tdp_learning import AutoTdpLearningStore
+import device_registry
+from gamescope_perf import GamescopePerf
+from user_session import spawn_args
+from gamescope_stats import GamescopeStats
+import osinfo
+import pdc_platform as platform_support
+import journal
+import journal_context
+import self_updater
+import theme_activation
+import theme_health
+import theme_packages
+import theme_remote
+import theme_transport
+from version import read_version
+from settings_store import SettingsStore
+from tdp import factory as tdp_factory
+from tdp.backend import NullBackend
+from tdp.extra_range import extra_tdp_max_ac, is_strix_halo, with_extra
+from tdp.low_battery_hold import LOW_BATTERY_PERCENT, decide_hold
+from tdp import powerstation as powerstation_conflict
+from tdp import suggest as tdp_suggest
+from tdp.reconcile import (
+    CONFIRM_S,
+    MIN_CORRECTION_S,
+    ReconcileMemory,
+    after_apply,
+    build_targets,
+    decide,
+    rail_bounds,
+)
+from tdp.overshoot import (
+    NUDGE,
+    HiddenOvershootMonitor,
+    PlatformProfileWatch,
+    nudged_target,
+)
+from tdp.types import (
+    TDP_REQUEST_MIN_W,
+    RailReading,
+    TdpLimits,
+    TdpObservation,
+    TdpResult,
+)
+from tdp_profiles import AUTO_RANGE_UNSET, ProfileStore
+from power_presets import PowerPresetStore
+from lifecycle import LifecycleManager, read_on_ac
+from fans.hwmon import FanReader, extract_cpu_gpu_temps
+from fans import control as fan_control
+from fans import legion_ec
+from fans import oxp_ec
+from fans import expose as fan_expose
+from fans import gpd_recovery
+from fans import presets as fan_presets
+from fans import suggest as fan_suggest
+from fan_curves import FanCurveStore
+from launch import tools as launch_tools
+from launch import proton_caps
+from launch import custom_vars as launch_custom_vars
+from display.color_store import ColorStore, sanitize_calibration, sanitize_color
+from display.gamescope import GamescopeColorBackend, run_gamescopectl
+from display.oled_look import oled_look_for
+from display.const import NATIVE as COLOR_NATIVE, FIELDS as COLOR_FIELDS, CALIBRATION as COLOR_CALIBRATION
+from display.night_store import NightStore
+from display.night import is_night_active
+from display import presets as color_presets
+from display.hdr import HdrBackend
+from gpu.clock import select_gpu_clock
+from gpu.profiles import GpuProfileStore
+from gpu.power_cap import AmdGpuPowerCap
+from power.reader import PowerReader
+from desktop.mode import (
+    effective_desktop_mode,
+    migrate_desktop_defaults,
+    normalize_desktop_settings,
+    recognised_desktop_migration_pending,
+)
+from desktop.power import DesktopPowerCoordinator, handoff_cpu_ceiling_w
+from desktop.fan_store import DesktopFanStore
+from desktop.cpu_policy import DesktopCpuPolicy
+from desktop.board_fans import BoardFanDriver
+from battery.reader import BatteryReader
+from battery.charge_limit import (
+    NullChargeLimit,
+    SteamDeckChargeLimit,
+    SysfsChargeLimit,
+    select_charge_limit,
+)
+from audio.eq_store import EqStore
+from audio.pipewire import PipeWireEq
+from audio.profile_store import AudioProfileStore
+from audio import presets as audio_presets
+from audio import safe as audio_safe
+from audio import tone as audio_tone
+from cpu.info import read_cpu_info, read_cpu_model
+from cpu.controls import CoreControl, SmtControl, select_boost
+from cpu.coordinator import CpuCoordinator, CpuCoordinatorResult
+from cpu.frequency import NullCpuFrequency, select_cpu_frequency
+from cpu.profiles import CpuProfileStore
+from telemetry.store import TelemetryStore
+from telemetry.sampler import TelemetrySampler
+from controllers import detect as controller_detect
+from controllers import hhd as controller_hhd
+from controllers import conflict as controller_conflict
+from controllers import factory as controller_factory
+from controllers.store import RemapStore
+from controllers.dbus import IpDbus
+from sysfs import read_str
+from mangohud.store import HudStore
+from mangohud import detect as mangohud_detect
+from mangohud import config as mangohud_config
+from mangohud import pdc_metrics as mangohud_pdc
+from mangohud import ownership as mangohud_ownership
+from mangohud.apply import apply_hud, clear_presets, reload_sessions
+from mangohud.coordinator import HudClosed, HudCoordinator, HudStale
+from mangohud.observations import TimedValue, fresh_value
+from report import collector as report_collector
+from report import client as report_client
+from steam_cleaner import SteamCleanerError, SteamCleanerService
+from steam_cleaner.media import measure_screenshot_paths
+from kiosk.controller import KioskController
+from kiosk.rpc import plugin_dispatch, public_rpc_methods
+from kiosk import steam_game as kiosk_steam_game
+from kiosk import vitals as kiosk_vitals
+from kiosk.bridge import READS as kiosk_bridge_reads, BridgeError, SteamBridge
+
+# Report collector: the app slug (routes to the right GitHub repo, server-side) and the
+# collector endpoint. The URL is set to the deployed Vercel service; overridable via
+# env for testing. The plugin only POSTs here; it can never read a report back.
+_REPORT_APP = "panel-de-control"
+_REPORT_SERVICE_URL = os.environ.get(
+    "PDC_REPORT_URL", "https://bug-collector-khaki.vercel.app/api/report"
+)
+_SUPPORT_SAMPLE_INTERVAL_S = 30
+_SUPPORT_CONTEXT_INTERVAL_S = 900
+_SUPPORT_AFTER_ACTION_S = 5
+# Stable fields only: live readings would make every refresh look like a change.
+# tests/test_journal_sections.py requires an entry for every section.
+_SUPPORT_SECTIONS: dict[str, tuple[tuple[str, tuple[str, ...] | None], ...]] = {
+    "power": (
+        ("get_tdp_state", (
+            "tdp_control_enabled", "backend", "firmware_mode", "boost_mode", "watts",
+            "global_watts", "has_game_profile", "follows_global", "auto_config",
+            "global_auto_config", "low_battery_hold.enabled",
+        )),
+    ),
+    "system": (
+        ("get_cpu_state", ("smt", "boost", "active_cores", "has_game_profile")),
+        ("get_gpu_clock", ("manual", "configured_min", "configured_max", "status", "has_game_profile")),
+        ("get_eco_state", ("enabled", "tdp_min_w")),
+        ("get_battery_state", ("charge_limit",)),
+    ),
+    "display": (
+        ("get_color_state", (
+            "active_preset", "saturation", "temperature", "contrast", "gamma", "hue", "black",
+            "vibrance", "oled_look", "has_game_profile",
+        )),
+    ),
+    "fans": (
+        ("get_fan_curve_state", (
+            "preset", "global_preset", "bias", "source", "experimental_enabled", "has_game_profile",
+        )),
+    ),
+    "audio": (
+        ("get_audio_state", ("enabled", "preset", "route", "bass", "loudness", "balance", "has_game_profile")),
+    ),
+    "mandos": (
+        ("_safe_controller_config", ("manager", "manager_version", "buttons", "has_game_profile")),
+    ),
+    "hud": (
+        ("get_hud_state", (
+            "capability", "applyStatus", "conflict", "model.enabled", "model.layout",
+            "model.position", "model.items",
+        )),
+    ),
+    "params": (("_support_launch_state", None),),
+    "cleaner": (("_steam_cleaner_diagnostics", ("phase", "interrupted", "persistence_error")),),
+    "ambient": (("_support_ambient_state", None),),
+    "themes": (
+        ("_theme_report_diagnostics", (
+            "installed", "other_active_themes", "activation_phase", "activation_quarantined",
+            "recent_failures", "health",
+        )),
+        ("_support_custom_artwork", None),
+    ),
+    "settings": (("_support_settings_state", None),),
+}
+
+# How often the audio EQ watcher checks the active output route (headphones vs speakers)
+# to re-apply the per-route curve with the QAM closed.
+_AUDIO_POLL_S = 4
+_OVERSHOOT_BACKENDS = frozenset(
+    ("firmware-attr:asus-armoury", "firmware-attr:lenovo-wmi-other")
+)
+_OVERSHOOT_VIEW_STALE_S = 10.0
+_PROFILE_REASSERT_BACKENDS = frozenset(("firmware-attr:asus-armoury",))
+_LOW_BATTERY_WATCH_S = 60.0
+_AUDIO_RETRY_MAX_S = 60
+_NIGHT_TICK_S = 30  # how often the night-mode clock checks for a schedule-edge crossing
+_SHUTDOWN_DRAIN_TIMEOUT_S = 12.0
+_RPC_CONTEXT_UNSET = object()
+_monotonic = time.monotonic
+_HUD_OBSERVATION_MAX_AGE_S = 3.0
+_MIN_HUD_REFRESH_S = 1.0
+_HUD_RELOAD_MAX_ATTEMPTS = 4
+_TDP_BACKEND_REPROBE_S = 30.0
+_TDP_STORAGE_MIGRATION_RETRY_S = 30.0
+_AUTO_APPLY_RETRY_DELAYS_S = (2.0, 8.0, 30.0)
+_CHARGE_LIMIT_VERIFY_DELAYS = (2.0, 8.0, 20.0)
+_FULL_CHARGE_ONCE_SECONDS = 24 * 60 * 60
+_FULL_CHARGE_ONCE_POLL_S = 30.0
+_ROG_CHARGE_LIMIT_PROFILES = frozenset({
+    "rog_ally",
+    "rog_ally_x",
+    "rog_xbox_ally",
+    "rog_xbox_ally_x",
+})
+_STEAM_DECK_PROFILES = frozenset({
+    "steam_deck_lcd",
+    "steam_deck_oled",
+})
+
+# "custom" = our TDP owns the rails, vs a named platform_profile mode.
+_CUSTOM_MODE = "custom"
+_STABLE_THEME_VERSION = re.compile(
+    r"^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$"
+)
+_SAFE_THEME_ID = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_OFFICIAL_THEME_CHANNEL = theme_remote.OfficialThemeChannel(
+    pages_base_url="https://hooandee.github.io/panel-de-control",
+    catalog_path="themes/v1/catalog.json",
+)
+_THEME_CATALOG_CACHE_FILE = "theme-catalog-cache.json"
+_THEME_EXTENSION_RECEIPTS_FILE = "theme-extension-receipts.json"
+_THEME_ACTIVATION_RECOVERY_FILE = "theme-activation-recovery.json"
+_THEME_FAILURE_OPERATIONS = frozenset({
+    "recovering", "installing", "uninstalling", "activating", "deactivating", "saving",
+    "cleaning", "restoring",
+})
+_THEME_FAILURE_CODE = re.compile(r"^[a-z][a-z0-9_]{0,47}$")
+_THEME_FAILURE_MESSAGE_CHARS = 240
+_THEME_FAILURE_HISTORY = 5
+_UI_DIAGNOSTIC_AREA = re.compile(r"^(cleaner|proton|media|frontend)$")
+_UI_DIAGNOSTIC_HISTORY = 20
+_UI_EVENT_NAME = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
+_THEME_FOLDER_SCAN_LIMIT = 200
+_THEME_MANIFEST_SCAN_BYTES = 256 * 1024
+
+
+@dataclass(frozen=True)
+class _TdpCommand:
+    generation: int
+    backend: object
+    reason: str
+    logical_requested: dict
+    requested: dict
+    safe_bounds: dict
+    primary_rail: str
+    on_ac: bool
+    auto_tdp: bool
+    ppt_probe_pending: bool
+
+
+@dataclass(frozen=True)
+class _ChargeLimitProbe:
+    backend: str
+    reason: Literal[
+        "matched",
+        "backend_recovered",
+        "no_candidate",
+        "wrong_class",
+        "unreadable",
+        "write_rejected",
+        "confirmation_failed",
+        "stale",
+    ]
+    readback: int | None = None
+    confirmed: int | None = None
+    write_attempted: bool = False
+
+    @property
+    def ok(self) -> bool:
+        return self.reason in ("matched", "backend_recovered")
+
+    @property
+    def observed(self) -> int | None:
+        return self.confirmed if self.confirmed is not None else self.readback
+
+    @property
+    def action(self) -> Literal["hold", "write", "unavailable"]:
+        if self.write_attempted:
+            return "write"
+        return "hold" if self.ok else "unavailable"
+
+
+def _now_minutes() -> int:
+    t = datetime.now()
+    return t.hour * 60 + t.minute
+
+
+_KIOSK_STOP_TIMEOUT_S = 1.5
+# The kiosk polls for frame rate; without a poll for this long, the gamescope reader is
+# released again unless Auto-TDP still needs it.
+_KIOSK_FPS_HOLD_S = 10.0
+
+
+async def _emit_to_frontend(event: str, *args) -> None:
+    emit = getattr(decky, "emit", None)
+    if emit is None:
+        raise BridgeError("unsupported")
+    await emit(event, *args)
+
+
+def _plugin_dir() -> str:
+    return getattr(decky, "DECKY_PLUGIN_DIR", "") or os.path.dirname(os.path.abspath(__file__))
+
+
+def _user_home() -> str:
+    return getattr(decky, "DECKY_USER_HOME", None) or os.path.expanduser("~")
+
+
+def _kiosk_journal(level: str, event: str, **fields) -> None:
+    diary = journal.active
+    if diary is not None:
+        diary.write(level, "kiosk", event, **fields)
+
+
+DEFAULTS = {
+    # Unit of the saved power values: "W" on PC, "level" on ARM.
+    "tdp_unit": "W",
+    "kiosk_enabled": False,
+    "kiosk_brightness": None,
+    # Persisted settings keys go here; SettingsStore merges these over stored values.
+    # (Per-game TDP profiles live in their own store, tdp_profiles.py.)
+    # One-time-migration flags: SettingsStore drops keys not in DEFAULTS, so these MUST
+    # be declared here or the migration re-runs every load and clobbers the new stores.
+    "_potencia_scope_migrated": False,
+    "_deck_ppt_scope_migrated": False,
+    "_cpu_scope_migrated": False,
+    "_gpu_scope_migrated": False,
+    "_hdr_scope_migrated": False,
+    "_desktop_defaults_migrated": False,
+    # Manual opt-in for generic Linux desktops. Validated desktop hardware such as
+    # Fremont enables the topology automatically, but still starts in pass-through.
+    "desktop_mode_enabled": False,
+    "_desktop_pc_seeded": False,
+    "_desktop_pc_prev_tdp_control": None,
+    "desktop_power_mode": "free",
+    "desktop_cpu_w": 23,
+    "desktop_gpu_w": 80,
+    "desktop_prev_tdp_control": None,
+    "desktop_power_handoff": None,
+    "fremont_fan_handoff_pending": False,
+    "auto_tdp": False,
+    # Learn from usage (local-only telemetry powering fan-curve suggestions). Opt-out:
+    # when False the sampler never runs — nothing is read or written during play.
+    "telemetry_enabled": True,
+    # Opt-in: raise the on-battery TDP ceiling to the firmware/charger max. Default
+    # off (we cap battery below the firmware max for battery life); the user accepts
+    # the drain when enabling. The firmware itself allows the same max either way.
+    "unlock_battery_max": False,
+    "cooler_boost": False,
+    "experimental_tdp_unlock": False,
+    # Master switch: when False we stop writing the TDP rails and Potencia drops to
+    # monitor-only, handing TDP to another tool.
+    "tdp_control_enabled": True,
+    "low_battery_tdp_hold": False,
+    # Modules the user turned off in the customization editor (generic ids only;
+    # power/learning are folded from tdp_control_enabled/telemetry_enabled).
+    "disabled_modules": [],
+    # One-time notices (SettingsStore drops keys not in DEFAULTS).
+    "seen_tdp_conflict_takeover": False,
+    "seen_autotdp_notice": False,
+    # HHD's tdp_enable saved when we take control, to restore later. None = never took it.
+    "hhd_tdp_prev": None,
+    # Unload hands TDP back to HHD, so the player's choice of Panel is kept apart.
+    "hhd_tdp_takeover": False,
+    "steamdeck_ppt_previous": None,
+    # HDR output on/off (only meaningful on HDR-capable panels — see device.hdr).
+    "hdr_enabled": False,
+    # Battery charge limit: when enabled, cap charging at `charge_limit_percent`
+    # (protects battery longevity). Disabled → firmware default (100%).
+    "charge_limit_enabled": False,
+    "charge_limit_percent": 80,
+    "charge_limit_full_once_until": None,
+    "charge_limit_full_once_restore_pending": False,
+    # CPU controls default to full performance (SMT + boost on) — the stock state.
+    "smt_enabled": True,
+    "boost_enabled": True,
+    # Active physical cores. None = all cores (stock); an int caps the count.
+    "active_cores": None,
+    # GPU clock window (MHz). manual=False → leave the GPU on auto (we don't touch
+    # it); True → pin/limit to [min,max]. min/max None until the user sets them.
+    "gpu_clock_manual": False,
+    "gpu_clock_min": None,
+    "gpu_clock_max": None,
+    "gpu_handoff_pending": False,
+    "cpu_frequency_handoff": None,
+    # Download mode (low power while a game downloads unattended): TDP→min, boost
+    # off, ambient screen dim. `eco_brightness` = the pre-eco brightness % to wake
+    # back to. Both restored/derived on exit; eco_enabled is a pure override.
+    "eco_enabled": False,
+    "eco_brightness": 40,
+    # Opt-in experimental fan control on devices whose only channel is an unofficial
+    # EC interface (Legion Go S). Default off → read-only monitor; on → EC curve
+    # control with the RPM cap + temp guardian harness. The user accepts the risk.
+    "fan_experimental": False,
+    "board_fan_driver": False,
+    "board_fan_module": None,
+    # Firmware performance mode (Legion Go original). "custom" = our TDP; a named mode
+    # hands power+fan+LED to the firmware. Device-global; ignored where unsupported.
+    "firmware_mode": "custom",
+    # Audio EQ (Sonido): opt-in. Off = we never create the PipeWire EQ sink, audio is
+    # untouched. On → the effective per-route/per-game curve is applied. The curves
+    # themselves live in their own store (audio.json).
+    "audio_eq_enabled": False,
+    # Frontend UI preferences, mirrored here so they survive a reboot (the
+    # frontend's localStorage cache does not). Opaque string map.
+    "ui_prefs": {},
+    # Launch-options pill usage counts ({pill_id: times applied}) → the editor
+    # surfaces the ones you use most. Durable so it survives a reboot.
+    "launch_usage": {},
+    # User-defined launch variables (env NAME=VALUE / game args), reusable across
+    # games. The library is global; the on/off is per-game (in Steam's string).
+    "custom_launch_vars": [],
+    "hud_managed_path": None,
+}
+
+
+class Plugin:
+    # Re-fit + re-apply the learned fan curve every this-many collected in-game
+    # samples. The sampler ticks every 5 s only while in-game, so 360 × 5 s ≈ 30 min
+    # of ACTUAL play — matching the telemetry histogram's ~30 min decay half-life so
+    # the curve tracks the current thermal "zone" without explicit zone detection.
+    _REAPPLY_EVERY_TICKS = 360
+
+    # Calibration preview auto-reverts to the saved value after this many seconds
+    # unless the user confirms — the "changing screen resolution" safety pattern.
+    _COLOR_REVERT_SECS = 15
+
+    # Lazy, idempotent init called at the top of EVERY RPC method and _main.
+    # RPC can be invoked before _main finishes; without this, methods AttributeError
+    # on a half-built instance and the UI hangs on its spinner.
+    def _init(self) -> None:
+        if getattr(self, "_ready", False):
+            return
+        self._store = SettingsStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "state.json")
+        )
+        self._settings = self._store.load(DEFAULTS)
+        self._kiosk = KioskController(
+            plugin_dispatch(self),
+            public_rpc_methods(self),
+            journal=_kiosk_journal,
+            enabled=bool(self._settings.get("kiosk_enabled")),
+            art=lambda appid, kind: kiosk_steam_game.art_file(_user_home(), appid, kind),
+            brightness=self._settings.get("kiosk_brightness"),
+        )
+        self._kiosk_bridge = SteamBridge(_emit_to_frontend)
+        self._kiosk_fps_at = None
+        self._os_id = osinfo.read_os_id()
+        self._os_name = osinfo.read_os_name()
+        self._platform = platform_support.describe(self._os_id)
+        self._hhd_tdp_client = platform_support.select_hhd_tdp_client(
+            self._os_id,
+            controller_hhd,
+        )
+        self._tdp_external_owner = None if self._os_id == "anatase" else False
+        desktop_settings_changed = normalize_desktop_settings(self._settings)
+        low_battery_setting_changed = not isinstance(
+            self._settings.get("low_battery_tdp_hold"),
+            bool,
+        )
+        if low_battery_setting_changed:
+            self._settings["low_battery_tdp_hold"] = False
+        # Probe hardware/environment HERE, wrapped so it NEVER raises — a raise in
+        # init or _main bricks plugin load (UI stuck on spinner forever).
+        self._device = device_registry.detect()
+        self._desktop_recognition_migration_pending = (
+            recognised_desktop_migration_pending(self._settings, self._device)
+        )
+        self._desktop_recognition_migration_last_attempt = float("-inf")
+        self._desktop_recognition_migration_last_failure = None
+        if (
+            migrate_desktop_defaults(self._settings, self._device)
+            or desktop_settings_changed
+            or low_battery_setting_changed
+        ):
+            self._store.save(self._settings)
+        self._tdp_profiles = ProfileStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "tdp_profiles.json"),
+            default_watts=self._device.tdp_default or 15,
+        )
+        self._auto_learning = AutoTdpLearningStore(
+            os.path.join(
+                decky.DECKY_PLUGIN_SETTINGS_DIR,
+                "auto_tdp_learning.json",
+            ),
+            required_samples=6,
+        )
+        self._power_presets = PowerPresetStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "power_presets.json"))
+        # One-time migration: auto-TDP and GPU clock used to be flat global settings.
+        # Seed them into the global Potencia profile so they take part in per-game scope.
+        if not self._settings.get("_potencia_scope_migrated"):
+            if self._settings.get("auto_tdp"):
+                self._tdp_profiles.set_auto_tdp("global", True)
+            if self._settings.get("gpu_clock_manual"):
+                self._tdp_profiles.set_gpu_clock(
+                    "global", True,
+                    self._settings.get("gpu_clock_min") or 0,
+                    self._settings.get("gpu_clock_max") or 0)
+            self._settings["_potencia_scope_migrated"] = True
+            self._store.save(self._settings)
+        self._gpu_profiles = GpuProfileStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "gpu_profiles.json")
+        )
+        if not self._settings.get("_gpu_scope_migrated"):
+            legacy_global = self._tdp_profiles.gpu_clock(None)
+            if legacy_global.get("manual"):
+                self._gpu_profiles.set_clock(
+                    "global", True, legacy_global.get("min"), legacy_global.get("max")
+                )
+            for appid in self._tdp_profiles.list_games():
+                legacy_profile = self._tdp_profiles.game_profile(appid) or {}
+                legacy_gpu = legacy_profile.get("gpu")
+                if not isinstance(legacy_gpu, dict):
+                    if (
+                        not self._tdp_profiles.is_following_global(appid)
+                        and not self._gpu_profiles.has_game(appid)
+                    ):
+                        self._gpu_profiles.set_clock(
+                            "game", False, 0, 0, appid=appid
+                        )
+                    continue
+                self._gpu_profiles.set_clock(
+                    "game",
+                    bool(legacy_gpu.get("manual")),
+                    legacy_gpu.get("min") or 0,
+                    legacy_gpu.get("max") or 0,
+                    appid=appid,
+                )
+                if self._tdp_profiles.is_following_global(appid):
+                    self._gpu_profiles.set_follow_global(appid, True)
+            self._tdp_profiles.drop_legacy_gpu_clocks()
+            self._settings["_gpu_scope_migrated"] = True
+            self._store.save(self._settings)
+        self._tdp_backend = tdp_factory.select_backend(
+            self._device,
+            os_id=self._os_id,
+            desktop_ceiling_hint_w=handoff_cpu_ceiling_w(
+                self._settings.get("desktop_power_handoff")),
+        )
+        self._reset_power_values_on_unit_change()
+        self._low_battery_hold_backend = (
+            tdp_factory.select_low_battery_hold_backend(self._device)
+        )
+        self._low_battery_hold_last_write_at = None
+        self._low_battery_watch_at = 0.0
+        self._low_battery_below = None
+        self._low_battery_hold_cached_reassert_s = None
+        self._low_battery_hold_last_failure = None
+        self._low_battery_hold_recovery_pending = bool(
+            getattr(self._low_battery_hold_backend, "safety_locked", False)
+        )
+        self._steamdeck_ppt_history = deque(maxlen=32)
+        self._steamdeck_ppt_last_failure = None
+        self._steamdeck_ppt_recovery_blocked = False
+        if (
+            self._device.key in _STEAM_DECK_PROFILES
+            and not self._settings.get("_deck_ppt_scope_migrated")
+        ):
+            self._tdp_profiles.migrate_deck_ppt_stable()
+            self._settings["_deck_ppt_scope_migrated"] = True
+            self._store.save(self._settings)
+        self._gpu_power_cap = AmdGpuPowerCap(device_key=self._device.key)
+        self._desktop_power = DesktopPowerCoordinator(
+            self._tdp_backend,
+            self._gpu_power_cap,
+            DesktopCpuPolicy(),
+            persisted_state=self._settings.get("desktop_power_handoff"),
+            persist_state=self._persist_desktop_power_state,
+            device_key=self._device.key,
+            firmware_relative=self._device.key == "desktop_pc",
+            legacy_device_keys=(
+                {"generic"}
+                if self._desktop_recognition_migration_pending
+                else None
+            ),
+        )
+        self._powerstation_detector = powerstation_conflict.Detector()
+        self._tdp_profile_sanitize_pending = False
+        self._tdp_profile_sanitize_max = None
+        self._tdp_storage_migration_retry_at = 0.0
+        # Preserve durable intent while a dynamic hardware ceiling is unreadable.
+        _lim = self._profile_storage_limits()
+        if _lim is None:
+            self._tdp_profile_sanitize_pending = True
+            self._tdp_storage_migration_retry_at = (
+                _monotonic() + _TDP_STORAGE_MIGRATION_RETRY_S
+            )
+        else:
+            self._sanitize_tdp_profiles(self._tdp_request_min(), _lim.max_ac_w)
+        # Which daemon owns the controller (HHD / InputPlumber / none). Detected
+        # once — the resident daemon doesn't change at runtime. Probe never raises.
+        self._controller = controller_detect.detect()
+        # Cooperative controller remap: per-scope overrides store (global + per-game,
+        # InputPlumber only — we own its remap) + the busctl dbus driver, both owned by
+        # the InputPlumber backend. The factory picks ONE backend (HHD REST / IP dbus /
+        # none). `_last_controller_overrides` gates the game-change re-apply so we only
+        # touch the daemon when the effective profile actually changes.
+        self._controller_backend = controller_factory.select_controller_backend(
+            self._controller,
+            RemapStore(os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "controller_remap.json")),
+            IpDbus(event_cb=self._log_controller_event),
+            self._device,
+        )
+        self._controller_action_inflight = False
+        self._last_controller_overrides = None
+        self._fan_reader = FanReader(
+            desktop=self._desktop_mode_on(), device_key=self._device.key)
+        # temp_fn feeds the software-loop backends (Steam Deck / Legion Go 2) the
+        # live driving temp; hardware-curve backends (ASUS/MSI) ignore it.
+        self._fan_ctrl = fan_control.select_fan_backend(
+            self._device, temp_fn=self._driving_temp,
+            experimental=bool(self._settings.get("fan_experimental", False)))
+        board_module = self._settings.get("board_fan_module")
+        self._board_fans = (
+            BoardFanDriver(owned=(board_module,) if isinstance(board_module, str) else ())
+            if self._device.key == "desktop_pc" else None
+        )
+        # True only on a device with an opt-in experimental EC fan channel (Legion
+        # Go S / OneXPlayer Apex). DMI-only check (no EC I/O) → the UI shows the
+        # experimental toggle.
+        try:
+            self._fan_experimental_available = any(
+                b.eligible for b in fan_control.experimental_ec_backends(root="/"))
+        except Exception:  # noqa: BLE001 — availability probe must never break load
+            self._fan_experimental_available = False
+        # MSI Claw only: the firmware fan curve is read-only-legible in the EC even
+        # though the write backend is unsupported. Surface it as an informational
+        # curve. Other devices get None (no EC dependency).
+        self._ec_curve = fan_control.select_firmware_curve_reader(self._device)
+        # Read-only EC RPM fallback for kernels whose driver publishes no hwmon fan node.
+        self._ec_rpm = legion_ec.select_legion_rpm_reader(self._device)
+        self._fan_curves = FanCurveStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "fan_curves.json")
+        )
+        self._fan_apply_confirmed = False
+        self._desktop_fans = DesktopFanStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "desktop_fans.json")
+        )
+        self._color = ColorStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "color.json")
+        )
+        # One-time migration: HDR on/off used to be a flat global setting; fold it into
+        # the global color profile so it participates in per-game scope.
+        if not self._settings.get("_hdr_scope_migrated"):
+            if self._settings.get("hdr_enabled"):
+                self._color.set_hdr("global", True)
+            self._settings["_hdr_scope_migrated"] = True
+            self._store.save(self._settings)
+        # Intel/Xe needs gamescope composition forced for a color look to show in-game
+        # (the LUT isn't carried by the HW color pipeline as it is on AMD); ARM display
+        # controllers keep the same forced path until their plane pipeline is proven.
+        self._color_backend = GamescopeColorBackend(
+            force_composite=(self._device.vendor == "intel" or self._device.arch == "arm")
+        )
+        decky.logger.info(
+            "color: supported=%s (%s)",
+            self._color_backend.supported, self._color_backend.probe_detail,
+        )
+        # Sonido: system audio EQ. Per-game + per output route (speaker/headphone),
+        # applied via a PipeWire filter-chain sink. Opt-in — the sink is only created
+        # when audio_eq_enabled. Backend is probe-gated (UI hidden without PipeWire).
+        self._audio_eq = EqStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "audio.json")
+        )
+        self._audio = PipeWireEq(name=self._device.display_name)
+        self._audio_profiles = AudioProfileStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "audio_profiles.json")
+        )
+        # Calibration safety: a change previews live but auto-reverts to the saved
+        # value after _COLOR_REVERT_SECS unless confirmed (so a mis-drag to an
+        # illegible screen self-heals even if the QAM closes). None = nothing pending.
+        self._color_preview = None
+        self._color_preview_target = None
+        self._color_revert_task = None
+        self._color_revert_deadline = None
+        # Night mode: a scheduled warm shift on top of the calibration; _night_loop
+        # re-applies on a schedule edge so it works with the QAM closed.
+        self._night = NightStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "night.json")
+        )
+        self._night_task = None
+        self._night_applied = False
+        # Bounded startup task that re-asserts the display look once gamescope is ready.
+        self._display_wait_task = None
+        # HDR output on/off (gamescope). State lives in settings (hdr_enabled); gated to
+        # HDR-capable panels with gamescope.
+        self._hdr_backend = HdrBackend(run_gamescopectl)
+        # In-game performance overlay (MangoHud). Single global model; applied by
+        # writing ~/.config/MangoHud/presets.conf, which Steam reads per overlay level.
+        self._hud = HudStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "hud.json")
+        )
+        self._hud_home = (
+            getattr(decky, "DECKY_USER_HOME", None) or os.path.expanduser("~")
+        )
+        try:
+            hud_home_stat = os.stat(self._hud_home)
+            self._hud_owner = (hud_home_stat.st_uid, hud_home_stat.st_gid)
+        except OSError:
+            self._hud_owner = None
+        self._hud_managed_path = self._trusted_hud_path(
+            self._settings.get("hud_managed_path")
+        )
+        self._power_reader = PowerReader()
+        self._gamescope_stats = GamescopeStats()
+        self._gamescope_perf = GamescopePerf(
+            app_id=self._gamescope_focus_app,
+            skip_connectors=lambda: {c} if (c := self._kiosk.secondary_connector()) else set(),
+            env=controller_detect.clean_env,
+            wrap=self._native_frame_helper,
+        )
+        self._auto_stats_reader_active = False
+        self._battery = BatteryReader()
+        self._charge_limit = select_charge_limit(self._device)
+        self._charge_limit_last_apply = None
+        self._charge_limit_failures = 0
+        self._charge_limit_verify_delays = _CHARGE_LIMIT_VERIFY_DELAYS
+        self._charge_limit_generation = 0
+        self._charge_limit_reconcile_task = None
+        self._charge_limit_apply_tasks = set()
+        self._charge_limit_candidate = None
+        self._charge_limit_full_once_task = None
+        self._charge_limit_full_once_status = (
+            "pending"
+            if self._charge_limit_full_once_deadline() is not None
+            else "inactive"
+        )
+        self._charge_limit_history = deque(maxlen=8)
+        self._charge_limit_reconciliation = {
+            "generation": 0,
+            "trigger": None,
+            "status": "idle",
+            "checks": 0,
+            "writes": 0,
+            "readback": None,
+            "reason": "not_scheduled",
+            "history": [],
+        }
+        self._smt = SmtControl()
+        self._boost = select_boost()
+        self._cores = CoreControl()
+        self._cpu_frequency = self._build_cpu_frequency_control()
+        self._cpu_coordinator = CpuCoordinator(
+            self._cores, self._smt, self._boost, self._cpu_frequency
+        )
+        self._cpu_generation = 0
+        self._cpu_last_result = None
+        self._cpu_history = deque(maxlen=32)
+        self._cpu_mutation_lock = asyncio.Lock()
+        self._cpu_shutdown = False
+        self._cpu_profiles = CpuProfileStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "cpu_profiles.json"))
+        # One-time migration: SMT / boost / active cores used to be flat global settings.
+        if not self._settings.get("_cpu_scope_migrated"):
+            self._cpu_profiles.set_smt("global", bool(self._settings.get("smt_enabled", True)))
+            self._cpu_profiles.set_boost("global", bool(self._settings.get("boost_enabled", True)))
+            n = self._settings.get("active_cores")
+            if n is not None:
+                self._cpu_profiles.set_cores("global", int(n))
+            self._settings["_cpu_scope_migrated"] = True
+            self._store.save(self._settings)
+        self._gpu_clock = select_gpu_clock(self._device)
+        self._gpu_generation = 0
+        self._gpu_requested = None
+        self._gpu_last_result = None
+        self._gpu_last_failure = None
+        self._gpu_history = deque(maxlen=16)
+        self._gpu_rpc_pending = 0
+        self._gpu_rpc_profile_snapshot = None
+        self._gpu_reapply_pending = False
+        self._gpu_mutation_lock = asyncio.Lock()
+        self._gpu_shutdown = False
+        self._gpu_owned = bool(self._settings.get("gpu_handoff_pending"))
+        self._gpu_releasing = False
+        self._gpu_manual_inflight = 0
+        self._reapply_generation = 0
+        self._last_reapply_trigger = None
+        # Topology + freq range are static — read once (only SMT/boost state is live).
+        # ORDER-CRITICAL: read AFTER CoreControl() above, which onlines all CPUs. The
+        # kernel drops an offline CPU's topology/core_id, so counting cores here before
+        # every core is online undercounts (e.g. 2 cores on an 8-core chip). Keep this
+        # after self._cores.
+        self._cpu_info = read_cpu_info()
+        # Real silicon name (static) shown in the DeviceHeader instead of the hardcoded
+        # table chip; read once here like _cpu_info. None on generic or when unreadable.
+        self._chip = (
+            read_cpu_model()
+            if not self._device.is_generic and self._device.arch != "arm"
+            else None
+        )
+        self._current_appid = None
+        self._current_game_name = None  # display name of the running game (for the HUD)
+        # HUD (MangoHud) plugin-state metrics: the presets.conf path + the shown pdc
+        # ids, cached by _apply_hud so the auto loop can re-bake fresh values each tick
+        # without re-scanning /proc. _pdc_written = the last baked values, so a tick
+        # whose values are unchanged skips the presets.conf rewrite (no churn).
+        self._pdc_presets_path = None
+        self._hud_generation = 0
+        self._hud_shutdown = False
+        self._hud_coordinator = HudCoordinator(self._hud_generation)
+        self._hud_sessions = ()
+        self._hud_reload_pending = ()
+        self._hud_reload_attempt = 0
+        self._hud_reload_retry_at = 0.0
+        self._hud_conflict = None
+        self._hud_last_publish_at = float("-inf")
+        self._pdc_active_ids = []
+        self._pdc_locale = "es"
+        self._pdc_written = {}
+        self._pdc_preview_values = {}
+        self._pdc_refresh_failed = False
+        self._hud_apply_status = None
+        self._tdp_generation = 0
+        self._tdp_targets = None
+        self._tdp_observation = TdpObservation(
+            readable=bool(getattr(self._tdp_backend, "readback", True)),
+        )
+        self._tdp_observation_at = float("-inf")
+        self._tdp_reconcile_memory = ReconcileMemory()
+        self._tdp_overshoot = HiddenOvershootMonitor()
+        self._tdp_status = (
+            "settling" if self._tdp_supported() else "unsupported"
+        )
+        self._tdp_reason = ""
+        self._tdp_reprobe_at = 0.0
+        self._tdp_probe_lock = asyncio.Lock()
+        self._tdp_backend_used = False
+        self._tdp_backend_history = deque(maxlen=8)
+        self._tdp_conflict_persistent = False
+        self._tdp_history = deque(maxlen=32)
+        self._tdp_guard_task = None
+        self._tdp_shutdown = False
+        self._lifecycle = LifecycleManager(apply_cb=self._reapply_all,
+                                            reassert_cb=self._reassert_tdp_only,
+                                            event_cb=self._log_lifecycle_event)
+        self._auto_task = None
+        self._auto_controller = None
+        self._auto_context = None
+        self._auto_setpoint = None
+        self._auto_seed_source = None
+        self._auto_seed_watts = None
+        self._auto_last_sample_at = None
+        self._auto_applied = False
+        self._auto_apply_blocked = False
+        self._auto_apply_attempts = 0
+        self._auto_apply_retry_at = 0.0
+        self._auto_apply_exhausted = False
+        self._auto_ui_hold_watts = None
+        self._auto_focus_hold_active = False
+        self._auto_status = {
+            "state": "paused",
+            "reason": "no_game",
+            "setpoint": None,
+            "fps": None,
+            "target_fps": None,
+            "signal_age_s": None,
+            "focus": None,
+            "seed_source": None,
+            "seed_watts": None,
+            "held_watts": None,
+        }
+        self._auto_history = deque(maxlen=32)
+        self._auto_transitions = deque(maxlen=32)
+        self._auto_last_pre_ui = None
+        self._auto_last_tick_at = None
+        self._auto_last_error = None
+        # Audio EQ output-route watcher: last applied route + its loop task.
+        self._audio_task = None
+        self._audio_route_last = None
+        self._audio_cleanup_pending = True
+        self._audio_runtime_expected = False
+        self._audio_shutdown = False
+        self._shutting_down = False
+        self._offload_futures = set()
+        self._audio_apply_failures = 0
+        self._audio_watch_resume_at = 0.0
+        self._audio_last_apply = None
+        self._test_sample = None
+        self._ui_active = False
+        self._telemetry = TelemetryStore(
+            os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "telemetry.json")
+        )
+        # count in-game samples toward the periodic adaptive re-fit.
+        self._reapply_ticks = 0
+        # Whether the adaptive curve has been driven THIS session (per game). Lets the
+        # mid-session drive fire the moment `enough_data` flips true instead of waiting
+        # for the next ~30 min re-fit. Reset on game change (and on sampler (re)start).
+        self._adaptive_applied = False
+        # Last adaptive curve actually driven to hardware — the anti-churn baseline for
+        # the periodic re-fit (adaptive stores no points, so we track it here).
+        self._last_adaptive_points = None
+        self._sampler = TelemetrySampler(
+            self._telemetry, self._collect_sample, on_sample=self._on_sample_collected
+        )
+        # Host tools the launch-option pills depend on (lsfg/mangohud/gamemode/…) +
+        # distro. Static for the session; detected once. Never raises. Decky runs as
+        # root, so detection must look under the real user's home, not root's.
+        self._launch_tools = launch_tools.detect_tools(
+            home=getattr(decky, "DECKY_USER_HOME", None) or os.path.expanduser("~")
+        )
+        self._theme_remote_service = self._new_theme_remote_service()
+        self._theme_accepting_work = True
+        self._ready = True
+
+    def _save(self) -> None:
+        self._store.save(self._settings)
+
+    def _persist_desktop_power_state(self, state) -> None:
+        previous = copy.deepcopy(self._settings.get("desktop_power_handoff"))
+        self._settings["desktop_power_handoff"] = copy.deepcopy(state)
+        try:
+            self._save()
+        except Exception:
+            self._settings["desktop_power_handoff"] = previous
+            raise
+
+    def _recover_recognised_desktop_migration(self) -> bool:
+        if not getattr(self, "_desktop_recognition_migration_pending", False):
+            return True
+        now = time.monotonic()
+        last_attempt = getattr(
+            self,
+            "_desktop_recognition_migration_last_attempt",
+            float("-inf"),
+        )
+        if now - last_attempt < 5.0:
+            return False
+        self._desktop_recognition_migration_last_attempt = now
+        result = self._desktop_power.restore()
+        if not result.get("ok"):
+            self._desktop_recognition_migration_last_failure = result.get(
+                "detail",
+                "unknown",
+            )
+            decky.logger.warning(
+                "Recognised-device desktop handoff restore remains pending: %s",
+                self._desktop_recognition_migration_last_failure,
+            )
+            return False
+        if migrate_desktop_defaults(self._settings, self._device):
+            self._save()
+        self._desktop_recognition_migration_pending = False
+        self._desktop_recognition_migration_last_failure = None
+        decky.logger.info("Restored generic desktop handoff before device migration")
+        return True
+
+    async def _ensure_recognised_desktop_migration(self) -> bool:
+        if not getattr(self, "_desktop_recognition_migration_pending", False):
+            return True
+        return bool(
+            await self._offload_call(self._recover_recognised_desktop_migration)
+        )
+
+    # ---- RPC methods (referenced by name from src/api.ts) -------------------
+    async def get_version(self) -> str:
+        self._init()
+        return read_version()
+
+    def _ensure_steam_cleaner_executor(self):
+        executor = getattr(self, "_steam_cleaner_executor", None)
+        if executor is None:
+            executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="steam-cleaner")
+            self._steam_cleaner_executor = executor
+        return executor
+
+    async def _get_steam_cleaner(self):
+        if getattr(self, "_shutting_down", False) or getattr(self, "_steam_cleaner_closed", False):
+            raise RuntimeError("closed")
+        service = getattr(self, "_steam_cleaner", None)
+        if service is not None:
+            return service
+        future = getattr(self, "_steam_cleaner_init_future", None)
+        if future is None:
+            home = getattr(decky, "DECKY_USER_HOME", None)
+            if not isinstance(home, str) or not os.path.isabs(home):
+                raise RuntimeError("steam_home_unavailable")
+            future = self._ensure_steam_cleaner_executor().submit(
+                self._invoke_steam_cleaner,
+                lambda: SteamCleanerService(
+                    home,
+                    logger=decky.logger,
+                    state_dir=os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "steam_cleaner"),
+                ),
+            )
+            self._steam_cleaner_init_future = future
+        service = await asyncio.shield(asyncio.wrap_future(future))
+        if getattr(self, "_steam_cleaner_closed", False):
+            raise RuntimeError("closed")
+        self._steam_cleaner = service
+        return service
+
+    @staticmethod
+    def _invoke_steam_cleaner(operation, *args):
+        try:
+            return operation(*args)
+        except SteamCleanerError as error:
+            code = error.code
+            if not isinstance(code, str) or not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", code):
+                code = "internal_error"
+            raise RuntimeError(code) from None
+        except Exception:  # noqa: BLE001
+            decky.logger.warning("Steam cleaner operation failed: internal_error")
+            raise RuntimeError("internal_error") from None
+
+    async def _offload_steam_cleaner(self, method, *args):
+        service = await self._get_steam_cleaner()
+        active = getattr(self, "_steam_cleaner_future", None)
+        if active is not None and not active.done():
+            raise RuntimeError("busy")
+        executor = self._ensure_steam_cleaner_executor()
+        future = executor.submit(self._invoke_steam_cleaner, getattr(service, method), *args)
+        self._steam_cleaner_future = future
+        # Cancelling a QAM await must not hide a worker that can still delete files.
+        return await asyncio.shield(asyncio.wrap_future(future))
+
+    async def get_steam_cleaner_state(self) -> dict:
+        self._init()
+        service = await self._get_steam_cleaner()
+        return self._invoke_steam_cleaner(service.get_state)
+
+    async def scan_steam_cleaner(self) -> dict:
+        self._init()
+        return await self._offload_steam_cleaner("inventory")
+
+    async def prepare_steam_cleaner(self, scan_id: str, entry_ids: list[str]) -> dict:
+        self._init()
+        return await self._offload_steam_cleaner("prepare", scan_id, entry_ids)
+
+    async def execute_steam_cleaner(self, plan_id: str, confirm_compatdata: bool = False) -> dict:
+        self._init()
+        return await self._offload_steam_cleaner("execute", plan_id, confirm_compatdata)
+
+    async def cancel_steam_cleaner(self) -> dict:
+        self._init()
+        service = await self._get_steam_cleaner()
+        return self._invoke_steam_cleaner(service.cancel)
+
+    async def get_proton_cleaner_state(self) -> dict:
+        self._init()
+        service = await self._get_steam_cleaner()
+        return self._invoke_steam_cleaner(service.get_proton_state)
+
+    async def scan_proton_cleaner(self) -> dict:
+        self._init()
+        return await self._offload_steam_cleaner("inventory_proton")
+
+    async def prepare_proton_cleaner(self, scan_id: str, entry_ids: list[str]) -> dict:
+        self._init()
+        return await self._offload_steam_cleaner("prepare_proton", scan_id, entry_ids)
+
+    async def execute_proton_cleaner(self, plan_id: str) -> dict:
+        self._init()
+        return await self._offload_steam_cleaner("execute_proton", plan_id)
+
+    async def measure_steam_screenshot_paths(self, paths: list[str]) -> dict:
+        self._init()
+        home = getattr(decky, "DECKY_USER_HOME", None)
+        if not isinstance(home, str) or not os.path.isabs(home):
+            return {}
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            measure_screenshot_paths,
+            home,
+            paths,
+        )
+
+    async def record_steam_media_event(
+        self, event: str, operation_id: str, count: int = 0, errors: int = 0,
+        source: str = "none", reason: str = "none",
+    ) -> bool:
+        self._init()
+        service = await self._get_steam_cleaner()
+        return await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: service.record_media_event(event, operation_id, count, errors, source, reason),
+        )
+
+    async def _steam_cleaner_diagnostics(self) -> dict:
+        try:
+            service = await self._get_steam_cleaner()
+            return report_collector.steam_cleaner_snapshot(service.diagnostics())
+        except Exception:  # noqa: BLE001
+            return {"error": "diagnostics_unavailable"}
+
+    def _close_steam_cleaner_sync(self) -> None:
+        if getattr(self, "_steam_cleaner_closed", False):
+            return
+        self._steam_cleaner_closed = True
+        executor = getattr(self, "_steam_cleaner_executor", None)
+        service = getattr(self, "_steam_cleaner", None)
+        try:
+            pending = getattr(self, "_steam_cleaner_init_future", None)
+            if service is None and pending is not None:
+                service = pending.result()
+                self._steam_cleaner = service
+            if service is not None:
+                service.close()
+        except Exception:  # noqa: BLE001
+            decky.logger.warning("Steam cleaner close failed: internal_error")
+        finally:
+            if executor is not None:
+                executor.shutdown(wait=True, cancel_futures=True)
+                self._steam_cleaner_executor = None
+
+    async def get_launch_tools(self) -> dict:
+        self._init()
+        return dict(self._launch_tools)
+
+    async def get_kiosk_state(self) -> dict:
+        return await self._kiosk.refresh()
+
+    async def kiosk_steam(self, action: str, args: list | None = None) -> dict:
+        try:
+            result = await self._kiosk_bridge.call(str(action), list(args or []))
+        except BridgeError as error:
+            _kiosk_journal("WARNING", "steam_action_failed", action=str(action)[:40], error=str(error))
+            return {"ok": False, "error": str(error)}
+        return {"ok": True, "result": result}
+
+    async def kiosk_steam_result(self, request_id: int, ok: bool, result=None) -> bool:
+        return self._kiosk_bridge.resolve(int(request_id), bool(ok), result)
+
+    async def get_kiosk_live(self) -> dict:
+        self._kiosk_fps_at = time.monotonic()
+        await self._apply_stats_reader()
+        fps = self._gamescope_perf.fps()
+        if fps is not None:
+            reason = "ok"
+        else:
+            focus_reason = self._gamescope_stats.peek().get("reason")
+            reason = focus_reason if focus_reason not in (None, "ok") else "fps_unavailable"
+        return {
+            "fps": round(fps, 1) if fps is not None else None,
+            "reason": reason,
+            **await self.get_kiosk_session(),
+        }
+
+    async def get_kiosk_session(self) -> dict:
+        since = getattr(self, "_current_appid_at", None)
+        playing_s = (
+            round(time.monotonic() - since)
+            if self._current_appid is not None and since is not None
+            else None
+        )
+        return {"playing_s": playing_s, "appid": self._current_appid}
+
+    async def get_kiosk_vitals(self) -> dict:
+        self._init()
+
+        def read() -> dict:
+            battery = self._battery.read()
+            rpms = self._fan_reader.fan_rpms()
+            temps = [t for t in (self._fan_reader.driving_temps() or ()) if t is not None]
+            return {
+                **kiosk_vitals.read(),
+                "watts": battery.get("power_now_w"),
+                "charging": battery.get("status") == "Charging",
+                "fan_rpm": max(rpms) if rpms else None,
+                "celsius": max(temps) if temps else None,
+            }
+
+        return await asyncio.to_thread(read)
+
+    async def set_kiosk_screen_off(self, off: bool) -> dict:
+        return await self._kiosk.set_screen_off(bool(off))
+
+    async def get_kiosk_game(self, appid: str) -> dict:
+        name = await asyncio.to_thread(kiosk_steam_game.game_name, _user_home(), str(appid))
+        return {"appid": str(appid), "name": name}
+
+    def _kiosk_report_state(self) -> dict:
+        kiosk = getattr(self, "_kiosk", None)
+        if kiosk is None:
+            return {"available": False}
+        return {**kiosk.state(), "rpc_calls": {name: int(count) for name, (count, _spent) in kiosk.rpc_calls().items()}}
+
+    async def get_kiosk_brightness(self) -> dict:
+        return {"value": await self._kiosk.brightness()}
+
+    async def set_kiosk_brightness(self, value: float, persist: bool = True) -> dict:
+        applied = await self._kiosk.set_brightness(float(value))
+        if applied is not None and persist:
+            self._settings["kiosk_brightness"] = applied
+            self._save()
+        return {"value": applied}
+
+    async def set_kiosk_enabled(self, enabled: bool) -> dict:
+        self._settings["kiosk_enabled"] = bool(enabled)
+        self._save()
+        return await self._kiosk.set_enabled(bool(enabled))
+
+    async def _stop_kiosk(self) -> None:
+        task = getattr(self, "_kiosk_task", None)
+        if task is not None:
+            task.cancel()
+        kiosk = getattr(self, "_kiosk", None)
+        if kiosk is None:
+            return
+        try:
+            await asyncio.wait_for(kiosk.shutdown(), _KIOSK_STOP_TIMEOUT_S)
+        except Exception as error:  # noqa: BLE001
+            decky.logger.warning("Kiosk shutdown incomplete: %s", error)
+
+    async def get_proton_caps(self, compat_name: str = "") -> dict:
+        """Which launch-option vars the installed Proton build supports."""
+        self._init()
+        home = getattr(decky, "DECKY_USER_HOME", None) or os.path.expanduser("~")
+        return proton_caps.detect_capabilities(compat_name, home=home)
+
+    async def get_launch_usage(self) -> dict:
+        self._init()
+        usage = self._settings.get("launch_usage")
+        return dict(usage) if isinstance(usage, dict) else {}
+
+    async def bump_launch_usage(self, ids: list) -> bool:
+        """Increment the apply-count for each given pill id (drives the Frecuentes row)."""
+        self._init()
+        usage = self._settings.get("launch_usage")
+        usage = dict(usage) if isinstance(usage, dict) else {}
+        for pid in ids or []:
+            if isinstance(pid, str):
+                usage[pid] = int(usage.get(pid, 0)) + 1
+        self._settings["launch_usage"] = usage
+        self._save()
+        return True
+
+    async def get_custom_launch_vars(self) -> list:
+        """The reusable launch-variable library (shape-coerced)."""
+        self._init()
+        return launch_custom_vars.coerce_custom_vars(self._settings.get("custom_launch_vars"))
+
+    async def set_custom_launch_vars(self, vars: list) -> list:
+        """Persist the whole library; return the stored (coerced) list."""
+        self._init()
+        clean = launch_custom_vars.coerce_custom_vars(vars)
+        self._settings["custom_launch_vars"] = clean
+        self._save()
+        return clean
+
+    async def get_ui_prefs(self) -> dict:
+        self._init()
+        prefs = self._settings.get("ui_prefs")
+        return dict(prefs) if isinstance(prefs, dict) else {}
+
+    async def set_ui_prefs(self, updates: dict) -> bool:
+        # A None value removes that key.
+        self._init()
+        prefs = self._settings.get("ui_prefs")
+        # Copy: an unset key aliases the shared DEFAULTS dict; never mutate it.
+        prefs = dict(prefs) if isinstance(prefs, dict) else {}
+        if isinstance(updates, dict):
+            for key, value in updates.items():
+                if value is None:
+                    prefs.pop(str(key), None)
+                else:
+                    prefs[str(key)] = str(value)
+        self._settings["ui_prefs"] = prefs
+        self._save()
+        return True
+
+    async def get_ui_modules(self) -> dict:
+        """The user-disabled module set (generic ids + power/learning folded from
+        their native settings). The frontend derives the effective state."""
+        self._init()
+        return {"disabled": self._user_disabled_all()}
+
+    async def set_ui_module(self, module_id: str, disabled: bool) -> dict:
+        """Persist a module state and reconcile affected runtime ownership."""
+        self._init()
+        disabled = bool(disabled)
+        charge_generation = None
+        if module_id in self._MODULE_SETTING:
+            charge_generation = self._cancel_charge_limit_reconcile(
+                "module_changed",
+                preserve_candidate=not (
+                    disabled and module_id in ("system", "chargeLimit")
+                ),
+            )
+            self._settings[self._MODULE_SETTING[module_id]] = not disabled
+        elif module_id in self._GENERIC_MODULES:
+            charge_generation = self._cancel_charge_limit_reconcile(
+                "module_changed",
+                preserve_candidate=not (
+                    disabled and module_id in ("system", "chargeLimit")
+                ),
+            )
+            cur = set(self._disabled_modules())
+            cur.add(module_id) if disabled else cur.discard(module_id)
+            self._settings["disabled_modules"] = sorted(cur)
+        else:
+            return {"disabled": self._user_disabled_all()}  # unknown id → no-op
+        if disabled and module_id in ("system", "chargeLimit"):
+            self._clear_charge_limit_full_once()
+        release_requested = (
+            dict(targets.requested)
+            if module_id == "power"
+            and disabled
+            and (targets := getattr(self, "_tdp_targets", None)) is not None
+            else {}
+        )
+        self._save()
+        if (
+            module_id == "power"
+            and not disabled
+            and self._retired_experimental_tdp_unlock()
+        ):
+            activated = await self.set_tdp_control_enabled(True)
+            if not activated:
+                if self._tdp_control_on():
+                    await self.set_tdp_control_enabled(False)
+                self._sync_sampler()
+                return {"disabled": self._user_disabled_all()}
+        if module_id == "chargeLimit":
+            if not self._module_enabled("chargeLimit"):
+                self._publish_charge_limit_handoff(charge_generation)
+                await self._drain_charge_limit_writes()
+            else:
+                await self._apply_charge_limit_intent(charge_generation)
+            self._sync_sampler()
+            return {"disabled": self._user_disabled_all()}
+        early_release = None
+        if module_id == "power" and disabled and self._power_uses_levels():
+            # The level's ceilings must be gone before the CPU window and GPU clock
+            # re-apply on the same nodes, or they would adopt them as their baseline.
+            early_release = bool(await self._offload_call(self._restore_power_handoff))
+        self._reapply_all()
+        if module_id == "system" and disabled:
+            self._publish_charge_limit_handoff(self._charge_limit_generation)
+            await self._release_gpu_clock("module-disabled")
+            await self._drain_charge_limit_writes()
+        # Turning the power module off = stepping aside; hand HHD's TDP back, same
+        # as set_tdp_control_enabled(False). Otherwise no manager drives the TDP.
+        if module_id == "power" and disabled:
+            released = (
+                early_release
+                if early_release is not None
+                else bool(await self._offload_call(self._restore_power_handoff))
+            )
+            if hasattr(self, "_tdp_backend"):
+                self._remember_tdp_observation(
+                    await self._offload_call(self._observe_tdp_sync)
+                )
+                self._tdp_targets = None
+                self._tdp_status = "unverifiable" if released else "rejected"
+                self._tdp_reason = "module_disabled" if released else "release_failed"
+                self._record_tdp_transition(
+                    (
+                        "module-disabled"
+                        if released
+                        else "module-disable-release-failed"
+                    ),
+                    action="release",
+                    requested=release_requested,
+                )
+        self._sync_sampler()  # learning may have (un)gained a consumer
+        return {"disabled": self._user_disabled_all()}
+
+    async def reset_modules(self) -> dict:
+        """Reset the customization layout. Leaves the functional switches (TDP control,
+        telemetry) as-is; a visual reset must not silently re-enable them."""
+        self._init()
+        self._cancel_charge_limit_reconcile(
+            "module_reset", preserve_candidate=True
+        )
+        self._settings["disabled_modules"] = []
+        self._save()
+        self._reapply_all()
+        self._sync_sampler()
+        return {"disabled": self._user_disabled_all()}
+
+    async def check_update(self, force: bool = False) -> dict:
+        self._init()
+        return await asyncio.to_thread(self_updater.check, force)
+
+    async def install_update(self) -> dict:
+        self._init()
+        return await asyncio.to_thread(self_updater.install)
+
+    async def restart_loader(self) -> None:
+        # Fire-and-forget: restarts Decky to load the just-installed files.
+        self_updater.restart_loader()
+
+    def _themes_root(self) -> Path:
+        decky_home = os.environ.get("DECKY_HOME")
+        if decky_home:
+            return Path(decky_home) / "themes"
+        user_home = getattr(decky, "DECKY_USER_HOME", None) or os.path.expanduser("~")
+        return Path(user_home) / "homebrew" / "themes"
+
+    def _decky_plugins_root(self) -> Path:
+        return self._themes_root().parent / "plugins"
+
+    def _theme_receipts_path(self) -> Path:
+        return Path(decky.DECKY_PLUGIN_SETTINGS_DIR) / _THEME_EXTENSION_RECEIPTS_FILE
+
+    def _theme_activation_recovery_path(self) -> Path:
+        return Path(decky.DECKY_PLUGIN_SETTINGS_DIR) / _THEME_ACTIVATION_RECOVERY_FILE
+
+    def _theme_report_diagnostics(self) -> dict:
+        activation = self._theme_activation_recovery_path()
+        return {
+            "transactions": theme_packages.theme_transaction_diagnostics(self._themes_root()),
+            "activation_phase": theme_activation.theme_activation_phase(activation),
+            "activation_quarantined": activation.with_name(f"{activation.name}.quarantined").exists(),
+            "recent_failures": [
+                {key: entry[key] for key in ("operation", "code", "count")}
+                for entry in self._theme_failures()
+            ],
+            "unreadable_theme_folders": self._unreadable_theme_folders(),
+            **self._installed_theme_inventory(),
+            "health": self._theme_health_summary(),
+        }
+
+    def _theme_health_summary(self) -> dict:
+        try:
+            return {
+                "folders": theme_health.summary(theme_health.scan(self._themes_root())),
+                "cleanup": theme_health.undo_state(self._themes_root()),
+                "panel": theme_health.internal_panel_mode(),
+            }
+        except Exception as error:  # noqa: BLE001
+            return {"unavailable": type(error).__name__}
+
+    def _installed_theme_inventory(self) -> dict:
+        """Hooandee themes by name; other themes and CSS Loader profiles can carry personal names,
+        so they are only counted."""
+        installed = []
+        other_active = 0
+        try:
+            folders = sorted(entry for entry in self._themes_root().iterdir() if entry.is_dir())
+        except OSError:
+            folders = []
+
+        def read_json(path: Path):
+            try:
+                if path.stat().st_size > _THEME_MANIFEST_SCAN_BYTES:
+                    return None
+                value = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                return None
+            return value if isinstance(value, dict) else None
+
+        for folder in folders[:_THEME_FOLDER_SCAN_LIMIT]:
+            manifest = read_json(folder / "theme.json")
+            if manifest is None:
+                continue
+            config = read_json(folder / "config_USER.json") or {}
+            active = config.get("active") is True
+            if not (folder / "panel-theme.json").is_file():
+                other_active += active
+                continue
+            installed.append({
+                "name": str(manifest.get("name", ""))[:80],
+                "version": str(manifest.get("version", ""))[:32],
+                "active": active,
+                "runtime": (folder / "panel-extension.js").is_file(),
+                "sections": {
+                    key: value
+                    for key, value in config.items()
+                    if isinstance(key, str) and key.startswith("Estilizar ") and isinstance(value, str)
+                },
+            })
+        return {"installed": installed, "other_active_themes": other_active}
+
+    def _unreadable_theme_folders(self) -> int:
+        unreadable = 0
+        try:
+            folders = [entry for entry in self._themes_root().iterdir() if entry.is_dir()]
+        except OSError:
+            return 0
+        for folder in folders[:_THEME_FOLDER_SCAN_LIMIT]:
+            manifest = folder / "theme.json"
+            if not manifest.is_file():
+                continue
+            try:
+                readable = manifest.stat().st_size <= _THEME_MANIFEST_SCAN_BYTES and isinstance(
+                    json.loads(manifest.read_text(encoding="utf-8")), dict
+                )
+            except (OSError, ValueError):
+                readable = False
+            unreadable += not readable
+        return unreadable
+
+    def _theme_failures(self) -> deque:
+        failures = getattr(self, "_theme_failure_history", None)
+        if failures is None:
+            failures = deque(maxlen=_THEME_FAILURE_HISTORY)
+            self._theme_failure_history = failures
+        return failures
+
+    def _ui_diagnostics(self) -> deque:
+        entries = getattr(self, "_ui_diagnostic_history", None)
+        if entries is None:
+            entries = deque(maxlen=_UI_DIAGNOSTIC_HISTORY)
+            self._ui_diagnostic_history = entries
+        return entries
+
+    def _ui_diagnostics_snapshot(self) -> list[dict]:
+        return [{key: entry[key] for key in ("area", "code", "count")} for entry in self._ui_diagnostics()]
+
+    async def record_ui_event(self, area: str, action: str, detail: str = "", ok: bool = True) -> bool:
+        diary = journal.active
+        if diary is None:
+            return False
+        area = area if isinstance(area, str) and _UI_EVENT_NAME.match(area) else "unknown"
+        action = action if isinstance(action, str) and _UI_EVENT_NAME.match(action) else "unknown"
+        diary.write("INFO" if ok else "WARNING", "ui", action, area=area,
+                    detail=" ".join(str(detail).split())[:400], ok=bool(ok))
+        return True
+
+    async def record_ui_diagnostic(self, area: str, code: str, detail: str = "") -> bool:
+        area = area if isinstance(area, str) and _UI_DIAGNOSTIC_AREA.match(area) else "unknown"
+        code = code if isinstance(code, str) and _THEME_FAILURE_CODE.match(code) else "unknown"
+        detail = " ".join(str(detail).split())[:_THEME_FAILURE_MESSAGE_CHARS]
+        entries = self._ui_diagnostics()
+        entry = {"area": area, "code": code, "detail": detail}
+        if entries and {key: entries[-1][key] for key in entry} == entry:
+            entries[-1]["count"] += 1
+            return True
+        entries.append({**entry, "count": 1})
+        decky.logger.warning(
+            "UI diagnostic %s",
+            json.dumps(entry, separators=(",", ":"), ensure_ascii=False),
+        )
+        return True
+
+    async def record_theme_failure(self, operation: str, code: str, message: str) -> bool:
+        operation = operation if operation in _THEME_FAILURE_OPERATIONS else "unknown"
+        code = code if isinstance(code, str) and _THEME_FAILURE_CODE.match(code) else "unknown"
+        message = " ".join(str(message).split())[:_THEME_FAILURE_MESSAGE_CHARS]
+        failures = self._theme_failures()
+        entry = {"operation": operation, "code": code, "message": message}
+        if failures and {key: failures[-1][key] for key in entry} == entry:
+            failures[-1]["count"] += 1
+            return True
+        failures.append({**entry, "count": 1})
+        decky.logger.warning(
+            "Theme operation failed %s",
+            json.dumps(entry, separators=(",", ":"), ensure_ascii=False),
+        )
+        return True
+
+    def _remote_themes(self) -> theme_remote.ThemeRemoteService:
+        service = getattr(self, "_theme_remote_service", None)
+        if service is None:
+            service = self._new_theme_remote_service()
+            self._theme_remote_service = service
+        return service
+
+    def _new_theme_remote_service(self) -> theme_remote.ThemeRemoteService:
+        channel = _OFFICIAL_THEME_CHANNEL
+        transport = theme_transport.ThemeHttpTransport(channel.pages_base_url)
+        cache = theme_remote.ThemeCatalogCacheStore(
+            os.path.join(
+                decky.DECKY_PLUGIN_SETTINGS_DIR,
+                _THEME_CATALOG_CACHE_FILE,
+            )
+        )
+        return theme_remote.ThemeRemoteService(
+            channel,
+            transport=transport,
+            runtime_versions=lambda: theme_remote.ThemeRuntimeVersions(
+                panel=read_version(),
+            ),
+            cache=cache,
+            cache_error_logger=lambda error_name: decky.logger.warning(
+                "Theme catalog cache unavailable (%s)",
+                error_name,
+            ),
+        )
+
+    async def check_theme_releases(
+        self,
+        force: bool = False,
+    ) -> dict:
+        self._init()
+        if not isinstance(force, bool):
+            return {
+                "status": "recoverable-failure",
+                "code": "invalid_descriptor",
+                "retryable": False,
+            }
+
+        def discover() -> dict:
+            return self._remote_themes().check_releases(force)
+
+        try:
+            return await self._offload_theme_call(discover)
+        except theme_packages.ThemePackageError as error:
+            return {
+                "status": "recoverable-failure",
+                "code": error.code,
+                "retryable": False,
+            }
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error(
+                "Remote theme discovery failed: %s",
+                type(error).__name__,
+            )
+            return {
+                "status": "recoverable-failure",
+                "code": "invalid_descriptor",
+                "retryable": True,
+            }
+
+    async def prepare_remote_theme_install(
+        self,
+        theme_id: str,
+        expected_version: str,
+    ) -> dict:
+        self._init()
+        if (
+            not isinstance(theme_id, str)
+            or _SAFE_THEME_ID.fullmatch(theme_id) is None
+        ):
+            return {"ok": False, "code": "unsupported_theme", "theme_id": theme_id}
+        if (
+            not isinstance(expected_version, str)
+            or _STABLE_THEME_VERSION.fullmatch(expected_version) is None
+        ):
+            return {"ok": False, "code": "invalid_descriptor", "theme_id": theme_id}
+
+        def prepare() -> dict:
+            service = self._remote_themes()
+            return service.prepare_install(
+                theme_id,
+                expected_version,
+                self._themes_root(),
+                self._theme_receipts_path(),
+            )
+
+        try:
+            return await self._offload_theme_call(prepare)
+        except (theme_remote.ThemeRemoteError, theme_packages.ThemePackageError) as error:
+            decky.logger.warning("Remote theme prepare rejected (%s)", error.code)
+            return {"ok": False, "code": error.code, "theme_id": theme_id}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Remote theme prepare failed: %s", type(error).__name__)
+            return {"ok": False, "code": "install_failed", "theme_id": theme_id}
+
+    async def commit_theme_install(self, transaction: str) -> dict:
+        self._init()
+        try:
+            return await self._offload_theme_call(lambda: theme_packages.commit_theme_install(
+                transaction,
+                self._themes_root(),
+                receipts_path=self._theme_receipts_path(),
+            ))
+        except theme_packages.ThemePackageError as error:
+            decky.logger.warning("Theme package commit rejected (%s): %s", error.code, error)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Theme package commit failed: %s", error)
+            return {"ok": False, "code": "commit_failed"}
+
+    async def discard_theme_extension_receipt(self, catalog_id: str) -> dict:
+        self._init()
+        if (
+            not isinstance(catalog_id, str)
+            or _SAFE_THEME_ID.fullmatch(catalog_id) is None
+        ):
+            return {"ok": False, "code": "unsupported_theme"}
+        try:
+            return await self._offload_theme_call(
+                lambda: theme_packages.discard_orphaned_theme_receipt(
+                    catalog_id,
+                    self._themes_root(),
+                    self._theme_receipts_path(),
+                )
+            )
+        except theme_packages.ThemePackageError as error:
+            decky.logger.warning("Theme receipt discard rejected (%s)", error.code)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.warning(
+                "Theme receipt discard failed (%s)",
+                type(error).__name__,
+            )
+            return {"ok": False, "code": "discard_failed"}
+
+    async def rollback_theme_install(self, transaction: str) -> dict:
+        self._init()
+        try:
+            return await self._offload_theme_call(lambda: theme_packages.rollback_theme_install(
+                transaction,
+                self._themes_root(),
+                receipts_path=self._theme_receipts_path(),
+            ))
+        except theme_packages.ThemePackageError as error:
+            decky.logger.error("Theme package rollback rejected (%s): %s", error.code, error)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Theme package rollback failed: %s", error)
+            return {"ok": False, "code": "rollback_failed"}
+
+    async def get_theme_install_recoveries(self) -> dict:
+        self._init()
+        try:
+            recoveries = await self._offload_theme_call(
+                lambda: theme_packages.recover_theme_transactions(
+                    self._themes_root(),
+                    receipts_path=self._theme_receipts_path(),
+                )
+            )
+            return {"ok": True, "code": "ready", "recoveries": recoveries}
+        except theme_packages.ThemePackageError as error:
+            decky.logger.error("Theme package recovery blocked (%s)", error.code)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Theme package recovery inspection failed: %s", error)
+            return {"ok": False, "code": "recovery_failed"}
+
+    async def acknowledge_theme_install_rollback(self, transaction: str) -> dict:
+        self._init()
+        try:
+            return await self._offload_theme_call(
+                lambda: theme_packages.acknowledge_theme_rollback(
+                    transaction,
+                    self._themes_root(),
+                    receipts_path=self._theme_receipts_path(),
+                )
+            )
+        except theme_packages.ThemePackageError as error:
+            decky.logger.error("Theme rollback acknowledgement rejected (%s): %s", error.code, error)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Theme rollback acknowledgement failed: %s", error)
+            return {"ok": False, "code": "acknowledgement_failed"}
+
+    async def begin_theme_activation(self, snapshot: dict) -> dict:
+        self._init()
+        try:
+            return await self._offload_theme_call(
+                lambda: theme_activation.begin_theme_activation(
+                    snapshot,
+                    self._theme_activation_recovery_path(),
+                )
+            )
+        except theme_activation.ThemeActivationJournalError as error:
+            decky.logger.warning("Theme activation journal rejected (%s): %s", error.code, error)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Theme activation journal failed: %s", type(error).__name__)
+            return {"ok": False, "code": "journal_failed"}
+
+    async def get_theme_activation_recovery(self) -> dict:
+        self._init()
+        try:
+            recovery = await self._offload_theme_call(
+                lambda: theme_activation.get_theme_activation_recovery(
+                    self._theme_activation_recovery_path(),
+                )
+            )
+            return {"ok": True, "code": "ready", "recovery": recovery}
+        except theme_activation.ThemeActivationJournalError as error:
+            decky.logger.error("Theme activation recovery blocked (%s)", error.code)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Theme activation recovery failed: %s", type(error).__name__)
+            return {"ok": False, "code": "recovery_failed"}
+
+    async def settle_theme_activation(self, transaction: str) -> dict:
+        self._init()
+        try:
+            return await self._offload_theme_call(
+                lambda: theme_activation.mark_theme_activation_settled(
+                    transaction,
+                    self._theme_activation_recovery_path(),
+                )
+            )
+        except theme_activation.ThemeActivationJournalError as error:
+            decky.logger.error("Theme activation settlement rejected (%s)", error.code)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Theme activation settlement failed: %s", type(error).__name__)
+            return {"ok": False, "code": "settlement_failed"}
+
+    async def acknowledge_theme_activation(self, transaction: str) -> dict:
+        self._init()
+        try:
+            return await self._offload_theme_call(
+                lambda: theme_activation.acknowledge_theme_activation(
+                    transaction,
+                    self._theme_activation_recovery_path(),
+                )
+            )
+        except theme_activation.ThemeActivationJournalError as error:
+            decky.logger.error("Theme activation acknowledgement rejected (%s)", error.code)
+            return {"ok": False, "code": error.code}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Theme activation acknowledgement failed: %s", type(error).__name__)
+            return {"ok": False, "code": "acknowledgement_failed"}
+
+    async def list_theme_extensions(self) -> list[dict]:
+        self._init()
+        try:
+            receipts = await self._offload_theme_call(
+                lambda: theme_packages.list_theme_extensions(
+                    self._themes_root(),
+                    self._theme_receipts_path(),
+                )
+            )
+            return [
+                {
+                    "catalogId": receipt["catalogId"],
+                    "cssLoaderName": receipt["cssLoaderName"],
+                    "version": receipt["version"],
+                    "abiVersion": receipt["abiVersion"],
+                    "sha256": receipt["sha256"],
+                }
+                for receipt in receipts
+            ]
+        except Exception as error:
+            decky.logger.warning(
+                "Theme extension inventory unavailable (%s)",
+                type(error).__name__,
+            )
+            raise RuntimeError("extension_unavailable") from None
+
+    async def get_theme_patch_labels(self, catalog_id: str, css_loader_name: str) -> dict:
+        self._init()
+        try:
+            return await self._offload_theme_call(
+                lambda: theme_packages.theme_patch_labels(
+                    self._themes_root(),
+                    catalog_id,
+                    css_loader_name,
+                )
+            )
+        except Exception as error:  # noqa: BLE001
+            decky.logger.warning(
+                "Theme patch labels unavailable (%s)",
+                type(error).__name__,
+            )
+            return {}
+
+    async def load_theme_extension(self, catalog_id: str, version: str) -> dict:
+        self._init()
+        if (
+            not isinstance(catalog_id, str)
+            or _SAFE_THEME_ID.fullmatch(catalog_id) is None
+            or not isinstance(version, str)
+            or _STABLE_THEME_VERSION.fullmatch(version) is None
+        ):
+            raise RuntimeError("extension_unavailable")
+        try:
+            return await self._offload_theme_call(
+                lambda: theme_packages.load_theme_extension(
+                    catalog_id,
+                    version,
+                    self._themes_root(),
+                    self._theme_receipts_path(),
+                )
+            )
+        except Exception as error:
+            decky.logger.warning(
+                "Theme extension load rejected (%s)",
+                type(error).__name__,
+            )
+            raise RuntimeError("extension_unavailable") from None
+
+    async def get_theme_health(self) -> dict:
+        self._init()
+        root = self._themes_root()
+
+        def read() -> dict:
+            return {
+                "folders": theme_health.scan(root),
+                "panel": theme_health.internal_panel_mode(),
+                "undo": theme_health.undo_state(root),
+            }
+
+        return await self._offload_theme_call(read)
+
+    async def set_aside_theme_leftovers(self, disabled: list) -> dict:
+        self._init()
+        try:
+            result = await self._offload_theme_call(
+                lambda: theme_health.set_aside(self._themes_root(), disabled)
+            )
+        except (theme_health.ThemeHealthError, theme_packages.ThemePackageError) as error:
+            decky.logger.warning("Theme cleanup refused (%s)", error.code)
+            return {"ok": False, "code": error.code}
+        if result["failed"]:
+            decky.logger.warning("Theme cleanup could not move %d folders", len(result["failed"]))
+        return {"ok": True, **result}
+
+    async def restore_theme_cleanup(self) -> dict:
+        self._init()
+        try:
+            result = await self._offload_theme_call(
+                lambda: theme_health.restore(self._themes_root())
+            )
+        except (theme_health.ThemeHealthError, theme_packages.ThemePackageError) as error:
+            decky.logger.warning("Theme cleanup undo refused (%s)", error.code)
+            return {"ok": False, "code": error.code}
+        if result["kept"]:
+            decky.logger.warning("Theme cleanup undo kept %d folders set aside", len(result["kept"]))
+        return {"ok": True, **result}
+
+    async def acknowledge_theme_cleanup_undo(self) -> dict:
+        self._init()
+        try:
+            await self._offload_theme_call(lambda: theme_health.forget_reenabled(self._themes_root()))
+        except (theme_health.ThemeHealthError, theme_packages.ThemePackageError) as error:
+            decky.logger.warning("Theme cleanup undo acknowledgement refused (%s)", error.code)
+            return {"ok": False, "code": error.code}
+        return {"ok": True}
+
+    async def get_device(self) -> dict:
+        self._init()
+        d = asdict(self._device)
+        # Show the REAL silicon name (cached in _init) rather than the hardcoded table
+        # value, which can drift per unit/variant (e.g. Legion Go 2 = "Ryzen Z2
+        # Extreme", not the Ally X's "Ryzen AI Z2 Extreme"). Falls back to the table
+        # chip when the kernel exposes nothing.
+        if self._chip:
+            d["chip"] = self._chip
+        # GPU generation for upscaler gating in Parámetros (FSR4 = rdna3/rdna4).
+        d["gpu_gen"] = device_registry.gpu_generation(self._device.vendor, d["chip"])
+        return d
+
+    def _desktop_mode_on(self) -> bool:
+        return effective_desktop_mode(
+            self._device, self._settings.get("desktop_mode_enabled") is True)
+
+    def _desktop_power_active(self) -> bool:
+        return bool(
+            self._desktop_mode_on()
+            and self._settings.get("desktop_power_mode") != "free"
+        )
+
+    def _ensure_desktop_tdp_ownership(self) -> bool:
+        backend = getattr(self, "_controller_backend", None)
+        if getattr(backend, "manager", None) != controller_detect.HHD:
+            return True
+        hhd_client = getattr(self, "_hhd_tdp_client", controller_hhd)
+        try:
+            current = hhd_client.current_tdp_enable()
+        except Exception:  # noqa: BLE001
+            return False
+        if current is False:
+            if getattr(self, "_os_id", None) == "anatase":
+                self._tdp_external_owner = False
+            return True
+        if current is not True:
+            if getattr(self, "_os_id", None) == "anatase":
+                self._tdp_external_owner = True
+            return False
+        previous = self._settings.get("hhd_tdp_prev")
+        if previous is None:
+            self._settings["hhd_tdp_prev"] = True
+            try:
+                self._save()
+            except Exception:  # noqa: BLE001
+                self._settings["hhd_tdp_prev"] = None
+                return False
+        try:
+            released = hhd_client.set_tdp_enable(False) is False
+            if getattr(self, "_os_id", None) == "anatase":
+                self._tdp_external_owner = not released
+            return released
+        except Exception:  # noqa: BLE001
+            if getattr(self, "_os_id", None) == "anatase":
+                self._tdp_external_owner = True
+            return False
+
+    def _suspend_handheld_tdp_for_desktop(self) -> None:
+        requested = (
+            dict(self._tdp_targets.requested)
+            if getattr(self, "_tdp_targets", None) is not None
+            else {}
+        )
+        self._settings["tdp_control_enabled"] = False
+        self._advance_tdp_generation()
+        self._tdp_targets = None
+        self._tdp_status = "unverifiable"
+        self._tdp_reason = "desktop_mode"
+        record = getattr(self, "_record_tdp_transition", None)
+        if callable(record):
+            record(
+                "desktop-mode",
+                action="release",
+                requested=requested,
+            )
+
+    def _desktop_state(self) -> dict:
+        power = self._desktop_power.state()
+        return {
+            "enabled": self._desktop_mode_on(),
+            "automatic": bool(getattr(self._device, "desktop_mode", False)),
+            "manual_enabled": self._settings.get("desktop_mode_enabled") is True,
+            "migration_pending": bool(
+                getattr(self, "_desktop_recognition_migration_pending", False)
+            ),
+            "migration_failure": getattr(
+                self,
+                "_desktop_recognition_migration_last_failure",
+                None,
+            ),
+            "power": power,
+        }
+
+    async def get_desktop_state(self) -> dict:
+        self._init()
+        await self._ensure_recognised_desktop_migration()
+        state = self._desktop_state()
+        reader = getattr(self, "_power_reader", None)
+        state["telemetry"] = (
+            await self._offload_call(lambda: reader.read_desktop(self._device.key))
+            if state["enabled"] and reader is not None else None
+        )
+        cpu_info = getattr(self, "_cpu_info", None)
+        state["cpu"] = dict(cpu_info) if isinstance(cpu_info, dict) else None
+        return state
+
+    async def retry_desktop_migration(self) -> dict:
+        self._init()
+        self._desktop_recognition_migration_last_attempt = float("-inf")
+        await self._ensure_recognised_desktop_migration()
+        return await self.get_desktop_state()
+
+    async def set_desktop_mode_enabled(self, enabled: bool) -> dict:
+        """Opt a generic Linux PC into the desktop topology, reversibly.
+
+        Validated desktops stay automatic. Enabling first steps the APU-oriented TDP
+        loop aside; disabling restores both desktop domains before restoring the
+        previous handheld TDP preference.
+        """
+        self._init()
+        await self._ensure_recognised_desktop_migration()
+        if (
+            getattr(self._device, "desktop_mode", False)
+            or not getattr(self._device, "is_generic", False)
+        ):
+            return self._desktop_state()
+        enabled = enabled is True
+        current = self._settings.get("desktop_mode_enabled") is True
+        if enabled == current:
+            return self._desktop_state()
+        if enabled:
+            previous_settings = copy.deepcopy(self._settings)
+            self._settings["desktop_prev_tdp_control"] = self._tdp_control_on()
+            self._settings["desktop_power_mode"] = "free"
+            self._settings["desktop_mode_enabled"] = True
+            self._suspend_handheld_tdp_for_desktop()
+            try:
+                self._save()
+            except Exception:  # noqa: BLE001
+                self._settings.clear()
+                self._settings.update(previous_settings)
+                return self._desktop_state()
+            await self._offload_call(self._restore_power_handoff)
+        else:
+            restored = await self._offload_call(self._desktop_power.restore)
+            if not restored.get("ok"):
+                return self._desktop_state()
+            previous_settings = copy.deepcopy(self._settings)
+            self._settings["desktop_power_mode"] = "free"
+            self._settings["desktop_mode_enabled"] = False
+            previous = self._settings.get("desktop_prev_tdp_control")
+            self._settings["desktop_prev_tdp_control"] = None
+            if isinstance(previous, bool):
+                applied = await self.set_tdp_control_enabled(previous)
+                if applied is not previous:
+                    self._settings.clear()
+                    self._settings.update(previous_settings)
+                    self._save()
+                    return self._desktop_state()
+            else:
+                self._save()
+                await self._offload_call(self._restore_power_handoff)
+        fan_reader = getattr(self, "_fan_reader", None)
+        if fan_reader is not None:
+            fan_reader.set_desktop(self._desktop_mode_on())
+        if enabled:
+            return self._desktop_state()
+        self._save()
+        return self._desktop_state()
+
+    async def set_desktop_power_mode(self, mode: str) -> dict:
+        self._init()
+        await self._ensure_recognised_desktop_migration()
+        if getattr(self, "_desktop_recognition_migration_pending", False):
+            return {"ok": False, "mode": "free", "cpu_w": None, "gpu_w": None,
+                    "detail": "desktop migration pending"}
+        if not self._desktop_mode_on():
+            return {"ok": False, "mode": "free", "cpu_w": None, "gpu_w": None,
+                    "detail": "desktop mode disabled"}
+        mode = str(mode)
+        if mode != "free" and not await self._offload_call(
+            self._ensure_desktop_tdp_ownership
+        ):
+            return {"ok": False, "mode": "free", "cpu_w": None, "gpu_w": None,
+                    "detail": "desktop TDP ownership unavailable"}
+        result = await self._offload_call(lambda: self._desktop_power.apply(mode))
+        if result.get("ok"):
+            self._settings["desktop_power_mode"] = mode
+            self._settings["tdp_control_enabled"] = False
+            self._save()
+            if mode == "free" and not await self._offload_call(
+                self._restore_power_handoff
+            ):
+                return {**result, "ok": False, "detail": "desktop handoff pending"}
+        return result
+
+    async def set_desktop_power_limits(self, cpu_w: int, gpu_w: int) -> dict:
+        self._init()
+        await self._ensure_recognised_desktop_migration()
+        if getattr(self, "_desktop_recognition_migration_pending", False):
+            return {"ok": False, "mode": "free", "cpu_w": None, "gpu_w": None,
+                    "detail": "desktop migration pending"}
+        if not self._desktop_mode_on():
+            return {"ok": False, "mode": "free", "cpu_w": None, "gpu_w": None,
+                    "detail": "desktop mode disabled"}
+        if (
+            isinstance(cpu_w, bool)
+            or not isinstance(cpu_w, int)
+            or isinstance(gpu_w, bool)
+            or not isinstance(gpu_w, int)
+        ):
+            return {"ok": False, "mode": "free", "cpu_w": None, "gpu_w": None,
+                    "detail": "invalid desktop power limits"}
+        if not await self._offload_call(self._ensure_desktop_tdp_ownership):
+            return {"ok": False, "mode": "free", "cpu_w": None, "gpu_w": None,
+                    "detail": "desktop TDP ownership unavailable"}
+        result = await self._offload_call(
+            lambda: self._desktop_power.apply_custom(cpu_w, gpu_w))
+        if result.get("ok"):
+            applied_cpu = result.get("cpu_w")
+            applied_gpu = result.get("gpu_w")
+            self._settings["desktop_cpu_w"] = int(
+                cpu_w if applied_cpu is None else applied_cpu)
+            self._settings["desktop_gpu_w"] = int(
+                gpu_w if applied_gpu is None else applied_gpu)
+            self._settings["desktop_power_mode"] = "custom"
+            self._settings["tdp_control_enabled"] = False
+            self._save()
+        return result
+
+    # ---- Report collector -------------------------------------------------
+    async def submit_report(self, categories=None, text: str = "", context=None) -> dict:
+        """Collect a redacted diagnostic bundle and send it to the collector
+        service. Write-only: the plugin can never read a report back. `context` is
+        optional frontend-only diagnostics (e.g. a launch report's running-game
+        snapshot). Falls back to saving the bundle on disk if the network send fails.
+        Returns {ok, code, issue_url} or {ok:false, error, saved_path}."""
+        self._init()
+        home, hostname = self._redact_ids()
+        report_kind = self._report_kind(context)
+        try:
+            bundle = await self._build_report_bundle(categories, text, home, hostname, context)
+        except Exception as e:  # noqa: BLE001
+            decky.logger.error("report bundle failed: %s", e)
+            bundle = report_collector.build_bundle(
+                app=_REPORT_APP, categories=categories, text=text,
+                environment={}, capabilities={},
+                state={
+                    "auto_tdp": {
+                        "schema": 1,
+                        "error": "bundle_incomplete",
+                    },
+                },
+                stores={}, logs=[],
+                kind=report_kind,
+                home=home, hostname=hostname,
+            )
+            bundle["error"] = "bundle_incomplete"
+        # The POST is a blocking urllib call (up to 20s on a dead network); run it
+        # off the event loop so the auto-TDP loop and other RPCs don't stall.
+        res = await asyncio.get_running_loop().run_in_executor(
+            None, lambda: report_client.submit(_REPORT_SERVICE_URL, bundle)
+        )
+        if res.get("ok"):
+            decky.logger.info("report sent: %s", res.get("code"))
+            return {"ok": True, "code": res["code"], "issue_url": res.get("issue_url")}
+        path = report_client.save_local(
+            getattr(decky, "DECKY_PLUGIN_LOG_DIR", "."), bundle
+        )
+        decky.logger.warning(
+            "report send failed (%s); saved to %s", res.get("error"), path
+        )
+        return {"ok": False, "error": res.get("error", "unknown"), "saved_path": path}
+
+    @staticmethod
+    def _report_kind(context) -> str:
+        if isinstance(context, dict) and context.get("report_kind") == "feature":
+            return "feature"
+        return "bug"
+
+    def _redact_ids(self):
+        """(home, hostname) used to scrub PII from the bundle. Guarded."""
+        home = getattr(decky, "DECKY_USER_HOME", None) or os.path.expanduser("~")
+        try:
+            import socket
+
+            hostname = socket.gethostname()
+        except Exception:  # noqa: BLE001
+            hostname = None
+        # A distro's stock hostname names no one, and scrubbing it would mangle its own
+        # service names ("armada-pwm" on Armada OS).
+        stock = {"localhost", "steamdeck", str(getattr(self, "_os_id", "") or "").lower()}
+        if hostname and hostname.lower() in stock:
+            hostname = None
+        return home, hostname
+
+    async def _build_report_bundle(self, categories, text, home, hostname, context=None) -> dict:
+        """Gather every diagnostic piece (device, live state, stores, logs) and hand
+        it to the collector for assembly + redaction. Each state fetch is guarded so
+        a single failing subsystem never blocks the report."""
+        loop = asyncio.get_running_loop()
+
+        async def _safe(coro):
+            try:
+                return await coro
+            except Exception:  # noqa: BLE001
+                return {}
+
+        hud_diagnostics = await _safe(
+            self._hud_call(
+                lambda: self._hud_report_diagnostics(self._hud_state(), context)
+            )
+        )
+        tdp_state = await _safe(self.get_tdp_state())
+        power_state = await _safe(self.get_power_draw())
+        try:
+            auto_tdp_diagnostics = self._auto_tdp_diagnostics(
+                tdp_state,
+                power_state,
+            )
+        except Exception as error:  # noqa: BLE001
+            auto_tdp_diagnostics = {
+                "schema": 1,
+                "error": type(error).__name__,
+            }
+        states = {
+            "device": await _safe(self.get_device()),
+            "tdp": tdp_state,
+            "tdp_diagnostics": self._tdp_diagnostics(),
+            "auto_tdp": auto_tdp_diagnostics,
+            "lifecycle_diagnostics": self._lifecycle.diagnostics(),
+            "tdp_conflict": await _safe(self.get_tdp_conflict()),
+            "fan_curve": await _safe(self.get_fan_curve_state()),
+            "fan_monitor": await _safe(self.get_fan_state()),
+            "battery": await _safe(self.get_battery_state()),
+            "cpu": await _safe(self.get_cpu_state()),
+            "color": await _safe(self.get_color_state()),
+            "display_diagnostics": await _safe(
+                self._offload_call(lambda: self._display_diagnostics(context))
+            ),
+            "gpu": await _safe(self.get_gpu_clock()),
+            "cpu_gpu_diagnostics": self._cpu_gpu_diagnostics(),
+            # get_controller_config can block (HHD localhost HTTP / busctl spawn) →
+            # run it off the event loop, unlike the cheap sysfs reads above.
+            "controller": await loop.run_in_executor(None, self._safe_controller_config),
+            "controller_diagnostics": self._controller_backend.diagnostics(),
+            "power": power_state,
+            "eco": await _safe(self.get_eco_state()),
+            "audio": await _safe(self.get_audio_state()),
+            "audio_diag": await _safe(self._offload_call(self._audio.diagnostics)),
+            "hud_diagnostics": hud_diagnostics,
+            # Detected tools + current game + the frontend's running-game snapshot.
+            "launch": self._launch_report_state(context),
+            "steam_cleaner": await self._steam_cleaner_diagnostics(),
+            "themes": self._with_theme_display(
+                await _safe(self._offload_theme_call(self._theme_report_diagnostics)), context
+            ),
+            "ui_diagnostics": self._ui_diagnostics_snapshot(),
+            "kiosk": self._kiosk_report_state(),
+        }
+        logs = report_collector.tail_logs(
+            getattr(decky, "DECKY_PLUGIN_LOG_DIR", ""), home=home, hostname=hostname
+        )
+        if self._report_kind(context) == "bug":
+            steam_home = home or getattr(decky, "DECKY_USER_HOME", None)
+            cef_paths = [
+                os.path.join(steam_home, ".local", "share", "Steam", "logs", name)
+                for name in ("cef_log.txt", "cef_log.previous.txt")
+            ] if steam_home else []
+            try:
+                states["frontend_crash"] = await loop.run_in_executor(
+                    None,
+                    lambda: report_collector.frontend_crash_diagnostics(cef_paths),
+                )
+            except Exception:  # noqa: BLE001
+                states["frontend_crash"] = {
+                    "schema": 1,
+                    "status": "unavailable",
+                    "files": [],
+                    "crash_detected": False,
+                    "plugin_load_error": False,
+                    "plugin_load_errors": [],
+                    "signals": [],
+                }
+        # Bounded filesystem listing of the raw sysfs support surfaces (fan/temp
+        # chips, vendor WMI attributes, battery/charge nodes, ACPI-call + modules)
+        # so an unrecognised device is diagnosable from what actually exists.
+        snapshot = await loop.run_in_executor(
+            None, lambda: self._report_sysfs_snapshot(home, hostname))
+        # dmesg/journalctl are blocking subprocess calls (up to a few seconds each);
+        # run them off the event loop so the auto-TDP loop and other RPCs don't stall.
+        kernel = await loop.run_in_executor(
+            None,
+            lambda: report_collector.kernel_logs(
+                self._run_capture,
+                extra=report_collector.controller_daemon_cmds(
+                    self._controller_backend.manager
+                ),
+                home=home,
+                hostname=hostname,
+            ),
+        )
+        diary = await loop.run_in_executor(None, self._journal_report)
+        return report_collector.build_bundle(
+            app=_REPORT_APP,
+            categories=categories,
+            text=text,
+            kind=self._report_kind(context),
+            environment=self._report_environment(),
+            capabilities=report_collector.capabilities_from(states),
+            state=states,
+            stores=self._report_stores(),
+            logs=logs,
+            journal=diary,
+            kernel=kernel,
+            sysfs=snapshot,
+            home=home,
+            hostname=hostname,
+        )
+
+    @staticmethod
+    def _hud_steam_overlay_diagnostics(context) -> dict | None:
+        if not isinstance(context, dict):
+            return None
+        hud = context.get("hud")
+        overlay = hud.get("steam_overlay") if isinstance(hud, dict) else None
+        if not isinstance(overlay, dict):
+            return None
+
+        def level(value):
+            return (
+                value
+                if isinstance(value, int)
+                and not isinstance(value, bool)
+                and 0 <= value <= 4
+                else None
+            )
+
+        raw_level = level(overlay.get("raw_level"))
+        raw_to_ui = {0: 0, 4: 1, 1: 2, 2: 3, 3: 4}
+        resolver = overlay.get("resolver")
+        if resolver not in {"global", "module", "unavailable"}:
+            resolver = "unavailable"
+        service_state = overlay.get("service_state")
+        if (
+            not isinstance(service_state, int)
+            or isinstance(service_state, bool)
+            or service_state not in {0, 1, 2}
+        ):
+            service_state = None
+        show_over_steam = overlay.get("show_over_steam")
+        if not isinstance(show_over_steam, bool):
+            show_over_steam = None
+
+        activation = overlay.get("last_activation")
+        activation = activation if isinstance(activation, dict) else {}
+        outcome = activation.get("outcome")
+        if outcome not in {
+            "not_attempted",
+            "already_visible",
+            "confirmed",
+            "unavailable",
+            "exception",
+            "readback_timeout",
+            "readback_mismatch",
+        }:
+            outcome = "unavailable"
+        return {
+            "snapshot_status": "available" if raw_level is not None else "unavailable",
+            "resolver": resolver,
+            "settings_available": overlay.get("settings_available") is True,
+            "read_available": raw_level is not None,
+            "write_available": overlay.get("write_available") is True,
+            "raw_level": raw_level,
+            "ui_level": raw_to_ui.get(raw_level),
+            "master_enabled": None if raw_level is None else raw_level != 0,
+            "service_state": service_state,
+            "show_over_steam": show_over_steam,
+            "last_activation": {
+                "outcome": outcome,
+                "before_level": level(activation.get("before_level")),
+                "requested_level": level(activation.get("requested_level")),
+                "observed_level": level(activation.get("observed_level")),
+            },
+        }
+
+    def _hud_report_diagnostics(self, state, context=None) -> dict:
+        state = state if isinstance(state, dict) else {}
+        model = state.get("model")
+        model = model if isinstance(model, dict) else {}
+        raw_items = model.get("items")
+        items = (
+            [item for item in raw_items if isinstance(item, dict)]
+            if isinstance(raw_items, list)
+            else []
+        )
+        metric_ids = [
+            item.get("id")
+            for item in items
+            if item.get("kind") == "metric"
+            and item.get("id") in mangohud_config.METRIC_CATALOG
+        ]
+        values = state.get("values")
+        values = values if isinstance(values, dict) else {}
+        conflict = getattr(self, "_hud_conflict", None)
+        conflict = conflict if isinstance(conflict, dict) else {}
+        diagnostics = {
+            "capability": state.get("capability"),
+            "apply_status": state.get("applyStatus"),
+            "enabled": bool(model.get("enabled")),
+            "layout": model.get("layout"),
+            "position": model.get("position"),
+            "item_count": len(items),
+            "metric_ids": metric_ids,
+            "pdc_metric_ids": [
+                metric_id for metric_id in metric_ids
+                if metric_id in mangohud_config.PDC_IDS
+            ],
+            "live_value_ids": sorted(
+                metric_id for metric_id in values
+                if metric_id in mangohud_config.PDC_IDS
+            ),
+            "custom_text_count": sum(item.get("kind") == "text" for item in items),
+            "separator_count": sum(item.get("kind") == "separator" for item in items),
+            "typography": {
+                "font_size": model.get("fontSize"),
+                "font_size_secondary": model.get("fontSizeSecondary"),
+                "font_scale": model.get("fontScale"),
+                "no_small_font": bool(model.get("noSmallFont")),
+            },
+            "managed_path_present": bool(getattr(self, "_hud_managed_path", None)),
+            "managed_session_count": len(getattr(self, "_hud_sessions", ())),
+            "reload_pending_count": len(getattr(self, "_hud_reload_pending", ())),
+            "reload_attempt": int(getattr(self, "_hud_reload_attempt", 0)),
+            "conflict": bool(state.get("conflict") or conflict),
+            "conflict_reason": conflict.get("reason"),
+            "shutdown": bool(getattr(self, "_hud_shutdown", False)),
+        }
+        steam_overlay = self._hud_steam_overlay_diagnostics(context)
+        if steam_overlay is not None:
+            diagnostics["steam_overlay"] = steam_overlay
+        return diagnostics
+
+    def _display_diagnostics(self, context) -> dict:
+        diagnostics = getattr(self._color_backend, "diagnostics", None)
+        if callable(diagnostics):
+            backend = diagnostics()
+        else:
+            backend = {
+                "supported": bool(self._color_backend.supported),
+                "probe_detail": getattr(self._color_backend, "probe_detail", ""),
+                "wayland_display": None,
+                "last_apply": None,
+            }
+        frontend = {}
+        if isinstance(context, dict):
+            display = context.get("display")
+            brightness = display.get("brightness") if isinstance(display, dict) else None
+            if isinstance(brightness, dict):
+                frontend = {
+                    "brightness": {
+                        "subscribe_available": bool(
+                            brightness.get("subscribe_available", False)
+                        ),
+                        "set_available": bool(brightness.get("set_available", False)),
+                    },
+                }
+        return {"backend": backend, "frontend": frontend}
+
+    @staticmethod
+    def _with_theme_display(themes, context):
+        display = context.get("theme_display") if isinstance(context, dict) else None
+        if not isinstance(themes, dict) or not isinstance(display, dict):
+            return themes
+        sanitized = {}
+        for key, value in display.items():
+            if not isinstance(key, str) or len(key) > 32:
+                continue
+            if isinstance(value, bool) or value is None:
+                sanitized[key] = value
+            elif isinstance(value, (int, float)) and math.isfinite(value):
+                sanitized[key] = round(float(value), 3)
+            if len(sanitized) >= 16:
+                break
+        return {**themes, "display": sanitized}
+
+    def _launch_report_state(self, context) -> dict:
+        """Launch-options triage: tools, current game, custom-var count, and the
+        frontend snapshot. Never raises."""
+        try:
+            tools = dict(self._launch_tools) if isinstance(self._launch_tools, dict) else {}
+        except Exception:  # noqa: BLE001
+            tools = {}
+        try:
+            n_custom = len(launch_custom_vars.coerce_custom_vars(self._settings.get("custom_launch_vars")))
+        except Exception:  # noqa: BLE001
+            n_custom = 0
+        frontend = dict(context) if isinstance(context, dict) else {}
+        frontend.pop("hud", None)
+        frontend.pop("theme_display", None)
+        return {
+            "tools": tools,
+            "current_appid": self._current_appid,
+            "custom_var_count": n_custom,
+            "frontend": frontend,
+        }
+
+    def _safe_controller_config(self) -> dict:
+        try:
+            return self._controller_backend.get_config()
+        except Exception:  # noqa: BLE001
+            return {}
+
+    def _run_capture(self, cmd) -> str | None:
+        """Run a diagnostic command and return its stdout (or None). Root + a clean
+        env (the frozen runtime's LD_LIBRARY_PATH breaks system binaries). Guarded."""
+        return report_collector.capture_command(cmd, env=controller_detect.clean_env())
+
+    def _report_environment(self) -> dict:
+        """Host identity + versions. Serials are deliberately NOT read (and any
+        serial-like field is scrubbed downstream)."""
+        os_name = self._os_name
+        kernel = None
+        try:
+            u = os.uname()
+            kernel = f"{u.sysname} {u.release}"
+        except Exception:  # noqa: BLE001
+            pass
+        home = getattr(decky, "DECKY_USER_HOME", None)
+        try:
+            steam_client = report_collector.steam_client_diagnostics(
+                os.path.join(home, ".local", "share", "Steam") if home else None
+            )
+        except Exception:  # noqa: BLE001
+            steam_client = {"status": "unavailable", "branch": "unknown", "version": None}
+        try:
+            plugins = report_collector.decky_plugins(str(self._decky_plugins_root()))
+        except Exception:  # noqa: BLE001
+            plugins = {"status": "unavailable", "plugins": [], "truncated": False}
+        return {
+            "plugin_version": read_version(),
+            "decky_version": getattr(decky, "DECKY_VERSION", None),
+            "device_key": getattr(self._device, "key", None),
+            "product_name": read_str("/sys/class/dmi/id/product_name"),
+            "product_family": read_str("/sys/class/dmi/id/product_family"),
+            "board_name": read_str("/sys/class/dmi/id/board_name"),
+            "os": os_name,
+            "platform": dict(self._platform),
+            "kernel": kernel,
+            "steam_client": steam_client,
+            "decky_plugins": plugins,
+        }
+
+    def _report_stores(self) -> dict:
+        """The persisted JSON stores (settings + per-game profiles/curves + learned
+        telemetry). Private hardware recovery snapshots are excluded. All stores
+        are bounded in size; telemetry self-caps at 50 games."""
+        base = decky.DECKY_PLUGIN_SETTINGS_DIR
+
+        def _rj(name):
+            try:
+                with open(os.path.join(base, name)) as f:
+                    return json.load(f)
+            except Exception:  # noqa: BLE001
+                return None
+
+        report_settings = dict(self._settings)
+        report_settings.pop("cpu_frequency_handoff", None)
+        report_settings.pop("desktop_power_handoff", None)
+        return {
+            "settings": report_settings,
+            "tdp_profiles": _rj("tdp_profiles.json"),
+            "gpu_profiles": _rj("gpu_profiles.json"),
+            "fan_curves": _rj("fan_curves.json"),
+            "desktop_fans": _rj("desktop_fans.json"),
+            "color": _rj("color.json"),
+            "audio": _rj("audio.json"),
+            "controller_remap": _rj("controller_remap.json"),
+            "telemetry": _rj("telemetry.json"),
+        }
+
+    # ---- Mandos (controller manager + conflict) ----------------------------
+    # One backend per device (factory), mirroring the TDP backend: each RPC is a
+    # one-line delegation, no per-manager if/elif here. The config carries
+    # manager / manager_version / supported so the UI needs a single round-trip.
+    # get_config / set_button / reset spawn busctl (InputPlumber) or hit HHD's local
+    # HTTP — blocking work that must stay off the event loop (a busctl stall while the
+    # daemon re-grabs the pad would freeze the QAM). All offloaded via _offload_call.
+    async def get_controller_config(self) -> dict:
+        self._init()
+        return await self._offload_call(
+            lambda: self._controller_backend.get_config(self._current_appid))
+
+    async def set_controller_button(self, source: str, targets: list,
+                                    scope: str = "global", appid=None) -> dict:
+        """Remap one extra button in a scope (global / a game; InputPlumber only,
+        no-op on others). Editing tracks the applied set so the game-change re-apply
+        can tell whether anything changed."""
+        self._init()
+        scope = self._resolve_scope(scope, appid)  # game+no-appid → global; pins _current_appid
+        if scope is None:
+            return await self._offload_call(
+                lambda: self._controller_backend.get_config(self._current_appid))
+        cfg = await self._offload_call(
+            lambda: self._controller_backend.set_button(source, targets, scope, appid))
+        self._last_controller_overrides = self._controller_backend.effective_overrides(
+            self._current_appid)
+        return cfg
+
+    async def set_controller_follow_global(self, follow: bool, appid) -> dict:
+        """Toggle a game between its own remap and following the global one, keeping
+        its stored overrides (never deletes). Seeds from global on "use own" if it has
+        none, then re-applies the now-effective profile (InputPlumber only)."""
+        self._init()
+        if appid is not None:
+            appid = str(appid)
+            self._set_current_appid(appid)
+            if not follow and not self._controller_backend.has_game(appid):
+                self._controller_backend.create_game_from_global(appid)  # already sets follow_global=False
+            else:
+                self._controller_backend.set_follow_global(appid, bool(follow))
+            self._reapply_controller()
+        return await self._offload_call(
+            lambda: self._controller_backend.get_config(self._current_appid))
+
+    async def set_controller_setting(self, field: str, value: str) -> dict:
+        """Change a controller setting on HHD (mode / paddles_as; no-op on others)."""
+        self._init()
+        return await self._offload_call(
+            lambda: self._controller_backend.set_setting(field, value))
+
+    async def run_controller_action(self, action: str) -> dict:
+        """Run a bounded hardware action and return its independent confirmation state."""
+        self._init()
+        if getattr(self, "_controller_action_inflight", False):
+            config = await self._offload_call(
+                lambda: self._controller_backend.get_config(self._current_appid)
+            )
+            return {
+                "action": action,
+                "outcome": "busy",
+                "accepted": None,
+                "reason": "action_in_progress",
+                "config": config,
+            }
+        self._controller_action_inflight = True
+        try:
+            result = await self._offload_controller_action_call(
+                lambda: self._controller_backend.run_action(action)
+            )
+            config = await self._offload_call(
+                lambda: self._controller_backend.get_config(self._current_appid)
+            )
+            return {**result, "config": config}
+        finally:
+            self._controller_action_inflight = False
+
+    async def reset_controller(self, scope: str = "global", appid=None) -> dict:
+        """Reset a scope's remap to the device default (InputPlumber; no-op on others)."""
+        self._init()
+        scope = self._resolve_scope(scope, appid)
+        if scope is None:
+            return await self._offload_call(
+                lambda: self._controller_backend.get_config(self._current_appid))
+        cfg = await self._offload_call(
+            lambda: self._controller_backend.reset(scope, appid))
+        self._last_controller_overrides = self._controller_backend.effective_overrides(
+            self._current_appid)
+        return cfg
+
+    def _reapply_controller(self) -> None:
+        """On a game change, load the effective InputPlumber profile for the running
+        game — but only when it DIFFERS from what's already loaded, so the common case
+        (following global, or the same profile) never touches the daemon and can't
+        race its own re-grab on game launch. Offloaded (dbus + YAML subprocess). No-op
+        on HHD/none (effective_overrides returns None)."""
+        if not self._module_enabled("mandos"):
+            return
+        ov = self._controller_backend.effective_overrides(self._current_appid)
+        if ov is None or ov == self._last_controller_overrides:
+            return
+        # No remaps configured and none ever applied this session → leave the daemon
+        # untouched (don't reset it to default just because a game launched).
+        if not ov and self._last_controller_overrides is None:
+            return
+        appid = self._current_appid
+
+        def apply():
+            if self._controller_backend.apply_effective(appid):
+                self._last_controller_overrides = ov
+
+        self._offload(apply)
+
+    # ---- Ajustes: per-game profile overview --------------------------------
+    def _scoped_stores(self):
+        """Every store that keeps per-game profiles, all sharing list_games/forget_game
+        (the controller backend no-ops when it's not InputPlumber)."""
+        return (self._tdp_profiles, self._fan_curves, self._color, self._cpu_profiles,
+                self._gpu_profiles,
+                self._audio_eq, self._controller_backend)
+
+    def _game_profile_row(self, appid: str) -> dict:
+        """A game's per-section profiles for the overview — RAW own values (what the user
+        set), not the effective/global-inherited ones. A section is included only when
+        the game's own profile actually DIFFERS from global (a bare scope-toggle that
+        just copied global isn't 'configured'); `follows_global` marks a
+        configured-but-inactive one."""
+        row = {"appid": appid}
+        if self._tdp_profiles.differs_from_global(appid):
+            tp = self._tdp_profiles.game_profile(appid)
+            row["tdp"] = {
+                "unit": getattr(self._tdp_backend, "unit", "W"),
+                "pl1": int(tp.get("pl1", 0)),
+                "auto": bool(tp.get("auto_tdp")),
+                "target_fps": int(tp["auto_target_fps"]),
+                "initial_tdp": int(tp["auto_initial_tdp"]),
+                "min_tdp": tp["auto_min_tdp"],
+                "max_tdp": tp["auto_max_tdp"],
+                "follows_global": self._tdp_profiles.is_following_global(appid),
+            }
+        if self._gpu_profiles.differs_from_global(appid):
+            gp = self._gpu_profiles.game_profile(appid)
+            row["gpu"] = {
+                "manual": bool(gp.get("manual")),
+                "min": gp.get("min"),
+                "max": gp.get("max"),
+                "follows_global": self._gpu_profiles.is_following_global(appid),
+            }
+        if self._fan_curves.differs_from_global(appid):
+            row["fan"] = {"preset": self._fan_curves.game_profile(appid).get("preset", "auto"),
+                          "follows_global": self._fan_curves.is_following_global(appid)}
+        if self._color.differs_from_global(appid):
+            cp = self._color.game_profile(appid)
+            row["color"] = {"saturation": int(cp.get("saturation", 100)),
+                            "calibrated": any(cp.get(f) != COLOR_NATIVE[f] for f in COLOR_CALIBRATION),
+                            "hdr": bool(cp.get("hdr")),
+                            "follows_global": self._color.is_following_global(appid)}
+        if self._cpu_profiles.differs_from_global(appid):
+            up = self._cpu_profiles.game_profile(appid)
+            row["cpu"] = {"smt": bool(up.get("smt", True)),
+                          "boost": bool(up.get("boost", True)),
+                          "cores": up.get("cores"),
+                          "frequency": dict(up.get("frequency") or {}),
+                          "follows_global": self._cpu_profiles.is_following_global(appid)}
+        if self._controller_backend.differs_from_global(appid):
+            row["mandos"] = {"count": len(self._controller_backend.game_profile(appid)),
+                             "follows_global": self._controller_backend.is_following_global(appid)}
+        if self._audio_eq.differs_from_global(appid):
+            row["audio"] = {"follows_global": self._audio_eq.is_following_global(appid)}
+        return row
+
+    async def list_game_profiles(self) -> list:
+        """Every game with a per-game profile that differs from global in ANY section, for
+        the Ajustes overview. The frontend resolves names + formats the summaries (i18n)."""
+        self._init()
+        appids = set()
+        for store in self._scoped_stores():
+            appids.update(store.list_games())
+        rows = (self._game_profile_row(a) for a in sorted(appids))
+        return [r for r in rows if len(r) > 1]  # drop games whose every section == global
+
+    async def reset_game_profiles(self, appid) -> list:
+        """Forget a game's per-section profiles across every store → it reverts to
+        global. Re-applies if it's the running game. Returns the refreshed list."""
+        self._init()
+        appid = str(appid)
+        for store in self._scoped_stores():
+            store.forget_game(appid)
+        if appid == self._current_appid:
+            self._reapply_all()
+        return await self.list_game_profiles()
+
+    async def get_controller_conflict(self) -> dict:
+        self._init()
+        hhd_present = self._controller_backend.manager == controller_detect.HHD
+        # Only read HHD state when HHD is the active manager (its API is local).
+        state = self._hhd_tdp_client.read_state() if hhd_present else None
+        out = controller_conflict.assess(state, self._tdp_supported())
+        out["hhd_present"] = hhd_present
+        return out
+
+    def _steamdeck_ppt_supported(self) -> bool:
+        capability = getattr(self._tdp_backend, "ppt_capability", None)
+        if not callable(capability):
+            return False
+        try:
+            return bool(capability().get("supported"))
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _steamdeck_overclock_state(self) -> dict:
+        configured_state = getattr(
+            self._tdp_backend,
+            "configured_tdp_state",
+            None,
+        )
+        if not callable(configured_state):
+            return {
+                "detected": False,
+                "max_w": None,
+                "source": None,
+                "status": "unsupported",
+                "reason": None,
+            }
+        baseline = self._settings.get("steamdeck_ppt_previous")
+        source = "handoff" if baseline is not None else "live"
+        try:
+            configured = configured_state(baseline)
+        except Exception as error:  # noqa: BLE001
+            return {
+                "detected": False,
+                "max_w": None,
+                "source": None,
+                "status": "unavailable",
+                "reason": type(error).__name__,
+            }
+        if not isinstance(configured, dict):
+            configured = {}
+        status = configured.get("status")
+        ceiling = configured.get("max_w")
+        valid_ceiling = (
+            status == "overclocked"
+            and isinstance(ceiling, int)
+            and not isinstance(ceiling, bool)
+        )
+        reason = configured.get("reason")
+        if status not in {"overclocked", "stock", "unavailable"} or (
+            status == "overclocked" and not valid_ceiling
+        ):
+            status = "unavailable"
+            ceiling = None
+            reason = reason or "invalid_state"
+        detected = status == "overclocked"
+        return {
+            "detected": detected,
+            "max_w": int(ceiling) if detected else None,
+            "source": source if detected else None,
+            "status": status,
+            "reason": reason,
+        }
+
+    def _record_steamdeck_ppt(self, action, ok, reason=None) -> None:
+        history = getattr(self, "_steamdeck_ppt_history", None)
+        if history is None:
+            history = deque(maxlen=32)
+            self._steamdeck_ppt_history = history
+        event = {
+            "at": round(time.monotonic(), 3),
+            "action": action,
+            "ok": bool(ok),
+            "reason": reason,
+        }
+        history.append(event)
+        if not ok:
+            self._steamdeck_ppt_last_failure = event
+        decky.logger.info(
+            "Steam Deck PPT transition %s",
+            json.dumps(event, sort_keys=True, separators=(",", ":")),
+        )
+
+    def _restore_steamdeck_ppt(self, preserve_ownership=False) -> bool:
+        marker = self._settings.get("steamdeck_ppt_previous")
+        if marker is None:
+            return True
+        restore = getattr(self._tdp_backend, "restore_ppt", None)
+        if not callable(restore):
+            self._steamdeck_ppt_recovery_blocked = True
+            self._record_steamdeck_ppt("restore", False, "backend_unavailable")
+            return False
+        try:
+            result = restore(marker)
+        except Exception as error:  # noqa: BLE001
+            self._steamdeck_ppt_recovery_blocked = True
+            self._record_steamdeck_ppt("restore", False, type(error).__name__)
+            return False
+        if not result.ok:
+            self._steamdeck_ppt_recovery_blocked = True
+            self._record_steamdeck_ppt("restore", False, result.reason or "restore_failed")
+            return False
+        if preserve_ownership:
+            self._steamdeck_ppt_recovery_blocked = False
+            self._steamdeck_ppt_last_failure = None
+            self._record_steamdeck_ppt("restore", True)
+            return True
+        marker = dict(marker)
+        self._settings["steamdeck_ppt_previous"] = None
+        try:
+            self._save()
+        except Exception as error:  # noqa: BLE001
+            self._settings["steamdeck_ppt_previous"] = marker
+            self._steamdeck_ppt_recovery_blocked = True
+            self._record_steamdeck_ppt(
+                "restore", False, f"persist_{type(error).__name__}"
+            )
+            return False
+        self._steamdeck_ppt_recovery_blocked = False
+        self._steamdeck_ppt_last_failure = None
+        self._record_steamdeck_ppt("restore", True)
+        return True
+
+    def _steamdeck_ppt_probe_pending(self, overclock=None) -> bool:
+        if self._device.key not in _STEAM_DECK_PROFILES:
+            return False
+        state = overclock or self._steamdeck_overclock_state()
+        return state["status"] in {"unavailable", "unsupported"}
+
+    def _restore_steamdeck_startup_ppt(self) -> bool:
+        return self._restore_steamdeck_ppt(
+            preserve_ownership=self._steamdeck_ppt_probe_pending()
+        )
+
+    def _prepare_steamdeck_ppt(self, command):
+        if not self._steamdeck_ppt_supported():
+            return None
+        advanced = "pl3" in command.requested
+        if advanced:
+            if getattr(self, "_steamdeck_ppt_recovery_blocked", False):
+                failure = getattr(self, "_steamdeck_ppt_last_failure", None) or {}
+                return failure.get("reason", "recovery_blocked")
+            if self._settings.get("steamdeck_ppt_previous") is None:
+                snapshot = self._tdp_backend.capture_ppt()
+                if not isinstance(snapshot, dict):
+                    self._record_steamdeck_ppt("capture", False, "snapshot_unavailable")
+                    return "snapshot_unavailable"
+                validate = getattr(self._tdp_backend, "validate_ppt_snapshot", None)
+                if not callable(validate) or not validate(snapshot):
+                    self._record_steamdeck_ppt("capture", False, "snapshot_invalid")
+                    return "snapshot_invalid"
+                self._settings["steamdeck_ppt_previous"] = dict(snapshot)
+                try:
+                    self._save()
+                except Exception as error:  # noqa: BLE001
+                    self._settings["steamdeck_ppt_previous"] = None
+                    self._steamdeck_ppt_recovery_blocked = True
+                    reason = f"snapshot_persist_{type(error).__name__}"
+                    self._record_steamdeck_ppt("capture", False, reason)
+                    return reason
+                self._record_steamdeck_ppt("capture", True)
+            return None
+        if self._settings.get("steamdeck_ppt_previous") is not None:
+            if not self._restore_steamdeck_ppt():
+                failure = getattr(self, "_steamdeck_ppt_last_failure", None) or {}
+                return failure.get("reason", "restore_failed")
+        return None
+
+    def _release_tdp_hardware(self, preserve_ownership=False) -> bool | None:
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        if preserve_ownership and sidecar is not None and (
+            self._low_battery_sidecar_active()
+            or getattr(sidecar, "safety_locked", False)
+        ):
+            return None
+        if not self._release_low_battery_hold():
+            return False
+        backend = getattr(self, "_tdp_backend", None)
+        if preserve_ownership and backend is not None and (
+            getattr(backend, "owns_auto_state", False)
+            or getattr(backend, "safety_locked", False)
+        ):
+            return None
+        release = getattr(backend, "release", None)
+        try:
+            backend_released = bool(release()) if callable(release) else True
+        except Exception:  # noqa: BLE001
+            backend_released = False
+        if not backend_released:
+            return False
+        return (
+            self._restore_steamdeck_ppt(preserve_ownership=True)
+            if preserve_ownership
+            else self._restore_steamdeck_ppt()
+        )
+
+    def _restore_power_handoff(self, preserve_ownership=False) -> bool | None:
+        hardware_released = self._release_tdp_hardware(preserve_ownership)
+        if hardware_released is not True:
+            return hardware_released
+        return (
+            self._restore_hhd_tdp(preserve_ownership=True)
+            if preserve_ownership
+            else self._restore_hhd_tdp()
+        )
+
+    # ---- TDP conflict + master switch --------------------------------------
+    def _tdp_write_authorized(self) -> bool:
+        return (
+            getattr(self, "_os_id", None) != "anatase"
+            or self._tdp_external_owner is False
+        )
+
+    async def _prime_tdp_ownership(self) -> bool | None:
+        if self._os_id != "anatase":
+            return False
+        hhd_present = self._controller_backend.manager == controller_detect.HHD
+        if not hhd_present:
+            self._tdp_external_owner = False
+            return False
+        managing = await self._offload_call(
+            self._hhd_tdp_client.current_tdp_enable
+        )
+        self._tdp_external_owner = managing is not False
+        return managing
+
+    async def _recover_tdp_startup_state(self) -> bool:
+        managing = await self._prime_tdp_ownership()
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        sidecar_locked = bool(getattr(sidecar, "safety_locked", False))
+        if sidecar_locked:
+            if self._os_id == "anatase" and managing is not False:
+                self._low_battery_hold_recovery_pending = True
+                self._low_battery_hold_last_failure = "external_owner"
+                decky.logger.warning(
+                    "Interrupted low-battery TDP hold recovery deferred: external owner"
+                )
+                return False
+            sidecar_recovered = await self._offload_call(
+                self._recover_low_battery_hold_transaction
+            )
+            self._low_battery_hold_recovery_pending = not sidecar_recovered
+            self._low_battery_hold_last_failure = (
+                None if sidecar_recovered else "restore_failed"
+            )
+            if not sidecar_recovered:
+                return False
+        if self._os_id != "anatase" or managing is False:
+            primary_recovered = await self._offload_call(
+                self._recover_tdp_runtime_transaction
+            )
+            return primary_recovered
+        if not getattr(self._tdp_backend, "safety_locked", False):
+            return True
+        if managing is True:
+            relinquish = getattr(self._tdp_backend, "relinquish_ownership", None)
+            if callable(relinquish):
+                try:
+                    result = await self._offload_call(relinquish)
+                except Exception as error:  # noqa: BLE001
+                    decky.logger.warning(
+                        "Interrupted TDP ownership relinquish failed: %s",
+                        type(error).__name__,
+                    )
+                else:
+                    ok = bool(isinstance(result, dict) and result.get("ok"))
+                    detail = (
+                        result.get("detail")
+                        if isinstance(result, dict)
+                        else "invalid response"
+                    )
+                    log = decky.logger.info if ok else decky.logger.warning
+                    log("Interrupted TDP ownership relinquish: %s", detail)
+                    if ok and not getattr(
+                        self._tdp_backend,
+                        "safety_locked",
+                        False,
+                    ):
+                        return True
+        reason = "external owner" if managing is True else "ownership unconfirmed"
+        decky.logger.warning(
+            "Interrupted TDP transaction recovery deferred: %s",
+            reason,
+        )
+        return False
+
+    def _recover_low_battery_hold_transaction(self) -> bool:
+        backend = getattr(self, "_low_battery_hold_backend", None)
+        if backend is None or not getattr(backend, "safety_locked", False):
+            return True
+        recover = getattr(backend, "recover_runtime_transaction", None)
+        if not callable(recover):
+            return False
+        try:
+            result = recover()
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error(
+                "Interrupted low-battery TDP hold recovery failed: %s",
+                type(error).__name__,
+            )
+            return False
+        ok = bool(isinstance(result, dict) and result.get("ok"))
+        detail = result.get("detail") if isinstance(result, dict) else "invalid response"
+        log = decky.logger.info if ok else decky.logger.warning
+        log("Interrupted low-battery TDP hold recovery: %s", detail)
+        return ok
+
+    async def get_tdp_conflict(self) -> dict:
+        """Which external managers can currently write the power rails."""
+        self._init()
+        hhd_present = self._controller_backend.manager == controller_detect.HHD
+        hhd_call = (
+            self._offload_call(self._hhd_tdp_client.current_tdp_enable)
+            if hhd_present
+            else asyncio.sleep(0, result=False)
+        )
+        managing, powerstation = await asyncio.gather(
+            hhd_call,
+            self._offload_call(self._powerstation_detector.tdp_active),
+        )
+        if self._os_id == "anatase":
+            self._tdp_external_owner = (
+                managing is not False if hhd_present else False
+            )
+        return {
+            "hhd_present": hhd_present,
+            "hhd_managing": bool(managing),
+            "powerstation_active": bool(powerstation),
+        }
+
+    async def take_tdp_control(self) -> dict:
+        """Hand HHD's TDP module over to us (reversible), saving its previous value.
+        ok only when the echo confirms it's off."""
+        self._init()
+        await self._ensure_recognised_desktop_migration()
+        if getattr(self, "_desktop_recognition_migration_pending", False):
+            managing = await self._offload_call(
+                self._hhd_tdp_client.current_tdp_enable
+            )
+            return {
+                "ok": False,
+                "hhd_managing": bool(managing),
+                "detail": "desktop migration pending",
+            }
+        if not await self._probe_tdp_backend(force=True):
+            prev = await self._offload_call(
+                self._hhd_tdp_client.current_tdp_enable
+            )
+            return {
+                "ok": False,
+                "hhd_managing": bool(prev),
+                "detail": "tdp backend readback unavailable",
+            }
+        # HHD's REST client is blocking urllib — keep it off the loop.
+        prev = await self._offload_call(self._hhd_tdp_client.current_tdp_enable)
+        if prev is None:
+            if self._os_id == "anatase":
+                self._tdp_external_owner = True
+            return {"ok": False, "hhd_managing": False}
+        if prev and self._settings.get("hhd_tdp_prev") is None:
+            self._settings["hhd_tdp_prev"] = True
+            try:
+                self._save()
+            except Exception:  # noqa: BLE001
+                self._settings["hhd_tdp_prev"] = None
+                return {"ok": False, "hhd_managing": True}
+        applied = await self._offload_call(
+            lambda: self._hhd_tdp_client.set_tdp_enable(False)
+        )
+        if applied is not False:
+            if self._os_id == "anatase":
+                self._tdp_external_owner = True
+            return {"ok": False, "hhd_managing": bool(applied)}
+        if self._os_id == "anatase":
+            self._tdp_external_owner = False
+        if self._low_battery_hold_recovery_pending:
+            recovered = await self._offload_call(
+                self._recover_low_battery_hold_transaction
+            )
+            self._low_battery_hold_recovery_pending = not recovered
+            self._low_battery_hold_last_failure = (
+                None if recovered else "restore_failed"
+            )
+        else:
+            recovered = True
+        result = (
+            await self._apply_tdp_now("take-control")
+            if recovered
+            else TdpResult(
+                self._tdp_profiles.effective(self._current_appid)["pl1"],
+                None,
+                False,
+                "low-battery-hold-recovery-failed",
+            )
+        )
+        if not result.ok:
+            hardware_released = await self._offload_call(
+                self._release_tdp_hardware
+            )
+            if not hardware_released:
+                return {
+                    "ok": False,
+                    "hhd_managing": False,
+                    "detail": f"{result.detail}; hardware restore pending",
+                }
+            restore = await self._offload_call(self._restore_hhd_tdp_status)
+            managing = restore.get("hhd_managing")
+            if managing is None:
+                managing = False
+            if restore.get("ok"):
+                detail = result.detail
+            elif restore.get("hardware_ok"):
+                detail = f"{result.detail}; HHD marker clear pending"
+            else:
+                detail = f"{result.detail}; HHD restore pending"
+            return {
+                "ok": False,
+                "hhd_managing": bool(managing),
+                "detail": detail,
+            }
+        self._remember_hhd_takeover(True)
+        return {"ok": True, "hhd_managing": False}
+
+    def _remember_hhd_takeover(self, taken: bool) -> None:
+        if self._settings.get("hhd_tdp_takeover") is taken:
+            return
+        self._settings["hhd_tdp_takeover"] = taken
+        try:
+            self._save()
+        except Exception:  # noqa: BLE001
+            decky.logger.warning("HHD takeover choice not saved")
+
+    async def _resume_hhd_takeover(self) -> None:
+        if (
+            self._settings.get("hhd_tdp_takeover") is not True
+            or not self._tdp_control_on()
+            or self._controller_backend.manager != controller_detect.HHD
+        ):
+            return
+        try:
+            managing = await self._offload_call(self._hhd_tdp_client.current_tdp_enable)
+            if managing is not True:
+                return
+            result = await self.take_tdp_control()
+        except Exception as error:  # noqa: BLE001
+            decky.logger.warning("HHD TDP takeover not resumed: %s", type(error).__name__)
+            return
+        decky.logger.info("HHD TDP takeover resumed ok=%s", result.get("ok"))
+
+    def _restore_hhd_tdp_status(self, preserve_ownership=False) -> dict:
+        """Return HHD to its previous tdp_enable if we took it. Idempotent. Clears the
+        marker only once the write confirms, so a failed hand-back is retried later."""
+        prev = self._settings.get("hhd_tdp_prev")
+        if prev is None:
+            return {
+                "ok": True,
+                "hardware_ok": True,
+                "hhd_managing": None,
+                "marker_cleared": True,
+            }
+        try:
+            hhd_client = getattr(self, "_hhd_tdp_client", controller_hhd)
+            echoed = hhd_client.set_tdp_enable(bool(prev))
+            if echoed != bool(prev):
+                if getattr(self, "_os_id", None) == "anatase":
+                    self._tdp_external_owner = True
+                return {
+                    "ok": False,
+                    "hardware_ok": False,
+                    "hhd_managing": echoed if isinstance(echoed, bool) else None,
+                    "marker_cleared": False,
+                }
+            if getattr(self, "_os_id", None) == "anatase":
+                self._tdp_external_owner = bool(prev)
+            if preserve_ownership:
+                return {
+                    "ok": True,
+                    "hardware_ok": True,
+                    "hhd_managing": bool(echoed),
+                    "marker_cleared": False,
+                }
+            self._settings["hhd_tdp_prev"] = None
+            try:
+                self._save()
+            except Exception:  # noqa: BLE001
+                self._settings["hhd_tdp_prev"] = prev
+                return {
+                    "ok": False,
+                    "hardware_ok": True,
+                    "hhd_managing": bool(echoed),
+                    "marker_cleared": False,
+                }
+            return {
+                "ok": True,
+                "hardware_ok": True,
+                "hhd_managing": bool(echoed),
+                "marker_cleared": True,
+            }
+        except Exception:  # noqa: BLE001
+            return {
+                "ok": False,
+                "hardware_ok": False,
+                "hhd_managing": None,
+                "marker_cleared": False,
+            }
+
+    def _restore_hhd_tdp(self, preserve_ownership=False) -> bool:
+        return bool(
+            self._restore_hhd_tdp_status(preserve_ownership).get("ok")
+        )
+
+    def _restore_hhd_after_tdp_route_loss(self):
+        if self._settings.get("hhd_tdp_prev") is None:
+            return None
+        self._remember_hhd_takeover(False)
+        previous = self._settings.get("tdp_control_enabled", True)
+        self._settings["tdp_control_enabled"] = False
+        try:
+            self._save()
+        except Exception as error:  # noqa: BLE001
+            self._settings["tdp_control_enabled"] = previous
+            return {
+                "ok": False,
+                "hardware_ok": False,
+                "marker_cleared": False,
+                "error": type(error).__name__,
+            }
+        return self._restore_hhd_tdp_status()
+
+    async def get_tdp_control_enabled(self) -> bool:
+        self._init()
+        await self._ensure_recognised_desktop_migration()
+        return self._tdp_control_on()
+
+    async def set_tdp_control_enabled(self, enabled: bool) -> bool:
+        """OFF = stop writing rails and hand HHD back (step aside). ON = re-assert
+        our setpoint."""
+        self._init()
+        enabled = bool(enabled)
+        if enabled:
+            await self._ensure_recognised_desktop_migration()
+            if getattr(self, "_desktop_recognition_migration_pending", False):
+                return False
+            if not await self._probe_tdp_backend(force=True):
+                return False
+            if self._low_battery_hold_recovery_pending:
+                if not self._tdp_write_authorized():
+                    return False
+                recovered = await self._offload_call(
+                    self._recover_low_battery_hold_transaction
+                )
+                self._low_battery_hold_recovery_pending = not recovered
+                self._low_battery_hold_last_failure = (
+                    None if recovered else "restore_failed"
+                )
+                if not recovered:
+                    return False
+        self._settings["tdp_control_enabled"] = enabled
+        self._save()
+        if not enabled:
+            self._remember_hhd_takeover(False)
+            requested = (
+                dict(self._tdp_targets.requested)
+                if self._tdp_targets is not None
+                else {}
+            )
+            self._advance_tdp_generation()
+            released = bool(
+                await self._offload_call(self._restore_power_handoff)
+            )
+            if self._power_uses_levels():
+                self._apply_cpu()
+                self._apply_gpu_clock()
+            self._remember_tdp_observation(
+                await self._offload_call(self._observe_tdp_sync)
+            )
+            self._tdp_targets = None
+            self._tdp_status = "unverifiable" if released else "rejected"
+            self._tdp_reason = "control_disabled" if released else "release_failed"
+            self._record_tdp_transition(
+                (
+                    "control-disabled"
+                    if released
+                    else "control-disable-release-failed"
+                ),
+                action="release",
+                requested=requested,
+            )
+        else:
+            if self._retired_experimental_tdp_unlock():
+                retired = await self._retire_experimental_tdp_unlock_or_disable()
+                if not retired.get("ok"):
+                    return False
+            else:
+                if self._power_uses_levels():
+                    self._apply_cpu()
+                    self._apply_gpu_clock()
+                await self._apply_tdp_now("control-enabled")
+        return enabled
+
+    async def set_seen_autotdp_notice(self, seen: bool) -> bool:
+        self._init()
+        self._settings["seen_autotdp_notice"] = bool(seen)
+        self._save()
+        return bool(seen)
+
+    async def set_seen_tdp_conflict_takeover(self, seen: bool) -> bool:
+        self._init()
+        self._settings["seen_tdp_conflict_takeover"] = bool(seen)
+        self._save()
+        return bool(seen)
+
+    # ---- Fans (read-only monitor) ------------------------------------------
+    def _read_fans(self) -> dict:
+        """hwmon fan/temp reading, with EC-readable RPM merged in for devices that
+        expose NO hwmon fan (Legion Go 2 reads RPM over the EC). Shared by the
+        monitor RPC and the telemetry sampler so both see the real RPM, not an empty
+        list. Honest: a value only appears when actually readable. Never raises."""
+        state = self._fan_reader.read()
+        if not state["fans"]:
+            try:
+                hw = self._fan_ctrl.read_state()
+                ec_fans = [{"label": f.get("key", "fan"), "rpm": rpm, "percent": None}
+                           for f in hw.get("fans", []) if (rpm := f.get("rpm")) is not None]
+                if ec_fans:
+                    state = {**state, "supported": True, "fans": ec_fans}
+            except Exception:  # noqa: BLE001
+                pass
+        # Some kernels load lenovo_wmi_other but publish no hwmon fan node — read the
+        # RPM straight from the EC so the monitor still shows the fan.
+        if not state["fans"] and self._ec_rpm is not None:
+            try:
+                rpm = self._ec_rpm.read_rpm()
+                if rpm is not None and rpm > 0:
+                    state = {**state, "supported": True,
+                             "fans": [{"label": "fan", "rpm": rpm, "percent": None}]}
+            except Exception:  # noqa: BLE001
+                pass
+        return state
+
+    async def get_fan_state(self) -> dict:
+        self._init()
+        return await self._offload_call(self._read_fans)
+
+    def _driving_temp(self):
+        """Live driving temperature (max of CPU/GPU) for software-loop backends.
+        Never raises; returns None if no temp is readable."""
+        try:
+            pair = self._fan_reader.driving_temps()
+            cpu, gpu = pair if pair is not None else extract_cpu_gpu_temps(self._fan_reader.read())
+            vals = [t for t in (cpu, gpu) if t is not None]
+            return max(vals) if vals else None
+        except Exception:  # noqa: BLE001
+            return None
+
+    # ---- Fan-curve control (global + per-game, persisted) -------------------
+    def _recover_gpd_fan_sync(self):
+        if getattr(self, "_gpd_fan_recovery_done", False):
+            return None
+        self._gpd_fan_recovery_done = True
+        if bool(getattr(self._fan_ctrl, "supported", False)):
+            return None
+
+        outcome = gpd_recovery.ensure_gpd_fan(self._device)
+        if outcome["eligible"] and outcome["abi_after"]:
+            try:
+                self._fan_ctrl = fan_control.select_fan_backend(
+                    self._device,
+                    temp_fn=self._driving_temp,
+                    experimental=bool(
+                        self._settings.get("fan_experimental", False)
+                    ),
+                )
+            except Exception as exc:  # noqa: BLE001 — retain firmware-auto/null
+                outcome["error"] = type(exc).__name__
+
+        return {
+            **outcome,
+            "backend": getattr(self._fan_ctrl, "name", "null"),
+            "supported": bool(getattr(self._fan_ctrl, "supported", False)),
+        }
+
+    async def _recover_gpd_fan(self) -> None:
+        if (
+            getattr(self._fan_ctrl, "supported", False)
+            or getattr(self._device, "key", None) != "gpd_win_mini_2025"
+        ):
+            return
+        try:
+            outcome = await self._offload_call(self._recover_gpd_fan_sync)
+        except Exception as exc:  # noqa: BLE001 — startup must continue
+            decky.logger.warning("GPD fan recovery error=%s", type(exc).__name__)
+            return
+        if outcome is None or not outcome["eligible"]:
+            return
+        encoded = json.dumps(outcome, sort_keys=True, separators=(",", ":"))
+        log = decky.logger.info if outcome["supported"] else decky.logger.warning
+        log("GPD fan recovery %s", encoded)
+
+    def _board_fan_state(self) -> dict:
+        driver = getattr(self, "_board_fans", None)
+        if driver is None:
+            return {"supported": False}
+        return {**driver.state(), "supported": True,
+                "enabled": self._settings.get("board_fan_driver") is True}
+
+    def _set_board_fans_sync(self, enabled: bool, only: str | None = None) -> dict:
+        driver = self._board_fans
+        try:
+            released = self._fan_ctrl.restore_auto()
+            released_ok = not isinstance(released, dict) or bool(released.get("ok", True))
+        except Exception:  # noqa: BLE001
+            released_ok = False
+        if enabled:
+            state = driver.load(only)
+        elif released_ok:
+            state = driver.unload()
+        else:
+            # Unloading under a fan still in manual mode would strand it at its
+            # last duty with no driver to move it again.
+            state = driver.release_failed()
+        reader = getattr(self, "_fan_reader", None)
+        if reader is not None:
+            reader.invalidate()
+        self._fan_ctrl = fan_control.select_fan_backend(
+            self._device, temp_fn=self._driving_temp,
+            experimental=bool(self._settings.get("fan_experimental", False)))
+        self._reapply_fans_sync()
+        decky.logger.info("Board fan driver %s", json.dumps(
+            {**state, "backend": getattr(self._fan_ctrl, "name", "null")},
+            sort_keys=True, separators=(",", ":")))
+        return state
+
+    # Models whose fan EC map is unknown: a report loads ec_sys read-only for one
+    # dump so the registers can be matched against known OneXPlayer layouts.
+    _REPORT_EC_PROBE_KEYS = frozenset({"onexplayer_3"})
+
+    def _report_sysfs_snapshot(self, home, hostname) -> dict:
+        probe = None
+        if (getattr(getattr(self, "_device", None), "key", None) in self._REPORT_EC_PROBE_KEYS
+                and not os.path.exists("/sys/kernel/debug/ec/ec0/io")
+                and not os.path.isdir("/sys/module/ec_sys")):
+            probe = {"loaded_for_report": False, "unloaded": None}
+            probe["loaded_for_report"] = self._run_modprobe(["ec_sys"])
+        try:
+            snapshot = report_collector.sysfs_snapshot(home=home, hostname=hostname)
+        finally:
+            if probe and probe["loaded_for_report"]:
+                probe["unloaded"] = self._run_modprobe(["-r", "ec_sys"])
+        if probe is not None and isinstance(snapshot.get("ec"), dict):
+            snapshot["ec"]["report_probe"] = probe
+        return snapshot
+
+    @staticmethod
+    def _run_modprobe(args) -> bool:
+        from controllers.detect import clean_env, resolve_bin
+        try:
+            return subprocess.run([resolve_bin("modprobe"), *args], check=False,
+                                  capture_output=True, timeout=5,
+                                  env=clean_env()).returncode == 0
+        except Exception:  # noqa: BLE001
+            return False
+
+    async def set_board_fan_enabled(self, enabled: bool) -> dict:
+        """Opt in to loading the motherboard's fan driver (desktop PCs only)."""
+        self._init()
+        if getattr(self, "_board_fans", None) is None:
+            return {"supported": False}
+        enabled = enabled is True
+        state = await self._offload_call(lambda: self._set_board_fans_sync(enabled))
+        self._settings["board_fan_driver"] = bool(
+            state["channels"] > 0 and (enabled or state["loaded_by_panel"]))
+        self._settings["board_fan_module"] = (
+            self._board_fans.active_module if self._settings["board_fan_driver"] else None
+        )
+        self._save()
+        self._ensure_fan_loop()
+        return await self._offload_call(self._board_fan_state)
+
+    def _restore_board_fans(self) -> None:
+        if (getattr(self, "_board_fans", None) is None
+                or self._settings.get("board_fan_driver") is not True):
+            return
+        module = self._settings.get("board_fan_module")
+        self._offload(
+            lambda: self._set_board_fans_sync(True, module if isinstance(module, str) else None),
+            done=self._ensure_fan_loop,
+        )
+
+    def _reapply_fans(self) -> None:
+        """Push the effective fan curve off the event loop (Steam Deck's software-loop
+        backend spawns a blocking systemctl). `done` (re)starts the curve loop on the
+        event loop after the apply took ownership — race-free (see _ensure_fan_loop)."""
+        self._offload(self._reapply_fans_sync, done=self._ensure_fan_loop)
+
+    def _ensure_fan_loop(self) -> None:
+        """Start a software-loop backend's periodic curve loop ON the event loop.
+        Applies run off-loop (worker thread, no loop) where the backend's own start()
+        no-ops — so the loop that re-evaluates the curve against live temperature (and
+        enforces the high-temp guardian) would never run. Call after an apply has taken
+        fan ownership (race-free via _offload's `done`). No-op for backends without a
+        loop and when not driving (auto mode)."""
+        ctrl = self._fan_ctrl
+        starter = getattr(ctrl, "start", None)
+        if callable(starter) and getattr(ctrl, "_owns_fan", False):
+            try:
+                starter()
+            except Exception as error:  # noqa: BLE001 — starting the loop must never break an RPC
+                self._log_fan_transition("loop_start_failed", ok=False, error=type(error).__name__)
+
+    def _reapply_fans_sync(self) -> bool:
+        """Apply the effective fan profile for the current game (or global). Returns
+        whether the intended state was established (the apply/release reported ok) so
+        callers that care — the reset — don't claim success on a refused re-apply.
+
+        - auto      -> firmware control.
+        - adaptive  -> drive the LEARNED curve (computed live from telemetry): the
+                       balanced fit biased by the scope's silence↔cool dial. When
+                       there isn't enough real data yet, fall back to firmware auto
+                       (never fabricate a curve) — the card shows the learning state.
+        - preset/custom -> write the stored 8-point curve to all fans.
+
+        Guarded: a bad fan apply must never brick load.
+        """
+        if not self._module_enabled("fanControl"):
+            # Fan control disabled: hand the fans back to firmware auto, never drive.
+            released = self._restore_fans_safe()
+            self._fan_apply_confirmed = False
+            self._log_fan_transition("module_disabled", ok=bool(released))
+            return released
+        try:
+            hw_state = self._fan_ctrl.read_state()
+            if self._desktop_mode_on() and hw_state.get("independent"):
+                profile = self._desktop_fans.effective(self._current_appid)
+                ok = True
+                for channel in ("system", "gpu"):
+                    channel_profile = profile[channel]
+                    channel_hw = next(
+                        (fan for fan in hw_state.get("fans", []) if fan.get("key") == channel), {})
+                    if not channel_hw.get("controllable", False):
+                        continue
+                    if channel_profile["preset"] == "auto" or not channel_profile["points"]:
+                        result = self._fan_ctrl.set_auto(channel)
+                    else:
+                        if not self._arm_fremont_fan_handoff_marker():
+                            ok = False
+                            continue
+                        result = self._fan_ctrl.set_curve(channel, channel_profile["points"])
+                    ok = bool(result.get("ok")) and ok
+                self._log_fan_transition("desktop_channels", ok=ok, profile=profile)
+                return ok and self._sync_fremont_fan_handoff_marker()
+            profile = self._fan_curves.effective(self._current_appid)
+            preset = profile["preset"]
+            points = None
+            if preset == "adaptive":
+                points = self._adaptive_curve_points(self._current_appid)
+                if points is None:
+                    mode = "adaptive_learning_auto"
+                    res = self._fan_ctrl.set_auto(None)  # not enough data → firmware auto
+                else:
+                    mode = "adaptive_curve"
+                    if not self._arm_fremont_fan_handoff_marker():
+                        self._log_fan_transition(mode, ok=False, detail="handoff_marker")
+                        return False
+                    res = self._fan_ctrl.apply_curve_all(points)
+            elif preset == "auto" or not profile["points"]:
+                mode = "auto"
+                res = self._fan_ctrl.set_auto(None)
+            else:
+                mode = "curve"
+                points = profile["points"]
+                if not self._arm_fremont_fan_handoff_marker():
+                    self._log_fan_transition(mode, ok=False, detail="handoff_marker")
+                    return False
+                res = self._fan_ctrl.apply_curve_all(points)
+            # A malformed response (None / {} / no "ok") is not success, so reset_ok
+            # can't ride a bad re-apply.
+            confirmed = bool(res.get("ok")) if isinstance(res, dict) else False
+            self._fan_apply_confirmed = confirmed
+            self._log_fan_transition(
+                mode,
+                ok=confirmed,
+                preset=preset,
+                points=points,
+                detail=res.get("detail") if isinstance(res, dict) else "invalid_response",
+            )
+            return confirmed and self._sync_fremont_fan_handoff_marker()
+        except Exception as error:  # noqa: BLE001
+            self._fan_apply_confirmed = False
+            self._sync_fremont_fan_handoff_marker()
+            self._log_fan_transition("apply_failed", ok=False, error=type(error).__name__)
+            return False
+
+    def _log_fan_transition(self, mode: str, *, ok: bool, **fields) -> None:
+        if getattr(self._fan_ctrl, "supported", True) is False:
+            return
+        event = {
+            "mode": mode,
+            "ok": ok,
+            "backend": getattr(self._fan_ctrl, "name", type(self._fan_ctrl).__name__),
+            "appid": self._current_appid,
+            **{key: value for key, value in fields.items() if value is not None},
+        }
+        log = decky.logger.info if ok else decky.logger.warning
+        log("Fan transition %s", json.dumps(event, sort_keys=True, separators=(",", ":"), default=str))
+
+    def _adaptive_curve_points(self, appid):
+        """The learned curve to drive in adaptive mode for *appid* (or None if there
+        isn't enough real data yet). Balanced fit biased by the scope's silence↔cool
+        dial, sanitized. Never raises; never fabricates a curve without data."""
+        sugg = self._fan_suggestion(appid)
+        if not sugg["available"] or not sugg["curves"]:
+            return None
+        bias = self._fan_curves.adaptive_bias(appid)
+        pts = fan_suggest.biased_curve(sugg["curves"], bias)
+        return [list(p) for p in pts]
+
+    def _fan_curve_state(self, hw_state=None) -> dict:
+        hw_state = hw_state if hw_state is not None else self._fan_ctrl.read_state()
+        effective = self._fan_curves.effective(self._current_appid)
+        # When idle (no game) the effective profile IS the global one — skip the
+        # second store read.
+        global_curve = effective if self._current_appid is None else self._fan_curves.effective(None)
+        # A device that can't be controlled but exposes its firmware curve (MSI Claw)
+        # shows it read-only, as [{temp, pct}]. Never activates when a write backend
+        # is present; None everywhere else (the reader is cached, static config).
+        firmware_points = None
+        if not hw_state.get("supported") and self._ec_curve is not None:
+            curve = self._ec_curve.read_curve()
+            if curve:
+                firmware_points = [{"temp": t, "pct": p} for t, p in curve]
+        state = {
+            "supported": hw_state.get("supported", False),
+            "resettable": bool(getattr(self._fan_ctrl, "resettable", False)),
+            "firmware_points": firmware_points,
+            "source": hw_state.get("source"),
+            "pwm_max": hw_state.get("pwm_max", 255),
+            "preset": effective["preset"],
+            "points": effective["points"],
+            "bias": effective.get("bias", 0),
+            "global_preset": global_curve["preset"],
+            "global_points": global_curve["points"],
+            "has_game_profile": (self._current_appid is not None
+                                 and self._fan_curves.has_game(self._current_appid)),
+            "follows_global": self._fan_curves.is_following_global(self._current_appid),
+            "appid": self._current_appid,
+            "presets": [{"id": pid, "points": pts}
+                        for pid, pts in fan_presets.RESOLVED.items()],
+            # Experimental EC control (Legion Go S): available = device has the
+            # unofficial channel; enabled = the user opted in.
+            "experimental_available": getattr(self, "_fan_experimental_available", False),
+            "experimental_enabled": bool(self._settings.get("fan_experimental", False)),
+            "os_name": self._os_name,
+            # OneXPlayer Apex on SteamOS: the kernel lacks the oxpec fan driver (it
+            # lands in a newer kernel). Flag it so the UI can say control will work
+            # once SteamOS updates — and offer the opt-in EC path meanwhile.
+            "kernel_pending": self._fan_kernel_pending(),
+            # Active firmware mode governing the fan; None = custom / no firmware modes.
+            "firmware_mode": (fw if (fw := self._firmware_mode()) != _CUSTOM_MODE else None),
+            "has_firmware_modes": bool(self._firmware_choices()),
+            "device_key": getattr(self._device, "key", None),
+        }
+        if getattr(self, "_board_fans", None) is not None:
+            state["board_fans"] = self._board_fan_state()
+        if self._desktop_mode_on() and hw_state.get("independent"):
+            profile = self._desktop_fans.effective(self._current_appid)
+            hardware = {fan.get("key"): fan for fan in hw_state.get("fans", [])}
+            state["independent"] = True
+            state["channels"] = [
+                {
+                    "key": key,
+                    "preset": profile[key]["preset"],
+                    "points": profile[key]["points"],
+                    "sensor": hardware.get(key, {}).get("sensor"),
+                    "rpm": hardware.get(key, {}).get("rpm"),
+                    "max_rpm": hardware.get(key, {}).get("max_rpm"),
+                    "controllable": bool(hardware[key].get("controllable", False)),
+                }
+                for key in ("system", "gpu")
+                if key in hardware
+            ]
+        else:
+            state["independent"] = False
+            state["channels"] = []
+        return state
+
+    def _fan_kernel_pending(self) -> bool:
+        if getattr(self._device, "key", None) != "onexplayer_apex":
+            return False
+        if "steamos" not in (self._os_name or "").lower():
+            return False
+        return not oxp_ec.oxpec_hwmon_present()
+
+    async def _fan_curve_state_offloop(self) -> dict:
+        return await self._offload_call(self._fan_curve_state)
+
+    async def get_fan_curve_state(self) -> dict:
+        self._init()
+        return await self._fan_curve_state_offloop()
+
+    def _desktop_fan_mutation_lock(self):
+        lock = getattr(self, "_desktop_fan_rpc_lock", None)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._desktop_fan_rpc_lock = lock
+        return lock
+
+    async def _commit_desktop_fan_mutation(self, mutate) -> dict:
+        async with self._desktop_fan_mutation_lock():
+            checkpoint = self._desktop_fans.checkpoint()
+            mutate()
+            applied = await self._offload_call(self._reapply_fans_sync)
+            rollback_ok = None
+            if not applied:
+                self._desktop_fans.restore_checkpoint(checkpoint)
+                rollback_ok = await self._offload_call(self._reapply_fans_sync)
+            self._ensure_fan_loop()
+            state = await self._fan_curve_state_offloop()
+            state["apply_ok"] = bool(applied)
+            if rollback_ok is not None:
+                state["rollback_ok"] = bool(rollback_ok)
+            return state
+
+    async def set_desktop_fan_curve(self, channel: str, preset: str,
+                                    points=None, scope: str = "global", appid=None) -> dict:
+        self._init()
+        if not self._desktop_mode_on() or channel not in ("system", "gpu"):
+            return await self._fan_curve_state_offloop()
+        hardware = self._fan_ctrl.read_state()
+        channel_hw = next(
+            (fan for fan in hardware.get("fans", []) if fan.get("key") == channel), {})
+        if not channel_hw.get("controllable", False):
+            return await self._fan_curve_state_offloop()
+        if preset in fan_presets.RESOLVED:
+            resolved_points = [list(point) for point in fan_presets.RESOLVED[preset]]
+        elif preset == "custom" and isinstance(points, list) and points:
+            resolved_points = [list(point) for point in fan_control.sanitize_curve(points)]
+        elif preset == "auto":
+            resolved_points = None
+        else:
+            return await self._fan_curve_state_offloop()
+        resolved_scope = self._resolve_scope(scope, appid)
+        if resolved_scope is None:
+            return await self._fan_curve_state_offloop()
+        return await self._commit_desktop_fan_mutation(lambda: self._desktop_fans.set_channel(
+            resolved_scope, channel, preset, resolved_points, appid))
+
+    async def set_desktop_fan_follow_global(self, follow: bool, appid) -> dict:
+        self._init()
+        if appid is not None:
+            appid = str(appid)
+            def mutate():
+                if not follow and not self._desktop_fans.has_game(appid):
+                    self._desktop_fans.create_game_from_global(appid)
+                self._desktop_fans.set_follow_global(appid, bool(follow))
+            return await self._commit_desktop_fan_mutation(mutate)
+        return await self._fan_curve_state_offloop()
+
+    async def set_fan_experimental(self, enabled: bool) -> dict:
+        """Opt in/out of experimental EC fan control. Backend I/O runs off-loop."""
+        self._init()
+        enabled = bool(enabled)
+        swapped = await self._offload_call(lambda: self._swap_fan_backend(enabled))
+        if swapped:
+            self._settings["fan_experimental"] = enabled
+            self._store.save(self._settings)
+            self._ensure_fan_loop()
+        return await self._fan_curve_state_offloop()
+
+    def _swap_fan_backend(self, enabled: bool) -> bool:
+        """Release the current backend, rebuild it, and re-apply the effective curve."""
+        active_experimental = bool(getattr(self._fan_ctrl, "experimental", False))
+        if active_experimental or getattr(self._fan_ctrl, "supported", False):
+            try:
+                released = self._fan_ctrl.restore_auto()
+            except Exception:  # noqa: BLE001
+                released = None
+            if not enabled and active_experimental and (
+                not isinstance(released, dict) or not bool(released.get("ok"))
+            ):
+                return False
+        self._fan_ctrl = fan_control.select_fan_backend(
+            self._device, temp_fn=self._driving_temp, experimental=enabled)
+        self._reapply_fans_sync()
+        return True
+
+    async def set_fan_follow_global(self, follow: bool, appid) -> dict:
+        """Toggle a game between its own fan curve and following the global one, keeping
+        its stored curve (never deletes). Seeds from global on "use own" if it has none."""
+        self._init()
+        if appid is not None:
+            appid = str(appid)
+            self._set_current_appid(appid)
+            if not follow and not self._fan_curves.has_game(appid):
+                self._fan_curves.create_game_from_global(appid)
+            self._fan_curves.set_follow_global(appid, bool(follow))
+            self._reapply_fans()
+        return await self._fan_curve_state_offloop()
+
+    async def set_fan_preset(self, preset: str, scope: str, appid=None) -> dict:
+        self._init()
+        if preset not in fan_presets.PRESETS:
+            decky.logger.warning("Fan request ignored: unknown preset %r", preset)
+            return await self._fan_curve_state_offloop()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._fan_curve_state_offloop()
+        self._fan_curves.set_preset(resolved, preset, fan_presets.RESOLVED[preset], appid)
+        self._reapply_fans()
+        return await self._fan_curve_state_offloop()
+
+    async def set_fan_adaptive(self, scope: str, appid=None) -> dict:
+        """Select the Adaptive (learned) curve mode. Choosing this IS the opt-in to
+        auto-learning for this scope: the learner now drives + re-fits the curve."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._fan_curve_state_offloop()
+        self._fan_curves.set_adaptive(resolved, appid)
+        # Re-arm the mid-session drive, then drive the learned curve now (also sets the
+        # anti-churn baseline so the periodic re-fit doesn't needlessly re-drive).
+        self._adaptive_applied = False
+        self._last_adaptive_points = None
+        self._maybe_drive_adaptive_fan_curve()
+        self._reapply_fans()  # covers the no-data case (firmware auto) honestly
+        return await self._fan_curve_state_offloop()
+
+    async def set_fan_adaptive_bias(self, bias: int, scope: str, appid=None) -> dict:
+        """Set the silence↔cool bias of the Adaptive mode (also selects it). Drives
+        the biased learned curve so the hardware reflects the dial immediately."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._fan_curve_state_offloop()
+        self._fan_curves.set_adaptive_bias(resolved, bias, appid)
+        # A new bias changes the target curve → reset the anti-churn baseline and drive.
+        self._last_adaptive_points = None
+        self._maybe_drive_adaptive_fan_curve()
+        self._reapply_fans()
+        return await self._fan_curve_state_offloop()
+
+    async def set_fan_curve_points(self, points: list, scope: str, appid=None) -> dict:
+        self._init()
+        if not isinstance(points, list) or not points:
+            return await self._fan_curve_state_offloop()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._fan_curve_state_offloop()
+        # Store the SANITIZED curve (8 points, monotonic, hot-point safety floor) —
+        # the same transform applied at write time — so the persisted/returned state
+        # reflects what the hardware will actually run. Never show a curve we override.
+        safe_points = [list(p) for p in fan_control.sanitize_curve(points)]
+        self._fan_curves.set_custom(resolved, safe_points, appid)
+        self._reapply_fans()
+        return await self._fan_curve_state_offloop()
+
+    async def set_fan_auto(self, scope: str, appid=None) -> dict:
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._fan_curve_state_offloop()
+        self._fan_curves.set_auto(resolved, appid)
+        self._reapply_fans()
+        return await self._fan_curve_state_offloop()
+
+    async def reset_fan_control(self) -> dict:
+        """Recover a wedged software-loop fan control: hand the fan back to firmware
+        (off the event loop), then re-establish the stored curve and read the state
+        back. `reset_ok` reflects whether the release actually landed — a malformed or
+        failed response is not success."""
+        self._init()
+        try:
+            res = await self._offload_call(self._fan_ctrl.restore_auto)
+            released = bool(res.get("ok")) if isinstance(res, dict) else False
+        except Exception:  # noqa: BLE001
+            released = False
+        # Re-establish the stored curve off-loop, then restart the curve loop, before
+        # reading the state back. reset_ok requires BOTH the release and the re-apply.
+        reapplied = await self._offload_call(self._reapply_fans_sync)
+        self._ensure_fan_loop()
+        state = await self._fan_curve_state_offloop()
+        state["reset_ok"] = released and bool(reapplied)
+        return state
+
+    # ---- Fan-curve suggestion (suggestion brain over local telemetry) -------
+    def _fan_suggestion(self, appid=None) -> dict:
+        """Suggest a fan curve fit to a game's observed temperature band (sync core).
+
+        Per-game only (the band is learned per game). Degrades honestly:
+        - telemetry opted out  -> available False, reason "disabled"
+        - device can't write    -> available False, reason "unsupported"
+        - not enough/varied data -> available False, reason from enough_data
+        Never raises. Shared by the RPC and the proactive auto-apply path.
+        """
+        key = str(appid) if appid is not None else self._current_appid
+
+        def unavail(reason):
+            return {"available": False, "curves": None, "band": None,
+                    "minutes": 0, "seconds": 0, "reason": reason,
+                    "target_minutes": fan_suggest.MIN_MINUTES,
+                    "target_seconds": fan_suggest._MIN_SECONDS}
+
+        # Device-can't-write is checked first: an unsupported device returns
+        # "unsupported" (card stays silent) rather than nudging "turn on learning".
+        if not self._fan_ctrl.supported:  # cheap property — no sysfs/EC read
+            return unavail("unsupported")
+        if not self._learning_active():
+            return unavail("disabled")
+        if key is None:
+            return unavail("no_game")
+        try:
+            hist = self._telemetry.temp_histogram(key)
+            total = sum(hist.values()) if hist else 0
+            # Floor (not round) so `minutes` can't show the 30-min target while the
+            # honest gate is still `too_few` (round(1770/60)=30 would lie). The FE
+            # derives the progress bar + "min left" from raw `seconds` anyway.
+            minutes = int(total // 60)
+            ok, reason = fan_suggest.enough_data(hist)
+            # Compute the candidate the moment there's ANY real observed dwell, so the
+            # UI can show a live green preview while learning. Gated on total>0 so the
+            # no_data verdict never carries a curve (no graph beside "start playing").
+            # `available` (=ok) still gates applying — never apply without enough data.
+            band = curves = None
+            if total > 0:
+                band = fan_suggest.band(hist)
+                curves = {name: [list(p) for p in pts]
+                          for name, pts in fan_suggest.suggest_curves(band).items()}
+            return {"available": ok, "reason": reason, "minutes": minutes,
+                    "seconds": total, "target_minutes": fan_suggest.MIN_MINUTES,
+                    "target_seconds": fan_suggest._MIN_SECONDS, "band": band, "curves": curves}
+        except Exception:  # noqa: BLE001
+            return unavail("error")
+
+    async def get_fan_suggestion(self, appid=None) -> dict:
+        self._init()
+        return self._fan_suggestion(appid)
+
+    def _drive_adaptive_fan_curve(self, *, reapply: bool) -> None:
+        """Drive the learned curve when the effective mode is Adaptive.
+
+        Adaptive is a stateless MODE — it stores no points; the curve is computed
+        live from telemetry here. Choosing the mode IS the opt-in, so the only guards
+        are: a game is running and the effective curve is Adaptive. Never overrides a
+        preset/custom/auto profile (that mode simply isn't Adaptive → we return).
+
+        - reapply=False (mode selected / game entry): mark applied so the per-tick
+          watcher can stop recomputing every 5 s. `_reapply_fans` does the actual
+          hardware write on these paths.
+        - reapply=True  (periodic ~30 min re-fit): recompute and re-drive the hardware
+          only when the fit shifted appreciably (anti-churn vs the last driven curve).
+
+        Cheap O(1) guards (running game + adaptive mode) run FIRST so the histogram is
+        never walked otherwise. Never raises; never applies a fabricated curve."""
+        try:
+            appid = self._current_appid
+            if appid is None or not self._fan_curves.is_adaptive(appid):
+                return
+            points = self._adaptive_curve_points(appid)
+            if points is None:
+                return  # not enough real data yet → firmware auto stays
+            if reapply and not fan_suggest.curve_changed(self._last_adaptive_points, points):
+                return  # nothing worth re-driving → no thermal/eMMC churn
+            self._last_adaptive_points = points
+            self._reapply_fans()  # push the (re)computed curve to the hardware
+            self._adaptive_applied = True  # per-session watcher can stop now
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _maybe_drive_adaptive_fan_curve(self) -> None:
+        """On selecting Adaptive / entering a game (or mid-session once enough data
+        lands), compute and drive the learned curve to the hardware."""
+        self._drive_adaptive_fan_curve(reapply=False)
+
+    def _maybe_reapply_adaptive_fan_curve(self) -> None:
+        """Periodically (every ~30 min of play) re-fit and re-drive the adaptive
+        curve so it follows the game's RECENT thermal pattern (the histogram decays)."""
+        self._drive_adaptive_fan_curve(reapply=True)
+
+    # ---- Telemetry ----------------------------------------------------------
+    def _collect_sample(self):
+        """Build one telemetry sample from live readers.
+
+        Returns (appid, sample_dict) while in-game, or None when idle.
+        Never raises; any error degrades to None (no sample recorded).
+        """
+        if not self._learning_active():
+            return None
+        if self._ui_active or self._auto_focus_hold_active:
+            return None
+        try:
+            # Snapshot the appid once: this method now runs on a worker thread
+            # (via asyncio.to_thread) and spans a ~120 ms gpu_busy burst + fan
+            # I/O, during which an event-loop RPC could reassign _current_appid.
+            # Reading it once keeps the guard, the setpoint, and the returned
+            # appid consistent so a sample is never mislabelled across a game
+            # switch (telemetry honesty).
+            appid = self._current_appid
+            if appid is None:
+                return None
+            auto_context = self._auto_context
+            auto_active = self._auto_runtime_active()
+            auto_setpoint = self._auto_setpoint
+            tdp_generation = self._tdp_generation
+            pl1 = (
+                auto_setpoint
+                if auto_active
+                else self._effective_levels(appid)[0]["pl1"]
+            )
+
+            pr = self._power_reader.read()
+            fan = self._read_fans()  # includes EC RPM on devices without a hwmon fan
+            if appid != self._current_appid:
+                return None
+            if tdp_generation != self._tdp_generation:
+                return None
+            if auto_active and (
+                auto_context != self._auto_context
+                or auto_setpoint != self._auto_setpoint
+            ):
+                return None
+
+            # CPU / GPU temps — prefer labels "CPU" / "GPU", fall back to position
+            temp_cpu, temp_gpu = extract_cpu_gpu_temps(fan)
+
+            # Max RPM across all fans (None if no fans)
+            fans = fan.get("fans") or []
+            fan_rpms = [f["rpm"] for f in fans if f.get("rpm") is not None]
+            fan_rpm = max(fan_rpms) if fan_rpms else None
+
+            # boost = was the chip boosting at this PL1 (draw > PL1 + deadband)?
+            # 1.0/0.0/None; its per-bin average = the honest "power-limited here?"
+            # signal the learned band reads (tdp/suggest._satisfied).
+            watts = pr.get("watts")
+            boosting = auto_tdp.is_boosting(watts, pl1)
+            boost = None if boosting is None else (1.0 if boosting else 0.0)
+
+            sample = {
+                "pl1": pl1,
+                "watts": watts,
+                "gpu_busy": pr.get("gpu_busy"),
+                "boost": boost,
+                "temp_cpu": temp_cpu,
+                "temp_gpu": temp_gpu,
+                "fan_rpm": fan_rpm,
+            }
+            return (appid, sample)
+        except Exception:  # noqa: BLE001
+            return None
+
+    def _on_sample_collected(self, result) -> None:
+        """Sampler callback after each stored sample (re-apply cadence).
+
+        *result* is the (appid, sample) tuple that was stored, or None when idle.
+        Idle ticks don't count — the counter reflects real play time. Every
+        _REAPPLY_EVERY_TICKS in-game samples (~30 min) trigger a learned re-fit.
+
+        While the effective mode is Adaptive and we have NOT yet driven the learned
+        curve this session, try the gated drive on every in-game tick — so the moment
+        `enough_data` flips true mid-session the curve lands immediately instead of
+        waiting up to ~30 min for the next re-fit tick. The cheap O(1) mode guard runs
+        first (in `_drive_adaptive_fan_curve`), and once driven the flag stops the
+        suggestion from being recomputed every 5 s (only the 30-min re-fit runs).
+        """
+        if result is None:
+            return
+        if not self._adaptive_applied:
+            self._maybe_drive_adaptive_fan_curve()  # gated; sets _adaptive_applied on success
+        self._reapply_ticks += 1
+        if self._reapply_ticks >= self._REAPPLY_EVERY_TICKS:
+            self._reapply_ticks = 0
+            self._maybe_reapply_adaptive_fan_curve()
+
+    async def get_telemetry(self, appid=None) -> dict:
+        self._init()
+        key = str(appid) if appid is not None else self._current_appid
+        if key is None:
+            return {"samples_n": 0, "by_pl1": {}, "recent": []}
+        return self._telemetry.aggregate(key)
+
+    async def reset_telemetry(self) -> bool:
+        """Wipe ALL learned usage data (TDP + fan) — start from scratch. Does NOT
+        touch the user's manual TDP/fan profiles. The live windows are cleared too so
+        the loop doesn't carry stale signal into the freshly-empty model."""
+        self._init()
+        self._telemetry.clear()
+        self._auto_learning.reset()
+        self._reset_auto_session("learning_reset")
+        return True
+
+    def _start_sampler(self) -> None:
+        """Start the telemetry sampler and reset the ~30 min re-apply cadence so it
+        aligns to when learning actually (re)begins — otherwise toggling telemetry
+        mid-game would let `_reapply_ticks` drift out of phase with real dwell."""
+        self._reapply_ticks = 0
+        self._sampler.start()
+
+    def _sync_sampler(self) -> None:
+        """Start the sampler iff learning is effectively active (enabled AND a consumer
+        — Power or Fans — is on), else stop it. Called when module state changes."""
+        if getattr(self, "_sampler", None) is None:
+            return
+        if self._learning_active():
+            self._start_sampler()
+        else:
+            self._sampler.stop()
+
+    async def get_telemetry_enabled(self) -> bool:
+        self._init()
+        return bool(self._settings.get("telemetry_enabled", True))
+
+    async def set_telemetry_enabled(self, enabled: bool) -> bool:
+        """Opt out of (or back into) usage learning. Off stops the sampler so
+        nothing is read or written during play; on resumes it."""
+        self._init()
+        enabled = bool(enabled)
+        self._settings["telemetry_enabled"] = enabled
+        self._save()
+        self._sync_sampler()  # honours the Power/Fans dependency (also flushes on stop)
+        return enabled
+
+    async def get_learning_status(self) -> dict:
+        """Capability + opt-in snapshot for the persistent learning banner (shown
+        under the DeviceHeader). Reports what THIS device can actually learn:
+        `tdp_supported` = a real TDP write backend exists; `fan_supported` = the
+        device can WRITE fan curves (Null backends read-only → False). The banner
+        combines these with the live running game (read on the frontend) to say —
+        honestly — what is being learned, or that learning is paused when
+        telemetry is off. Never claims to learn something this device can't."""
+        self._init()
+        return {
+            "telemetry_enabled": bool(self._settings.get("telemetry_enabled", True)),
+            "tdp_supported": self._tdp_supported(),
+            "fan_supported": bool(self._fan_ctrl.supported),
+            "auto_tdp_active": bool(
+                self._current_appid is not None
+                and self._module_enabled("autoTdp")
+                and self._tdp_profiles.auto_tdp(self._current_appid)
+                and self._auto_tdp_supported()
+            ),
+        }
+
+    async def get_unlock_battery_max(self) -> bool:
+        self._init()
+        return bool(self._settings.get("unlock_battery_max", False))
+
+    async def set_unlock_battery_max(self, enabled: bool) -> bool:
+        """Opt in/out of using the firmware max on battery. Re-applies TDP so the
+        new ceiling (and any re-clamp of the current setpoint) takes effect now."""
+        self._init()
+        enabled = bool(enabled)
+        self._settings["unlock_battery_max"] = enabled
+        self._save()
+        await self._apply_tdp_now("battery-ceiling")
+        return enabled
+
+    async def get_cooler_boost(self) -> bool:
+        self._init()
+        return bool(self._settings.get("cooler_boost", False))
+
+    async def set_cooler_boost(self, enabled: bool) -> bool:
+        """Opt in/out of the GPD Win 5 cooler-attached ceiling. Re-applies TDP so the
+        new ceiling (and any re-clamp of the current setpoint) takes effect now."""
+        self._init()
+        enabled = bool(enabled)
+        was_enabled = self._settings.get("cooler_boost", False) is True
+        self._settings["cooler_boost"] = enabled
+        self._save()
+        if was_enabled and not enabled:
+            # Otherwise a value set for the cooler would stay on as extra.
+            self._sanitize_tdp_profiles(
+                self._tdp_request_min(), self._safe_limits().max_ac_w
+            )
+        await self._apply_tdp_now("cooler-ceiling")
+        return enabled
+
+    async def get_experimental_tdp_unlock(self) -> bool:
+        self._init()
+        return bool(
+            self._device.experimental_tdp_max_ac
+            and self._settings.get("experimental_tdp_unlock") is True
+        )
+
+    def _retired_experimental_tdp_unlock(self) -> bool:
+        return bool(
+            self._device.key == "gpd_win_mini_2025"
+            and self._device.experimental_tdp_max_ac is None
+            and self._settings.get("experimental_tdp_unlock") is True
+        )
+
+    async def set_experimental_tdp_unlock(self, enabled: bool) -> dict:
+        """Opt into a charger-only ceiling above the manufacturer range."""
+        self._init()
+        previous = (
+            await self.get_experimental_tdp_unlock()
+            or self._retired_experimental_tdp_unlock()
+        )
+        enabled = bool(enabled is True and self._device.experimental_tdp_max_ac)
+        if enabled == previous:
+            return {"enabled": previous, "ok": True, "detail": "unchanged"}
+        if previous and not enabled and not self._tdp_control_on():
+            return {
+                "enabled": True,
+                "ok": False,
+                "detail": "TDP control disabled",
+            }
+        if enabled:
+            self._settings["experimental_tdp_unlock"] = True
+            try:
+                self._save()
+            except Exception as error:  # noqa: BLE001
+                self._settings["experimental_tdp_unlock"] = previous
+                return {
+                    "enabled": previous,
+                    "ok": False,
+                    "detail": f"persist failed: {type(error).__name__}",
+                }
+        else:
+            self._settings["experimental_tdp_unlock"] = False
+            backend_was_supported = bool(self._tdp_backend.supported)
+            recover = getattr(self._tdp_backend, "recover_safe_range", None)
+            if callable(recover):
+                recover()
+        result = await self._apply_tdp_now("experimental-ac-ceiling")
+        safe_reclamp_confirmed = bool(
+            result.ok
+            and result.applied_w is not None
+            and self._safe_limits().min_w <= result.applied_w <= self._safe_limits().max_ac_w
+        )
+        if result.ok and (enabled or safe_reclamp_confirmed):
+            if not enabled:
+                try:
+                    self._save()
+                except Exception as error:  # noqa: BLE001
+                    self._settings["experimental_tdp_unlock"] = previous
+                    return {
+                        "enabled": previous,
+                        "ok": False,
+                        "detail": f"persist failed: {type(error).__name__}",
+                    }
+                if not backend_was_supported and self._tdp_backend.supported:
+                    self._start_tdp_guard_loop()
+            return {"enabled": enabled, "ok": True, "detail": result.detail}
+        self._settings["experimental_tdp_unlock"] = previous
+        if enabled:
+            try:
+                self._save()
+            except Exception as error:  # noqa: BLE001
+                self._settings["experimental_tdp_unlock"] = True
+                return {
+                    "enabled": True,
+                    "ok": False,
+                    "detail": (
+                        f"{result.detail}; rollback persist failed: "
+                        f"{type(error).__name__}"
+                    ),
+                }
+        detail = result.detail
+        if not enabled and result.ok:
+            detail = (
+                f"{detail}; safe ceiling unconfirmed"
+                if detail
+                else "safe ceiling unconfirmed"
+            )
+        return {"enabled": previous, "ok": False, "detail": detail}
+
+    async def _retire_experimental_tdp_unlock_or_disable(self) -> dict:
+        result = await self.set_experimental_tdp_unlock(False)
+        if not result.get("ok"):
+            await self.set_tdp_control_enabled(False)
+        return result
+
+    # ---- Auto-TDP loop ------------------------------------------------------
+    def _auto_target_max_fps(self):
+        value = getattr(self._device, "display_refresh_hz", None)
+        return int(value) if value is not None else None
+
+    def _auto_config(self, appid):
+        config = self._tdp_profiles.auto_config(appid)
+        maximum = self._auto_target_max_fps()
+        if maximum is None or config["target_fps"] <= maximum:
+            return config
+        return {**config, "target_fps": maximum}
+
+    async def _sync_auto_stats_reader(self, active):
+        self._auto_stats_reader_active = bool(active)
+        await self._apply_stats_reader()
+
+    def _native_frame_helper(self, argv: list[str]):
+        # Started through the session's systemd so it runs the system python natively: launched
+        # from the plugin it would run under the same x86 emulation as the plugin on ARM.
+        session = self._kiosk.session()
+        if session is None:
+            return None
+        return spawn_args(session, [
+            "systemd-run", "--user", "--pipe", "--quiet", "--collect", "/usr/bin/python3", *argv[1:],
+        ])
+
+    def _gamescope_focus_app(self) -> int | None:
+        focus = self._gamescope_stats.focus()
+        if focus == "steam":
+            return None
+        if focus and focus.isdigit() and int(focus) > 0:
+            return int(focus)
+        current = getattr(self, "_current_appid", None)
+        return int(current) if current and str(current).isdigit() else None
+
+    def _kiosk_wants_fps(self) -> bool:
+        polled = getattr(self, "_kiosk_fps_at", None)
+        return polled is not None and time.monotonic() - polled < _KIOSK_FPS_HOLD_S
+
+    async def _apply_stats_reader(self):
+        kiosk = self._kiosk_wants_fps()
+        if kiosk:
+            self._gamescope_perf.start()
+        elif getattr(self, "_perf_reader_running", False):
+            await asyncio.to_thread(self._gamescope_perf.stop)
+        self._perf_reader_running = kiosk
+        wanted = bool(getattr(self, "_auto_stats_reader_active", False)) or kiosk
+        if wanted == getattr(self, "_stats_reader_running", False):
+            return
+        self._stats_reader_running = wanted
+        if wanted:
+            self._gamescope_stats.start()
+        else:
+            await asyncio.to_thread(self._gamescope_stats.stop)
+
+    def _start_auto_loop(self) -> None:
+        if self._auto_task is not None and not self._auto_task.done():
+            return
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return  # no event loop in tests — skip task creation safely
+        self._reset_auto_session("starting")
+        self._auto_task = asyncio.create_task(self._auto_loop())
+
+    def _stop_auto_loop(self) -> None:
+        if self._auto_task is not None:
+            self._auto_task.cancel()
+            self._auto_task = None
+        stats = getattr(self, "_gamescope_stats", None)
+        if stats is not None:
+            stats.stop()
+        self._auto_stats_reader_active = False
+        self._stats_reader_running = False
+
+    def _reset_auto_session(self, reason="inactive") -> None:
+        stats = getattr(self, "_gamescope_stats", None)
+        if stats is not None:
+            stats.clear()
+        if (
+            getattr(self, "_auto_controller", None) is not None
+            and hasattr(self, "_tdp_generation")
+        ):
+            self._advance_tdp_generation()
+        self._auto_controller = None
+        self._auto_context = None
+        self._auto_setpoint = None
+        self._auto_seed_source = None
+        self._auto_seed_watts = None
+        self._auto_last_sample_at = None
+        self._auto_applied = False
+        self._auto_apply_blocked = False
+        self._auto_apply_attempts = 0
+        self._auto_apply_retry_at = 0.0
+        self._auto_apply_exhausted = False
+        self._auto_focus_hold_active = False
+        self._auto_last_pre_ui = None
+        if reason != "config_changed":
+            self._auto_ui_hold_watts = None
+        config = self._auto_config(self._current_appid)
+        status = {
+            "state": "paused",
+            "reason": reason,
+            "setpoint": None,
+            "fps": None,
+            "target_fps": config["target_fps"],
+            "signal_age_s": None,
+            "focus": None,
+            "seed_source": None,
+            "seed_watts": None,
+            "held_watts": (
+                self._auto_ui_hold_watts if self._ui_active else None
+            ),
+        }
+        if (
+            hasattr(self, "_auto_history")
+            and getattr(self, "_auto_status", None) != status
+        ):
+            event = {"at": round(_monotonic(), 3), **status}
+            self._auto_history.append(event)
+            if hasattr(self, "_auto_transitions"):
+                self._auto_transitions.append(event)
+        self._auto_status = status
+
+    def _ensure_auto_session(self, on_ac=None, observation=None):
+        ac = read_on_ac() if on_ac is None else bool(on_ac)
+        config = self._auto_config(self._current_appid)
+        minimum, active = self._auto_effective_range(
+            self._current_appid, ac, observation
+        )
+        context = (
+            self._current_appid,
+            config["target_fps"],
+            config["initial_tdp"],
+            ac,
+            minimum,
+            active,
+        )
+        if self._auto_controller is not None and self._auto_context == context:
+            return self._auto_controller, False
+        if self._auto_controller is not None:
+            self._advance_tdp_generation()
+        learned = None
+        if self._learning_active():
+            learned = self._auto_learning.seed(
+                self._current_appid,
+                config["target_fps"],
+                ac,
+                minimum,
+                active,
+            )
+        initial = learned["watts"] if learned is not None else config["initial_tdp"]
+        self._auto_controller = auto_tdp.AutoTdpController(
+            initial_w=initial,
+            min_w=minimum,
+            max_w=active,
+            target_fps=config["target_fps"],
+        )
+        self._auto_context = context
+        self._auto_setpoint = self._auto_controller.setpoint
+        self._auto_seed_source = "learned" if learned is not None else "initial"
+        self._auto_seed_watts = self._auto_controller.setpoint
+        self._auto_applied = False
+        self._auto_apply_blocked = False
+        self._auto_apply_attempts = 0
+        self._auto_apply_retry_at = 0.0
+        self._auto_apply_exhausted = False
+        self._auto_status = {
+            **self._auto_controller.snapshot().as_dict(),
+            "reason": f"{self._auto_seed_source}_seed",
+            "signal_age_s": None,
+            "focus": None,
+            "seed_source": self._auto_seed_source,
+            "seed_watts": self._auto_seed_watts,
+            "held_watts": (
+                self._auto_ui_hold_watts if self._ui_active else None
+            ),
+        }
+        return self._auto_controller, True
+
+    def _auto_runtime_active(self):
+        return bool(
+            self._auto_controller is not None
+            and self._auto_setpoint is not None
+            and self._current_appid is not None
+            and self._auto_control_active()
+        )
+
+    def _auto_control_active(self):
+        return bool(
+            not self._settings.get("eco_enabled")
+            and self._module_enabled("autoTdp")
+            and self._tdp_profiles.auto_tdp(self._current_appid)
+            and self._firmware_mode() == _CUSTOM_MODE
+            and self._auto_tdp_supported()
+            and self._tdp_control_on()
+            and self._tdp_write_authorized()
+        )
+
+    def _auto_ui_blocks_tdp_write(self, reason):
+        reason = str(reason)
+        if reason in ("auto-ui-floor", "auto-focus-floor", "auto-game-exit"):
+            return False
+        responsive_hold = self._ui_active or self._auto_focus_hold_active
+        return bool(
+            responsive_hold
+            and (
+                reason.startswith("auto-")
+                or (
+                    reason in ("guard", "settle-retry", "lifecycle", "reapply")
+                    and (
+                        self._auto_runtime_active()
+                        or (
+                            self._current_appid is None
+                            and self._auto_control_active()
+                        )
+                    )
+                )
+            )
+        )
+
+    def _auto_context_is_current(self, controller, context, appid):
+        return bool(
+            self._auto_identity_is_current(controller, context, appid)
+            and bool(context[3]) == read_on_ac()
+        )
+
+    def _auto_identity_is_current(self, controller, context, appid):
+        return bool(
+            controller is self._auto_controller
+            and context == self._auto_context
+            and appid == self._current_appid
+        )
+
+    def _auto_apply_confirmed(self, result, setpoint):
+        if not result.ok or result.applied_w is None:
+            return False
+        tolerance = max(
+            0,
+            int(getattr(self._tdp_backend, "read_tolerance_w", 0)),
+        )
+        return abs(int(result.applied_w) - int(setpoint)) <= tolerance
+
+    def _auto_observation_confirmed(self, observation, setpoint):
+        tolerance = max(
+            0,
+            int(getattr(self._tdp_backend, "read_tolerance_w", 0)),
+        )
+        confirm = getattr(
+            self._tdp_backend,
+            "auto_observation_confirmed",
+            None,
+        )
+        if callable(confirm):
+            try:
+                return bool(confirm(observation, setpoint, tolerance))
+            except Exception:  # noqa: BLE001
+                return False
+        if not callable(getattr(self._tdp_backend, "observe", None)):
+            primary = observation.surfaces.get(self._tdp_backend.name, {})
+            reading = primary.get(getattr(self._tdp_backend, "primary_rail", "pl1"))
+            return bool(
+                reading is not None
+                and reading.applied_w is not None
+                and abs(int(reading.applied_w) - int(setpoint)) <= tolerance
+            )
+        command = self._capture_tdp_command(
+            "auto-confirm",
+            bump=False,
+            auto_watts=setpoint,
+        )
+        targets = build_targets(
+            command.requested,
+            command.safe_bounds,
+            observation,
+        )
+        seen = set()
+        for rails in observation.surfaces.values():
+            for rail, reading in rails.items():
+                expected = targets.target.get(rail)
+                if expected is None:
+                    continue
+                if (
+                    reading.applied_w is None
+                    or abs(int(reading.applied_w) - expected) > tolerance
+                ):
+                    return False
+                seen.add(rail)
+        if set(targets.target) - seen:
+            return False
+        return True
+
+    def _auto_observed_primary_watts(self, observation):
+        primary = observation.surfaces.get(self._tdp_backend.name, {})
+        rail = getattr(self._tdp_backend, "primary_rail", "pl1")
+        reading = primary.get(rail)
+        if reading is None or reading.applied_w is None:
+            return None
+        return int(reading.applied_w)
+
+    def _accept_auto_apply(self, result, controller, ac):
+        if self._auto_apply_confirmed(result, controller.setpoint):
+            return controller
+        if not (
+            result.ok
+            and result.applied_w is not None
+            and self._tdp_status == "constrained"
+            and self._tdp_reason in ("live_min", "live_max")
+        ):
+            return None
+        constrained, _created = self._ensure_auto_session(
+            ac,
+            observation=self._tdp_observation,
+        )
+        if self._auto_apply_confirmed(result, constrained.setpoint):
+            return constrained
+        return None
+
+    def _confirm_auto_apply(self, controller):
+        controller.confirm_apply()
+        self._auto_setpoint = controller.setpoint
+        self._auto_applied = True
+        self._clear_auto_apply_failure()
+
+    def _clear_auto_apply_failure(self):
+        self._auto_apply_blocked = False
+        self._auto_apply_attempts = 0
+        self._auto_apply_retry_at = 0.0
+        self._auto_apply_exhausted = False
+
+    def _schedule_auto_apply_retry(self):
+        if self._auto_apply_attempts >= len(_AUTO_APPLY_RETRY_DELAYS_S):
+            self._auto_apply_exhausted = True
+            self._auto_apply_retry_at = (
+                _monotonic() + _AUTO_APPLY_RETRY_DELAYS_S[-1]
+            )
+            self._auto_apply_blocked = True
+            return
+        index = self._auto_apply_attempts
+        self._auto_apply_retry_at = (
+            _monotonic() + _AUTO_APPLY_RETRY_DELAYS_S[index]
+        )
+        self._auto_apply_attempts += 1
+        self._auto_apply_exhausted = False
+        self._auto_apply_blocked = True
+
+    def _restart_auto_for_power_source(self, on_ac):
+        self._reset_auto_session("power_source_changed")
+        self._ensure_auto_session(
+            on_ac,
+            observation=self._tdp_observation,
+        )
+
+    async def _recover_auto_apply(self, controller, context, appid, ac, reading):
+        if self._ui_active:
+            self._hold_auto_session("ui_active", reading)
+            return
+        if reading.get("reason") != "ok":
+            decision = controller.pause(
+                reading.get("reason", "fps_unavailable")
+            )
+            self._auto_setpoint = decision.setpoint
+            self._record_auto_status(decision, reading)
+            return
+        if _monotonic() < self._auto_apply_retry_at:
+            decision = controller.pause("apply_retry_wait")
+            self._auto_setpoint = decision.setpoint
+            self._record_auto_status(decision, reading)
+            return
+
+        observation = await self._read_tdp_observation()
+        if not self._auto_identity_is_current(controller, context, appid):
+            return
+        if self._ui_active:
+            self._hold_auto_session("ui_active", reading)
+            return
+        current_ac = read_on_ac()
+        if current_ac != ac:
+            self._restart_auto_for_power_source(current_ac)
+            return
+        if not self._auto_context_is_current(controller, context, appid):
+            return
+        if self._auto_observation_confirmed(observation, controller.setpoint):
+            self._confirm_auto_apply(controller)
+            decision = controller.pause("apply_recovered")
+            self._record_auto_status(decision, reading)
+            return
+        if self._auto_apply_exhausted:
+            self._auto_apply_retry_at = (
+                _monotonic() + _AUTO_APPLY_RETRY_DELAYS_S[-1]
+            )
+            decision = controller.pause("apply_unconfirmed")
+            self._auto_setpoint = decision.setpoint
+            self._record_auto_status(decision, reading)
+            return
+
+        result = await self._apply_tdp_now(
+            "auto-retry",
+            on_ac=ac,
+            auto_guard=(controller, context, appid),
+        )
+        if not self._auto_context_is_current(controller, context, appid):
+            return
+        if self._ui_active:
+            self._hold_auto_session("ui_active", reading)
+            return
+        accepted = self._accept_auto_apply(result, controller, ac)
+        if accepted is not None:
+            self._confirm_auto_apply(accepted)
+            decision = accepted.pause("apply_recovered")
+            self._record_auto_status(decision, reading)
+            return
+        self._schedule_auto_apply_retry()
+        decision = controller.pause(
+            "apply_unconfirmed" if result.ok else "apply_failed"
+        )
+        self._auto_setpoint = decision.setpoint
+        self._record_auto_status(decision, reading)
+
+    async def _apply_auto_seed(self, reason, on_ac=None):
+        """Apply an explicit starting point before the first trustworthy FPS sample.
+
+        Enable, configuration and lifecycle actions may do this one write; autonomous
+        adjustments remain gated on a fresh, focused Gamescope reading in `_auto_tick`.
+        """
+        controller = self._auto_controller
+        context = self._auto_context
+        appid = self._current_appid
+        if controller is None or context is None or appid is None:
+            return await self._apply_tdp_now(reason, on_ac=on_ac)
+        if self._ui_active:
+            self._hold_auto_session("ui_active")
+            return TdpResult(controller.setpoint, None, False, "auto-ui-active")
+        ac = read_on_ac() if on_ac is None else bool(on_ac)
+        result = await self._apply_tdp_now(
+            reason,
+            on_ac=ac,
+            auto_guard=(controller, context, appid),
+        )
+        if not self._auto_identity_is_current(controller, context, appid):
+            return result
+        if self._ui_active:
+            self._hold_auto_session("ui_active")
+            return result
+        current_ac = read_on_ac()
+        if current_ac != ac:
+            self._restart_auto_for_power_source(current_ac)
+            return result
+        if not self._auto_context_is_current(controller, context, appid):
+            return result
+        accepted = self._accept_auto_apply(result, controller, ac)
+        if accepted is not None:
+            self._confirm_auto_apply(accepted)
+            return result
+        decision = controller.pause(
+            "apply_unconfirmed" if result.ok else "apply_failed"
+        )
+        self._schedule_auto_apply_retry()
+        self._auto_setpoint = decision.setpoint
+        self._record_auto_status(decision, {})
+        return result
+
+    def _record_auto_status(self, decision, reading):
+        status = {
+            **decision.as_dict(),
+            "signal_age_s": reading.get("age_s"),
+            "focus": reading.get("focus"),
+            "seed_source": self._auto_seed_source,
+            "seed_watts": self._auto_seed_watts,
+            "held_watts": (
+                self._auto_ui_hold_watts
+                if self._ui_active or self._auto_focus_hold_active
+                else None
+            ),
+        }
+        previous = getattr(self, "_auto_status", None)
+        transition_fields = (
+            "state",
+            "reason",
+            "setpoint",
+            "target_fps",
+            "focus",
+            "seed_source",
+            "seed_watts",
+        )
+        transitioned = previous is None or any(
+            previous.get(field) != status.get(field)
+            for field in transition_fields
+        )
+        if transitioned:
+            decky.logger.info(
+                "Auto-TDP transition %s",
+                json.dumps(
+                    {
+                        **{field: status.get(field) for field in transition_fields},
+                        "fps": status.get("fps"),
+                        "signal_age_s": status.get("signal_age_s"),
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
+            self._auto_transitions.append({
+                "at": round(_monotonic(), 3),
+                **status,
+            })
+        if previous != status:
+            self._auto_history.append({
+                "at": round(_monotonic(), 3),
+                **status,
+            })
+        self._auto_status = status
+        return status
+
+    def _hold_auto_session(self, reason, reading=None):
+        controller = getattr(self, "_auto_controller", None)
+        if controller is None:
+            return self._auto_status
+        decision = controller.hold(reason)
+        self._auto_setpoint = decision.setpoint
+        if reading is None:
+            current = getattr(self, "_auto_status", {})
+            reading = {
+                "age_s": current.get("signal_age_s"),
+                "focus": current.get("focus"),
+            }
+        return self._record_auto_status(decision, reading)
+
+    async def _auto_tick(self):
+        async def inactive(reason):
+            await self._sync_auto_stats_reader(False)
+            self._reset_auto_session(reason)
+            return self._auto_status
+
+        if self._current_appid is None:
+            return await inactive("no_game")
+        if self._settings.get("eco_enabled"):
+            return await inactive("eco_active")
+        if not self._module_enabled("autoTdp"):
+            return await inactive("module_disabled")
+        if not self._tdp_profiles.auto_tdp(self._current_appid):
+            return await inactive("disabled")
+        if self._firmware_mode() != _CUSTOM_MODE:
+            return await inactive("firmware_mode")
+        if not self._auto_tdp_supported():
+            return await inactive("tdp_unsupported")
+        if not self._tdp_control_on():
+            return await inactive("control_disabled")
+        if not self._tdp_write_authorized():
+            return await inactive("external_owner")
+
+        await self._sync_auto_stats_reader(True)
+
+        ac = read_on_ac()
+        controller, _created = self._ensure_auto_session(
+            ac,
+            observation=self._tdp_observation,
+        )
+        context = self._auto_context
+        appid = self._current_appid
+        if self._ui_active:
+            return self._hold_auto_session("ui_active")
+        power = await asyncio.to_thread(self._power_reader.read)
+        if not self._auto_identity_is_current(controller, context, appid):
+            return self._auto_status
+        if self._ui_active:
+            return self._hold_auto_session("ui_active")
+        live_ac = read_on_ac()
+        if live_ac != ac:
+            self._restart_auto_for_power_source(live_ac)
+            return self._auto_status
+        if not self._auto_context_is_current(controller, context, appid):
+            return self._auto_status
+        controller, _created = self._ensure_auto_session(
+            ac,
+            observation=self._tdp_observation,
+        )
+        context = self._auto_context
+        appid = self._current_appid
+        reading = self._gamescope_stats.read()
+        if self._ui_active:
+            return self._hold_auto_session("ui_active", reading)
+        focus_lost = (
+            reading.get("reason") == "no_game_focus"
+            and reading.get("focus") in (None, "steam")
+        )
+        if focus_lost:
+            if not self._auto_focus_hold_active:
+                self._set_auto_focus_hold(True)
+            decision = controller.step(
+                fps=None,
+                signal_reason="no_game_focus",
+                gpu_busy=power.get("gpu_busy"),
+            )
+            self._auto_setpoint = decision.setpoint
+            self._record_auto_status(decision, reading)
+            if (
+                self._auto_apply_blocked
+                and _monotonic() < self._auto_apply_retry_at
+            ):
+                return self._auto_status
+            await self._apply_auto_responsive_floor("no_game_focus", reading)
+            return self._auto_status
+        if self._auto_focus_hold_active:
+            self._set_auto_focus_hold(False)
+        self._auto_ui_hold_watts = None
+        sample_at = reading.get("sample_at")
+        if self._auto_apply_blocked:
+            await self._recover_auto_apply(
+                controller,
+                context,
+                appid,
+                ac,
+                reading,
+            )
+            return self._auto_status
+        if (
+            reading.get("reason") == "ok"
+            and sample_at is not None
+            and sample_at == self._auto_last_sample_at
+        ):
+            return self._auto_status
+        if reading.get("reason") == "ok":
+            self._auto_last_sample_at = sample_at
+        decision = controller.step(
+            fps=reading.get("fps"),
+            signal_reason=reading.get("reason", "fps_unavailable"),
+            gpu_busy=power.get("gpu_busy"),
+        )
+        self._auto_setpoint = decision.setpoint
+        self._record_auto_status(decision, reading)
+        if not self._auto_context_is_current(controller, context, appid):
+            return self._auto_status
+        if self._ui_active:
+            return self._hold_auto_session("ui_active", reading)
+        if decision.reason == "probe_stable" and self._learning_active():
+            try:
+                recorded = self._auto_learning.record(
+                    appid,
+                    decision.target_fps,
+                    ac,
+                    decision.setpoint,
+                    stable=True,
+                )
+            except Exception as error:  # noqa: BLE001
+                recorded = False
+                decky.logger.warning(
+                    "Auto-TDP learning write failed: %s",
+                    type(error).__name__,
+                )
+            if not recorded:
+                decky.logger.warning("Auto-TDP learning observation was not saved")
+        should_apply = decision.changed or (
+            reading.get("reason") == "ok" and not self._auto_applied
+        )
+        if not should_apply:
+            return self._auto_status
+        live_ac = read_on_ac()
+        if live_ac != ac:
+            self._restart_auto_for_power_source(live_ac)
+            return self._auto_status
+        if self._ui_active:
+            return self._hold_auto_session("ui_active", reading)
+        result = await self._apply_tdp_now(
+            "auto-start" if not self._auto_applied else "auto-step",
+            on_ac=ac,
+            auto_guard=(controller, context, appid),
+        )
+        if not self._auto_context_is_current(controller, context, appid):
+            return self._auto_status
+        if self._ui_active:
+            return self._hold_auto_session("ui_active", reading)
+        accepted = self._accept_auto_apply(result, controller, ac)
+        if accepted is not None:
+            self._confirm_auto_apply(accepted)
+            return self._auto_status
+
+        rejected = controller.reject_apply(
+            "apply_unconfirmed" if result.ok else "apply_failed"
+        )
+        self._auto_setpoint = rejected.setpoint
+        self._schedule_auto_apply_retry()
+        self._record_auto_status(rejected, reading)
+        if rejected.changed:
+            await self._apply_tdp_now(
+                "auto-rollback",
+                on_ac=ac,
+                auto_guard=(controller, context, appid),
+            )
+        return self._auto_status
+
+    async def _auto_loop(self) -> None:
+        while True:
+            try:
+                await asyncio.sleep(2)
+                self._offer_pdc_refresh()
+                await self._auto_tick()
+                self._auto_last_tick_at = _monotonic()
+                self._auto_last_error = None
+            except asyncio.CancelledError:
+                return
+            except Exception as error:  # noqa: BLE001
+                self._auto_last_error = {
+                    "phase": "tick",
+                    "type": type(error).__name__,
+                }
+                await self._sync_auto_stats_reader(False)
+                self._reset_auto_session(f"error:{type(error).__name__}")
+
+    # ---- Power draw + auto-TDP RPCs -----------------------------------------
+    async def get_power_draw(self) -> dict:
+        self._init()
+        pr = await asyncio.to_thread(self._power_reader.read)
+        auto = (
+            self._tdp_profiles.auto_tdp(self._current_appid)
+            and self._auto_tdp_supported()
+        )
+        ac = read_on_ac()
+        setpoint = (
+            self._auto_setpoint
+            if self._auto_runtime_active()
+            else self._effective_levels(self._current_appid, ac)[0]["pl1"]
+        )
+        observation_backend = self._tdp_observation_backend()
+        if getattr(observation_backend, "blocking", False):
+            observation = self._tdp_observation
+            applied = None
+        else:
+            observation = (
+                await asyncio.to_thread(self._observe_tdp_sync)
+                if self._power_uses_levels()
+                else self._observe_tdp_sync()
+            )
+            primary = observation.surfaces.get(observation_backend.name, {})
+            primary_rail = getattr(observation_backend, "primary_rail", "pl1")
+            primary_reading = primary.get(primary_rail)
+            applied = (
+                primary_reading.applied_w
+                if primary_reading is not None
+                else None
+            )
+        return {
+            "watts": pr["watts"],
+            "gpu_busy": pr["gpu_busy"],
+            "auto_tdp": auto,
+            "setpoint": setpoint,
+            "applied": applied,
+            # Polled every second, so the UI can refresh the slider ceiling the moment
+            # the charger is plugged or unplugged.
+            "on_ac": ac,
+            "ownership": self._tdp_ownership_state(observation),
+            "auto": dict(self._auto_status),
+        }
+
+    async def set_auto_tdp(
+        self, enabled: bool, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        auto_tdp = (
+            self._auto_tdp_supported()
+            and self._tdp_profiles.auto_tdp(self._current_appid)
+        )
+        if (
+            context_appid is not _RPC_CONTEXT_UNSET
+            and not self._scope_context_is_current(scope, appid, context_appid)
+        ):
+            return {"auto_tdp": auto_tdp}
+        if not self._auto_tdp_supported():
+            self._tdp_profiles.set_auto_tdp(scope, False, appid=appid)
+            return {"auto_tdp": False}
+        if not self._tdp_control_on():
+            return {"auto_tdp": auto_tdp}
+        self._clear_eco()
+        before = self._tdp_profiles.auto_tdp(self._current_appid)
+        self._tdp_profiles.set_auto_tdp(scope, bool(enabled), appid=appid)
+        after = self._tdp_profiles.auto_tdp(self._current_appid)
+        if before != after:
+            self._reset_auto_session("enabled" if after else "disabled")
+        if after and self._current_appid is not None:
+            self._ensure_auto_session(
+                read_on_ac(),
+                observation=self._tdp_observation,
+            )
+            if self._ui_active:
+                await self._apply_auto_ui_floor()
+            else:
+                await self._apply_auto_seed("auto-toggle")
+        elif self._current_appid is None:
+            await self._apply_tdp_now("auto-ui-floor" if after else "manual-auto-restore")
+        else:
+            await self._apply_tdp_now("auto-toggle")
+        return {"auto_tdp": self._tdp_profiles.auto_tdp(self._current_appid)}
+
+    async def set_auto_tdp_config(
+        self,
+        target_fps: int,
+        initial_tdp: int,
+        scope: str = "global",
+        appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+        min_tdp=AUTO_RANGE_UNSET,
+        max_tdp=AUTO_RANGE_UNSET,
+    ) -> dict:
+        self._init()
+        if (
+            context_appid is not _RPC_CONTEXT_UNSET
+            and not self._scope_context_is_current(scope, appid, context_appid)
+        ):
+            return self._tdp_state(await self._read_tdp_observation())
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return self._tdp_state(await self._read_tdp_observation())
+        limits = self._auto_request_limits()
+        previous = self._tdp_profiles.auto_config(
+            None if resolved == "global" else appid
+        )
+
+        def endpoint(value, key):
+            if value is AUTO_RANGE_UNSET:
+                return previous[key]
+            if value is None:
+                return None
+            try:
+                return max(limits.min_w, min(int(value), limits.max_ac_w))
+            except (TypeError, ValueError, OverflowError):
+                return previous[key]
+
+        minimum = endpoint(min_tdp, "min_tdp")
+        maximum = endpoint(max_tdp, "max_tdp")
+        if minimum is not None and maximum is not None and minimum > maximum:
+            return self._tdp_state(await self._read_tdp_observation())
+        try:
+            requested_initial = int(initial_tdp)
+        except (TypeError, ValueError, OverflowError):
+            requested_initial = self._tdp_profiles.auto_config(
+                None if resolved == "global" else appid
+            )["initial_tdp"]
+        initial = max(limits.min_w, min(requested_initial, limits.max_ac_w))
+        try:
+            requested_target = int(target_fps)
+        except (TypeError, ValueError, OverflowError):
+            requested_target = self._auto_config(
+                None if resolved == "global" else appid
+            )["target_fps"]
+        maximum_fps = self._auto_target_max_fps()
+        target = (
+            min(requested_target, maximum_fps)
+            if maximum_fps is not None
+            else requested_target
+        )
+        self._tdp_profiles.set_auto_config(
+            resolved,
+            target,
+            initial,
+            appid=appid,
+            min_tdp=minimum,
+            max_tdp=maximum,
+        )
+        applies_to_current = (
+            resolved == "global"
+            and (
+                self._current_appid is None
+                or self._tdp_profiles.is_following_global(self._current_appid)
+            )
+        ) or (
+            resolved == "game"
+            and appid is not None
+            and str(appid) == self._current_appid
+        )
+        if applies_to_current:
+            self._reset_auto_session("config_changed")
+            if (
+                self._current_appid is not None
+                and self._tdp_profiles.auto_tdp(self._current_appid)
+                and self._auto_tdp_supported()
+            ):
+                self._ensure_auto_session(
+                    read_on_ac(),
+                    observation=self._tdp_observation,
+                )
+                if self._ui_active:
+                    await self._apply_auto_ui_floor()
+                else:
+                    await self._apply_auto_seed("auto-config")
+            elif self._current_appid is None and self._auto_control_active():
+                await self._apply_tdp_now("auto-ui-floor")
+        return self._tdp_state(await self._read_tdp_observation())
+
+    def _auto_responsive_hold_active(self, reason, reading=None):
+        if reason == "ui_active":
+            return self._ui_active
+        if reason == "no_game_focus":
+            current = reading if reading is not None else self._gamescope_stats.read()
+            return bool(
+                self._auto_focus_hold_active
+                and current.get("reason") == reason
+                and current.get("focus") in (None, "steam")
+            )
+        return False
+
+    def _set_auto_focus_hold(self, active):
+        active = bool(active)
+        if active == self._auto_focus_hold_active:
+            return
+        self._auto_focus_hold_active = active
+        if not active:
+            self._auto_ui_hold_watts = None
+        self._advance_tdp_generation()
+
+    async def _apply_auto_responsive_floor(self, reason, reading=None):
+        if (
+            not self._auto_responsive_hold_active(reason, reading)
+            or not self._auto_runtime_active()
+        ):
+            return
+        if reason == "ui_active":
+            self._hold_auto_session(reason, reading)
+        controller = self._auto_controller
+        context = self._auto_context
+        appid = self._current_appid
+        generation = self._tdp_generation
+        self._auto_applied = False
+        observation = await self._read_tdp_observation()
+        if (
+            not self._auto_responsive_hold_active(reason)
+            or generation != self._tdp_generation
+            or not self._auto_context_is_current(controller, context, appid)
+            or not self._auto_runtime_active()
+        ):
+            return
+        observed = self._auto_observed_primary_watts(observation)
+        floor = self._auto_responsive_floor(appid, read_on_ac(), observation)
+        _minimum, maximum = self._auto_effective_range(appid, read_on_ac(), observation)
+        if observed is None:
+            self._auto_ui_hold_watts = None
+            if reason == "ui_active":
+                self._hold_auto_session(reason, reading)
+            else:
+                self._record_auto_status(controller.snapshot(), reading or {})
+            return
+        current = max(
+            int(controller.setpoint),
+            int(observed) if observed is not None else int(controller.setpoint),
+        )
+        hold_watts = max(floor, min(current, maximum))
+        confirmed = self._auto_observation_confirmed(observation, hold_watts)
+        self._auto_ui_hold_watts = hold_watts if confirmed else None
+        if not confirmed:
+            apply_reason = (
+                "auto-focus-floor"
+                if reason == "no_game_focus"
+                else "auto-ui-floor"
+            )
+            result = await self._apply_tdp_now(
+                apply_reason,
+                auto_guard=(controller, context, appid),
+                auto_watts=hold_watts,
+            )
+            if (
+                not self._auto_responsive_hold_active(reason)
+                or not self._auto_context_is_current(controller, context, appid)
+                or not self._auto_runtime_active()
+            ):
+                if reason == "no_game_focus":
+                    self._set_auto_focus_hold(False)
+                return
+            confirmed = bool(
+                result.ok
+                and self._auto_observation_confirmed(
+                    self._tdp_observation,
+                    hold_watts,
+                )
+            )
+            if confirmed:
+                self._auto_ui_hold_watts = hold_watts
+                self._clear_auto_apply_failure()
+            else:
+                self._auto_ui_hold_watts = None
+                self._schedule_auto_apply_retry()
+        elif confirmed:
+            self._clear_auto_apply_failure()
+        if reason == "ui_active":
+            self._hold_auto_session(reason, reading)
+        else:
+            self._record_auto_status(controller.snapshot(), reading or {})
+
+    async def _apply_auto_ui_floor(self):
+        await self._apply_auto_responsive_floor("ui_active")
+
+    async def set_ui_active(self, enabled: bool) -> bool:
+        self._init()
+        active = bool(enabled)
+        changed = active != self._ui_active
+        activated = active and not self._ui_active
+        if activated:
+            signal = self._gamescope_stats.diagnostics()
+            pre_ui = dict(self._auto_status)
+            pre_ui["at"] = round(_monotonic(), 3)
+            for target, source in (
+                ("fps", "fps"),
+                ("signal_age_s", "sample_age_s"),
+                ("focus", "focus"),
+                ("pending_min_fps", "pending_min_fps"),
+            ):
+                value = signal.get(source)
+                if value is not None:
+                    pre_ui[target] = value
+            self._auto_last_pre_ui = pre_ui
+        if changed:
+            self._gamescope_stats.clear()
+        self._ui_active = active
+        if activated and self._auto_controller is not None:
+            self._advance_tdp_generation()
+            await self._apply_auto_ui_floor()
+        elif activated:
+            self._auto_ui_hold_watts = None
+        elif not active and not self._auto_focus_hold_active:
+            self._auto_ui_hold_watts = None
+            if self._auto_status.get("held_watts") is not None:
+                self._auto_status = {**self._auto_status, "held_watts": None}
+        if (
+            changed
+            and self._tdp_menu_rail_floors()
+            and not self._auto_runtime_active()
+        ):
+            self._schedule_tdp_apply("menu-floor")
+        return self._ui_active
+
+    # ---- TDP helpers + RPCs -------------------------------------------------
+    def _profile_storage_limits(self, extra=True):
+        """Authorised durable range, or None while a dynamic ceiling is unreadable."""
+        def extended(limits):
+            return with_extra(limits, self._device) if extra else limits
+
+        if self._device.key == "gpd_win_mini_2025":
+            return extended(TdpLimits.from_profile(self._device))
+        if self._device.key in _STEAM_DECK_PROFILES:
+            overclock = self._steamdeck_overclock_state()
+            if overclock["status"] in {"unavailable", "unsupported"}:
+                return None
+            return self._limits(overclock, extra=extra)
+        if self._device.key != "rog_flow_z13":
+            return self._limits(extra=extra)
+        limits = TdpLimits.from_profile(self._device)
+        cooler_max = self._device.cooler_max
+        if cooler_max and self._settings.get("cooler_boost", False):
+            limits = limits.with_cooler(cooler_max)
+        return extended(limits)
+
+    def _sanitize_tdp_profiles(self, min_w: int, max_w: int) -> None:
+        try:
+            changed = self._tdp_profiles.sanitize(min_w, max_w)
+        except OSError:
+            self._tdp_profile_sanitize_pending = True
+            pending = getattr(self, "_tdp_profile_sanitize_max", None)
+            self._tdp_profile_sanitize_max = max_w if pending is None else min(pending, max_w)
+            self._tdp_storage_migration_retry_at = max(
+                self._tdp_storage_migration_retry_at,
+                _monotonic() + _TDP_STORAGE_MIGRATION_RETRY_S,
+            )
+            decky.logger.warning(
+                "Stored TDP profile correction deferred after write failure"
+            )
+            return
+        self._tdp_profile_sanitize_pending = False
+        self._tdp_profile_sanitize_max = None
+        if changed:
+            decky.logger.info("Corrected out-of-range stored TDP profiles")
+
+    def _retry_tdp_storage_migrations(self) -> None:
+        if not self._tdp_profile_sanitize_pending:
+            self._tdp_storage_migration_retry_at = 0.0
+            return
+        if _monotonic() < self._tdp_storage_migration_retry_at:
+            return
+        limits = self._profile_storage_limits()
+        if limits is None:
+            self._tdp_storage_migration_retry_at = (
+                _monotonic() + _TDP_STORAGE_MIGRATION_RETRY_S
+            )
+            return
+        pending_max = getattr(self, "_tdp_profile_sanitize_max", None)
+        self._sanitize_tdp_profiles(
+            self._tdp_request_min(),
+            limits.max_ac_w if pending_max is None else min(pending_max, limits.max_ac_w),
+        )
+        if not self._tdp_profile_sanitize_pending:
+            self._tdp_storage_migration_retry_at = 0.0
+
+    def _safe_limits(self, overclock=None):
+        return self._limits(overclock, extra=False)
+
+    def _limits(self, overclock=None, *, extra=True):
+        """Manual TDP limits after opt-ins, a detected Deck SlowPPT ceiling and, on the
+        charger, the extra range the firmware may refuse."""
+        # Chokepoint for the battery-unlock preference. Ignore it where the firmware
+        # enforces the battery cap (Ally/Ally X) — the write would be refused, so the
+        # reported ceiling must not claim the extra either.
+        unlock = (bool(self._settings.get("unlock_battery_max", False))
+                  and not self._device.charger_only_extra)
+        lim = self._tdp_backend.get_limits().unlocked(unlock)
+        cooler_max = self._device.cooler_max
+        if cooler_max and self._settings.get("cooler_boost", False):
+            lim = (lim.with_ac_max(cooler_max) if getattr(self._device, "cooler_charger_only", False)
+                   else lim.with_cooler(cooler_max))
+        experimental_max = self._device.experimental_tdp_max_ac
+        if experimental_max and self._settings.get("experimental_tdp_unlock") is True:
+            lim = lim.with_ac_max(experimental_max)
+        overclock = overclock or self._steamdeck_overclock_state()
+        configured_max = overclock["max_w"]
+        if configured_max is not None:
+            ceiling = max(lim.max_ac_w, configured_max)
+            lim = TdpLimits(
+                lim.min_w,
+                lim.default_w,
+                ceiling,
+                ceiling,
+            )
+        if extra and not self._desktop_mode_on():
+            lim = with_extra(
+                lim,
+                self._device,
+                getattr(self._tdp_backend, "manual_write_max_ac", None) or 0,
+            )
+        return lim
+
+    def _automatic_limits(self, limits=None):
+        """Limits for automatic control and presets, excluding unsafe opt-ins."""
+        limits = self._safe_limits() if limits is None else limits
+        manual_cooler = bool(
+            getattr(self._device, "cooler_charger_only", False)
+            and self._device.cooler_max
+            and self._settings.get("cooler_boost", False)
+        )
+        if not manual_cooler and not (
+            self._device.experimental_tdp_max_ac
+            and self._settings.get("experimental_tdp_unlock") is True
+        ):
+            return limits
+        max_ac = max(limits.max_w, min(limits.max_ac_w, self._device.tdp_max_charger))
+        return TdpLimits(
+            limits.min_w,
+            limits.default_w,
+            limits.max_w,
+            max_ac,
+        )
+
+    def _auto_request_limits(self):
+        return self._automatic_limits(self._profile_storage_limits(extra=False))
+
+    def _auto_effective_range(self, appid, on_ac, observation=None):
+        limits = self._auto_power_limits(observation)
+        active = self._active_max(limits, on_ac)
+        config = self._auto_config(appid)
+        minimum = config["min_tdp"]
+        maximum = config["max_tdp"]
+        return (
+            max(limits.min_w, min(minimum, active)) if minimum is not None else limits.min_w,
+            max(limits.min_w, min(maximum, active)) if maximum is not None else active,
+        )
+
+    def _auto_responsive_floor(self, appid, on_ac, observation=None):
+        minimum, maximum = self._auto_effective_range(appid, on_ac, observation)
+        return max(minimum, min(self._auto_request_limits().default_w, maximum))
+
+    def _auto_power_limits(self, observation=None):
+        limits = self._automatic_limits()
+        primary_rail = getattr(self._tdp_backend, "primary_rail", "pl1")
+        get_level_limits = getattr(self._tdp_backend, "auto_level_limits", None)
+        level_limits = (
+            get_level_limits()
+            if callable(get_level_limits)
+            else self._tdp_backend.level_limits()
+        )
+        rail = level_limits.get(primary_rail, {})
+        minimum = max(limits.min_w, int(rail.get("min", limits.min_w)))
+        rail_max = int(rail.get("max", limits.max_ac_w))
+        if observation is not None:
+            live = observation.surfaces.get(
+                self._tdp_backend.name,
+                {},
+            ).get(primary_rail)
+            if live is not None and live.min_w is not None:
+                minimum = max(minimum, int(live.min_w))
+            if live is not None and live.max_w is not None:
+                rail_max = min(rail_max, int(live.max_w))
+        rail_max = max(minimum, rail_max)
+        maximum = max(minimum, min(limits.max_w, rail_max))
+        maximum_ac = max(maximum, min(limits.max_ac_w, rail_max))
+        default = max(minimum, min(limits.default_w, maximum_ac))
+        return TdpLimits(minimum, default, maximum, maximum_ac)
+
+    def _effective_levels(self, appid=None, on_ac=None, limits=None):
+        """Clamped {pl1,pl2,pl3} for a scope at the active (on_ac) ceiling, plus the
+        ceiling. Single source for every loop/RPC that needs the applied setpoint."""
+        limits = limits or self._limits()
+        ac = read_on_ac() if on_ac is None else on_ac
+        active = self._active_max(limits, ac)
+        effective = self._tdp_profiles.effective(appid)
+        ll = self._cap_level_limits(
+            self._tdp_backend.level_limits(),
+            active,
+            self._manual_boost(effective, appid),
+            safe_max=self._safe_active_max(ac),
+            pl1=effective["pl1"],
+        )
+        levels = self._clamp_levels(effective, limits, active, ll)
+        if self._settings.get("eco_enabled"):
+            # Download mode: force every rail to the device minimum, overriding any
+            # profile/scope (this is the single chokepoint every RPC + reapply reads).
+            # Clamp through the rail floors so the reported levels equal what the
+            # firmware actually accepts (a rail's own min may be > min_w).
+            m = limits.min_w
+            levels = self._clamp_levels({"pl1": m, "pl2": m, "pl3": m}, limits, active, ll)
+        return levels, active, ac
+
+    def _manual_boost(self, effective: dict, appid=None) -> bool:
+        return effective.get("mode") == "custom" and not self._tdp_profiles.auto_tdp(appid)
+
+    def _safe_active_max(self, ac: bool) -> int | None:
+        """None when the device has no manual extra range."""
+        if extra_tdp_max_ac(self._device) is None or self._desktop_mode_on():
+            return None
+        return self._active_max(self._safe_limits(), ac)
+
+    def _cap_level_limits(
+        self,
+        ll: dict,
+        active_max: int,
+        manual_boost: bool = False,
+        safe_max: int | None = None,
+        pl1: int | None = None,
+    ) -> dict:
+        out = {}
+        cap_boost = bool(
+            getattr(self._tdp_backend, "cap_boost_to_active", False)
+        ) and not (
+            manual_boost
+            and getattr(self._tdp_backend, "manual_boost_to_driver_max", False)
+        )
+        boost_cap = active_max if safe_max is None else min(active_max, safe_max)
+        for key, b in ll.items():
+            if key == "pl1" or cap_boost:
+                hi = min(b["max"], active_max if key == "pl1" else boost_cap)
+                out[key] = {"min": min(b["min"], hi), "max": hi}
+            else:
+                out[key] = {"min": b["min"], "max": b["max"]}
+        # A manual request in the extra range lifts every rail up to it, and only to it.
+        if safe_max is not None and pl1 is not None and int(pl1) > safe_max:
+            reach = min(int(pl1), active_max)
+            for bound in out.values():
+                bound["max"] = max(bound["max"], reach)
+        return out
+
+    def _clamp_levels(self, eff: dict, lim, active_max: int, ll: dict) -> dict:
+        def clamp(value, key):
+            b = ll.get(key)
+            lo = b["min"] if b else lim.min_w
+            hi = b["max"] if b else active_max
+            return max(lo, min(int(value), hi))
+
+        return {"pl1": clamp(eff["pl1"], "pl1"),
+                "pl2": clamp(eff["pl2"], "pl2"),
+                "pl3": clamp(eff["pl3"], "pl3")}
+
+    def _active_max(self, limits, ac: bool) -> int:
+        return limits.max_ac_w if ac else limits.max_w
+
+    def _tdp_request_min(self) -> int:
+        backend = getattr(self, "_tdp_backend", None)
+        if getattr(backend, "unit", None) == "level":
+            return int(backend.get_limits().min_w)
+        return TDP_REQUEST_MIN_W
+
+    def _clamp_tdp_request(self, watts, active_max: int) -> int:
+        return max(
+            self._tdp_request_min(),
+            min(int(watts), int(active_max)),
+        )
+
+    def _clamp_requested_levels(
+        self,
+        effective: dict,
+        active_max: int,
+        level_limits: dict,
+    ) -> dict:
+        def clamp(rail):
+            ceiling = level_limits.get(rail, {}).get("max", active_max)
+            return max(self._tdp_request_min(), min(int(effective[rail]), int(ceiling)))
+
+        return {rail: clamp(rail) for rail in ("pl1", "pl2", "pl3")}
+
+    # ---- Learned TDP band ---------------------------------------------------
+    def _tdp_learned_info(self, appid=None) -> dict:
+        """Display-facing learned-band info for a game (honest reasons).
+
+        reason ∈ {disabled, no_game, no_data, too_few, one_level, ok}. The band
+        fields are None unless ``enough``. ``minutes`` = total in-game dwell learned.
+        """
+        def unavail(reason):
+            return {"floor": None, "ceil": None, "seed": None,
+                    "observed_lo": None, "observed_hi": None,
+                    "enough": False, "reason": reason, "minutes": 0,
+                    "target_minutes": tdp_suggest.MIN_MINUTES}
+
+        if not self._learning_active():
+            return unavail("disabled")
+        key = str(appid) if appid is not None else self._current_appid
+        if key is None:
+            return unavail("no_game")
+        try:
+            by_pl1 = self._telemetry.aggregate(key)["by_pl1"]
+            band = tdp_suggest.learned_band(by_pl1)
+            minutes = round(sum(r["seconds"] for r in by_pl1.values()) / 60) if by_pl1 else 0
+            safe = self._auto_request_limits()
+            for field in ("floor", "ceil", "seed"):
+                if band.get(field) is not None:
+                    band[field] = max(safe.min_w, min(int(band[field]), safe.max_ac_w))
+            return {**band, "minutes": minutes, "target_minutes": tdp_suggest.MIN_MINUTES}
+        except Exception:  # noqa: BLE001
+            return unavail("error")
+
+    def _auto_scope(self) -> str:
+        """The TDP profile scope the auto machinery writes to. Only the game scope when
+        the running game has its OWN profile; a game that follows global is tuned via the
+        global profile it inherits, so the loop never silently detaches it (which would
+        flip follow_global off and mint a per-game profile with no user action)."""
+        appid = self._current_appid
+        if appid is not None and not self._tdp_profiles.is_following_global(appid):
+            return "game"
+        return "global"
+
+    # ---- off-loop dispatch --------------------------------------------------
+    # Any subprocess/HTTP-backed apply (gamescopectl, systemctl, ryzenadj, …) MUST
+    # run through one of these so a wedged tool can't stall the event loop that
+    # drives the auto-TDP loop + every QAM RPC. The single-worker executor (created
+    # in _main) serialises applies → no race on shared state (e.g. the color LUT
+    # file). No executor / no loop (unit tests) → run inline (behaviour preserved).
+    def _ensure_apply_executor(self):
+        executor = getattr(self, "_apply_executor", None)
+        if executor is None:
+            if getattr(self, "_shutting_down", False):
+                raise RuntimeError("plugin_shutting_down")
+            executor = ThreadPoolExecutor(max_workers=1)
+            self._apply_executor = executor
+        return executor
+
+    def _ensure_controller_action_executor(self):
+        executor = getattr(self, "_controller_action_executor", None)
+        if executor is None:
+            if getattr(self, "_shutting_down", False):
+                raise RuntimeError("plugin_shutting_down")
+            executor = ThreadPoolExecutor(max_workers=1)
+            self._controller_action_executor = executor
+        return executor
+
+    def _submit_offloaded(self, executor, fn):
+        future = executor.submit(fn)
+        tracked = getattr(self, "_offload_futures", None)
+        if tracked is not None:
+            tracked.add(future)
+            future.add_done_callback(tracked.discard)
+        return future
+
+    def _offload(self, fn, done=None):
+        """Fire-and-forget a blocking apply off the event loop. Guards fn on both
+        paths so a raise can't kill the caller nor leak an unretrieved-future log.
+
+        `done` (optional) runs ON the event loop AFTER fn finishes — use it to start
+        work that depends on state fn just set (e.g. a re-assert loop that needs the
+        apply to have taken fan ownership first), race-free. It must be safe to run
+        on the loop; it is guarded like fn."""
+        if getattr(self, "_shutting_down", False):
+            return
+
+        def guarded():
+            if getattr(self, "_shutting_down", False):
+                return
+            try:
+                fn()
+            except Exception:  # noqa: BLE001
+                pass
+
+        def run_done(*_):
+            if getattr(self, "_shutting_down", False):
+                return
+            try:
+                done()
+            except Exception:  # noqa: BLE001
+                pass
+
+        ex = getattr(self, "_apply_executor", None)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        if loop is None:
+            guarded()
+            if done is not None:
+                run_done()
+        else:
+            ex = self._ensure_apply_executor()
+            fut = asyncio.wrap_future(
+                self._submit_offloaded(ex, guarded), loop=loop
+            )
+            if done is not None:
+                fut.add_done_callback(run_done)
+
+    async def _offload_call(self, fn):
+        """Run a blocking call off the event loop and return its result (awaited).
+        Falls back to a default worker thread when the serial executor isn't up yet
+        (before _main / after shutdown) so blocking work — systemctl, EC writes — never
+        lands on the loop."""
+        if getattr(self, "_shutting_down", False):
+            raise RuntimeError("plugin_shutting_down")
+        ex = getattr(self, "_apply_executor", None)
+        if ex is None:
+            ex = self._ensure_apply_executor()
+        loop = asyncio.get_running_loop()
+
+        def guarded_call():
+            if getattr(self, "_shutting_down", False):
+                raise RuntimeError("plugin_shutting_down")
+            return fn()
+
+        return await asyncio.wrap_future(
+            self._submit_offloaded(ex, guarded_call), loop=loop
+        )
+
+    async def _offload_controller_action_call(self, fn):
+        if getattr(self, "_shutting_down", False):
+            raise RuntimeError("plugin_shutting_down")
+        executor = self._ensure_controller_action_executor()
+        loop = asyncio.get_running_loop()
+
+        def guarded_call():
+            if getattr(self, "_shutting_down", False):
+                raise RuntimeError("plugin_shutting_down")
+            return fn()
+
+        return await asyncio.wrap_future(
+            self._submit_offloaded(executor, guarded_call),
+            loop=loop,
+        )
+
+    async def _offload_theme_call(self, fn, *, allow_stopping: bool = False):
+        if not allow_stopping and not getattr(self, "_theme_accepting_work", True):
+            raise theme_packages.ThemePackageError(
+                "lifecycle_stopping",
+                "Theme service is stopping",
+            )
+        ex = getattr(self, "_theme_executor", None)
+        if ex is None:
+            return await asyncio.to_thread(fn)
+        return await asyncio.get_running_loop().run_in_executor(ex, fn)
+
+    def _begin_theme_shutdown(self) -> None:
+        self._theme_accepting_work = False
+        service = getattr(self, "_theme_remote_service", None)
+        if service is not None:
+            service.close()
+
+    async def _drain_offloaded(self):
+        """Wait for the queued off-loop applies to finish (a no-op runs after them on
+        the single-worker executor). Use before reading back hardware state that a
+        fire-and-forget apply just changed, so the readback isn't stale."""
+        ex = getattr(self, "_apply_executor", None)
+        if ex is None:
+            return
+        loop = asyncio.get_running_loop()
+        await asyncio.wrap_future(
+            self._submit_offloaded(ex, lambda: None), loop=loop
+        )
+
+    def _cancel_queued_offloads(self) -> None:
+        for future in tuple(getattr(self, "_offload_futures", ())):
+            if not future.running():
+                future.cancel()
+
+    def _drain_offloaded_sync(self, timeout_s=None) -> bool:
+        ex = getattr(self, "_apply_executor", None)
+        if ex is None:
+            return True
+        try:
+            ex.submit(lambda: None).result(timeout=timeout_s)
+            return True
+        except FutureTimeoutError:
+            return False
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _firmware_choices(self) -> list:
+        """Firmware performance modes the device exposes, or [] when it has none."""
+        return self._tdp_backend.profile_choices() if self._device.firmware_modes else []
+
+    def _firmware_mode(self) -> str:
+        """Selected firmware performance mode on a device that exposes them
+        ('low-power'/'balanced'/'performance'), else 'custom' (our TDP owns the rails)."""
+        if not self._device.firmware_modes:
+            return _CUSTOM_MODE
+        return self._settings.get("firmware_mode") or _CUSTOM_MODE
+
+    def _exit_firmware_mode(self) -> None:
+        """A manual TDP action (slider / boost offsets) returns control to our TDP."""
+        if self._firmware_mode() != _CUSTOM_MODE:
+            self._settings["firmware_mode"] = _CUSTOM_MODE
+            self._save()
+
+    def _tdp_control_on(self) -> bool:
+        """Master switch: whether we're allowed to write the TDP rails at all."""
+        return bool(self._settings.get("tdp_control_enabled", True))
+
+    def _reset_power_values_on_unit_change(self) -> None:
+        """Saved power values are watts on PC and performance levels on ARM; a value
+        saved in one unit must never be replayed as the other."""
+        unit = getattr(self._tdp_backend, "unit", "W")
+        if not getattr(self._tdp_backend, "supported", False):
+            return
+        if self._settings.get("tdp_unit", "W") == unit:
+            return
+        try:
+            self._tdp_profiles.reset()
+            self._power_presets.reset()
+            self._auto_learning.reset()
+            self._settings["tdp_unit"] = unit
+            self._store.save(self._settings)
+            decky.logger.info("Power values reset for unit change to %s", unit)
+        except Exception as exc:  # noqa: BLE001
+            decky.logger.warning("Power value reset failed: %s", type(exc).__name__)
+
+    def _power_uses_levels(self) -> bool:
+        return getattr(getattr(self, "_tdp_backend", None), "unit", None) == "level"
+
+    def _frequency_managed_by_power(self) -> bool:
+        """On ARM the performance level owns the same cpufreq/devfreq ceilings that the
+        CPU window and GPU clock controls write, so only one of them may drive them."""
+        backend = getattr(self, "_tdp_backend", None)
+        return bool(
+            getattr(backend, "unit", None) == "level"
+            and getattr(backend, "supported", False)
+            and self._tdp_control_on()
+            and self._module_enabled("power")
+        )
+
+    # ---- Module enable/disable ---------------------------------------------
+    # autoTdp/fanControl cascade from their tab (all); learning needs a consumer (any).
+    # MIRROR of REQUIRES in src/customize/moduleLogic.ts — keep the two in sync.
+    _MODULE_REQUIRES = {
+        "autoTdp": ("all", ("power",)),
+        "fanControl": ("all", ("fans",)),
+        "chargeLimit": ("all", ("system",)),
+        "learning": ("any", ("power", "fans")),
+    }
+    _GENERIC_MODULES = (
+        "system",
+        "display",
+        "fans",
+        "mandos",
+        "autoTdp",
+        "fanControl",
+        "chargeLimit",
+    )
+    # Modules backed by a pre-existing boolean setting instead of disabled_modules
+    # (setting True = module enabled). Single source of truth per concept.
+    _MODULE_SETTING = {"power": "tdp_control_enabled", "learning": "telemetry_enabled"}
+
+    def _disabled_modules(self) -> list:
+        v = self._settings.get("disabled_modules")
+        return [x for x in v if isinstance(x, str)] if isinstance(v, list) else []
+
+    def _module_user_disabled(self, mid: str) -> bool:
+        """Whether the user turned this module off (before cascade/dependency)."""
+        setting = self._MODULE_SETTING.get(mid)
+        if setting is not None:
+            return not bool(self._settings.get(setting, True))
+        return mid in self._disabled_modules()
+
+    def _module_enabled(self, mid: str) -> bool:
+        """Effective state: user flag AND requirements (cascade = all, dependency = any)."""
+        if self._module_user_disabled(mid):
+            return False
+        req = self._MODULE_REQUIRES.get(mid)
+        if not req:
+            return True
+        mode, ids = req
+        checks = [self._module_enabled(d) for d in ids]
+        return any(checks) if mode == "any" else all(checks)
+
+    def _learning_active(self) -> bool:
+        """Learning runs only when enabled AND it has a consumer (Power or Fans)."""
+        return self._module_enabled("learning")
+
+    def _user_disabled_all(self) -> list:
+        """The user-disabled set (for the UI), folding the native-setting modules in."""
+        out = list(self._disabled_modules())
+        for mid, setting in self._MODULE_SETTING.items():
+            if not bool(self._settings.get(setting, True)):
+                out.append(mid)
+        return out
+
+    def _capture_tdp_command(
+        self,
+        reason,
+        on_ac=None,
+        bump=True,
+        auto_watts=None,
+    ):
+        backend = self._tdp_backend
+        ac = read_on_ac() if on_ac is None else bool(on_ac)
+        overclock = self._steamdeck_overclock_state()
+        limits = self._limits(overclock)
+        active = self._active_max(limits, ac)
+        logical_requested = self._tdp_profiles.effective(self._current_appid)
+        requested_auto_watts = None
+        if auto_watts is not None and self._auto_runtime_active():
+            requested_auto_watts = int(auto_watts)
+        elif self._auto_runtime_active():
+            requested_auto_watts = int(self._auto_setpoint)
+        elif self._current_appid is None and self._auto_control_active():
+            requested_auto_watts = self._auto_responsive_floor(
+                None,
+                ac,
+                self._tdp_observation,
+            )
+        if requested_auto_watts is not None:
+            logical_requested = {
+                "pl1": requested_auto_watts,
+                "pl2": requested_auto_watts,
+                "pl3": requested_auto_watts,
+                "mode": "estable",
+            }
+        auto_active = requested_auto_watts is not None
+        if self._settings.get("eco_enabled"):
+            minimum = limits.min_w
+            logical_requested = {
+                "pl1": minimum,
+                "pl2": minimum,
+                "pl3": minimum,
+                "mode": "estable",
+            }
+        select_levels = getattr(
+            backend,
+            "auto_physical_levels" if auto_active else "physical_levels",
+            None,
+        )
+        if auto_active and not callable(select_levels):
+            select_levels = getattr(backend, "physical_levels", None)
+        if callable(select_levels):
+            requested = select_levels(logical_requested)
+        elif getattr(backend, "supports_levels", False):
+            requested = {
+                rail: int(logical_requested[rail])
+                for rail in ("pl1", "pl2", "pl3")
+            }
+        else:
+            requested = {"pl1": int(logical_requested["pl1"])}
+        get_level_limits = getattr(
+            backend,
+            "auto_level_limits" if auto_active else "level_limits",
+            None,
+        )
+        if auto_active and not callable(get_level_limits):
+            get_level_limits = getattr(backend, "level_limits", None)
+        safe = self._cap_level_limits(
+            get_level_limits(),
+            active,
+            not auto_active and self._manual_boost(logical_requested, self._current_appid),
+            safe_max=self._safe_active_max(ac),
+            pl1=logical_requested["pl1"],
+        )
+        for rail in requested:
+            safe.setdefault(
+                rail,
+                {"min": limits.min_w, "max": active},
+            )
+        if self._tdp_menu_context():
+            for rail, floor in self._tdp_menu_rail_floors().items():
+                bound = safe.get(rail)
+                if bound is not None:
+                    bound["min"] = min(bound["max"], max(bound["min"], floor))
+        if bump:
+            self._advance_tdp_generation()
+        return _TdpCommand(
+            generation=self._tdp_generation,
+            backend=backend,
+            reason=str(reason),
+            logical_requested={
+                rail: int(logical_requested[rail])
+                for rail in ("pl1", "pl2", "pl3")
+            },
+            requested={
+                rail: int(requested[rail])
+                for rail in requested
+            },
+            safe_bounds=safe,
+            primary_rail=getattr(backend, "primary_rail", "pl1"),
+            on_ac=ac,
+            auto_tdp=auto_active,
+            ppt_probe_pending=self._steamdeck_ppt_probe_pending(overclock),
+        )
+
+    def _tdp_menu_rail_floors(self) -> dict:
+        floors = getattr(self._tdp_backend, "menu_rail_floors", None)
+        return dict(floors) if isinstance(floors, dict) else {}
+
+    def _tdp_menu_context(self) -> bool:
+        return self._current_appid is None or bool(self._ui_active)
+
+    def _advance_tdp_generation(self):
+        self._tdp_generation += 1
+        self._tdp_reconcile_memory = ReconcileMemory(
+            drift_times=self._tdp_reconcile_memory.drift_times,
+        )
+
+    def _observe_tdp_sync(self):
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        observe_hold = getattr(sidecar, "observe_hold", None)
+        if self._low_battery_sidecar_active() and callable(observe_hold):
+            return observe_hold()
+        observe = getattr(self._tdp_backend, "observe", None)
+        if callable(observe):
+            return observe()
+        applied = self._tdp_backend.read_applied()
+        surfaces = {}
+        if applied is not None:
+            surfaces[self._tdp_backend.name] = {
+                "pl1": RailReading(applied),
+            }
+        return TdpObservation(readable=True, surfaces=surfaces)
+
+    def _tdp_observation_backend(self):
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        return sidecar if self._low_battery_sidecar_active() else self._tdp_backend
+
+    def _remember_tdp_observation(self, observation):
+        self._tdp_observation = observation
+        self._tdp_observation_at = _monotonic()
+        return observation
+
+    def _apply_tdp_targets(self, target, on_ac, auto_tdp):
+        self._tdp_backend_used = True
+        apply_targets = getattr(
+            self._tdp_backend,
+            "apply_auto_targets" if auto_tdp else "apply_targets",
+            None,
+        )
+        if auto_tdp and not callable(apply_targets):
+            apply_targets = getattr(self._tdp_backend, "apply_targets", None)
+        if callable(apply_targets):
+            return apply_targets(target, on_ac)
+        primary_rail = getattr(self._tdp_backend, "primary_rail", "pl1")
+        primary = target[primary_rail]
+        return self._tdp_backend.set_levels(
+            target.get("pl1", primary),
+            target.get("pl2", primary),
+            target.get("pl3", target.get("pl2", primary)),
+            on_ac,
+        )
+
+    @staticmethod
+    def _probe_tdp_live_max(command):
+        return bool(
+            command.on_ac
+            and not command.auto_tdp
+            and getattr(command.backend, "probe_live_max_on_ac", False)
+        )
+
+    def _tdp_live_max_probe_failed_safely(self, result):
+        detail = result.detail or ""
+        return bool(
+            not result.ok
+            and getattr(result, "failure_kind", None) == "target_not_applied"
+            and not getattr(self._tdp_backend, "safety_locked", False)
+            and detail.startswith("write not confirmed")
+            and "; rollback confirmed" in detail
+        )
+
+    def _execute_tdp_command(self, command):
+        logical_watts = command.logical_requested["pl1"]
+        if self._tdp_shutdown:
+            return TdpResult(
+                logical_watts,
+                None,
+                False,
+                "tdp-shutdown",
+            )
+        if command.generation != self._tdp_generation:
+            return TdpResult(
+                logical_watts,
+                None,
+                False,
+                "stale-generation",
+            )
+        if self._auto_ui_blocks_tdp_write(command.reason):
+            return TdpResult(
+                logical_watts,
+                None,
+                False,
+                "auto-ui-active",
+            )
+        if command.backend is not self._tdp_backend:
+            return TdpResult(
+                logical_watts,
+                None,
+                False,
+                "stale-backend",
+            )
+        if self._low_battery_hold_recovery_pending:
+            self._tdp_status = "rejected"
+            self._tdp_reason = "low_battery_hold_recovery_pending"
+            return TdpResult(
+                logical_watts,
+                None,
+                False,
+                "low-battery-hold-recovery-pending",
+            )
+        if not self._tdp_supported():
+            self._tdp_status, self._tdp_reason = "unsupported", ""
+            result = TdpResult(
+                logical_watts,
+                None,
+                False,
+                "tdp-unsupported",
+            )
+            self._record_tdp_transition(
+                command.reason,
+                action="apply",
+                result=result,
+                on_ac=command.on_ac,
+                requested=command.requested,
+            )
+            return result
+        if not self._tdp_control_on():
+            self._tdp_status = "unverifiable"
+            self._tdp_reason = "control_disabled"
+            return TdpResult(
+                logical_watts,
+                None,
+                True,
+                "tdp-control-disabled",
+            )
+        if command.ppt_probe_pending:
+            self._tdp_status = "rejected"
+            self._tdp_reason = "steamdeck_ppt_probe_pending"
+            result = TdpResult(
+                logical_watts,
+                None,
+                False,
+                "steamdeck-ppt-probe-pending",
+            )
+            self._record_tdp_transition(
+                command.reason,
+                action="blocked",
+                result=result,
+                on_ac=command.on_ac,
+                requested=command.requested,
+            )
+            return result
+        if not self._tdp_write_authorized():
+            self._tdp_status = "unverifiable"
+            self._tdp_reason = "external_owner"
+            self._tdp_targets = None
+            self._remember_tdp_observation(self._observe_tdp_sync())
+            result = TdpResult(
+                logical_watts,
+                self._tdp_backend.read_applied(),
+                False,
+                "tdp-ownership-unconfirmed",
+            )
+            self._record_tdp_transition(
+                command.reason,
+                action="blocked",
+                result=result,
+                on_ac=command.on_ac,
+                requested=command.requested,
+            )
+            return result
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        mode = self._firmware_mode()
+        if mode != _CUSTOM_MODE:
+            if sidecar is not None and not self._release_low_battery_hold():
+                self._tdp_status = "rejected"
+                self._tdp_reason = "low_battery_hold_restore_failed"
+                return TdpResult(
+                    logical_watts,
+                    None,
+                    False,
+                    "low-battery-hold-restore-failed",
+                )
+            self._tdp_backend_used = True
+            if not self._tdp_backend.set_profile(mode):
+                self._tdp_status = "rejected"
+                self._tdp_reason = "firmware_mode_rejected"
+                self._tdp_targets = None
+                self._remember_tdp_observation(self._observe_tdp_sync())
+                result = TdpResult(
+                    logical_watts,
+                    self._tdp_backend.read_applied(),
+                    False,
+                    f"firmware-mode-rejected:{mode}",
+                )
+                self._record_tdp_transition(
+                    command.reason,
+                    action="profile",
+                    result=result,
+                    on_ac=command.on_ac,
+                    requested=command.requested,
+                )
+                return result
+            self._tdp_status = "unverifiable"
+            self._tdp_reason = "firmware_mode"
+            self._tdp_targets = None
+            self._remember_tdp_observation(self._observe_tdp_sync())
+            result = TdpResult(
+                logical_watts,
+                self._tdp_backend.read_applied(),
+                True,
+                f"firmware-mode:{mode}",
+            )
+            self._record_tdp_transition(
+                command.reason,
+                action="profile",
+                result=result,
+                on_ac=command.on_ac,
+                requested=command.requested,
+            )
+            return result
+        if sidecar is not None:
+            hold = self._low_battery_hold_decision(command.on_ac)
+            if hold.active:
+                result = self._apply_low_battery_sidecar(
+                    command,
+                    time.monotonic(),
+                )
+                if command.generation != self._tdp_generation:
+                    return TdpResult(
+                        logical_watts,
+                        result.applied_w,
+                        False,
+                        "stale-generation",
+                    )
+                return TdpResult(
+                    logical_watts,
+                    result.applied_w,
+                    result.ok,
+                    result.detail,
+                )
+            if not self._release_low_battery_hold():
+                self._tdp_status = "rejected"
+                self._tdp_reason = "low_battery_hold_restore_failed"
+                return TdpResult(
+                    logical_watts,
+                    None,
+                    False,
+                    "low-battery-hold-restore-failed",
+                )
+        ppt_failure = self._prepare_steamdeck_ppt(command)
+        if ppt_failure is not None:
+            self._tdp_status = "rejected"
+            self._tdp_reason = "steamdeck_ppt_restore"
+            result = TdpResult(
+                logical_watts,
+                self._tdp_backend.read_applied(),
+                False,
+                f"steamdeck-ppt:{ppt_failure}",
+            )
+            self._record_tdp_transition(
+                command.reason,
+                action="ppt-prepare",
+                result=result,
+                on_ac=command.on_ac,
+                requested=command.requested,
+            )
+            return result
+        common_hold = (
+            self._low_battery_hold_decision(command.on_ac)
+            if sidecar is None
+            else None
+        )
+        before = self._observe_tdp_sync()
+        if command.generation != self._tdp_generation:
+            return TdpResult(
+                logical_watts,
+                None,
+                False,
+                "stale-generation",
+            )
+        probe_live_max = self._probe_tdp_live_max(command)
+        targets = build_targets(
+            command.requested,
+            command.safe_bounds,
+            before,
+            probe_live_max=probe_live_max,
+        )
+        if bool(command.on_ac) != read_on_ac():
+            return TdpResult(
+                logical_watts,
+                None,
+                False,
+                "stale-power-source",
+            )
+        if self._auto_ui_blocks_tdp_write(command.reason):
+            return TdpResult(
+                logical_watts,
+                None,
+                False,
+                "auto-ui-active",
+            )
+        result = self._apply_tdp_targets(
+            targets.target,
+            command.on_ac,
+            command.auto_tdp,
+        )
+        after = self._observe_tdp_sync()
+        if command.generation != self._tdp_generation:
+            return TdpResult(
+                logical_watts,
+                result.applied_w,
+                False,
+                "stale-generation",
+            )
+        outcome = after_apply(
+            targets,
+            after,
+            self._tdp_reconcile_memory,
+            time.monotonic(),
+            result.ok,
+            getattr(self._tdp_backend, "read_tolerance_w", 0),
+            write_only=not getattr(
+                self._tdp_backend,
+                "readback",
+                True,
+            ),
+            heartbeat_s=getattr(
+                self._tdp_backend,
+                "heartbeat_s",
+                None,
+            ),
+            probe_live_max=(
+                probe_live_max
+                and self._tdp_live_max_probe_failed_safely(result)
+            ),
+        )
+        self._tdp_targets = targets
+        self._remember_tdp_observation(after)
+        self._tdp_reconcile_memory = outcome.memory
+        self._tdp_status = outcome.status
+        self._tdp_reason = outcome.reason
+        self._tdp_conflict_persistent = outcome.conflict_persistent
+        self._remember_low_battery_primary_result(common_hold, result)
+        self._record_tdp_transition(
+            command.reason,
+            action="apply",
+            result=result,
+            on_ac=command.on_ac,
+            requested=command.requested,
+        )
+        return TdpResult(
+            logical_watts,
+            result.applied_w,
+            result.ok,
+            result.detail,
+        )
+
+    async def _apply_tdp_now(
+        self,
+        reason,
+        on_ac=None,
+        auto_guard=None,
+        auto_watts=None,
+    ):
+        ui_floor = reason in ("auto-ui-floor", "auto-focus-floor")
+        if auto_guard is not None and self._ui_active and not ui_floor:
+            return TdpResult(
+                int(getattr(self, "_auto_setpoint", 0) or 0),
+                None,
+                False,
+                "auto-ui-active",
+            )
+        await self._ensure_recognised_desktop_migration()
+        if auto_guard is not None and not self._auto_context_is_current(*auto_guard):
+            return TdpResult(
+                int(getattr(self, "_auto_setpoint", 0) or 0),
+                None,
+                False,
+                "stale-auto-context",
+            )
+        if auto_guard is not None and self._ui_active and not ui_floor:
+            return TdpResult(
+                int(getattr(self, "_auto_setpoint", 0) or 0),
+                None,
+                False,
+                "auto-ui-active",
+            )
+        if getattr(self, "_desktop_recognition_migration_pending", False):
+            requested = self._tdp_profiles.effective(self._current_appid)
+            return TdpResult(
+                int(requested["pl1"]),
+                None,
+                False,
+                "desktop migration pending",
+            )
+        if self._tdp_shutdown:
+            requested = self._tdp_profiles.effective(
+                self._current_appid,
+            )
+            return TdpResult(
+                int(requested["pl1"]),
+                None,
+                False,
+                "tdp-shutdown",
+            )
+        if auto_guard is not None and not self._auto_context_is_current(*auto_guard):
+            return TdpResult(
+                int(getattr(self, "_auto_setpoint", 0) or 0),
+                None,
+                False,
+                "stale-auto-context",
+            )
+        command = self._capture_tdp_command(
+            reason,
+            on_ac,
+            auto_watts=auto_watts,
+        )
+        return await self._offload_call(
+            lambda: self._execute_tdp_command(command)
+        )
+
+    def _schedule_tdp_apply(self, reason, on_ac=None):
+        if self._tdp_shutdown:
+            return
+        if (
+            reason == "settle-retry"
+            and (read_on_ac() if on_ac is None else bool(on_ac))
+            and self._tdp_reconcile_memory.live_limit_signature is not None
+        ):
+            return
+        command = self._capture_tdp_command(reason, on_ac)
+        self._offload(lambda: self._execute_tdp_command(command))
+
+    def _low_battery_hold_strategy(self):
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        if sidecar is not None:
+            active = self._low_battery_sidecar_active()
+            if self._low_battery_hold_recovery_pending or not sidecar.supported or (
+                getattr(sidecar, "safety_locked", False) and not active
+            ):
+                return None
+            return getattr(sidecar, "low_battery_hold_strategy", None)
+        backend = self._tdp_backend
+        strategy = getattr(backend, "low_battery_hold_strategy", None)
+        if not strategy or not backend.supported or not getattr(backend, "readback", True):
+            return None
+        if getattr(backend, "safety_locked", False):
+            return None
+        ready = getattr(backend, "ready", None)
+        if callable(ready):
+            try:
+                if not ready():
+                    return None
+            except Exception:  # noqa: BLE001
+                return None
+        return strategy
+
+    def _low_battery_hold_capability_strategy(self):
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        if sidecar is not None:
+            configured = getattr(sidecar, "low_battery_hold_strategy", None)
+            if configured and (
+                getattr(sidecar, "low_battery_hold_capable", False)
+                or getattr(sidecar, "supported", False)
+                or getattr(sidecar, "safety_locked", False)
+            ):
+                return configured
+            return None
+        backend = self._tdp_backend
+        configured = getattr(backend, "low_battery_hold_strategy", None)
+        if (
+            configured
+            and backend.supported
+            and getattr(backend, "readback", True)
+        ):
+            return configured
+        return None
+
+    def _low_battery_hold_decision(self, on_ac=None):
+        enabled = self._settings.get("low_battery_tdp_hold") is True
+        strategy = (
+            self._low_battery_hold_strategy()
+            if enabled
+            else self._low_battery_hold_capability_strategy()
+        )
+        ac = read_on_ac() if on_ac is None else bool(on_ac)
+        battery = self._battery.read() if enabled and strategy and not ac else {}
+        return decide_hold(
+            strategy=strategy,
+            enabled=enabled,
+            battery=battery,
+            on_ac=ac,
+            control_enabled=self._tdp_control_on(),
+            write_authorized=self._tdp_write_authorized(),
+            custom_mode=self._firmware_mode() == _CUSTOM_MODE,
+            auto_tdp=self._auto_control_active(),
+        )
+
+    def _remember_low_battery_primary_result(self, hold, result):
+        if hold is None:
+            return
+        if not hold.active:
+            self._low_battery_hold_last_failure = None
+            return
+        if result is None:
+            return
+        self._low_battery_hold_cached_reassert_s = hold.reassert_s
+        self._low_battery_hold_last_failure = None if result.ok else (
+            result.detail or "write_rejected"
+        )
+
+    def _low_battery_sidecar_active(self):
+        backend = getattr(self, "_low_battery_hold_backend", None)
+        diagnostics = getattr(backend, "diagnostics", None)
+        if not callable(diagnostics):
+            return False
+        try:
+            return bool(diagnostics().get("low_battery_hold_active"))
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _release_low_battery_hold(self):
+        backend = getattr(self, "_low_battery_hold_backend", None)
+        needs_release = backend is not None and (
+            self._low_battery_sidecar_active()
+            or getattr(backend, "safety_locked", False)
+        )
+        if not needs_release:
+            self._low_battery_hold_last_write_at = None
+            return True
+        if not self._tdp_write_authorized():
+            self._low_battery_hold_recovery_pending = True
+            self._low_battery_hold_last_failure = "external_owner"
+            return False
+        release = getattr(backend, "release_hold", None)
+        try:
+            restored = bool(release()) if callable(release) else False
+        except Exception:  # noqa: BLE001
+            restored = False
+        if restored:
+            self._low_battery_hold_last_write_at = None
+            self._low_battery_hold_recovery_pending = False
+            self._low_battery_hold_last_failure = None
+        else:
+            self._low_battery_hold_recovery_pending = True
+            self._low_battery_hold_last_failure = "restore_failed"
+        return restored
+
+    def _guard_low_battery_sidecar(self, command, hold, now):
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        if sidecar is None:
+            return False
+        if not hold.active:
+            if self._low_battery_sidecar_active():
+                decky.logger.info(
+                    "Low-battery TDP hold releasing reason=%s battery=%s",
+                    hold.reason,
+                    hold.battery_percent,
+                )
+            if not self._release_low_battery_hold():
+                self._tdp_status = "rejected"
+                self._tdp_reason = "low_battery_hold_restore_failed"
+                return True
+            return False
+        last_write = self._low_battery_hold_last_write_at
+        if last_write is not None and now - last_write < float(hold.reassert_s):
+            return True
+        self._apply_low_battery_sidecar(command, now)
+        return True
+
+    def _apply_low_battery_sidecar(self, command, now):
+        sidecar = self._low_battery_hold_backend
+        current = self._low_battery_hold_decision()
+        self._low_battery_hold_cached_reassert_s = current.reassert_s
+        if not current.active:
+            restored = self._release_low_battery_hold()
+            self._tdp_status = "unverifiable" if restored else "rejected"
+            self._tdp_reason = (
+                "low_battery_hold_condition_changed"
+                if restored
+                else "low_battery_hold_restore_failed"
+            )
+            return TdpResult(
+                command.logical_requested["pl1"],
+                None,
+                False,
+                "low-battery-hold-condition-changed",
+            )
+        self._low_battery_hold_last_write_at = now
+        sidecar_limits = getattr(sidecar, "low_battery_level_limits", None)
+        limits = self._limits()
+        active_max = self._active_max(limits, False)
+        bounds = (
+            sidecar_limits(active_max)
+            if callable(sidecar_limits)
+            else {}
+        )
+        for rail in ("pl1", "pl2", "pl3"):
+            bounds.setdefault(
+                rail,
+                command.safe_bounds.get(
+                    rail,
+                    {"min": limits.min_w, "max": limits.max_w},
+                ),
+            )
+        targets = build_targets(
+            command.logical_requested,
+            bounds,
+            TdpObservation(readable=False),
+        )
+        result = sidecar.hold_levels(targets.target)
+        self._tdp_targets = targets
+        if result.ok:
+            observe_hold = getattr(sidecar, "observe_hold", None)
+            observation = (
+                observe_hold()
+                if callable(observe_hold)
+                else TdpObservation(readable=False)
+            )
+            self._remember_tdp_observation(observation)
+            self._tdp_reconcile_memory = ReconcileMemory(last_write_at=now)
+            self._low_battery_hold_recovery_pending = False
+            self._low_battery_hold_last_failure = None
+        else:
+            self._low_battery_hold_recovery_pending = bool(
+                getattr(sidecar, "safety_locked", False)
+            )
+            self._low_battery_hold_last_failure = result.detail
+            self._remember_tdp_observation(self._observe_tdp_sync())
+        if result.ok and observation.readable:
+            self._tdp_status = "in_sync"
+            self._tdp_reason = "low_battery_hold"
+        elif result.ok:
+            self._tdp_status = "unverifiable"
+            self._tdp_reason = "low_battery_hold_unverified"
+        else:
+            self._tdp_status = "rejected"
+            self._tdp_reason = "low_battery_hold_failed"
+        self._record_tdp_transition(
+            "low-battery-hold",
+            action="reassert",
+            result=result,
+            on_ac=command.on_ac,
+            requested=command.logical_requested,
+        )
+        return result
+
+    def _watch_low_battery_threshold(self, now, command, hold):
+        if now < self._low_battery_watch_at:
+            return
+        self._low_battery_watch_at = now + _LOW_BATTERY_WATCH_S
+        battery = self._battery.read() if not command.on_ac else {}
+        try:
+            percent = int(battery.get("percent"))
+        except (TypeError, ValueError):
+            percent = None
+        below = percent is not None and percent <= LOW_BATTERY_PERCENT
+        previous, self._low_battery_below = self._low_battery_below, below
+        if below == bool(previous):
+            return
+        read_profile = getattr(self._tdp_backend, "read_profile", None)
+        decky.logger.info(
+            "Low battery TDP threshold %s",
+            json.dumps(
+                {
+                    "below": below,
+                    "battery_percent": percent,
+                    "on_ac": command.on_ac,
+                    "hold_enabled": hold.enabled,
+                    "hold_active": hold.active,
+                    "hold_reason": hold.reason,
+                    "backend": getattr(self._tdp_backend, "name", None),
+                    "platform_profile": read_profile() if callable(read_profile) else None,
+                    "requested": dict(command.logical_requested),
+                    "observation": self._tdp_observation.as_dict(),
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+        )
+
+    def _tdp_authoritative_reassert_s(self, hold=None):
+        cadences = []
+        if self._current_appid is not None:
+            cadence = getattr(
+                self._tdp_backend,
+                "authoritative_reassert_s",
+                None,
+            )
+            if cadence is not None:
+                cadences.append(float(cadence))
+        if hold is not None and hold.reassert_s is not None:
+            cadences.append(float(hold.reassert_s))
+        return min(cadences) if cadences else None
+
+    def _platform_profile_watch(self):
+        watch = getattr(self, "_tdp_profile_watch", None)
+        if watch is None:
+            watch = self._tdp_profile_watch = PlatformProfileWatch()
+        return watch
+
+    def _profile_reassert_eligible(self, command, hold, status):
+        backend = self._tdp_backend
+        return bool(
+            getattr(backend, "name", None) in _PROFILE_REASSERT_BACKENDS
+            and getattr(backend, "readback", True)
+            and not self._device.is_generic
+            and self._device.key not in ("desktop_pc", "steam_machine")
+            and not command.auto_tdp
+            and not self._auto_runtime_active()
+            and not hold.active
+            and status in ("in_sync", "constrained")
+        )
+
+    def _overshoot_monitor(self):
+        monitor = getattr(self, "_tdp_overshoot", None)
+        if monitor is None:
+            monitor = self._tdp_overshoot = HiddenOvershootMonitor()
+        return monitor
+
+    def _overshoot_eligible(self, command, hold, status):
+        backend = self._tdp_backend
+        return bool(
+            status in ("in_sync", "constrained")
+            and self._current_appid is not None
+            and not command.auto_tdp
+            and not self._auto_runtime_active()
+            and not hold.active
+            and not self._device.is_generic
+            and self._device.key not in ("desktop_pc", "steam_machine")
+            and getattr(backend, "name", None) in _OVERSHOOT_BACKENDS
+            and getattr(backend, "readback", True)
+            and not getattr(backend, "rearms_on_ignored_writes", False)
+        )
+
+    def _apply_overshoot_correction(self, method, command, targets, observation):
+        if method == NUDGE:
+            nudged = nudged_target(
+                targets.target,
+                rail_bounds(command.safe_bounds, observation),
+            )
+            if nudged is not None:
+                self._apply_tdp_targets(nudged, command.on_ac, command.auto_tdp)
+        return self._apply_tdp_targets(
+            targets.target,
+            command.on_ac,
+            command.auto_tdp,
+        )
+
+    def _guard_hidden_overshoot(self, now, command, hold, outcome, targets, observation):
+        monitor = self._overshoot_monitor()
+        before = monitor.last
+        watts = None
+        eligible = self._overshoot_eligible(command, hold, outcome.status)
+        if eligible:
+            reader = getattr(self, "_power_reader", None)
+            watts = reader.read_watts() if reader is not None else None
+        method = monitor.observe(
+            now,
+            self._current_appid,
+            watts,
+            targets.target,
+            eligible,
+        )
+        if monitor.last != before and monitor.last is not None:
+            decky.logger.info(
+                "TDP overshoot %s",
+                json.dumps(
+                    {
+                        **monitor.last,
+                        "target": dict(targets.target),
+                        "measured_w": watts,
+                        "backend": getattr(self._tdp_backend, "name", None),
+                        "on_ac": command.on_ac,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
+        if method is None:
+            return None
+        if bool(command.on_ac) != read_on_ac():
+            return None
+        return method, self._apply_overshoot_correction(
+            method,
+            command,
+            targets,
+            observation,
+        )
+
+    def _tdp_guard_tick(self, now=None):
+        now = time.monotonic() if now is None else float(now)
+        self._tdp_overshoot_clock = now
+        profile_reassert_due = (
+            getattr(self._tdp_backend, "name", None) in _PROFILE_REASSERT_BACKENDS
+            and self._platform_profile_watch().observe(now)
+        )
+        if self._tdp_shutdown:
+            return
+        if self._low_battery_hold_recovery_pending:
+            self._tdp_status = "rejected"
+            self._tdp_reason = "low_battery_hold_recovery_pending"
+            self._tdp_reconcile_memory = ReconcileMemory()
+            return
+        if not self._tdp_supported():
+            self._tdp_status, self._tdp_reason = "unsupported", ""
+            self._tdp_reconcile_memory = ReconcileMemory()
+            return
+        command = self._capture_tdp_command("guard", bump=False)
+        hold = self._low_battery_hold_decision()
+        self._low_battery_hold_cached_reassert_s = hold.reassert_s
+        self._watch_low_battery_threshold(now, command, hold)
+        if self._guard_low_battery_sidecar(command, hold, now):
+            return
+        if not self._tdp_control_on():
+            self._tdp_status = "unverifiable"
+            self._tdp_reason = "control_disabled"
+            self._tdp_reconcile_memory = ReconcileMemory()
+            return
+        if command.ppt_probe_pending:
+            self._tdp_status = "rejected"
+            self._tdp_reason = "steamdeck_ppt_probe_pending"
+            self._tdp_targets = None
+            self._tdp_reconcile_memory = ReconcileMemory()
+            return
+        if not self._tdp_write_authorized():
+            self._tdp_status = "unverifiable"
+            self._tdp_reason = "external_owner"
+            self._tdp_targets = None
+            self._tdp_reconcile_memory = ReconcileMemory()
+            self._remember_tdp_observation(self._observe_tdp_sync())
+            return
+        if self._firmware_mode() != _CUSTOM_MODE:
+            self._tdp_status = "unverifiable"
+            self._tdp_reason = "firmware_mode"
+            self._tdp_reconcile_memory = ReconcileMemory()
+            return
+        if self._auto_ui_blocks_tdp_write("guard"):
+            self._tdp_reconcile_memory = ReconcileMemory(
+                drift_times=self._tdp_reconcile_memory.drift_times,
+            )
+            self._remember_tdp_observation(self._observe_tdp_sync())
+            return
+        observation = self._observe_tdp_sync()
+        if command.generation != self._tdp_generation:
+            return
+        probe_live_max = self._probe_tdp_live_max(command)
+        targets = build_targets(
+            command.requested,
+            command.safe_bounds,
+            observation,
+            probe_live_max=probe_live_max,
+        )
+        outcome = decide(
+            targets,
+            observation,
+            self._tdp_reconcile_memory,
+            now,
+            getattr(self._tdp_backend, "read_tolerance_w", 0),
+            write_only=not getattr(
+                self._tdp_backend,
+                "readback",
+                True,
+            ),
+            heartbeat_s=getattr(
+                self._tdp_backend,
+                "heartbeat_s",
+                None,
+            ),
+            authoritative_reassert_s=self._tdp_authoritative_reassert_s(hold),
+        )
+        action = (
+            "reassert"
+            if outcome.action == "apply"
+            and outcome.reason == "periodic_reassert"
+            else outcome.action
+        )
+        result = None
+        if command.generation != self._tdp_generation:
+            return
+        if self._auto_ui_blocks_tdp_write(command.reason):
+            return
+        correction = None
+        if (
+            outcome.action != "apply"
+            and profile_reassert_due
+            and self._profile_reassert_eligible(command, hold, outcome.status)
+            and bool(command.on_ac) == read_on_ac()
+        ):
+            decky.logger.info(
+                "TDP profile reassert %s",
+                json.dumps(
+                    {
+                        "change": self._platform_profile_watch().last_change,
+                        "target": dict(targets.target),
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            )
+            correction = (
+                "profile",
+                self._apply_tdp_targets(
+                    targets.target,
+                    command.on_ac,
+                    command.auto_tdp,
+                ),
+            )
+            action = "profile-reassert"
+            outcome = replace(outcome, action="apply")
+        if outcome.action != "apply":
+            correction = self._guard_hidden_overshoot(
+                now,
+                command,
+                hold,
+                outcome,
+                targets,
+                observation,
+            )
+            if correction is not None:
+                action = f"overshoot-{correction[0]}"
+                outcome = replace(outcome, action="apply")
+        if outcome.action == "apply":
+            if correction is not None:
+                result = correction[1]
+            else:
+                if bool(command.on_ac) != read_on_ac():
+                    return
+                result = self._apply_tdp_targets(
+                    targets.target,
+                    command.on_ac,
+                    command.auto_tdp,
+                )
+            after = self._observe_tdp_sync()
+            if command.generation != self._tdp_generation:
+                return
+            outcome = after_apply(
+                targets,
+                after,
+                outcome.memory,
+                now,
+                result.ok,
+                getattr(self._tdp_backend, "read_tolerance_w", 0),
+                write_only=not getattr(
+                    self._tdp_backend,
+                    "readback",
+                    True,
+                ),
+                heartbeat_s=getattr(
+                    self._tdp_backend,
+                    "heartbeat_s",
+                    None,
+                ),
+                probe_live_max=(
+                    probe_live_max
+                    and self._tdp_live_max_probe_failed_safely(result)
+                ),
+            )
+            observation = after
+        if command.generation != self._tdp_generation:
+            return
+        self._tdp_targets = targets
+        self._remember_tdp_observation(observation)
+        self._tdp_reconcile_memory = outcome.memory
+        self._tdp_status = outcome.status
+        self._tdp_reason = outcome.reason
+        self._tdp_conflict_persistent = outcome.conflict_persistent
+        self._remember_low_battery_primary_result(hold, result)
+        self._record_tdp_transition(
+            "guard",
+            action=action,
+            result=result,
+            on_ac=command.on_ac,
+            requested=command.requested,
+        )
+
+    def _tdp_guard_delay(self):
+        if not self._tdp_backend.supported:
+            return _TDP_BACKEND_REPROBE_S
+        now = time.monotonic()
+        interval = max(
+            0.05,
+            float(getattr(self._tdp_backend, "guard_interval_s", 2.0)),
+        )
+        due = []
+        memory = self._tdp_reconcile_memory
+        if memory.pending_since is not None:
+            ready_at = memory.pending_since + CONFIRM_S
+            if memory.last_write_at is not None:
+                ready_at = max(
+                    ready_at,
+                    memory.last_write_at + MIN_CORRECTION_S,
+                )
+            due.append(ready_at)
+        if memory.next_retry_at > now:
+            due.append(memory.next_retry_at)
+        reassert_s = self._low_battery_hold_cached_reassert_s
+        if self._current_appid is not None:
+            primary_reassert = getattr(
+                self._tdp_backend,
+                "authoritative_reassert_s",
+                None,
+            )
+            if primary_reassert is not None:
+                reassert_s = (
+                    float(primary_reassert)
+                    if reassert_s is None
+                    else min(float(primary_reassert), float(reassert_s))
+                )
+        if reassert_s is not None and memory.last_write_at is not None:
+            due.append(memory.last_write_at + float(reassert_s))
+        if not due:
+            return interval
+        return max(0.05, min(interval, min(due) - now))
+
+    async def _tdp_guard_loop(self):
+        while True:
+            try:
+                await asyncio.sleep(self._tdp_guard_delay())
+                if not self._tdp_backend.supported:
+                    await self._probe_tdp_backend()
+                    continue
+                await self._offload_call(self._tdp_guard_tick)
+                if not self._tdp_supported():
+                    await self._probe_tdp_backend()
+            except asyncio.CancelledError:
+                return
+            except Exception:
+                decky.logger.exception("TDP guard tick failed")
+
+    def _start_tdp_guard_loop(self):
+        lifecycle = getattr(self, "_lifecycle", None)
+        if (
+            self._tdp_shutdown
+            or self._tdp_guard_task is not None
+            or getattr(lifecycle, "_task", None) is None
+        ):
+            return
+        self._tdp_guard_task = asyncio.create_task(
+            self._tdp_guard_loop()
+        )
+
+    def _stop_tdp_guard_loop(self):
+        if self._tdp_guard_task is not None:
+            self._tdp_guard_task.cancel()
+            self._tdp_guard_task = None
+
+    def _begin_tdp_shutdown(self):
+        if self._tdp_shutdown:
+            return
+        self._tdp_shutdown = True
+        self._stop_tdp_guard_loop()
+        self._stop_auto_loop()
+        if getattr(self, "_lifecycle", None) is not None:
+            self._lifecycle.stop()
+        self._advance_tdp_generation()
+
+    def _reapply_tdp(self, on_ac=None):
+        self._init()
+        command = self._capture_tdp_command("reapply", on_ac)
+        return self._execute_tdp_command(command)
+
+    def _tdp_scope_label(self):
+        if self._current_appid is None:
+            return "global"
+        if self._tdp_profiles.is_following_global(self._current_appid):
+            return "game_follow_global"
+        return "game"
+
+    def _record_tdp_transition(
+        self,
+        reason,
+        *,
+        action,
+        result=None,
+        on_ac=None,
+        requested=None,
+    ):
+        current_requested = (
+            dict(self._tdp_targets.requested)
+            if self._tdp_targets is not None
+            else dict(requested or {})
+        )
+        current_target = (
+            dict(self._tdp_targets.target)
+            if self._tdp_targets is not None
+            else {}
+        )
+        target_reasons = (
+            dict(self._tdp_targets.reasons)
+            if self._tdp_targets is not None
+            else {}
+        )
+        fingerprint = {
+            "generation": self._tdp_generation,
+            "reason": reason,
+            "action": action,
+            "scope": self._tdp_scope_label(),
+            "control_enabled": self._tdp_control_on(),
+            "on_ac": read_on_ac() if on_ac is None else bool(on_ac),
+            "firmware_mode": self._firmware_mode(),
+            "status": self._tdp_status,
+            "status_reason": self._tdp_reason,
+            "requested": current_requested,
+            "target": current_target,
+            "target_reasons": target_reasons,
+            "observation": self._tdp_observation.as_dict(),
+            "conflict_persistent": self._tdp_conflict_persistent,
+            "failures": self._tdp_reconcile_memory.failures,
+            "write": (
+                None
+                if result is None
+                else {
+                    "ok": bool(result.ok),
+                    "applied": result.applied_w,
+                    "detail": result.detail,
+                }
+            ),
+        }
+        if self._tdp_history:
+            previous_full = self._tdp_history[-1]
+            previous = {
+                key: value
+                for key, value in previous_full.items()
+                if key != "at"
+            }
+            if previous == fingerprint:
+                return
+            stable_keys = (
+                "scope",
+                "control_enabled",
+                "on_ac",
+                "firmware_mode",
+                "status",
+                "status_reason",
+                "requested",
+                "target",
+                "target_reasons",
+                "observation",
+                "conflict_persistent",
+                "failures",
+            )
+            if (
+                reason == "guard"
+                and action == "hold"
+                and result is None
+                and all(
+                    previous_full.get(key) == fingerprint[key]
+                    for key in stable_keys
+                )
+            ):
+                return
+        event = {
+            "at": round(time.monotonic(), 3),
+            **fingerprint,
+        }
+        previous_event = self._tdp_history[-1] if self._tdp_history else None
+        self._tdp_history.append(event)
+        self._journal_external_tdp_write(event, previous_event)
+        encoded = json.dumps(
+            event,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        warning = (
+            self._tdp_status in ("rejected", "unsupported")
+            or self._tdp_conflict_persistent
+            or (result is not None and not result.ok)
+        )
+        log = decky.logger.warning if warning else decky.logger.info
+        log("TDP transition %s", encoded)
+
+    def _reassert_tdp_only(self, on_ac=None) -> None:
+        """Settle-retry callback: re-assert only the power rails off the loop, winning the
+        firmware's post-transition reset without re-running the full re-apply each time."""
+        self._schedule_tdp_apply("settle-retry", on_ac)
+
+    def _reapply_all(self, on_ac=None, *, tdp_reason="lifecycle") -> None:
+        """Lifecycle callback: re-assert TDP, the fan curve, the charge limit and the
+        CPU controls (resume/AC — firmware may drop these across a suspend)."""
+        # A context change (resume, AC/DC, game change, eco) invalidates any
+        # unconfirmed calibration preview — drop it and cancel its revert timer so a
+        # stale preview can't leak onto the new context (nor a dangling timer fire).
+        self._reapply_generation = int(getattr(self, "_reapply_generation", 0)) + 1
+        self._last_reapply_trigger = "lifecycle_or_context"
+        if self._current_appid is not None and self._auto_control_active():
+            self._ensure_auto_session(
+                on_ac,
+                observation=self._tdp_observation,
+            )
+        if getattr(self, "_desktop_recognition_migration_pending", False):
+            self._offload(self._recover_recognised_desktop_migration)
+        self._drop_color_preview()
+        charge_generation = self._cancel_charge_limit_reconcile(
+            "reapply",
+            preserve_candidate=not getattr(self, "_shutting_down", False),
+        )
+        charge_limit_candidate_pending = (
+            getattr(self, "_charge_limit_candidate", None) is not None
+        )
+        charge_limit_managed = self._module_enabled("chargeLimit")
+
+        def apply_charge_limit():
+            if self._charge_limit_intent_current(charge_generation):
+                self._apply_charge_limit(charge_generation)
+
+        def schedule_charge_limit_reconcile():
+            if self._charge_limit_intent_current(charge_generation):
+                self._schedule_charge_limit_reconcile("reapply_all")
+
+        if (
+            charge_limit_managed
+            and (
+                bool(getattr(self._charge_limit, "supported", False))
+                or charge_limit_candidate_pending
+            )
+        ):
+            self._offload(
+                apply_charge_limit,
+                done=schedule_charge_limit_reconcile,
+            )
+        elif (
+            charge_limit_managed
+            and self._charge_limit_late_probe_eligible()
+        ):
+            schedule_charge_limit_reconcile()
+        self._apply_cpu()
+        self._apply_gpu_clock()
+        self._schedule_tdp_apply(tdp_reason, on_ac)
+        if self._desktop_mode_on():
+            self._offload(self._reapply_desktop_power)
+        # Stepped aside: retry a pending HHD hand-back (no-op while we control / no marker).
+        if not self._tdp_control_on() and not self._desktop_power_active():
+            self._offload(self._restore_power_handoff)
+        self._reapply_fans()   # self-offloading
+        # HDR before color: switching the HDR mode can drop the loaded LUT, so re-assert
+        # HDR first and load the color look after (both self-offloading, FIFO executor).
+        self._reapply_hdr()
+        self._reapply_color()
+        self._reapply_audio()  # self-offloading; no-op when the EQ is disabled
+        self._reapply_controller()  # diff-gated; no-op unless the effective remap changed
+        # Re-assert the overlay when mangoapp comes up on its independent serial worker.
+        self._schedule_hud_apply()
+
+    def _reapply_desktop_power(self) -> None:
+        mode = str(self._settings.get("desktop_power_mode", "free"))
+        if mode == "free":
+            self._desktop_power.apply("free")
+            self._restore_power_handoff()
+            return
+        if not self._ensure_desktop_tdp_ownership():
+            decky.logger.warning("Desktop power reapply blocked: HHD still owns TDP")
+            return
+        if mode == "custom":
+            self._desktop_power.apply_custom(
+                self._settings.get("desktop_cpu_w", 23),
+                self._settings.get("desktop_gpu_w", 80))
+        elif mode in ("silent", "balanced", "performance"):
+            self._desktop_power.apply(mode)
+
+    # ---- Battery + charge limit --------------------------------------------
+    def _record_charge_limit_apply(self, action, requested, ok, attempts) -> None:
+        try:
+            readback = self._charge_limit.get()
+        except Exception:  # noqa: BLE001
+            readback = None
+        event = {
+            "action": action,
+            "requested": requested,
+            "ok": bool(ok),
+            "readback": readback,
+            "attempts": attempts,
+        }
+        previous = getattr(self, "_charge_limit_last_apply", None)
+        self._charge_limit_last_apply = event
+        if action == "full_once":
+            self._charge_limit_full_once_status = (
+                "active" if ok else "failed"
+            )
+        if ok:
+            self._charge_limit_failures = 0
+            if event != previous:
+                decky.logger.info(
+                    "Charge limit transition %s",
+                    json.dumps(event, sort_keys=True, separators=(",", ":")),
+                )
+            return
+        self._charge_limit_failures = (
+            getattr(self, "_charge_limit_failures", 0) + 1
+        )
+        if (
+            self._charge_limit_failures
+            & (self._charge_limit_failures - 1)
+            == 0
+        ):
+            decky.logger.warning(
+                "Charge limit transition %s",
+                json.dumps(event, sort_keys=True, separators=(",", ":")),
+            )
+
+    def _charge_limit_apply_current(self, generation) -> bool:
+        return (
+            self._module_enabled("chargeLimit")
+            and not getattr(self, "_shutting_down", False)
+            and (
+                generation is None
+                or generation == self._charge_limit_generation
+            )
+        )
+
+    def _apply_charge_limit_operation(
+        self, action, requested, operation, generation=None
+    ) -> None:
+        if not self._charge_limit_apply_current(generation):
+            return
+        attempts = 1
+        result = operation()
+        if not self._charge_limit_apply_current(generation):
+            return
+        if result is False:
+            attempts = 2
+            result = operation()
+        if not self._charge_limit_apply_current(generation):
+            return
+        self._record_charge_limit_apply(
+            action,
+            requested,
+            bool(result),
+            attempts,
+        )
+
+    def _apply_charge_limit(self, generation=None) -> None:
+        if not self._charge_limit_apply_current(generation):
+            return
+        self._apply_selected_charge_limit(generation)
+        self._apply_pending_charge_limit_candidate(generation)
+
+    def _charge_limit_operation_for(self, backend):
+        if self._charge_limit_full_once_lifting():
+            if bool(getattr(backend, "adjustable", True)):
+                _, maximum = backend.range()
+                return (
+                    "full_once",
+                    maximum,
+                    lambda: backend.set(maximum),
+                )
+            return "full_once", None, backend.disable
+        if bool(self._settings.get("charge_limit_enabled", False)):
+            requested = self._charge_limit_requested_percent()
+            return "set", requested, lambda: backend.set(requested)
+        return "disable", None, backend.disable
+
+    def _charge_limit_full_once_deadline(self) -> float | None:
+        raw = self._settings.get("charge_limit_full_once_until")
+        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+            return None
+        deadline = float(raw)
+        return deadline if math.isfinite(deadline) and deadline > 0 else None
+
+    def _charge_limit_full_once_available(self) -> bool:
+        backend = self._charge_limit
+        if not (
+            self._module_enabled("chargeLimit")
+            and bool(getattr(backend, "supported", False))
+            and bool(self._settings.get("charge_limit_enabled", False))
+        ):
+            return False
+        if not bool(getattr(backend, "adjustable", True)):
+            return True
+        _, maximum = backend.range()
+        return maximum >= 100
+
+    def _charge_limit_full_once_active(self) -> bool:
+        return (
+            self._charge_limit_full_once_deadline() is not None
+            and self._charge_limit_full_once_available()
+        )
+
+    def _charge_limit_full_once_restore_pending(self) -> bool:
+        return (
+            self._charge_limit_full_once_deadline() is not None
+            and bool(self._settings.get("charge_limit_full_once_restore_pending"))
+        )
+
+    def _charge_limit_full_once_lifting(self) -> bool:
+        deadline = self._charge_limit_full_once_deadline()
+        return (
+            deadline is not None
+            and deadline > time.time()
+            and not self._charge_limit_full_once_restore_pending()
+        )
+
+    def _stop_charge_limit_full_once_monitor(self) -> None:
+        task = getattr(self, "_charge_limit_full_once_task", None)
+        self._charge_limit_full_once_task = None
+        if task is None or task.done():
+            return
+        try:
+            current = asyncio.current_task()
+        except RuntimeError:
+            current = None
+        if task is not current:
+            task.cancel()
+
+    def _clear_charge_limit_full_once(self) -> None:
+        self._settings["charge_limit_full_once_until"] = None
+        self._settings["charge_limit_full_once_restore_pending"] = False
+        self._charge_limit_full_once_status = "inactive"
+        self._stop_charge_limit_full_once_monitor()
+
+    def _complete_charge_limit_full_once(self, reason: str) -> None:
+        self._clear_charge_limit_full_once()
+        self._save()
+        decky.logger.info("Full charge once finished: %s", reason)
+
+    def _charge_limit_requested_percent(self) -> int:
+        if self._charge_limit_full_once_lifting():
+            _, maximum = self._charge_limit.range()
+            return int(maximum)
+        return int(self._settings.get("charge_limit_percent", 80))
+
+    async def _finish_charge_limit_full_once(
+        self,
+        reason: str,
+        expected_deadline: float | None = None,
+    ) -> None:
+        deadline = self._charge_limit_full_once_deadline()
+        if deadline is None or (
+            expected_deadline is not None and deadline != expected_deadline
+        ):
+            return
+        generation = self._cancel_charge_limit_reconcile(reason)
+        self._settings["charge_limit_full_once_restore_pending"] = True
+        self._charge_limit_full_once_status = "pending"
+        self._save()
+        if not (
+            self._module_enabled("chargeLimit")
+            and bool(self._settings.get("charge_limit_enabled", False))
+        ):
+            self._clear_charge_limit_full_once()
+            self._save()
+            return
+        previous_apply = getattr(self, "_charge_limit_last_apply", None)
+        await self._apply_charge_limit_intent(generation)
+        if self._charge_limit_full_once_deadline() != deadline:
+            return
+        last_apply = getattr(self, "_charge_limit_last_apply", None)
+        restored = (
+            last_apply is not previous_apply
+            and isinstance(last_apply, dict)
+            and last_apply.get("action") == "set"
+            and bool(last_apply.get("ok"))
+        )
+        if restored:
+            self._complete_charge_limit_full_once(reason)
+            return
+        self._charge_limit_full_once_status = "failed"
+        self._save()
+        self._start_charge_limit_full_once_monitor()
+
+    async def _check_charge_limit_full_once(self) -> None:
+        deadline = self._charge_limit_full_once_deadline()
+        if deadline is None:
+            return
+        if self._charge_limit_full_once_restore_pending():
+            await self._finish_charge_limit_full_once(
+                "full_once_restore_retry",
+                deadline,
+            )
+            return
+        if deadline <= time.time():
+            await self._finish_charge_limit_full_once(
+                "full_once_expired",
+                deadline,
+            )
+            return
+        battery = await self._offload_call(self._battery.read)
+        if self._charge_limit_full_once_deadline() != deadline:
+            return
+        percent = battery.get("percent") if isinstance(battery, dict) else None
+        status = (
+            str(battery.get("status", "")).strip().lower()
+            if isinstance(battery, dict)
+            else ""
+        )
+        numeric_percent = (
+            float(percent)
+            if isinstance(percent, (int, float)) and not isinstance(percent, bool)
+            else None
+        )
+        full = numeric_percent is not None and numeric_percent >= 100
+        full = full or (
+            status == "full"
+            and (numeric_percent is None or numeric_percent >= 99)
+        )
+        if full:
+            await self._finish_charge_limit_full_once(
+                "full_once_complete",
+                deadline,
+            )
+            return
+        if getattr(self, "_charge_limit_full_once_status", None) == "failed":
+            generation = self._cancel_charge_limit_reconcile(
+                "full_once_retry"
+            )
+            await self._apply_charge_limit_intent(generation)
+
+    async def _charge_limit_full_once_loop(self, deadline: float) -> None:
+        failures = 0
+        first_check = True
+        while self._charge_limit_full_once_deadline() == deadline:
+            restore_pending = self._charge_limit_full_once_restore_pending()
+            remaining = deadline - time.time()
+            if not (first_check and restore_pending) and (
+                restore_pending or remaining > 0
+            ):
+                await asyncio.sleep(
+                    _FULL_CHARGE_ONCE_POLL_S
+                    if restore_pending
+                    else min(_FULL_CHARGE_ONCE_POLL_S, remaining)
+                )
+            first_check = False
+            try:
+                await self._check_charge_limit_full_once()
+                failures = 0
+            except asyncio.CancelledError:
+                raise
+            except Exception as error:  # noqa: BLE001
+                failures += 1
+                if failures & (failures - 1) == 0:
+                    decky.logger.warning(
+                        "Full charge once battery poll failed: %s",
+                        error,
+                    )
+
+    def _start_charge_limit_full_once_monitor(self) -> None:
+        raw_deadline = self._settings.get("charge_limit_full_once_until")
+        deadline = self._charge_limit_full_once_deadline()
+        if deadline is None:
+            if raw_deadline is not None:
+                self._clear_charge_limit_full_once()
+                self._save()
+            return
+        if not self._charge_limit_full_once_available():
+            if (
+                self._module_enabled("chargeLimit")
+                and bool(self._settings.get("charge_limit_enabled", False))
+                and self._charge_limit_late_probe_eligible()
+            ):
+                return
+            self._clear_charge_limit_full_once()
+            self._save()
+            return
+        task = getattr(self, "_charge_limit_full_once_task", None)
+        if task is not None and not task.done():
+            return
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return
+        task = loop.create_task(self._charge_limit_full_once_loop(deadline))
+        self._charge_limit_full_once_task = task
+
+        def finished(done):
+            if self._charge_limit_full_once_task is done:
+                self._charge_limit_full_once_task = None
+            if not done.cancelled():
+                done.exception()
+
+        task.add_done_callback(finished)
+
+    def _apply_selected_charge_limit(self, generation=None) -> None:
+        backend = self._charge_limit
+        if not backend.supported:
+            return
+        action, requested, operation = self._charge_limit_operation_for(
+            backend
+        )
+        self._apply_charge_limit_operation(
+            action,
+            requested,
+            operation,
+            generation,
+        )
+
+    def _apply_pending_charge_limit_candidate(self, generation=None) -> None:
+        candidate = getattr(self, "_charge_limit_candidate", None)
+        if candidate is None:
+            return
+        if not self._charge_limit_apply_current(generation):
+            if (
+                not self._module_enabled("chargeLimit")
+                and self._charge_limit_candidate is candidate
+            ):
+                self._charge_limit_candidate = None
+            return
+        try:
+            if candidate is self._charge_limit:
+                return
+            if not getattr(candidate, "supported", False):
+                return
+            _, _, operation = self._charge_limit_operation_for(candidate)
+            applied = operation()
+            if (
+                applied is False
+                and self._charge_limit_apply_current(generation)
+            ):
+                operation()
+        finally:
+            if (
+                self._charge_limit_apply_current(generation)
+                and self._charge_limit_candidate is candidate
+            ):
+                self._charge_limit_candidate = None
+
+    def _charge_limit_generation_current(self, generation) -> bool:
+        return (
+            self._charge_limit_intent_current(generation)
+            and bool(self._settings.get("charge_limit_enabled", False))
+        )
+
+    def _charge_limit_intent_current(self, generation) -> bool:
+        return (
+            generation == self._charge_limit_generation
+            and not getattr(self, "_shutting_down", False)
+            and self._module_enabled("chargeLimit")
+        )
+
+    def _charge_limit_late_probe_eligible(self) -> bool:
+        key = getattr(self._device, "key", "")
+        return (
+            key in _ROG_CHARGE_LIMIT_PROFILES
+            or key in _STEAM_DECK_PROFILES
+        )
+
+    def _cancel_charge_limit_reconcile(
+        self, reason, preserve_candidate=False
+    ) -> int:
+        self._charge_limit_generation = int(
+            getattr(self, "_charge_limit_generation", 0)
+        ) + 1
+        if not preserve_candidate:
+            self._charge_limit_candidate = None
+        task = getattr(self, "_charge_limit_reconcile_task", None)
+        self._charge_limit_reconcile_task = None
+        if task is not None and not task.done():
+            task.cancel()
+        self._publish_charge_limit_reconciliation(
+            self._charge_limit_generation,
+            None,
+            "cancelled",
+            0,
+            0,
+            None,
+            reason,
+        )
+        return self._charge_limit_generation
+
+    def _publish_charge_limit_reconciliation(
+        self,
+        generation,
+        trigger,
+        status,
+        checks,
+        writes,
+        readback,
+        reason,
+    ) -> None:
+        self._charge_limit_reconciliation = {
+            "generation": generation,
+            "trigger": trigger,
+            "status": status,
+            "checks": checks,
+            "writes": writes,
+            "readback": readback,
+            "reason": reason,
+            "history": list(getattr(self, "_charge_limit_history", ())),
+        }
+
+    def _publish_charge_limit_handoff(self, generation) -> None:
+        self._charge_limit_candidate = None
+        self._publish_charge_limit_reconciliation(
+            generation,
+            None,
+            "idle",
+            0,
+            0,
+            None,
+            "module_disabled",
+        )
+
+    async def _drain_charge_limit_writes(self) -> None:
+        # The serial barrier guarantees no PdC charge write after the handoff RPC returns.
+        await self._offload_call(lambda: None)
+
+    def _schedule_charge_limit_reconcile(self, trigger) -> None:
+        generation = self._cancel_charge_limit_reconcile("rescheduled")
+        active = (
+            self._module_enabled("chargeLimit")
+            and bool(self._settings.get("charge_limit_enabled", False))
+        )
+        if (
+            active
+            and bool(getattr(self._charge_limit, "supported", False))
+            and not bool(getattr(self._charge_limit, "adjustable", True))
+        ):
+            self._publish_charge_limit_reconciliation(
+                generation,
+                trigger,
+                "unverifiable",
+                0,
+                0,
+                None,
+                "fixed_threshold",
+            )
+            return
+        eligible = (
+            active
+            and bool(getattr(self._charge_limit, "adjustable", True))
+            and (
+                bool(getattr(self._charge_limit, "supported", False))
+                or self._charge_limit_late_probe_eligible()
+            )
+        )
+        if not eligible:
+            self._charge_limit_reconciliation["trigger"] = trigger
+            self._charge_limit_reconciliation["status"] = "idle"
+            self._charge_limit_reconciliation["reason"] = "not_applicable"
+            return
+        self._publish_charge_limit_reconciliation(
+            generation,
+            trigger,
+            "scheduled",
+            0,
+            0,
+            None,
+            "verification_pending",
+        )
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self._charge_limit_reconciliation["status"] = "idle"
+            self._charge_limit_reconciliation["reason"] = "no_event_loop"
+            return
+        task = loop.create_task(
+            self._reconcile_charge_limit(generation, trigger)
+        )
+        self._charge_limit_reconcile_task = task
+
+        def finished(done):
+            if self._charge_limit_reconcile_task is done:
+                self._charge_limit_reconcile_task = None
+            if not done.cancelled():
+                done.exception()
+
+        task.add_done_callback(finished)
+
+    async def _reprobe_charge_limit(
+        self, generation, requested
+    ) -> _ChargeLimitProbe:
+        current = self._charge_limit
+        candidate = await self._offload_call(
+            lambda: select_charge_limit(self._device)
+        )
+        backend = getattr(candidate, "name", "unsupported")
+        if not self._charge_limit_generation_current(generation):
+            return _ChargeLimitProbe(backend, "stale")
+        if not getattr(candidate, "supported", False):
+            return _ChargeLimitProbe(backend, "no_candidate")
+        if type(candidate) is not type(current):
+            device_key = getattr(self._device, "key", "")
+            allowed_late_probe = (
+                type(current) is NullChargeLimit
+                and (
+                    (
+                        device_key in _ROG_CHARGE_LIMIT_PROFILES
+                        and type(candidate) is SysfsChargeLimit
+                    )
+                    or (
+                        device_key in _STEAM_DECK_PROFILES
+                        and type(candidate)
+                        in (SteamDeckChargeLimit, SysfsChargeLimit)
+                    )
+                )
+            )
+            if not allowed_late_probe:
+                return _ChargeLimitProbe(backend, "wrong_class")
+        readback = await self._offload_call(candidate.get)
+        if not self._charge_limit_generation_current(generation):
+            return _ChargeLimitProbe(backend, "stale", readback)
+        if readback is None:
+            return _ChargeLimitProbe(backend, "unreadable")
+        if readback != requested:
+            pending = candidate
+            self._charge_limit_candidate = pending
+
+            try:
+                def write_candidate_if_current():
+                    if not self._charge_limit_generation_current(generation):
+                        return None
+                    return candidate.set(requested)
+
+                applied = await self._offload_call(write_candidate_if_current)
+                if not self._charge_limit_generation_current(generation):
+                    return _ChargeLimitProbe(
+                        backend, "stale", readback, write_attempted=True
+                    )
+                if not applied:
+                    return _ChargeLimitProbe(
+                        backend,
+                        "write_rejected",
+                        readback,
+                        write_attempted=True,
+                    )
+                confirmed = await self._offload_call(candidate.get)
+                if not self._charge_limit_generation_current(generation):
+                    return _ChargeLimitProbe(
+                        backend,
+                        "stale",
+                        readback,
+                        confirmed,
+                        write_attempted=True,
+                    )
+                if confirmed != requested:
+                    return _ChargeLimitProbe(
+                        backend,
+                        "confirmation_failed",
+                        readback,
+                        confirmed,
+                        True,
+                    )
+            finally:
+                if (
+                    self._charge_limit_intent_current(generation)
+                    and self._charge_limit_candidate is pending
+                ):
+                    self._charge_limit_candidate = None
+            result = _ChargeLimitProbe(
+                backend,
+                "backend_recovered",
+                readback,
+                confirmed,
+                True,
+            )
+        else:
+            result = _ChargeLimitProbe(
+                backend,
+                "matched",
+                readback,
+                readback,
+            )
+        self._charge_limit = candidate
+        self._start_charge_limit_full_once_monitor()
+        return result
+
+    async def _reconcile_charge_limit(self, generation, trigger) -> None:
+        if not self._charge_limit_generation_current(generation):
+            return
+        checks = 0
+        writes = 0
+        last_readback = None
+        status = "confirmed"
+        reason = "matched"
+        started = asyncio.get_running_loop().time()
+        for check, delay in enumerate(self._charge_limit_verify_delays, 1):
+            remaining = started + delay - asyncio.get_running_loop().time()
+            if remaining > 0:
+                await asyncio.sleep(remaining)
+            if not self._charge_limit_generation_current(generation):
+                return
+            requested = self._charge_limit_requested_percent()
+            readback = await self._offload_call(self._charge_limit.get)
+            if not self._charge_limit_generation_current(generation):
+                return
+            checks += 1
+            if readback is None:
+                reprobe = await self._reprobe_charge_limit(
+                    generation, requested
+                )
+                if not self._charge_limit_generation_current(generation):
+                    return
+                last_readback = reprobe.observed
+                if reprobe.write_attempted:
+                    writes += 1
+                if reprobe.ok:
+                    status = (
+                        "recovered"
+                        if reprobe.write_attempted
+                        else "confirmed"
+                    )
+                else:
+                    status = "failed"
+                reason = reprobe.reason
+                event_readback = reprobe.readback
+                action = reprobe.action
+                ok = reprobe.ok
+                backend = reprobe.backend
+            else:
+                last_readback = readback
+                event_readback = readback
+                action = "hold"
+                ok = readback == requested
+                backend = getattr(
+                    self._charge_limit, "name", "unsupported"
+                )
+            if readback is not None and readback != requested:
+                action = "write"
+                writes += 1
+
+                def write_if_current():
+                    if not self._charge_limit_generation_current(generation):
+                        return None
+                    return self._charge_limit.set(requested)
+
+                applied = await self._offload_call(write_if_current)
+                if not self._charge_limit_generation_current(generation):
+                    return
+                last_readback = await self._offload_call(self._charge_limit.get)
+                if not self._charge_limit_generation_current(generation):
+                    return
+                ok = bool(applied) and last_readback == requested
+                status = "recovered" if ok else "failed"
+                reason = "mismatch_corrected" if ok else "write_unconfirmed"
+            elif readback is not None:
+                status = "confirmed"
+                reason = "matched"
+            if self._charge_limit_full_once_active():
+                if ok and self._charge_limit_full_once_restore_pending():
+                    self._complete_charge_limit_full_once(
+                        "full_once_restore_reconciled"
+                    )
+                else:
+                    self._charge_limit_full_once_status = (
+                        "active" if ok else "failed"
+                    )
+            event = {
+                "trigger": trigger,
+                "check": check,
+                "requested": requested,
+                "readback": event_readback,
+                "action": action,
+                "ok": ok,
+                "backend": backend,
+                "reason": reason,
+            }
+            self._charge_limit_history.append(event)
+            self._publish_charge_limit_reconciliation(
+                generation,
+                trigger,
+                status,
+                checks,
+                writes,
+                last_readback,
+                reason,
+            )
+
+    def _charge_limit_state(self) -> dict:
+        lo, hi = self._charge_limit.range()
+        supported = bool(self._charge_limit.supported)
+        managed = self._module_enabled("chargeLimit") and supported
+        enabled = bool(self._settings.get("charge_limit_enabled", False))
+        percent = int(self._settings.get("charge_limit_percent", 80))
+        applied_percent = None
+        if managed and enabled:
+            actual = self._charge_limit.get()
+            if actual is not None:
+                applied_percent = actual
+        full_charge_once_active = self._charge_limit_full_once_active()
+        return {
+            "backend": getattr(self._charge_limit, "name", "unsupported"),
+            "supported": supported,
+            "adjustable": self._charge_limit.adjustable,
+            "managed": managed,
+            "enabled": enabled,
+            "percent": percent,
+            "applied_percent": applied_percent,
+            "min": lo,
+            "max": hi,
+            "last_apply": (
+                dict(self._charge_limit_last_apply)
+                if getattr(self, "_charge_limit_last_apply", None) is not None
+                else None
+            ),
+            "reconciliation": dict(self._charge_limit_reconciliation),
+            "full_charge_once": {
+                "available": self._charge_limit_full_once_available(),
+                "active": full_charge_once_active,
+                "status": (
+                    getattr(
+                        self,
+                        "_charge_limit_full_once_status",
+                        "pending",
+                    )
+                    if full_charge_once_active
+                    else "inactive"
+                ),
+                "expires_at": (
+                    self._charge_limit_full_once_deadline()
+                    if full_charge_once_active
+                    else None
+                ),
+            },
+        }
+
+    async def get_battery_state(self) -> dict:
+        self._init()
+        battery = self._battery.read()
+        # Single AC-online source (same one every TDP clamp uses).
+        battery["ac_online"] = read_on_ac()
+        return {"battery": battery, "charge_limit": self._charge_limit_state()}
+
+    def _build_cpu_frequency_control(self):
+        return select_cpu_frequency(
+            persisted_state=self._settings.get("cpu_frequency_handoff"),
+            persist_state=self._persist_cpu_frequency_state,
+        )
+
+    def _persist_cpu_frequency_state(self, state) -> None:
+        previous = copy.deepcopy(self._settings.get("cpu_frequency_handoff"))
+        self._settings["cpu_frequency_handoff"] = copy.deepcopy(state)
+        try:
+            self._save()
+        except Exception:
+            self._settings["cpu_frequency_handoff"] = previous
+            raise
+
+    def _cpu_intent(self) -> dict:
+        profiles = getattr(self, "_cpu_profiles", None)
+        if profiles is not None:
+            intent = profiles.effective(getattr(self, "_current_appid", None))
+            if self._frequency_managed_by_power():
+                intent = {
+                    **intent,
+                    "frequency": {"manual": False, "min_khz": None, "max_khz": None},
+                }
+            return intent
+        return {
+            "smt": True,
+            "boost": True,
+            "cores": None,
+            "frequency": {"manual": False, "min_khz": None, "max_khz": None},
+        }
+
+    def _ensure_cpu_coordinator(self):
+        if not hasattr(self, "_cpu_frequency"):
+            self._cpu_frequency = NullCpuFrequency()
+        if not getattr(self._cpu_frequency, "supported", False):
+            try:
+                recovered = self._build_cpu_frequency_control()
+            except Exception:  # noqa: BLE001
+                recovered = None
+            if recovered is not None and recovered.supported:
+                self._cpu_frequency = recovered
+                self._cpu_recovery_reapply_pending = True
+        coordinator = getattr(self, "_cpu_coordinator", None)
+        controls = (self._cores, self._smt, self._boost, self._cpu_frequency)
+        if coordinator is None or getattr(coordinator, "_controls_identity", None) != tuple(
+            id(control) for control in controls
+        ):
+            coordinator = CpuCoordinator(*controls)
+            coordinator._controls_identity = tuple(id(control) for control in controls)
+            self._cpu_coordinator = coordinator
+        return coordinator
+
+    def _next_cpu_generation(self) -> int:
+        self._cpu_generation = int(getattr(self, "_cpu_generation", 0)) + 1
+        return self._cpu_generation
+
+    def _cpu_scope_label(self) -> str:
+        appid = getattr(self, "_current_appid", None)
+        if appid is None:
+            return "global"
+        if self._cpu_profiles.is_following_global(appid):
+            return "game_follow_global"
+        return "game_own"
+
+    def _record_cpu_result(self, result, trigger) -> None:
+        if result.generation != getattr(self, "_cpu_generation", 0):
+            return
+        self._cpu_last_result = result
+        history = getattr(self, "_cpu_history", None)
+        if history is None:
+            history = deque(maxlen=32)
+            self._cpu_history = history
+        event = {
+            "at": round(time.monotonic(), 3),
+            "trigger": trigger,
+            "generation": result.generation,
+            "scope": self._cpu_scope_label(),
+            "ok": result.ok,
+            "status": result.status,
+            "error_code": result.error_code,
+            "error_type": result.error_type,
+            "rollback": result.rollback,
+        }
+        if not result.ok and (result.error_code or "").startswith("frequency_"):
+            try:
+                failure = self._cpu_frequency_failure_diagnostic(
+                    self._cpu_frequency.diagnostics().get("last_failure")
+                )
+                if failure and result.error_code == f"frequency_{failure['reason']}":
+                    event["frequency_failure"] = failure
+            except Exception:  # noqa: BLE001
+                pass
+        history.append(event)
+        log = decky.logger.info if result.ok else decky.logger.warning
+        log("CPU transition %s", json.dumps(event, sort_keys=True, separators=(",", ":")))
+
+    def _run_cpu_apply(
+        self, intent, generation, enabled=None,
+        preserve_frequency_ownership=False,
+    ):
+        if generation != getattr(self, "_cpu_generation", 0):
+            return CpuCoordinatorResult(
+                False,
+                "rejected",
+                generation,
+                {"attempted": False, "ok": None},
+                "stale_generation",
+            )
+        if enabled is None:
+            enabled = self._module_enabled("system")
+        coordinator = self._ensure_cpu_coordinator()
+        self._cpu_recovery_reapply_pending = False
+        return coordinator.apply(
+            intent,
+            generation,
+            enabled=bool(enabled),
+            eco=bool(self._settings.get("eco_enabled", False)),
+            preserve_frequency_ownership=preserve_frequency_ownership,
+        )
+
+    async def _apply_cpu_awaited(self, intent=None, enabled=None, trigger="rpc"):
+        generation = self._next_cpu_generation()
+        selected = intent if intent is not None else self._cpu_intent()
+        result = await self._offload_call(
+            lambda: self._run_cpu_apply(selected, generation, enabled)
+        )
+        if generation == self._cpu_generation:
+            self._record_cpu_result(result, trigger)
+        return result
+
+    async def _release_cpu_controls(self, trigger) -> bool:
+        self._init()
+        result = None
+        async with self._cpu_mutation_lock:
+            for attempt in range(1, 4):
+                result = await self._apply_cpu_awaited(
+                    enabled=False,
+                    trigger=f"{trigger}-{attempt}",
+                )
+                recovery_pending = (
+                    self._settings.get("cpu_frequency_handoff") is not None
+                    and not self._cpu_frequency.supported
+                )
+                if result.ok and not recovery_pending:
+                    return True
+        decky.logger.error(
+            "CPU handoff failed after retries trigger=%s error=%s",
+            trigger,
+            getattr(result, "error_code", None),
+        )
+        return False
+
+    def _release_cpu_controls_sync(
+        self, trigger, preserve_frequency_ownership=False
+    ) -> bool:
+        self._init()
+        result = None
+        for attempt in range(1, 4):
+            generation = self._next_cpu_generation()
+            result = self._run_cpu_apply(
+                self._cpu_intent(), generation, enabled=False,
+                preserve_frequency_ownership=preserve_frequency_ownership,
+            )
+            self._record_cpu_result(result, f"{trigger}-{attempt}")
+            recovery_pending = (
+                self._settings.get("cpu_frequency_handoff") is not None
+                and not self._cpu_frequency.supported
+            )
+            if result.ok and not recovery_pending:
+                return True
+        decky.logger.error(
+            "CPU handoff failed after retries trigger=%s error=%s",
+            trigger,
+            getattr(result, "error_code", None),
+        )
+        return False
+
+    def _apply_cpu(self) -> None:
+        if getattr(self, "_cpu_shutdown", False):
+            return
+        generation = self._next_cpu_generation()
+        intent = self._cpu_intent()
+        holder = {}
+
+        def apply():
+            holder["result"] = self._run_cpu_apply(intent, generation)
+
+        def record():
+            result = holder.get("result")
+            if result is not None:
+                self._record_cpu_result(result, "reapply")
+
+        self._offload(apply, done=record)
+
+    def _clear_eco(self) -> None:
+        """Manual control taken → exit download mode and restore the normal TDP/boost
+        state. Brightness is NOT touched here (FE-only; the persistent controller
+        stops driving it and the user keeps whatever they set)."""
+        if self._settings.get("eco_enabled"):
+            self._settings["eco_enabled"] = False
+            self._save()
+            self._reapply_all()
+
+    def _eco_state(self) -> dict:
+        return {
+            "enabled": bool(self._settings.get("eco_enabled", False)),
+            "tdp_min_w": self._limits().min_w,
+            "tdp_unit": getattr(self._tdp_backend, "unit", "W"),
+            "affects_boost": self._boost.supported,
+            # The brightness % to wake back to (pre-eco snapshot).
+            "wake_brightness": int(self._settings.get("eco_brightness", 40)),
+        }
+
+    async def get_eco_state(self) -> dict:
+        self._init()
+        return self._eco_state()
+
+    async def set_eco(self, enabled: bool, current_brightness: int) -> dict:
+        """Toggle download mode. On enable, snapshot the current brightness (to wake
+        back to) and apply the override (TDP min + boost off) via _reapply_all; on
+        disable, drop the override and re-apply the normal profile/boost."""
+        self._init()
+        # Snapshot the wake brightness only if it's a real reading (> 0). The FE may
+        # pass 0 while brightness is still loading; storing 0 would restore the screen
+        # to black on exit (unrecoverable from the card). Keep the previous value then.
+        if enabled and int(current_brightness) > 0:
+            self._settings["eco_brightness"] = int(current_brightness)
+        self._settings["eco_enabled"] = bool(enabled)
+        self._save()
+        self._reapply_all()
+        await self._drain_offloaded()
+        return self._eco_state()
+
+    # ---- HUD (MangoHud overlay) --------------------------------------------
+    def _detect_hud(self) -> dict:
+        sessions = (
+            mangohud_detect.detect_sessions(
+                home=self._hud_home,
+                uid=self._hud_owner[0],
+            )
+            if self._hud_owner is not None
+            else ()
+        )
+        supported = tuple(
+            session
+            for session in sessions
+            if session.presets_supported
+            and self._trusted_hud_path(session.presets_path) is not None
+        )
+        paths = {self._trusted_hud_path(session.presets_path) for session in supported}
+        paths.discard(None)
+        ambiguous = len(paths) > 1
+        presets_path = (
+            next(iter(paths))
+            if len(paths) == 1
+            else mangohud_detect.presets_path({}, self._hud_home)
+        )
+        return {
+            "running": bool(sessions),
+            "supported": bool(supported) and not ambiguous,
+            "presetsPath": presets_path,
+            "sessions": supported,
+            "ambiguous": ambiguous,
+        }
+
+    def _trusted_hud_path(self, path):
+        if not isinstance(path, str) or not path:
+            return None
+        home = os.path.realpath(self._hud_home)
+        candidate = os.path.realpath(path)
+        try:
+            if os.path.commonpath((home, candidate)) != home or candidate == home:
+                return None
+        except ValueError:
+            return None
+        return candidate
+
+    def _remember_hud_path(self, path) -> None:
+        safe_path = self._trusted_hud_path(path)
+        if path is not None and safe_path is None:
+            raise OSError("MangoHud presets path is outside the trusted user home")
+        previous = self._settings.get("hud_managed_path")
+        if previous == safe_path:
+            self._hud_managed_path = safe_path
+            return
+        self._settings["hud_managed_path"] = safe_path
+        try:
+            self._save()
+        except Exception as exc:
+            self._settings["hud_managed_path"] = previous
+            raise OSError("Could not persist the managed MangoHud presets path") from exc
+        self._hud_managed_path = safe_path
+
+    def _hud_state(self, *, cap=None, model=None) -> dict:
+        cap = self._detect_hud() if cap is None else cap
+        model = self._hud.load() if model is None else model
+        capability = (
+            "ambiguous" if cap.get("ambiguous")
+            else "ready" if cap["supported"]
+            else "unsupported" if cap["running"]
+            else "inactive"
+        )
+        if cap.get("ambiguous"):
+            apply_status = "ambiguous"
+        elif not model["enabled"]:
+            apply_status = (
+                self._hud_apply_status
+                if self._hud_apply_status in ("conflict", "failed", "pending")
+                else "disabled"
+            )
+        elif capability == "inactive":
+            apply_status = "pending"
+        elif capability == "unsupported":
+            apply_status = "unavailable"
+        else:
+            apply_status = self._hud_apply_status or "pending"
+        return {
+            "capability": capability,
+            "applyStatus": apply_status,
+            "conflict": (
+                {
+                    "path": self._hud_conflict["path"],
+                    "expectedHash": self._hud_conflict["expectedHash"],
+                    "actualHash": self._hud_conflict["actualHash"],
+                }
+                if self._hud_conflict is not None
+                else None
+            ),
+            "model": model,
+            "values": dict(self._pdc_preview_values),
+        }
+
+    def _record_hud_conflict(self, path, conflict) -> None:
+        safe_path = self._trusted_hud_path(path)
+        shown_path = (
+            os.path.relpath(safe_path, self._hud_home)
+            if safe_path is not None
+            else "presets.conf"
+        )
+        self._hud_conflict = {
+            "managedPath": safe_path,
+            "path": shown_path,
+            "reason": conflict.reason,
+            "expectedHash": conflict.expected_hash,
+            "actualHash": conflict.actual_hash,
+        }
+        self._hud_apply_status = "conflict"
+
+    def _request_hud_reload(self, snapshot, *, reset_backoff) -> bool:
+        snapshot = tuple(snapshot)
+        if reset_backoff:
+            self._hud_reload_attempt = 0
+        elif self._hud_reload_attempt >= _HUD_RELOAD_MAX_ATTEMPTS:
+            self._hud_reload_pending = ()
+            self._hud_reload_retry_at = 0.0
+            return False
+        result = reload_sessions(snapshot)
+        pending = set(result.pending)
+        self._hud_reload_pending = tuple(
+            session
+            for session in snapshot
+            if (session.pid, session.starttime) in pending
+            and mangohud_detect.session_alive(session)
+        )
+        complete = (
+            bool(snapshot)
+            and not self._hud_reload_pending
+            and len(result.requested) == len(snapshot)
+        )
+        if complete:
+            self._hud_reload_attempt = 0
+            self._hud_reload_retry_at = 0.0
+            return True
+        if self._hud_reload_pending:
+            delays = (1.0, 2.0, 4.0)
+            self._hud_reload_attempt += 1
+            if self._hud_reload_attempt >= _HUD_RELOAD_MAX_ATTEMPTS:
+                self._hud_reload_pending = ()
+                self._hud_reload_retry_at = 0.0
+            else:
+                delay = delays[min(self._hud_reload_attempt - 1, len(delays) - 1)]
+                self._hud_reload_retry_at = _monotonic() + delay
+        return False
+
+    def _reload_mangoapp(self, sessions=None) -> bool:
+        snapshot = tuple(self._hud_sessions if sessions is None else sessions)
+        return self._request_hud_reload(snapshot, reset_backoff=True)
+
+    def _retry_pending_hud_reload(self) -> bool:
+        if not self._hud_reload_pending:
+            return True
+        if _monotonic() < self._hud_reload_retry_at:
+            return False
+        return self._request_hud_reload(
+            self._hud_reload_pending,
+            reset_backoff=False,
+        )
+
+    def _apply_hud(self, *, cap=None, model=None, replace_conflict=False) -> None:
+        """Reflect the saved model to presets.conf (Steam reads it per overlay level).
+        pdc plugin-state metrics are baked into their `custom_text` line as
+        "<label> <value>": Steam's mangoapp does not run `exec` commands (only the label
+        would show), so we bake a value snapshot here (it refreshes on re-apply / the
+        auto loop, then reloaded through mangohudctl). We never write Steam's own live
+        config. When off: clear presets.conf. No-op when the overlay isn't supported."""
+        cap = self._detect_hud() if cap is None else cap
+        model = self._hud.load() if model is None else model
+        if not model["enabled"]:
+            managed_path = self._hud_managed_path or cap["presetsPath"]
+            self._pdc_presets_path = None
+            self._pdc_active_ids = []
+            self._pdc_written = {}
+            self._pdc_preview_values = {}
+            try:
+                cleared = clear_presets(
+                    managed_path,
+                    owner=self._hud_owner,
+                    trusted_root=self._hud_home,
+                    raise_conflict=True,
+                )
+            except mangohud_ownership.HudOwnershipConflict as conflict:
+                self._record_hud_conflict(managed_path, conflict)
+                return
+            if not cleared:
+                self._hud_apply_status = "failed"
+                return
+            self._hud_conflict = None
+            try:
+                self._remember_hud_path(None)
+            except OSError:
+                self._hud_apply_status = "failed"
+                return
+            if (
+                cap["supported"]
+                and cap["running"]
+                and not self._reload_mangoapp(cap["sessions"])
+            ):
+                self._hud_apply_status = "pending"
+            else:
+                self._hud_apply_status = "disabled"
+            self._hud_sessions = ()
+            return
+        if not cap["supported"]:
+            self._pdc_active_ids = []
+            self._pdc_preview_values = {}
+            self._hud_apply_status = (
+                "ambiguous"
+                if cap.get("ambiguous")
+                else "pending" if not cap["running"] else "unavailable"
+            )
+            return
+        if not all(
+            mangohud_detect.session_alive(session)
+            for session in cap["sessions"]
+        ):
+            self._pdc_active_ids = []
+            self._pdc_preview_values = {}
+            self._hud_apply_status = "pending"
+            return
+        # Cache the presets path + active ids for the auto loop's re-bake (no /proc rescan).
+        if (
+            self._hud_managed_path is not None
+            and self._hud_managed_path != cap["presetsPath"]
+        ):
+            try:
+                cleared = clear_presets(
+                    self._hud_managed_path,
+                    owner=self._hud_owner,
+                    trusted_root=self._hud_home,
+                    raise_conflict=True,
+                )
+            except mangohud_ownership.HudOwnershipConflict as conflict:
+                self._record_hud_conflict(self._hud_managed_path, conflict)
+                return
+            if not cleared:
+                self._hud_apply_status = "failed"
+                return
+            try:
+                self._remember_hud_path(None)
+            except OSError:
+                self._hud_apply_status = "failed"
+                return
+        self._pdc_presets_path = cap["presetsPath"]
+        self._hud_sessions = tuple(cap["sessions"])
+        self._pdc_locale = model.get("locale", "es")
+        self._pdc_active_ids = mangohud_config.enabled_pdc_ids(model)
+        values = self._pdc_values()
+        self._pdc_preview_values = values
+        try:
+            apply_hud(
+                model,
+                cap["presetsPath"],
+                values,
+                owner=self._hud_owner,
+                replace_conflict=replace_conflict,
+                trusted_root=self._hud_home,
+            )
+        except mangohud_ownership.HudOwnershipConflict as conflict:
+            self._record_hud_conflict(cap["presetsPath"], conflict)
+            return
+        except OSError:
+            self._pdc_written = {}
+            self._hud_apply_status = "failed"
+            return
+        try:
+            self._remember_hud_path(cap["presetsPath"])
+        except OSError:
+            clear_presets(
+                cap["presetsPath"],
+                owner=self._hud_owner,
+                trusted_root=self._hud_home,
+            )
+            self._pdc_written = {}
+            self._hud_apply_status = "failed"
+            return
+        self._pdc_written = values
+        self._hud_last_publish_at = _monotonic()
+        self._hud_conflict = None
+        if self._reload_mangoapp(cap["sessions"]):
+            self._hud_apply_status = "reload_requested"
+        else:
+            self._hud_apply_status = "written"
+
+    # ---- HUD plugin-state metrics (pdc_*, baked into custom_text) -----------
+    def _read_pdc_sources(self) -> dict:
+        """Pre-read the sysfs-backed sources the active pdc metrics need (power, fans,
+        battery, charge limit, GPU clock). Called off the event loop by the auto tick so
+        the periodic refresh never blocks it; only reads what the shown metrics require."""
+        active = set(self._pdc_active_ids)
+        src = {}
+
+        def observed(reader, confirmed):
+            try:
+                value = reader()
+                is_confirmed = bool(confirmed(value))
+            except Exception:  # noqa: BLE001
+                return TimedValue(None, _monotonic(), False)
+            return TimedValue(value, _monotonic(), is_confirmed)
+
+        if "pdc_power" in active:
+            src["power"] = observed(
+                self._power_reader.read,
+                lambda value: isinstance(value.get("watts"), (int, float)),
+            )
+        if "pdc_fan_rpm" in active:
+            src["fans"] = observed(
+                self._read_fans,
+                lambda value: any(
+                    isinstance(fan.get("rpm"), (int, float))
+                    for fan in value.get("fans", [])
+                ),
+            )
+        if "pdc_bat_health" in active:
+            src["battery"] = observed(
+                self._battery.read,
+                lambda value: isinstance(value.get("health_percent"), (int, float)),
+            )
+        if "pdc_charge" in active:
+            src["charge"] = observed(
+                self._charge_limit_state,
+                lambda value: (
+                    not value.get("enabled")
+                    or isinstance(value.get("applied_percent"), (int, float))
+                ),
+            )
+        if "pdc_gpu_clock" in active:
+            src["gpu_clock"] = observed(
+                self._gpu_clock_state,
+                lambda value: (
+                    not value.get("manual")
+                    or (
+                        isinstance(value.get("applied_min"), (int, float))
+                        and isinstance(value.get("applied_max"), (int, float))
+                    )
+                ),
+            )
+        if "pdc_tdp" in active and self._tdp_supported():
+            if getattr(self._tdp_backend, "blocking", False):
+                observation = self._tdp_observation
+                src["tdp"] = TimedValue(
+                    observation,
+                    self._tdp_observation_at,
+                    bool(observation.readable),
+                )
+            else:
+                src["tdp"] = observed(
+                    self._observe_tdp_sync,
+                    lambda value: bool(value.readable),
+                )
+        return src
+
+    def _fresh_pdc_source(self, extras, key, fallback):
+        if key not in extras:
+            return fallback()
+        sample = extras[key]
+        if not isinstance(sample, TimedValue):
+            return sample
+        value = fresh_value(
+            sample,
+            _monotonic(),
+            _HUD_OBSERVATION_MAX_AGE_S,
+        )
+        return {} if value is None else value
+
+    def _pdc_snapshot(self, active_ids, extras=None) -> dict:
+        """Gather the live plugin state the active pdc metrics need. Only computes what
+        the shown metrics require; the sysfs-backed sources come pre-read in `extras`
+        (falling back to a direct read for the one-off seed). Honest: unavailable sources
+        stay None and format to a dash."""
+        extras = extras or {}
+        appid = self._current_appid
+        snap = {}
+        if self._tdp_supported():
+            if "pdc_eco" in active_ids:
+                snap["eco"] = bool(self._settings.get("eco_enabled"))
+            if "pdc_tdp" in active_ids:
+                snap["auto"] = (
+                    self._auto_tdp_supported()
+                    and self._tdp_profiles.auto_tdp(appid)
+                )
+                observation = self._fresh_pdc_source(
+                    extras,
+                    "tdp",
+                    lambda: None,
+                )
+                observation_backend = self._tdp_observation_backend()
+                primary = (
+                    observation.surfaces.get(observation_backend.name, {})
+                    if getattr(observation, "readable", False)
+                    else {}
+                )
+                primary_rail = getattr(observation_backend, "primary_rail", "pl1")
+                reading = primary.get(primary_rail)
+                snap["applied"] = reading.applied_w if reading is not None else None
+                snap["tdp_unit"] = getattr(self._tdp_backend, "unit", "W")
+            if "pdc_auto_tdp" in active_ids:
+                snap["auto_tdp"] = (
+                    self._auto_tdp_supported()
+                    and self._tdp_profiles.auto_tdp(appid)
+                )
+            if "pdc_tdp_learn" in active_ids:
+                snap["learn"] = self._tdp_learned_info(appid)
+        if self._fan_ctrl.supported and "pdc_fan" in active_ids:
+            prof = self._fan_curves.effective(appid)
+            snap["fan_mode"] = prof.get("preset")
+            snap["fan_confirmed"] = self._fan_apply_confirmed
+            snap["fan_learning"] = (prof.get("preset") == "adaptive"
+                                    and not self._fan_suggestion(appid)["available"])
+        if "pdc_fan_rpm" in active_ids:
+            fans = self._fresh_pdc_source(extras, "fans", self._read_fans)
+            snap["fan_rpms"] = [
+                f.get("rpm") for f in fans.get("fans", []) if f.get("rpm") is not None
+            ]
+        if "pdc_profile" in active_ids:
+            snap["appid"] = appid
+            snap["profile_name"] = self._current_game_name if appid is not None else None
+        if "pdc_power" in active_ids:
+            power = self._fresh_pdc_source(
+                extras,
+                "power",
+                self._power_reader.read,
+            )
+            snap["watts"] = power.get("watts")
+        if "pdc_charge" in active_ids:
+            cl = self._fresh_pdc_source(
+                extras,
+                "charge",
+                self._charge_limit_state,
+            )
+            snap["charge_supported"] = bool(cl.get("supported"))
+            snap["charge_enabled"] = bool(cl.get("enabled"))
+            snap["charge_confirmed"] = isinstance(
+                cl.get("applied_percent"),
+                (int, float),
+            )
+            snap["charge_percent"] = cl.get("applied_percent")
+        if "pdc_bat_health" in active_ids:
+            bat = self._fresh_pdc_source(
+                extras,
+                "battery",
+                self._battery.read,
+            )
+            snap["bat_health"] = bat.get("health_percent")
+        if "pdc_smt" in active_ids:
+            snap["smt_supported"] = self._smt.supported
+            snap["smt_on"] = self._smt.enabled() if self._smt.supported else None
+        if "pdc_boost" in active_ids:
+            snap["boost_supported"] = self._boost.supported
+            snap["boost_on"] = self._boost.enabled() if self._boost.supported else None
+        if "pdc_cores" in active_ids:
+            snap["cores_active"] = self._cores.active() if self._cores.supported else None
+            snap["cores_max"] = self._cores.max_cores
+        if "pdc_gpu_clock" in active_ids:
+            gc = self._fresh_pdc_source(
+                extras,
+                "gpu_clock",
+                self._gpu_clock_state,
+            )
+            snap["gpu_clock_supported"] = bool(gc.get("supported"))
+            snap["gpu_clock_manual"] = bool(gc.get("manual"))
+            snap["gpu_clock_min"] = gc.get("applied_min")
+            snap["gpu_clock_max"] = gc.get("applied_max")
+            snap["gpu_clock_confirmed"] = (
+                isinstance(gc.get("applied_min"), (int, float))
+                and isinstance(gc.get("applied_max"), (int, float))
+            )
+        if "pdc_model" in active_ids:
+            snap["model_name"] = self._device.display_name
+        return snap
+
+    def _pdc_values(self, extras=None) -> dict:
+        """The baked value string for each active pdc metric (id -> value; the label is
+        emitted separately in config.py). Reads the sysfs sources it needs (or reuses a
+        pre-read `extras`); honest dash for anything unavailable. Empty when no pdc
+        metric is shown."""
+        active = self._pdc_active_ids
+        if not active:
+            return {}
+        if extras is None:
+            extras = self._read_pdc_sources()
+        snap = self._pdc_snapshot(active, extras)
+        return {
+            mid: mangohud_pdc.render(mid, snap, self._pdc_locale)
+            or mangohud_pdc.DASH
+            for mid in active
+        }
+
+    def _refresh_pdc_metrics_sync(self) -> None:
+        if self._hud_reload_pending:
+            self._hud_apply_status = (
+                "reload_requested"
+                if self._retry_pending_hud_reload()
+                else "written"
+            )
+        if not self._pdc_active_ids or not self._pdc_presets_path:
+            return
+        extras = self._read_pdc_sources()
+        values = self._pdc_values(extras)
+        if values == self._pdc_written:
+            return
+        now = _monotonic()
+        if now - self._hud_last_publish_at < _MIN_HUD_REFRESH_S:
+            return
+        model = self._hud.load()
+        if model["enabled"]:
+            self._pdc_preview_values = values
+            try:
+                apply_hud(
+                    model,
+                    self._pdc_presets_path,
+                    values,
+                    owner=self._hud_owner,
+                    trusted_root=self._hud_home,
+                )
+            except mangohud_ownership.HudOwnershipConflict as conflict:
+                self._record_hud_conflict(self._pdc_presets_path, conflict)
+                return
+            except OSError:
+                self._hud_apply_status = "failed"
+                raise
+            if self._reload_mangoapp():
+                self._pdc_written = values
+                self._hud_last_publish_at = now
+                self._hud_apply_status = "reload_requested"
+            else:
+                self._pdc_written = values
+                self._hud_last_publish_at = now
+                self._hud_apply_status = "written"
+
+    async def _refresh_pdc_metrics(self) -> None:
+        """Refresh changed pdc values through the isolated HUD worker."""
+        if (
+            not self._hud_reload_pending
+            and (not self._pdc_active_ids or not self._pdc_presets_path)
+        ):
+            return
+        if self._hud_shutdown:
+            return
+        future = self._hud_coordinator.submit_latest(
+            self._hud_generation,
+            self._refresh_pdc_metrics_sync,
+        )
+        try:
+            await asyncio.wrap_future(future, loop=asyncio.get_running_loop())
+        except (HudClosed, HudStale):
+            if not self._hud_shutdown:
+                raise
+
+    def _finish_offered_pdc_refresh(self, future) -> None:
+        try:
+            future.result()
+        except (FutureCancelledError, HudClosed, HudStale):
+            return
+        except Exception as error:  # noqa: BLE001
+            if not self._pdc_refresh_failed:
+                decky.logger.warning(
+                    "HUD metric refresh failed: %s",
+                    type(error).__name__,
+                )
+            self._pdc_refresh_failed = True
+            return
+        if self._pdc_refresh_failed:
+            decky.logger.info("HUD metric refresh recovered")
+        self._pdc_refresh_failed = False
+
+    def _offer_pdc_refresh(self) -> None:
+        if (
+            self._hud_shutdown
+            or (
+                not self._hud_reload_pending
+                and (not self._pdc_active_ids or not self._pdc_presets_path)
+            )
+        ):
+            return
+        future = self._hud_coordinator.submit_latest(
+            self._hud_generation,
+            self._refresh_pdc_metrics_sync,
+        )
+        future.add_done_callback(self._finish_offered_pdc_refresh)
+
+    async def _hud_call(self, fn):
+        if self._hud_shutdown or getattr(self, "_shutting_down", False):
+            raise RuntimeError("plugin_shutting_down")
+        future = self._hud_coordinator.call(self._hud_generation, fn)
+        try:
+            return await asyncio.wrap_future(
+                future,
+                loop=asyncio.get_running_loop(),
+            )
+        except (HudClosed, HudStale) as error:
+            raise RuntimeError("plugin_shutting_down") from error
+
+    def _schedule_hud_apply(self) -> None:
+        if self._hud_shutdown:
+            return
+        self._hud_coordinator.submit_latest(
+            self._hud_generation,
+            self._apply_hud,
+        )
+
+    async def get_hud_state(self) -> dict:
+        self._init()
+        def refresh_pending_state():
+            model = self._hud.load()
+            if model["enabled"] and self._hud_apply_status in (
+                "pending",
+                "unavailable",
+                "ambiguous",
+            ):
+                cap = self._detect_hud()
+                if cap["supported"]:
+                    self._apply_hud(cap=cap, model=model)
+                return self._hud_state(cap=cap, model=model)
+            return self._hud_state(model=model)
+
+        return await self._hud_call(refresh_pending_state)
+
+    def _apply_hud_state(self, model) -> dict:
+        cap = self._detect_hud()
+        self._apply_hud(cap=cap, model=model)
+        return self._hud_state(cap=cap, model=model)
+
+    def _save_apply_hud_state(self, model) -> dict:
+        return self._apply_hud_state(self._hud.save(model))
+
+    async def set_hud_config(self, model: dict) -> dict:
+        self._init()
+        return await self._hud_call(lambda: self._save_apply_hud_state(model))
+
+    async def set_hud_enabled(self, enabled: bool) -> dict:
+        self._init()
+        def save_apply_state():
+            model = self._hud.load()
+            model["enabled"] = bool(enabled)
+            return self._save_apply_hud_state(model)
+        return await self._hud_call(save_apply_state)
+
+    async def reset_hud(self) -> dict:
+        self._init()
+        return await self._hud_call(
+            lambda: self._save_apply_hud_state(mangohud_config.DEFAULT_MODEL)
+        )
+
+    async def reload_hud(self) -> dict:
+        """Re-bake presets.conf now with fresh pdc values and reload mangoapp."""
+        self._init()
+        return await self._hud_call(
+            lambda: self._apply_hud_state(self._hud.load())
+        )
+
+    def _resolve_hud_conflict_sync(self, action) -> dict:
+        if action not in ("keep_external", "use_pdc"):
+            raise ValueError("Unknown HUD conflict action")
+        conflict = self._hud_conflict
+        if conflict is None or conflict["managedPath"] is None:
+            return self._hud_state()
+        path = conflict["managedPath"]
+        if action == "keep_external":
+            model = self._hud.load()
+            model["enabled"] = False
+            model = self._hud.save(model)
+            mangohud_ownership.relinquish_managed(
+                path,
+                trusted_root=self._hud_home,
+            )
+            self._remember_hud_path(None)
+            self._pdc_presets_path = None
+            self._hud_sessions = ()
+            self._hud_reload_pending = ()
+            self._pdc_active_ids = []
+            self._pdc_written = {}
+            self._pdc_preview_values = {}
+            self._hud_conflict = None
+            self._hud_apply_status = "disabled"
+            return self._hud_state(model=model)
+
+        cap = self._detect_hud()
+        if not cap["supported"] or cap["presetsPath"] != path:
+            self._hud_apply_status = (
+                "ambiguous" if cap.get("ambiguous") else "pending"
+            )
+            return self._hud_state(cap=cap)
+        model = self._hud.load()
+        self._apply_hud(cap=cap, model=model, replace_conflict=True)
+        return self._hud_state(cap=cap, model=model)
+
+    async def resolve_hud_conflict(self, action: str) -> dict:
+        self._init()
+        return await self._hud_call(
+            lambda: self._resolve_hud_conflict_sync(action)
+        )
+
+    def _cpu_state(self) -> dict:
+        self._ensure_cpu_coordinator()
+        if (
+            getattr(self, "_cpu_recovery_reapply_pending", False)
+            and not getattr(self, "_cpu_shutdown", False)
+        ):
+            self._cpu_recovery_reapply_pending = False
+            self._apply_cpu()
+        info = self._cpu_info
+        frequency_profile = self._cpu_profiles.effective(self._current_appid)["frequency"]
+        try:
+            frequency_diagnostics = self._cpu_frequency.diagnostics()
+        except Exception:  # noqa: BLE001
+            frequency_diagnostics = {
+                "supported": False,
+                "reason": "diagnostics_failed",
+                "policy_state": [],
+            }
+        frequency_range = self._cpu_frequency.get_range()
+        policy_state = frequency_diagnostics.get("policy_state") or []
+        applied_minimum = min(
+            (row["applied_min_khz"] for row in policy_state if row.get("applied_min_khz") is not None),
+            default=None,
+        )
+        applied_maximum = max(
+            (row["applied_max_khz"] for row in policy_state if row.get("applied_max_khz") is not None),
+            default=None,
+        )
+        last_result = getattr(self, "_cpu_last_result", None)
+        frequency_status = (
+            "unsupported"
+            if not self._cpu_frequency.supported
+            else last_result.status if last_result is not None
+            else "configured" if frequency_profile["manual"]
+            else "automatic"
+        )
+        return {
+            # Real silicon name (same source as get_device) so the CpuCard and the
+            # DeviceHeader never show two different CPU names on the same screen.
+            "chip": self._chip or self._device.chip,
+            "cores": info["cores"],
+            "threads": info["threads"],
+            "base_khz": info["base_khz"],
+            "max_khz": info["max_khz"],
+            "smt": {"supported": self._smt.supported, "enabled": self._smt.enabled()},
+            "boost": {"supported": self._boost.supported, "enabled": self._boost.enabled()},
+            # Active physical cores (None max = feature unavailable on this device).
+            "cores_supported": self._cores.supported,
+            "max_cores": self._cores.max_cores,
+            "active_cores": self._cores.active() if self._cores.supported else None,
+            "frequency": {
+                "supported": self._cpu_frequency.supported,
+                "managed_by_power": self._frequency_managed_by_power(),
+                "backend": frequency_diagnostics.get("backend", "unsupported"),
+                "manual": bool(frequency_profile["manual"]),
+                "range_min_khz": frequency_range[0] if frequency_range else None,
+                "range_max_khz": frequency_range[1] if frequency_range else None,
+                "requested_min_khz": frequency_profile.get("min_khz"),
+                "requested_max_khz": frequency_profile.get("max_khz"),
+                "applied_min_khz": applied_minimum,
+                "applied_max_khz": applied_maximum,
+                "status": frequency_status,
+                "reason": (
+                    last_result.error_code
+                    if last_result is not None and not last_result.ok
+                    else frequency_diagnostics.get("reason")
+                ),
+                "epoch": frequency_diagnostics.get("epoch", 0),
+                "policy_state": policy_state,
+            },
+            "follows_global": self._cpu_profiles.is_following_global(self._current_appid),
+            "has_game_profile": (self._current_appid is not None
+                                 and self._cpu_profiles.has_game(self._current_appid)),
+        }
+
+    async def get_cpu_state(self) -> dict:
+        self._init()
+        return self._cpu_state()
+
+    def _cpu_profile_candidate(self, scope, appid) -> dict:
+        if scope == "global":
+            source = self._cpu_profiles.effective(None)
+        elif scope == "game" and appid is not None:
+            appid = str(appid)
+            source = self._cpu_profiles.game_profile(appid) or self._cpu_profiles.effective(None)
+        else:
+            raise ValueError("invalid CPU profile scope")
+        return {
+            **source,
+            "frequency": dict(source["frequency"]),
+        }
+
+    def _scope_context_is_current(self, scope, appid, context_appid) -> bool:
+        if context_appid is not _RPC_CONTEXT_UNSET:
+            context = str(context_appid) if context_appid is not None else None
+            if context != self._current_appid:
+                self._journal_ignored("stale_game_context", scope=scope, appid=appid,
+                                      context=context, current=self._current_appid)
+                return False
+        current = scope == "global" or (
+            scope == "game"
+            and appid is not None
+            and str(appid) == self._current_appid
+        )
+        if not current:
+            self._journal_ignored("scope_not_current", scope=scope, appid=appid,
+                                  current=self._current_appid)
+        return current
+
+    def _journal_ignored(self, reason: str, **fields) -> None:
+        diary = journal.active
+        if diary is None:
+            return
+        caller = sys._getframe(2).f_code.co_name
+        if caller.startswith("_"):
+            caller = sys._getframe(3).f_code.co_name
+        diary.write("WARNING", "rpc", "ignored", call=caller, reason=reason, **fields)
+
+    def _set_current_appid(self, appid) -> None:
+        current = str(appid) if appid is not None else None
+        if current == getattr(self, "_current_appid", None):
+            return
+        stats = getattr(self, "_gamescope_stats", None)
+        if stats is not None:
+            stats.clear()
+        self._current_appid = current
+        self._current_appid_at = time.monotonic()
+        if getattr(self, "_auto_controller", None) is not None:
+            self._reset_auto_session("context_changed")
+        self._next_gpu_generation()
+
+    def _cpu_scope_is_current(
+        self, scope, appid, context_appid=_RPC_CONTEXT_UNSET
+    ) -> bool:
+        return self._scope_context_is_current(scope, appid, context_appid)
+
+    def _exit_eco_for_cpu(self) -> None:
+        if self._settings.get("eco_enabled"):
+            self._settings["eco_enabled"] = False
+            self._save()
+            self._schedule_tdp_apply("eco-exit-cpu")
+
+    async def _rollback_cpu_store_failure(
+        self, previous_intent, previous_data, error, trigger
+    ) -> None:
+        self._cpu_profiles._data = previous_data
+        rollback = await self._apply_cpu_awaited(
+            previous_intent,
+            trigger=f"{trigger}_rollback",
+        )
+        failure = CpuCoordinatorResult(
+            False,
+            "failed" if rollback.ok else "partial",
+            rollback.generation,
+            {"attempted": True, "ok": rollback.ok},
+            "store_write_failed" if rollback.ok else "store_write_failed_rollback_failed",
+            type(error).__name__,
+            rollback.frequency_status,
+        )
+        self._record_cpu_result(failure, trigger)
+
+    async def set_active_cores(
+        self, count: int, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if self._cpu_shutdown:
+            return self._cpu_state()
+        async with self._cpu_mutation_lock:
+            if not self._cpu_scope_is_current(scope, appid, context_appid):
+                return self._cpu_state()
+            self._cpu_profiles.set_cores(scope, int(count), appid=appid)
+            intent = self._cpu_profile_candidate(scope, appid)
+            self._exit_eco_for_cpu()
+            await self._apply_cpu_awaited(intent, trigger="set_cores")
+        return self._cpu_state()
+
+    async def set_cpu_follow_global(self, follow: bool, appid) -> dict:
+        """Toggle a game between its own CPU controls and following the
+        global ones, keeping its stored values (never deletes). Seeds from global on use-own."""
+        self._init()
+        if self._cpu_shutdown:
+            return self._cpu_state()
+        async with self._cpu_mutation_lock:
+            if appid is not None:
+                appid = str(appid)
+                if not self._cpu_scope_is_current("game", appid):
+                    return self._cpu_state()
+                previous_intent = copy.deepcopy(
+                    self._cpu_profiles.effective(appid)
+                )
+                previous_data = copy.deepcopy(self._cpu_profiles._data)
+                candidate = (
+                    self._cpu_profiles.effective(None)
+                    if follow
+                    else self._cpu_profiles.game_profile(appid) or self._cpu_profiles.effective(None)
+                )
+                result = await self._apply_cpu_awaited(candidate, trigger="scope_change")
+                if result.ok and result.generation == self._cpu_generation:
+                    try:
+                        if not follow and not self._cpu_profiles.has_game(appid):
+                            self._cpu_profiles.create_game_from_global(appid)
+                        else:
+                            self._cpu_profiles.set_follow_global(appid, bool(follow))
+                    except Exception as error:  # noqa: BLE001
+                        await self._rollback_cpu_store_failure(
+                            previous_intent,
+                            previous_data,
+                            error,
+                            "scope_change_store",
+                        )
+        return self._cpu_state()
+
+    async def set_cpu_frequency(
+        self, min_khz: int, max_khz: int, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if self._cpu_shutdown or self._frequency_managed_by_power():
+            return self._cpu_state()
+        async with self._cpu_mutation_lock:
+            if not self._cpu_scope_is_current(scope, appid, context_appid):
+                return self._cpu_state()
+            intent = self._cpu_profile_candidate(scope, appid)
+            previous_intent = copy.deepcopy(intent)
+            previous_data = copy.deepcopy(self._cpu_profiles._data)
+            frequency = {
+                "manual": True,
+                "min_khz": int(min_khz),
+                "max_khz": int(max_khz),
+            }
+            intent["frequency"] = frequency
+            self._exit_eco_for_cpu()
+            result = await self._apply_cpu_awaited(intent, trigger="set_frequency")
+            if result.ok and result.generation == self._cpu_generation:
+                try:
+                    self._cpu_profiles.set_frequency(
+                        scope, frequency["min_khz"], frequency["max_khz"], appid=appid
+                    )
+                except Exception as error:  # noqa: BLE001
+                    await self._rollback_cpu_store_failure(
+                        previous_intent,
+                        previous_data,
+                        error,
+                        "set_frequency_store",
+                    )
+        return self._cpu_state()
+
+    async def set_cpu_frequency_auto(
+        self, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if self._cpu_shutdown:
+            return self._cpu_state()
+        async with self._cpu_mutation_lock:
+            if not self._cpu_scope_is_current(scope, appid, context_appid):
+                return self._cpu_state()
+            intent = self._cpu_profile_candidate(scope, appid)
+            previous_intent = copy.deepcopy(intent)
+            previous_data = copy.deepcopy(self._cpu_profiles._data)
+            intent["frequency"] = {
+                "manual": False,
+                "min_khz": None,
+                "max_khz": None,
+            }
+            result = await self._apply_cpu_awaited(intent, trigger="set_frequency_auto")
+            if result.ok and result.generation == self._cpu_generation:
+                try:
+                    self._cpu_profiles.set_frequency_auto(scope, appid=appid)
+                except Exception as error:  # noqa: BLE001
+                    await self._rollback_cpu_store_failure(
+                        previous_intent,
+                        previous_data,
+                        error,
+                        "set_frequency_auto_store",
+                    )
+        return self._cpu_state()
+
+    def _gpu_scope_label(self, appid=None) -> str:
+        current = self._current_appid if appid is None else appid
+        if current is None:
+            return "global"
+        if self._gpu_profiles.is_following_global(current):
+            return "game_follow_global"
+        return "game_own"
+
+    def _next_gpu_generation(self) -> int:
+        self._gpu_generation = int(getattr(self, "_gpu_generation", 0)) + 1
+        return self._gpu_generation
+
+    def _run_gpu_clock(
+        self, requested, *, auto=False, generation=None,
+        preserve_ownership=False,
+    ) -> dict:
+        generation = (
+            self._next_gpu_generation()
+            if generation is None
+            else int(generation)
+        )
+        error_code = None
+        error_type = None
+        marker_acquired = False
+        previous_applied = None
+        try:
+            if generation != self._gpu_generation:
+                ok = False
+                error_code = "stale_context"
+            elif not self._gpu_clock.supported:
+                ok = False
+                error_code = "unsupported"
+            elif auto:
+                ok = bool(self._gpu_clock.set_auto())
+                if not ok:
+                    error_code = "write_rejected"
+                elif not preserve_ownership:
+                    self._settings["gpu_handoff_pending"] = False
+                    try:
+                        self._save()
+                    except Exception as exc:  # noqa: BLE001
+                        self._settings["gpu_handoff_pending"] = True
+                        ok = False
+                        error_code = "handoff_marker_clear_failed"
+                        error_type = type(exc).__name__
+            else:
+                lo, hi = int(requested["min_mhz"]), int(requested["max_mhz"])
+                previous_applied = self._gpu_clock.get()
+                if not self._settings.get("gpu_handoff_pending"):
+                    self._settings["gpu_handoff_pending"] = True
+                    try:
+                        self._save()
+                        marker_acquired = True
+                    except Exception as exc:  # noqa: BLE001
+                        self._settings["gpu_handoff_pending"] = False
+                        ok = False
+                        error_code = "handoff_marker_persist_failed"
+                        error_type = type(exc).__name__
+                if error_code is None:
+                    wrote = bool(self._gpu_clock.set(lo, hi))
+                    applied = self._gpu_clock.get()
+                    ok = wrote and applied == (lo, hi)
+                    if not wrote:
+                        error_code = "write_rejected"
+                    elif applied != (lo, hi):
+                        error_code = "readback_mismatch"
+        except Exception as exc:  # noqa: BLE001
+            ok = False
+            error_code = "exception"
+            error_type = type(exc).__name__
+        try:
+            applied = self._gpu_clock.get()
+        except Exception:  # noqa: BLE001
+            applied = None
+        if not auto and not ok and marker_acquired and applied == previous_applied:
+            self._settings["gpu_handoff_pending"] = False
+            try:
+                self._save()
+            except Exception as exc:  # noqa: BLE001
+                self._settings["gpu_handoff_pending"] = True
+                error_code = "handoff_marker_clear_failed"
+                error_type = type(exc).__name__
+        return {
+            "generation": generation,
+            "requested": requested,
+            "applied": (
+                {"min_mhz": int(applied[0]), "max_mhz": int(applied[1])}
+                if applied else None
+            ),
+            "ok": ok,
+            "status": "applied" if ok else ("unsupported" if error_code == "unsupported" else "rejected"),
+            "error_code": error_code,
+            "error_type": error_type,
+            "preserve_ownership": bool(preserve_ownership),
+        }
+
+    def _record_gpu_clock_transition(self, result, trigger, scope=None) -> None:
+        if result["generation"] != getattr(self, "_gpu_generation", 0):
+            return
+        self._gpu_last_result = dict(result)
+        if result["ok"] and result.get("preserve_ownership"):
+            self._gpu_owned = True
+        elif result["ok"]:
+            self._gpu_owned = result["requested"].get("mode") == "manual"
+        elif self._settings.get("gpu_handoff_pending"):
+            self._gpu_owned = True
+        if not result["ok"]:
+            self._gpu_last_failure = dict(result)
+        event = {
+            "at": round(time.monotonic(), 3),
+            "trigger": trigger,
+            "generation": result["generation"],
+            "scope": scope or self._gpu_scope_label(),
+            "requested": result["requested"],
+            "applied": result["applied"],
+            "ok": result["ok"],
+            "status": result["status"],
+            "error_code": result["error_code"],
+            "error_type": result["error_type"],
+        }
+        history = getattr(self, "_gpu_history", None)
+        if history is None:
+            history = deque(maxlen=16)
+            self._gpu_history = history
+        history.append(event)
+        log = decky.logger.info if result["ok"] else decky.logger.warning
+        log("GPU frequency transition %s", json.dumps(event, sort_keys=True, separators=(",", ":")))
+
+    def _apply_gpu_clock(self) -> None:
+        """Re-assert the GPU clock window when manual (cleared to auto after suspend).
+        When not manual we leave the GPU alone (don't fight other tools). Guarded."""
+        if getattr(self, "_gpu_shutdown", False):
+            return
+        if getattr(self, "_gpu_rpc_pending", 0) > 0:
+            current = self._gpu_profiles.clock(self._current_appid)
+            if current != getattr(self, "_gpu_rpc_profile_snapshot", None):
+                self._next_gpu_generation()
+            self._gpu_reapply_pending = True
+            return
+        try:
+            system_enabled = self._module_enabled("system")
+            g = (
+                self._gpu_profiles.clock(self._current_appid)
+                if system_enabled and not self._frequency_managed_by_power()
+                else {"manual": False, "min": None, "max": None}
+            )
+            if not self._gpu_clock.supported:
+                return
+            if not g.get("manual"):
+                if (
+                    (not self._gpu_release_required() and self._gpu_manual_inflight == 0)
+                    or self._gpu_releasing
+                ):
+                    return
+                requested = {"mode": "auto", "min_mhz": None, "max_mhz": None}
+                self._gpu_requested = requested
+                self._gpu_releasing = True
+                holder = {}
+
+                def release():
+                    holder["result"] = self._run_gpu_clock(requested, auto=True)
+
+                def record_release():
+                    self._gpu_releasing = False
+                    result = holder.get("result")
+                    if result is not None:
+                        self._record_gpu_clock_transition(result, "context_auto")
+
+                self._offload(release, done=record_release)
+                return
+            lo, hi = g.get("min"), g.get("max")
+            if lo is not None and hi is not None:
+                requested = {"mode": "manual", "min_mhz": int(lo), "max_mhz": int(hi)}
+                self._gpu_requested = requested
+                holder = {}
+                self._gpu_manual_inflight += 1
+
+                def apply():
+                    holder["result"] = self._run_gpu_clock(requested)
+
+                def record():
+                    self._gpu_manual_inflight = max(
+                        0, self._gpu_manual_inflight - 1
+                    )
+                    result = holder.get("result")
+                    if result is not None:
+                        self._record_gpu_clock_transition(result, "reapply")
+
+                self._offload(apply, done=record)
+        except Exception as exc:  # noqa: BLE001
+            generation = self._next_gpu_generation()
+            result = {
+                "generation": generation,
+                "requested": getattr(self, "_gpu_requested", None),
+                "applied": None,
+                "ok": False,
+                "status": "rejected",
+                "error_code": "exception",
+                "error_type": type(exc).__name__,
+            }
+            self._record_gpu_clock_transition(result, "reapply")
+
+    async def _release_gpu_clock(self, trigger) -> bool:
+        self._init()
+        lock = getattr(self, "_gpu_mutation_lock", None)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._gpu_mutation_lock = lock
+        async with lock:
+            return await self._release_gpu_clock_unlocked(trigger)
+
+    def _gpu_release_required(self) -> bool:
+        return bool(
+            getattr(self, "_gpu_owned", False)
+            or self._settings.get("gpu_handoff_pending", False)
+        )
+
+    async def _release_gpu_clock_unlocked(self, trigger) -> bool:
+        if not self._gpu_release_required():
+            return True
+        gpu_clock = getattr(self, "_gpu_clock", None)
+        if gpu_clock is None or not gpu_clock.supported:
+            return False
+        requested = {"mode": "auto", "min_mhz": None, "max_mhz": None}
+        self._gpu_requested = requested
+        result = None
+        for attempt in range(1, 4):
+            result = await self._offload_call(
+                lambda: self._run_gpu_clock(requested, auto=True)
+            )
+            self._record_gpu_clock_transition(result, f"{trigger}-{attempt}")
+            if result["ok"]:
+                return True
+        decky.logger.error(
+            "GPU handoff failed after retries trigger=%s error=%s",
+            trigger,
+            result.get("error_code") if result else None,
+        )
+        return False
+
+    def _release_gpu_clock_sync(self, trigger, preserve_ownership=False) -> bool:
+        self._init()
+        if not self._gpu_release_required():
+            return True
+        gpu_clock = getattr(self, "_gpu_clock", None)
+        if gpu_clock is None or not gpu_clock.supported:
+            return False
+        requested = {"mode": "auto", "min_mhz": None, "max_mhz": None}
+        self._gpu_requested = requested
+        result = None
+        for attempt in range(1, 4):
+            result = self._run_gpu_clock(
+                requested,
+                auto=True,
+                preserve_ownership=preserve_ownership,
+            )
+            self._record_gpu_clock_transition(result, f"{trigger}-{attempt}")
+            if result["ok"]:
+                return True
+        decky.logger.error(
+            "GPU handoff failed after retries trigger=%s error=%s",
+            trigger,
+            result.get("error_code") if result else None,
+        )
+        return False
+
+    def _capture_gpu_hardware_state(self):
+        capture = getattr(self._gpu_clock, "capture_state", None)
+        if not callable(capture):
+            return None
+        try:
+            return capture()
+        except Exception:  # noqa: BLE001
+            return None
+
+    async def _rollback_gpu_store_failure(
+        self, requested, previous_data, previous_hardware,
+        previous_marker, previous_owned, error, trigger, scope
+    ) -> None:
+        self._gpu_profiles._data = previous_data
+        restore = getattr(self._gpu_clock, "restore_state", None)
+        self._settings["gpu_handoff_pending"] = True
+        self._gpu_owned = True
+        conservative_marker_ready = requested.get("mode") == "manual"
+        if not conservative_marker_ready:
+            try:
+                self._save()
+                conservative_marker_ready = True
+            except Exception:  # noqa: BLE001
+                released = bool(
+                    await self._offload_call(self._gpu_clock.set_auto)
+                )
+                self._settings["gpu_handoff_pending"] = not released
+                self._gpu_owned = not released
+                rollback_ok = False
+        if conservative_marker_ready:
+            rollback_ok = bool(
+                await self._offload_call(lambda: restore(previous_hardware))
+            ) if callable(restore) else False
+            if rollback_ok:
+                self._settings["gpu_handoff_pending"] = bool(previous_marker)
+                self._gpu_owned = bool(previous_owned)
+                try:
+                    self._save()
+                except Exception:  # noqa: BLE001
+                    self._settings["gpu_handoff_pending"] = True
+                    self._gpu_owned = True
+                    rollback_ok = False
+        try:
+            applied = self._gpu_clock.get()
+        except Exception:  # noqa: BLE001
+            applied = None
+        failure = {
+            "generation": self._gpu_generation,
+            "requested": requested,
+            "applied": (
+                {"min_mhz": int(applied[0]), "max_mhz": int(applied[1])}
+                if applied else None
+            ),
+            "ok": False,
+            "status": "rejected",
+            "error_code": (
+                "store_write_failed" if rollback_ok
+                else "store_write_failed_rollback_failed"
+            ),
+            "error_type": type(error).__name__,
+            "rollback": {
+                "ok": rollback_ok,
+                "status": "restored" if rollback_ok else "failed",
+                "error_code": None if rollback_ok else "hardware_or_marker_restore_failed",
+            },
+        }
+        self._gpu_requested = requested
+        self._record_gpu_clock_transition(failure, trigger, scope)
+
+    def _gpu_clock_state(self) -> dict:
+        g = self._gpu_profiles.clock(self._current_appid)
+        rng = self._gpu_clock.get_range()
+        cur = self._gpu_clock.get()
+        gmin, gmax = g.get("min"), g.get("max")
+        requested = getattr(self, "_gpu_requested", None)
+        last = getattr(self, "_gpu_last_result", None)
+        applied_min, applied_max = cur if cur else (None, None)
+        return {
+            "supported": self._gpu_clock.supported,
+            "managed_by_power": self._frequency_managed_by_power(),
+            "manual": bool(g.get("manual")),
+            "range_min": rng[0] if rng else None,
+            "range_max": rng[1] if rng else None,
+            "levels": (
+                self._gpu_clock.levels() if callable(getattr(self._gpu_clock, "levels", None)) else None
+            ),
+            # Stored per-scope window when set; else the live/full range for the sliders.
+            "min": gmin if gmin is not None else (applied_min if cur else (rng[0] if rng else None)),
+            "max": gmax if gmax is not None else (applied_max if cur else (rng[1] if rng else None)),
+            "configured_min": gmin if g.get("manual") else None,
+            "configured_max": gmax if g.get("manual") else None,
+            "requested_min": requested.get("min_mhz") if requested else None,
+            "requested_max": requested.get("max_mhz") if requested else None,
+            "applied_min": applied_min,
+            "applied_max": applied_max,
+            "generation": last.get("generation") if last else 0,
+            "status": last.get("status") if last else (
+                "auto" if self._gpu_clock.supported else "unsupported"
+            ),
+            "reason": last.get("error_code") if last else None,
+            "follows_global": self._gpu_profiles.is_following_global(self._current_appid),
+            "has_game_profile": (
+                self._current_appid is not None
+                and self._gpu_profiles.has_game(self._current_appid)
+            ),
+        }
+
+    @staticmethod
+    def _diagnostic_window(value):
+        if not isinstance(value, dict):
+            return None
+        return {
+            "min_mhz": value.get("min_mhz"),
+            "max_mhz": value.get("max_mhz"),
+        }
+
+    @staticmethod
+    def _cpu_frequency_failure_diagnostic(value):
+        if not isinstance(value, dict):
+            return None
+        identity_fields = {
+            "path", "driver", "related_cpus", "hardware_min_khz",
+            "hardware_max_khz", "affected_cpus", "missing",
+        }
+        policies = value.get("policies") or []
+        return {
+            "reason": value.get("reason"),
+            "requested": list(value["requested"]) if value.get("requested") else None,
+            "policies": [{
+                "name": policy.get("name"),
+                "driver": policy.get("driver"),
+                **{
+                    key: list(policy[key]) if policy.get(key) else None
+                    for key in ("hardware_bounds", "target", "applied")
+                },
+                "identity_changed_fields": [
+                    field for field in policy.get("identity_changed_fields", ())
+                    if field in identity_fields
+                ],
+            } for policy in policies[:32]],
+            "policies_omitted": (
+                value.get("policies_omitted", 0) + max(0, len(policies) - 32)
+            ),
+        }
+
+    def _cpu_gpu_diagnostics(self) -> dict:
+        """Allowlisted CPU/GPU/PPT diagnostics for private reports.
+
+        Deliberately excludes application identifiers, titles and raw sysfs/command
+        output. Each producer is isolated so one broken backend cannot block reports.
+        """
+        try:
+            raw_cpu = self._cpu_frequency.diagnostics()
+            policies = []
+            for policy in raw_cpu.get("policy_state", ()):
+                policies.append({
+                    "name": policy.get("name"),
+                    "cpus": list(policy.get("cpus") or ()),
+                    "driver": policy.get("driver"),
+                    "hardware_min_khz": policy.get("hardware_min_khz"),
+                    "hardware_max_khz": policy.get("hardware_max_khz"),
+                    "applied_min_khz": policy.get("applied_min_khz"),
+                    "applied_max_khz": policy.get("applied_max_khz"),
+                })
+            last_cpu = getattr(self, "_cpu_last_result", None)
+            cpu = {
+                "backend": raw_cpu.get("backend"),
+                "supported": bool(raw_cpu.get("supported")),
+                "reason": raw_cpu.get("reason"),
+                "durable_state_reason": raw_cpu.get("durable_state_reason"),
+                "handoff_pending": self._settings.get("cpu_frequency_handoff") is not None,
+                "epoch": raw_cpu.get("epoch"),
+                "requested": raw_cpu.get("requested"),
+                "owned": bool(raw_cpu.get("owned")),
+                "drivers": list(raw_cpu.get("drivers") or ()),
+                "policies": policies,
+                "last_failure": self._cpu_frequency_failure_diagnostic(
+                    raw_cpu.get("last_failure")
+                ),
+                "last_result": ({
+                    "generation": last_cpu.generation,
+                    "ok": last_cpu.ok,
+                    "status": last_cpu.status,
+                    "error_code": last_cpu.error_code,
+                    "error_type": last_cpu.error_type,
+                    "frequency_status": last_cpu.frequency_status,
+                    "rollback": last_cpu.rollback,
+                } if last_cpu is not None else None),
+                "history": list(getattr(self, "_cpu_history", ())),
+            }
+        except Exception as exc:  # noqa: BLE001
+            cpu = {
+                "backend": None,
+                "supported": False,
+                "error_type": type(exc).__name__,
+            }
+
+        try:
+            diagnostics = getattr(self._gpu_clock, "diagnostics", None)
+            raw_gpu = diagnostics() if callable(diagnostics) else {}
+            operation = raw_gpu.get("last_operation") or None
+            selection = []
+            for candidate in raw_gpu.get("selection") or ():
+                selection.append({
+                    "backend": candidate.get("backend"),
+                    "supported": bool(candidate.get("supported")),
+                    "range_available": bool(candidate.get("range_available")),
+                    "applied_available": bool(candidate.get("applied_available")),
+                    "reason": candidate.get("reason"),
+                })
+            gpu = {
+                "backend": raw_gpu.get("backend", getattr(self._gpu_clock, "backend", None)),
+                "supported": bool(raw_gpu.get("supported", self._gpu_clock.supported)),
+                "range": self._diagnostic_window(raw_gpu.get("range")),
+                "applied": self._diagnostic_window(raw_gpu.get("applied")),
+                "last_operation": ({
+                    "action": operation.get("action"),
+                    "requested": self._diagnostic_window(operation.get("requested")),
+                    "applied": self._diagnostic_window(operation.get("applied")),
+                    "ok": bool(operation.get("ok")),
+                    "reason": operation.get("reason"),
+                } if operation else None),
+                "selection": selection,
+                "owned": bool(getattr(self, "_gpu_owned", False)),
+                "handoff_pending": bool(self._settings.get("gpu_handoff_pending")),
+                "last_result": getattr(self, "_gpu_last_result", None),
+                "last_failure": getattr(self, "_gpu_last_failure", None),
+                "history": list(getattr(self, "_gpu_history", ())),
+            }
+        except Exception as exc:  # noqa: BLE001
+            gpu = {"backend": None, "supported": False, "error_type": type(exc).__name__}
+
+        try:
+            backend_diagnostics = getattr(self._tdp_backend, "diagnostics", None)
+            raw_ppt = backend_diagnostics() if callable(backend_diagnostics) else {}
+            capability = raw_ppt.get("ppt") or {}
+            tdp_state = self._tdp_ownership_state(self._tdp_observation)
+            deck_ppt = {
+                "supported": bool(capability.get("supported")),
+                "source": capability.get("source"),
+                "slow": capability.get("slow"),
+                "fast": capability.get("fast"),
+                "visual_max": capability.get("visual_max"),
+                "probe_reason": raw_ppt.get("ppt_reason"),
+                "overclock": self._steamdeck_overclock_state(),
+                "requested": tdp_state.get("requested"),
+                "applied": tdp_state.get("applied"),
+                "status": tdp_state.get("status"),
+                "reason": tdp_state.get("reason"),
+                "recovery_blocked": bool(getattr(self, "_steamdeck_ppt_recovery_blocked", False)),
+                "previous": self._settings.get("steamdeck_ppt_previous"),
+                "last_failure": getattr(self, "_steamdeck_ppt_last_failure", None),
+                "history": list(getattr(self, "_steamdeck_ppt_history", ())),
+            }
+        except Exception as exc:  # noqa: BLE001
+            deck_ppt = {"supported": False, "error_type": type(exc).__name__}
+
+        cpu_last = getattr(self, "_cpu_last_result", None)
+        gpu_last = getattr(self, "_gpu_last_result", None)
+        reapply = {
+            "generation": int(getattr(self, "_reapply_generation", 0)),
+            "trigger": getattr(self, "_last_reapply_trigger", None),
+            "cpu": ({
+                "generation": cpu_last.generation,
+                "status": cpu_last.status,
+                "ok": cpu_last.ok,
+            } if cpu_last is not None else None),
+            "gpu": ({
+                "generation": gpu_last.get("generation"),
+                "status": gpu_last.get("status"),
+                "ok": gpu_last.get("ok"),
+            } if gpu_last else None),
+            "tdp": {
+                "generation": int(getattr(self, "_tdp_generation", 0)),
+                "status": getattr(self, "_tdp_status", None),
+                "pending": getattr(self._tdp_reconcile_memory, "pending_since", None) is not None,
+            },
+        }
+        return {"cpu": cpu, "gpu": gpu, "steamdeck_ppt": deck_ppt, "reapply": reapply}
+
+    async def get_gpu_clock(self) -> dict:
+        self._init()
+        return self._gpu_clock_state()
+
+    async def set_gpu_follow_global(self, follow: bool, appid) -> dict:
+        self._init()
+        if self._gpu_shutdown or not self._module_enabled("system"):
+            return self._gpu_clock_state()
+        async with self._gpu_mutation_lock:
+            if appid is None:
+                return self._gpu_clock_state()
+            appid = str(appid)
+            if not self._scope_context_is_current("game", appid, appid):
+                return self._gpu_clock_state()
+            previous_data = copy.deepcopy(self._gpu_profiles._data)
+            previous_hardware = self._capture_gpu_hardware_state()
+            previous_marker = bool(self._settings.get("gpu_handoff_pending"))
+            previous_owned = bool(getattr(self, "_gpu_owned", False))
+            candidate = (
+                self._gpu_profiles.clock(None)
+                if follow
+                else self._gpu_profiles.game_profile(appid) or self._gpu_profiles.clock(None)
+            )
+            manual = (
+                bool(candidate.get("manual"))
+                and candidate.get("min") is not None
+                and candidate.get("max") is not None
+            )
+            requested = (
+                {
+                    "mode": "manual",
+                    "min_mhz": int(candidate["min"]),
+                    "max_mhz": int(candidate["max"]),
+                }
+                if manual
+                else {"mode": "auto", "min_mhz": None, "max_mhz": None}
+            )
+            self._gpu_requested = requested
+            generation = self._next_gpu_generation()
+            if self._gpu_rpc_pending == 0:
+                self._gpu_rpc_profile_snapshot = dict(
+                    self._gpu_profiles.clock(self._current_appid)
+                )
+            self._gpu_rpc_pending += 1
+            try:
+                result = await self._offload_call(
+                    lambda: self._run_gpu_clock(
+                        requested, auto=not manual, generation=generation
+                    )
+                )
+                if result["ok"] and result["generation"] == self._gpu_generation:
+                    try:
+                        if not follow and not self._gpu_profiles.has_game(appid):
+                            self._gpu_profiles.create_game_from_global(appid)
+                        else:
+                            self._gpu_profiles.set_follow_global(appid, bool(follow))
+                    except Exception as error:  # noqa: BLE001
+                        await self._rollback_gpu_store_failure(
+                            requested,
+                            previous_data,
+                            previous_hardware,
+                            previous_marker,
+                            previous_owned,
+                            error,
+                            "scope_change_store",
+                            "game_follow_global" if follow else "game_own",
+                        )
+                        return self._gpu_clock_state()
+                self._record_gpu_clock_transition(
+                    result,
+                    "scope_change",
+                    "game_follow_global" if follow else "game_own",
+                )
+            finally:
+                self._gpu_rpc_pending -= 1
+                if self._gpu_rpc_pending == 0:
+                    self._gpu_rpc_profile_snapshot = None
+                    if self._gpu_reapply_pending:
+                        self._gpu_reapply_pending = False
+                        self._apply_gpu_clock()
+        return self._gpu_clock_state()
+
+    async def set_gpu_clock(
+        self, min_mhz: int, max_mhz: int, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if (
+            self._gpu_shutdown
+            or not self._module_enabled("system")
+            or self._frequency_managed_by_power()
+        ):
+            return self._gpu_clock_state()
+        async with self._gpu_mutation_lock:
+            if self._gpu_shutdown or not self._module_enabled("system"):
+                return self._gpu_clock_state()
+            if not self._scope_context_is_current(scope, appid, context_appid):
+                return self._gpu_clock_state()
+            return await self._set_gpu_clock_unlocked(min_mhz, max_mhz, scope, appid)
+
+    async def _set_gpu_clock_unlocked(
+        self, min_mhz: int, max_mhz: int, scope: str = "global", appid=None
+    ) -> dict:
+        self._init()
+        previous_data = copy.deepcopy(self._gpu_profiles._data)
+        previous_hardware = self._capture_gpu_hardware_state()
+        previous_marker = bool(self._settings.get("gpu_handoff_pending"))
+        previous_owned = bool(getattr(self, "_gpu_owned", False))
+        requested = {"mode": "manual", "min_mhz": int(min_mhz), "max_mhz": int(max_mhz)}
+        self._gpu_requested = requested
+        generation = self._next_gpu_generation()
+        if self._gpu_rpc_pending == 0:
+            self._gpu_rpc_profile_snapshot = dict(
+                self._gpu_profiles.clock(self._current_appid)
+            )
+        self._gpu_rpc_pending += 1
+        try:
+            result = await self._offload_call(
+                lambda: self._run_gpu_clock(requested, generation=generation)
+            )
+            if result["ok"] and result["generation"] == self._gpu_generation:
+                try:
+                    self._gpu_profiles.set_clock(
+                        scope, True, int(min_mhz), int(max_mhz), appid=appid
+                    )
+                except Exception as error:  # noqa: BLE001
+                    await self._rollback_gpu_store_failure(
+                        requested,
+                        previous_data,
+                        previous_hardware,
+                        previous_marker,
+                        previous_owned,
+                        error,
+                        "set_manual_store",
+                        "global" if scope == "global" else "game_own",
+                    )
+                    return self._gpu_clock_state()
+            self._record_gpu_clock_transition(
+                result, "set_manual", "global" if scope == "global" else "game_own"
+            )
+        finally:
+            self._gpu_rpc_pending -= 1
+            if self._gpu_rpc_pending == 0:
+                self._gpu_rpc_profile_snapshot = None
+                if self._gpu_reapply_pending:
+                    self._gpu_reapply_pending = False
+                    self._apply_gpu_clock()
+        return self._gpu_clock_state()
+
+    async def set_gpu_clock_auto(
+        self, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if self._gpu_shutdown or not self._module_enabled("system"):
+            return self._gpu_clock_state()
+        async with self._gpu_mutation_lock:
+            if self._gpu_shutdown or not self._module_enabled("system"):
+                return self._gpu_clock_state()
+            if not self._scope_context_is_current(scope, appid, context_appid):
+                return self._gpu_clock_state()
+            return await self._set_gpu_clock_auto_unlocked(scope, appid)
+
+    async def _set_gpu_clock_auto_unlocked(
+        self, scope: str = "global", appid=None
+    ) -> dict:
+        self._init()
+        previous_data = copy.deepcopy(self._gpu_profiles._data)
+        previous_hardware = self._capture_gpu_hardware_state()
+        previous_marker = bool(self._settings.get("gpu_handoff_pending"))
+        previous_owned = bool(getattr(self, "_gpu_owned", False))
+        requested = {"mode": "auto", "min_mhz": None, "max_mhz": None}
+        self._gpu_requested = requested
+        generation = self._next_gpu_generation()
+        if self._gpu_rpc_pending == 0:
+            self._gpu_rpc_profile_snapshot = dict(
+                self._gpu_profiles.clock(self._current_appid)
+            )
+        self._gpu_rpc_pending += 1
+        try:
+            result = await self._offload_call(
+                lambda: self._run_gpu_clock(
+                    requested, auto=True, generation=generation
+                )
+            )
+            if result["ok"] and result["generation"] == self._gpu_generation:
+                try:
+                    self._gpu_profiles.set_clock(scope, False, 0, 0, appid=appid)
+                except Exception as error:  # noqa: BLE001
+                    await self._rollback_gpu_store_failure(
+                        requested,
+                        previous_data,
+                        previous_hardware,
+                        previous_marker,
+                        previous_owned,
+                        error,
+                        "set_auto_store",
+                        "global" if scope == "global" else "game_own",
+                    )
+                    return self._gpu_clock_state()
+            self._record_gpu_clock_transition(
+                result, "set_auto", "global" if scope == "global" else "game_own"
+            )
+        finally:
+            self._gpu_rpc_pending -= 1
+            if self._gpu_rpc_pending == 0:
+                self._gpu_rpc_profile_snapshot = None
+                if self._gpu_reapply_pending:
+                    self._gpu_reapply_pending = False
+                    self._apply_gpu_clock()
+        return self._gpu_clock_state()
+
+    async def set_smt(
+        self, enabled: bool, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if self._cpu_shutdown:
+            return self._cpu_state()
+        async with self._cpu_mutation_lock:
+            if not self._cpu_scope_is_current(scope, appid, context_appid):
+                return self._cpu_state()
+            self._cpu_profiles.set_smt(scope, bool(enabled), appid=appid)
+            intent = self._cpu_profile_candidate(scope, appid)
+            self._exit_eco_for_cpu()
+            await self._apply_cpu_awaited(intent, trigger="set_smt")
+        return self._cpu_state()
+
+    async def set_cpu_boost(
+        self, enabled: bool, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if self._cpu_shutdown:
+            return self._cpu_state()
+        async with self._cpu_mutation_lock:
+            if not self._cpu_scope_is_current(scope, appid, context_appid):
+                return self._cpu_state()
+            self._cpu_profiles.set_boost(scope, bool(enabled), appid=appid)
+            intent = self._cpu_profile_candidate(scope, appid)
+            self._exit_eco_for_cpu()
+            await self._apply_cpu_awaited(intent, trigger="set_boost")
+        return self._cpu_state()
+
+    async def set_charge_limit(self, enabled: bool, percent: int) -> dict:
+        """Enable/disable the charge cap and set its threshold. Persists, applies via
+        readback, and returns the resulting charge_limit block."""
+        self._init()
+        self._clear_charge_limit_full_once()
+        generation = self._cancel_charge_limit_reconcile(
+            "new_intent",
+            preserve_candidate=not getattr(self, "_shutting_down", False),
+        )
+        lo, hi = self._charge_limit.range()
+        percent = max(lo, min(hi, int(percent)))
+        self._settings["charge_limit_enabled"] = bool(enabled)
+        self._settings["charge_limit_percent"] = percent
+        self._save()
+        if not self._module_enabled("chargeLimit"):
+            self._publish_charge_limit_handoff(generation)
+            return self._charge_limit_state()
+        apply_task = asyncio.create_task(
+            self._apply_charge_limit_intent(generation)
+        )
+        self._charge_limit_apply_tasks.add(apply_task)
+
+        def finished(done):
+            self._charge_limit_apply_tasks.discard(done)
+            if not done.cancelled():
+                done.exception()
+
+        apply_task.add_done_callback(finished)
+        await asyncio.shield(apply_task)
+        return await self._offload_call(self._charge_limit_state)
+
+    async def set_charge_limit_full_once(self, enabled: bool) -> dict:
+        self._init()
+        if not bool(enabled):
+            deadline = self._charge_limit_full_once_deadline()
+            if deadline is not None:
+                await self._finish_charge_limit_full_once(
+                    "full_once_cancelled",
+                    deadline,
+                )
+            return await self._offload_call(self._charge_limit_state)
+        if not self._charge_limit_full_once_available():
+            return await self._offload_call(self._charge_limit_state)
+
+        self._stop_charge_limit_full_once_monitor()
+        self._settings["charge_limit_full_once_until"] = (
+            time.time() + _FULL_CHARGE_ONCE_SECONDS
+        )
+        self._settings["charge_limit_full_once_restore_pending"] = False
+        self._charge_limit_full_once_status = "pending"
+        self._save()
+        generation = self._cancel_charge_limit_reconcile("full_once_started")
+        await self._apply_charge_limit_intent(generation)
+        self._start_charge_limit_full_once_monitor()
+        return await self._offload_call(self._charge_limit_state)
+
+    async def _apply_charge_limit_intent(self, generation) -> None:
+        await self._offload_call(
+            lambda: (
+                self._apply_charge_limit(generation)
+                if self._charge_limit_intent_current(generation)
+                else None
+            )
+        )
+        if self._charge_limit_intent_current(generation):
+            self._schedule_charge_limit_reconcile("set_charge_limit")
+
+    # ---- Pantalla (panel color via gamescope) -------------------------------
+    def _reapply_color(self) -> None:
+        """Push the color apply off the event loop (gamescopectl can stall on a wedged
+        compositor). No executor / no loop → inline."""
+        self._offload(self._reapply_color_sync)
+
+    def _reapply_color_sync(self) -> None:
+        """Push the effective color to gamescope. No-op when unsupported. Guarded.
+        Applied in HDR mode too — it colors all composited/SDR content; a native-HDR
+        game (direct scanout) is simply out of the LUT's reach, no handling needed."""
+        if not self._module_enabled("display"):
+            return
+        try:
+            if self._color_backend.supported:
+                color = self._effective_color()
+                ok = self._color_backend.apply(color)
+                self._log_display_transition("color", ok=bool(ok), color=color,
+                                             night=self._night_is_active(),
+                                             result=getattr(self._color_backend, "_last_apply", None))
+        except Exception as error:  # noqa: BLE001
+            self._log_display_transition("color", ok=False, error=type(error).__name__)
+
+    def _log_display_transition(self, kind: str, *, ok: bool, **fields) -> None:
+        """Startup re-asserts the same look dozens of times; only changes are logged."""
+        event = {"kind": kind, "ok": ok, **{key: value for key, value in fields.items() if value is not None}}
+        last = getattr(self, "_display_logged", {})
+        if last.get(kind) == event:
+            return
+        self._display_logged = {**last, kind: event}
+        log = decky.logger.info if ok else decky.logger.warning
+        log("Display transition %s", json.dumps(event, sort_keys=True, separators=(",", ":"), default=str))
+
+    async def _await_display_backend(self, attempts=30, interval=5.0,
+                                     reasserts=40, reassert_interval=3.0) -> None:
+        """Re-assert the color/HDR look at startup over a short window. gamescope drops a
+        look loaded while it is still bringing up the session, so applying once at load
+        isn't enough — whether gamescope wasn't up yet when we loaded (cold boot) or it
+        was up but still initialising (fast/manual reboot). First wait (bounded) for the
+        socket to answer, then re-apply every few seconds across the session-bringup
+        window, and finally start the night loop. On a host with no gamescope (desktop)
+        it just stays native."""
+        try:
+            for _ in range(attempts):
+                if await self._offload_call(lambda: self._color_backend.supported):
+                    break
+                await asyncio.sleep(interval)
+            else:
+                return  # gamescope never came up (desktop) — nothing to apply
+            for i in range(reasserts):
+                await self._offload_call(self._reapply_color_sync)
+                self._reapply_hdr()
+                if i < reasserts - 1:
+                    await asyncio.sleep(reassert_interval)
+            self._start_night_loop()
+        except asyncio.CancelledError:
+            pass
+
+    def _display_color(self) -> dict:
+        """What the UI reflects: saved effective + the unconfirmed preview. Excludes the
+        night-mode shift, so the Temperature slider keeps showing the user's own value."""
+        eff = self._color.effective(self._current_appid)
+        if self._color_preview is not None:
+            eff = {**eff, **self._color_preview}
+        return eff
+
+    def _effective_color(self) -> dict:
+        """What is pushed to hardware: the displayed color + the night-mode warm shift."""
+        eff = self._display_color()
+        n = self._night.get()
+        if self._night_is_active(n):
+            eff = {**eff, "temperature": min(100, eff.get("temperature", 0) + n["warmth"])}
+        return eff
+
+    def _night_is_active(self, n=None) -> bool:
+        n = n if n is not None else self._night.get()
+        return is_night_active(
+            _now_minutes(), n["enabled"], n["schedule_enabled"], n["start"], n["end"]
+        )
+
+    def _color_state(self) -> dict:
+        eff = self._display_color()
+        preset_keys = color_presets.preset_keys(self._device)
+        preview_target = self._color_preview_target
+        if self._color_preview is None:
+            revert_remaining = None
+        elif self._color_revert_deadline is None:
+            revert_remaining = self._COLOR_REVERT_SECS
+        else:
+            revert_remaining = max(
+                0, int(self._color_revert_deadline - time.monotonic() + 0.999)
+            )
+        return {
+            "supported": self._color_backend.supported,
+            **{f: eff[f] for f in COLOR_FIELDS},
+            "global_saturation": self._color.effective(None)["saturation"],
+            "has_game_profile": (self._current_appid is not None
+                                 and self._color.has_game(self._current_appid)),
+            "follows_global": self._color.is_following_global(self._current_appid),
+            "appid": self._current_appid,
+            # The per-model "OLED look" preset (None on a real OLED → UI hides the card).
+            "oled_look": oled_look_for(self._device),
+            "panel": self._device.panel,
+            # True when a color look costs a bit of extra power here (Intel forces
+            # gamescope composition) → the UI shows an honest, device-named note.
+            "perf_cost": getattr(self._color_backend, "force_composite", False),
+            "device_name": self._device.display_name,
+            # Calibration preview pending confirmation (auto-reverts) + its window.
+            "preview": self._color_preview is not None,
+            "revert_seconds": self._COLOR_REVERT_SECS,
+            "revert_remaining": revert_remaining,
+            "preview_scope": preview_target[0] if preview_target else None,
+            "preview_appid": preview_target[1] if preview_target else None,
+            "presets": preset_keys,
+            "active_preset": self._active_preset(preset_keys),
+        }
+
+    def _active_preset(self, keys) -> str:
+        """The look key the color actually shown for the current scope matches, or None.
+        Compares the effective color (so a per-game saturation override that hides the
+        look's saturation correctly reads as custom, not a false match)."""
+        cur = self._display_color()
+        for key in keys:
+            preset = color_presets.resolve_preset(self._device, key)
+            full = self._color._clean_global(preset or {})  # same merge+clamp apply uses
+            if all(cur[f] == full[f] for f in COLOR_FIELDS):
+                return key
+        return None
+
+    async def get_color_state(self) -> dict:
+        self._init()
+        return await self._offload_call(self._color_state)
+
+    def _color_context_is_current(
+        self, scope, appid, context_appid
+    ) -> bool:
+        return (
+            context_appid is _RPC_CONTEXT_UNSET
+            or self._scope_context_is_current(scope, appid, context_appid)
+        )
+
+    async def apply_color_preset(
+        self, key: str, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        """Apply a look to the given scope (native = reset that scope). Saved directly."""
+        self._init()
+        if not self._color_context_is_current(scope, appid, context_appid):
+            return await self._offload_call(self._color_state)
+        self._drop_color_preview()
+        preset = color_presets.resolve_preset(self._device, key)
+        if key == "native":
+            self._color.apply_preset(scope, dict(COLOR_NATIVE), appid=appid)
+        elif preset is not None:
+            self._color.apply_preset(scope, preset, appid=appid)
+        self._reapply_color()
+        return await self._offload_call(self._color_state)
+
+    async def preview_color_preset(
+        self, key: str, scope: str, appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if not self._color_context_is_current(scope, appid, context_appid):
+            return await self._offload_call(self._color_state)
+        preset = color_presets.resolve_preset(self._device, key)
+        if key != "native" and preset is None:
+            return await self._offload_call(self._color_state)
+        profile = dict(COLOR_NATIVE) if key == "native" else preset
+        return await self.preview_calibration(
+            self._color._clean_global(profile), scope, appid, context_appid
+        )
+
+    async def set_saturation(
+        self, value: int, scope: str, appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if not self._color_context_is_current(scope, appid, context_appid):
+            return await self._offload_call(self._color_state)
+        self._color.set_saturation(scope, int(value), appid=appid)
+        self._reapply_color()
+        return await self._offload_call(self._color_state)
+
+    async def set_color_follow_global(
+        self, follow: bool, appid, context_appid=_RPC_CONTEXT_UNSET
+    ) -> dict:
+        """Toggle a game between its own color profile and the global one, keeping its
+        stored values. Seeds from global on "use own" if it has none."""
+        self._init()
+        if not self._color_context_is_current("game", appid, context_appid):
+            return await self._offload_call(self._color_state)
+        if appid is not None:
+            appid = str(appid)
+            self._set_current_appid(appid)
+            if not follow and not self._color.has_game(appid):
+                self._color.create_game_from_global(appid)
+            self._color.set_follow_global(appid, bool(follow))
+            self._reapply_color()
+        return await self._offload_call(self._color_state)
+
+    async def preview_calibration(
+        self, calibration: dict, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        """Apply color live without saving and arm the auto-revert timer."""
+        self._init()
+        if not self._color_context_is_current(scope, appid, context_appid):
+            return await self._offload_call(self._color_state)
+        target_appid = str(appid) if scope == "game" and appid is not None else None
+        target = None if context_appid is _RPC_CONTEXT_UNSET else (scope, target_appid)
+        if (
+            self._color_preview is not None
+            and self._color_preview_target is not None
+            and self._color_preview_target != target
+        ):
+            return await self._offload_call(self._color_state)
+        # Empty/malformed payload → nothing to preview: don't arm a revert timer or
+        # show a confirm bar with nothing to confirm.
+        sanitize = (
+            sanitize_color
+            if context_appid is not _RPC_CONTEXT_UNSET
+            else sanitize_calibration
+        )
+        self._color_preview = sanitize(calibration) or None
+        if self._color_preview is not None:
+            self._color_preview_target = target
+            self._reapply_color()
+            self._arm_color_revert()
+        else:
+            self._drop_color_preview()
+            self._reapply_color()
+        return await self._offload_call(self._color_state)
+
+    async def set_calibration(
+        self, calibration: dict, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        """Confirm the pending color for a scope."""
+        self._init()
+        if not self._color_context_is_current(scope, appid, context_appid):
+            return await self._offload_call(self._color_state)
+        target_appid = str(appid) if scope == "game" and appid is not None else None
+        if (
+            self._color_preview is not None
+            and self._color_preview_target is not None
+            and self._color_preview_target != (scope, target_appid)
+        ):
+            return await self._offload_call(self._color_state)
+        self._drop_color_preview()
+        if context_appid is _RPC_CONTEXT_UNSET:
+            self._color.set_calibration(scope, appid, **sanitize_calibration(calibration))
+        else:
+            self._color.set_color(scope, calibration, appid=appid)
+        self._reapply_color()
+        return await self._offload_call(self._color_state)
+
+    def _arm_color_revert(self) -> None:
+        self._cancel_color_revert()
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return  # no event loop (tests) — the FE countdown still guards the UI
+        self._color_revert_deadline = time.monotonic() + self._COLOR_REVERT_SECS
+        self._color_revert_task = asyncio.create_task(self._color_revert_after())
+
+    def _cancel_color_revert(self) -> None:
+        if self._color_revert_task is not None:
+            self._color_revert_task.cancel()
+            self._color_revert_task = None
+        self._color_revert_deadline = None
+
+    def _drop_color_preview(self) -> None:
+        self._cancel_color_revert()
+        self._color_preview = None
+        self._color_preview_target = None
+
+    async def _color_revert_after(self) -> None:
+        try:
+            await asyncio.sleep(self._COLOR_REVERT_SECS)
+            self._do_color_revert()
+        except asyncio.CancelledError:
+            pass
+
+    def _do_color_revert(self) -> None:
+        """Drop the unconfirmed preview and re-apply the saved color."""
+        self._color_preview = None
+        self._color_preview_target = None
+        self._color_revert_task = None
+        self._color_revert_deadline = None
+        self._reapply_color()
+
+    async def discard_calibration(
+        self, context_appid=_RPC_CONTEXT_UNSET
+    ) -> dict:
+        self._init()
+        if not self._color_context_is_current("global", None, context_appid):
+            return await self._offload_call(self._color_state)
+        self._drop_color_preview()
+        self._reapply_color()
+        return await self._offload_call(self._color_state)
+
+    async def apply_oled_look(
+        self, scope: str = "global", appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        """One-tap: apply this model's OLED-look preset (calibration + saturation) to the
+        given scope. No-op on OLED panels (no preset). Saved directly."""
+        self._init()
+        if not self._color_context_is_current(scope, appid, context_appid):
+            return await self._offload_call(self._color_state)
+        self._drop_color_preview()
+        look = oled_look_for(self._device)
+        if look is not None:
+            self._color.apply_preset(scope, look, appid=appid)
+            self._reapply_color()
+        return await self._offload_call(self._color_state)
+
+    async def preview_oled_look(
+        self, scope: str, appid=None, context_appid=_RPC_CONTEXT_UNSET
+    ) -> dict:
+        self._init()
+        if not self._color_context_is_current(scope, appid, context_appid):
+            return await self._offload_call(self._color_state)
+        look = oled_look_for(self._device)
+        if look is None:
+            return await self._offload_call(self._color_state)
+        return await self.preview_calibration(
+            self._color._clean_global(look), scope, appid, context_appid
+        )
+
+    async def reset_color(
+        self, scope="global", appid=None, context_appid=_RPC_CONTEXT_UNSET
+    ) -> dict:
+        self._init()
+        if scope not in ("global", "game"):
+            context_appid = scope
+            scope = "global"
+            if not self._color_context_is_current(scope, appid, context_appid):
+                return await self._offload_call(self._color_state)
+        elif context_appid is not _RPC_CONTEXT_UNSET:
+            if not self._color_context_is_current(scope, appid, context_appid):
+                return await self._offload_call(self._color_state)
+            return await self.preview_calibration(
+                dict(COLOR_NATIVE), scope, appid, context_appid
+            )
+        self._drop_color_preview()
+        self._color.reset()
+        self._reapply_color()
+        return await self._offload_call(self._color_state)
+
+    # ---- Night mode (scheduled warm shift) ----------------------------------
+    def _night_state(self) -> dict:
+        n = self._night.get()
+        return {
+            "supported": self._color_backend.supported,
+            **n,
+            "active": self._night_is_active(n),
+        }
+
+    async def get_night_state(self) -> dict:
+        self._init()
+        return await self._offload_call(self._night_state)
+
+    async def set_night(self, patch: dict) -> dict:
+        """Update night-mode settings (any subset) and re-apply at once."""
+        self._init()
+        p = patch if isinstance(patch, dict) else {}
+        self._night.set(
+            warmth=p.get("warmth"), enabled=p.get("enabled"),
+            schedule_enabled=p.get("schedule_enabled"),
+            start=p.get("start"), end=p.get("end"),
+        )
+        self._night_applied = self._night_is_active()
+        self._start_night_loop()  # idempotent — (re)start if it hadn't come up yet
+        self._reapply_color()
+        return await self._offload_call(self._night_state)
+
+    def _start_night_loop(self) -> None:
+        if not self._color_backend.supported:
+            return  # nothing to apply a warm shift to on this host
+        if self._night_task is not None and not self._night_task.done():
+            return
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return  # no running event loop → skip task creation
+        self._night_applied = self._night_is_active()
+        self._night_task = asyncio.create_task(self._night_loop())
+
+    def _stop_night_loop(self) -> None:
+        if self._night_task is not None:
+            self._night_task.cancel()
+            self._night_task = None
+
+    async def _night_loop(self) -> None:
+        """Re-apply only when the active state crosses a schedule edge."""
+        try:
+            while True:
+                await asyncio.sleep(_NIGHT_TICK_S)
+                active = self._night_is_active()
+                if active != self._night_applied:
+                    self._night_applied = active
+                    self._reapply_color()
+        except asyncio.CancelledError:
+            pass
+
+    # ---- HDR output ----------------------------------------------------------
+    def _hdr_supported(self) -> bool:
+        return self._device.hdr and self._color_backend.supported
+
+    def _hdr_state(self) -> dict:
+        return {
+            "supported": self._hdr_supported(),
+            "enabled": self._color.hdr(self._current_appid),  # per-game (own or global)
+            "follows_global": self._color.is_following_global(self._current_appid),
+        }
+
+    def _reapply_hdr(self) -> None:
+        # Gate on the effective per-game HDR (skips a no-op executor hop on the common
+        # path); the supported probe (may spawn gamescopectl) runs off-loop below.
+        if self._color.hdr(self._current_appid):
+            self._offload(self._reapply_hdr_sync)
+
+    def _reapply_hdr_sync(self) -> None:
+        """Re-assert HDR ON (never force a supported panel OUT of an HDR mode set
+        elsewhere, e.g. Steam's own toggle)."""
+        try:
+            if self._hdr_supported() and self._color.hdr(self._current_appid):
+                ok = self._hdr_backend.set_enabled(True)
+                self._log_display_transition("hdr", ok=ok is not False, enabled=True)
+        except Exception as error:  # noqa: BLE001
+            self._log_display_transition("hdr", ok=False, error=type(error).__name__)
+
+    async def get_hdr_state(self) -> dict:
+        self._init()
+        return await self._offload_call(self._hdr_state)
+
+    async def set_hdr(self, patch: dict, scope: str = "global", appid=None) -> dict:
+        """Turn HDR on/off for a scope and apply at once (an explicit toggle applies both
+        states, unlike the resume re-assert which only re-asserts ON)."""
+        self._init()
+        p = patch if isinstance(patch, dict) else {}
+        if "enabled" in p:
+            self._color.set_hdr(scope, bool(p["enabled"]), appid=appid)
+        enabled = self._color.hdr(self._current_appid)
+        # Off-loop: set_enabled spawns gamescopectl (a no-op when gamescope is absent).
+        self._offload(lambda: self._hdr_backend.set_enabled(enabled))
+        # Then re-assert the color look — gamescope can drop the loaded LUT on a mode switch.
+        self._reapply_color()
+        return await self._offload_call(self._hdr_state)
+
+    async def _read_applied(self):
+        # Only subprocess-backed backends (ryzenadj fallback) need the executor;
+        # sysfs reads (firmware-attr/intel/deck) and acpi-alib (None) are cheap inline.
+        b = self._tdp_backend
+        if getattr(b, "blocking", False):
+            return await self._offload_call(b.read_applied)
+        return b.read_applied()
+
+    async def _read_tdp_observation(self):
+        return self._remember_tdp_observation(
+            await self._offload_call(self._observe_tdp_sync)
+        )
+
+    async def _read_tdp_state(self):
+        observation = await self._read_tdp_observation()
+        return await self._offload_call(
+            lambda: self._tdp_state(observation)
+        )
+
+    async def get_tdp_state(self) -> dict:
+        self._init()
+        self._retry_tdp_storage_migrations()
+        await self._ensure_recognised_desktop_migration()
+        await self._retry_delayed_tdp_recovery()
+        await self._probe_tdp_backend()
+        return await self._read_tdp_state()
+
+    async def set_low_battery_tdp_hold(self, enabled: bool) -> dict:
+        self._init()
+        available = bool(self._low_battery_hold_capability_strategy())
+        self._settings["low_battery_tdp_hold"] = bool(enabled) and available
+        self._save()
+        if self._settings["low_battery_tdp_hold"]:
+            await self._apply_tdp_now("low-battery-hold-toggle")
+            await self._offload_call(self._tdp_guard_tick)
+        else:
+            restored = await self._offload_call(self._release_low_battery_hold)
+            if not restored:
+                self._tdp_status = "rejected"
+                self._tdp_reason = "low_battery_hold_restore_failed"
+            elif self._low_battery_hold_backend is not None:
+                await self._apply_tdp_now("low-battery-hold-toggle-off")
+            else:
+                self._low_battery_hold_last_failure = None
+                self._low_battery_hold_cached_reassert_s = None
+        return await self._read_tdp_state()
+
+    def _tdp_targets_match_observation(self, observation, backend) -> bool:
+        targets = self._tdp_targets
+        if targets is None or self._tdp_status != "in_sync":
+            return False
+        readings = observation.surfaces.get(backend.name, {})
+        tolerance = int(getattr(backend, "read_tolerance_w", 0))
+        for rail, target in targets.target.items():
+            reading = readings.get(rail)
+            applied = reading.applied_w if reading is not None else None
+            if applied is None or abs(int(applied) - int(target)) > tolerance:
+                return False
+        return bool(targets.target)
+
+    def _tdp_state(self, observation) -> dict:
+        overclock = self._steamdeck_overclock_state()
+        limits = self._limits(overclock)
+        safe_limits = self._safe_limits(overclock)
+        levels, active, ac = self._effective_levels(
+            self._current_appid,
+            limits=limits,
+        )
+        global_levels, _active, _ac = self._effective_levels(
+            None,
+            ac,
+            limits=limits,
+        )
+        auto_limits = self._auto_power_limits(observation)
+        auto_request_limits = self._auto_request_limits()
+        eff = self._tdp_profiles.effective(self._current_appid)
+        safe_active = self._safe_active_max(ac)
+        ll = self._cap_level_limits(
+            self._tdp_backend.level_limits(),
+            active,
+            self._manual_boost(eff, self._current_appid),
+            safe_max=safe_active,
+            pl1=eff["pl1"],
+        )
+        geff = self._tdp_profiles.effective(None)
+        requested_levels = self._clamp_requested_levels(eff, active, ll)
+        global_requested_levels = self._clamp_requested_levels(
+            geff,
+            active,
+            self._cap_level_limits(
+                self._tdp_backend.level_limits(),
+                active,
+                self._manual_boost(geff, None),
+                safe_max=safe_active,
+                pl1=geff["pl1"],
+            ),
+        )
+        observation_backend = self._tdp_observation_backend()
+        primary = observation.surfaces.get(observation_backend.name, {})
+        primary_rail = getattr(observation_backend, "primary_rail", "pl1")
+        primary_reading = primary.get(primary_rail)
+        applied_w = primary_reading.applied_w if primary_reading is not None else None
+        ppt_capability = getattr(self._tdp_backend, "ppt_capability", None)
+        ppt = ppt_capability() if callable(ppt_capability) else None
+        if ppt is not None:
+            slow = primary.get("pl2")
+            fast = primary.get("pl3")
+            ppt = {
+                **ppt,
+                "requested": {"slow": levels["pl2"], "fast": levels["pl3"]},
+                "applied": {
+                    "slow": slow.applied_w if slow is not None else None,
+                    "fast": fast.applied_w if fast is not None else None,
+                },
+            }
+        low_battery_hold = self._low_battery_hold_decision(ac)
+        hold_available = bool(self._low_battery_hold_capability_strategy())
+        hold_enabled = (
+            self._settings.get("low_battery_tdp_hold") is True
+            and hold_available
+        )
+        sidecar_active = self._low_battery_sidecar_active()
+        hold_verified = self._tdp_targets_match_observation(
+            observation,
+            observation_backend,
+        )
+        hold_active = (
+            low_battery_hold.active
+            and not self._low_battery_hold_recovery_pending
+            and (
+                sidecar_active
+                and not self._low_battery_hold_last_failure
+                if self._low_battery_hold_backend is not None
+                else hold_verified
+            )
+        )
+        return {
+            "supported": self._tdp_supported(),
+            "auto_supported": self._auto_tdp_supported(),
+            "backend": self._tdp_backend.name,
+            "recovery_pending": (
+                self._tdp_delayed_recovery_pending()
+                or self._low_battery_hold_recovery_pending
+            ),
+            "request_min": self._tdp_request_min(),
+            "unit": getattr(self._tdp_backend, "unit", "W"),
+            "level_frequencies": (
+                self._tdp_backend.level_table()
+                if callable(getattr(self._tdp_backend, "level_table", None))
+                else None
+            ),
+            "limits": {"min": safe_limits.min_w, "default": safe_limits.default_w,
+                       "max": safe_limits.max_w, "max_ac": safe_limits.max_ac_w},
+            "manual_max_ac": limits.max_ac_w,
+            "extra_needs_accessory": (
+                is_strix_halo(self._device) and limits.max_ac_w > safe_limits.max_ac_w
+            ),
+            "auto_limits": {
+                "min": auto_limits.min_w,
+                "default": auto_limits.default_w,
+                "max": auto_limits.max_w,
+                "max_ac": auto_limits.max_ac_w,
+            },
+            "auto_request_limits": {
+                "min": auto_request_limits.min_w,
+                "default": auto_request_limits.default_w,
+                "max": auto_request_limits.max_w,
+                "max_ac": auto_request_limits.max_ac_w,
+            },
+            "overclock": overclock,
+            "on_ac": ac,
+            "appid": self._current_appid,
+            "has_game_profile": (self._current_appid is not None
+                                 and self._tdp_profiles.has_game(self._current_appid)),
+            # Whether this game is applying the global profile (no own value, or its own
+            # is toggled to follow global). Powers the "usa el global / usa el propio" UI.
+            "follows_global": self._tdp_profiles.is_following_global(self._current_appid),
+            "watts": self._clamp_tdp_request(eff["watts"], active),
+            "global_watts": self._clamp_tdp_request(
+                geff["watts"],
+                active,
+            ),
+            "applied_w": applied_w,
+            "primary_rail": primary_rail,
+            "ppt": ppt,
+            "supports_auto_tdp": self._auto_tdp_supported(),
+            "supports_advanced": ("pl2" in ll or "pl3" in ll),
+            "level_limits": self._cap_level_limits(
+                self._tdp_backend.level_limits(),
+                self._active_max(safe_limits, ac),
+                self._manual_boost(eff, self._current_appid),
+            ),
+            "levels": levels,
+            "requested_levels": requested_levels,
+            "boost_mode": eff["mode"],
+            "global_levels": global_levels,
+            "global_requested_levels": global_requested_levels,
+            "global_boost_mode": geff["mode"],
+            "auto_config": self._auto_config(self._current_appid),
+            "global_auto_config": self._auto_config(None),
+            "auto_target_max_fps": self._auto_target_max_fps(),
+            # The learned band for this game (powers the separate TDP suggestion card).
+            # The battery↔performance dial that picks a value inside it is now LOCAL UI
+            # state — applying it is a fixed manual setpoint, not a loop parameter.
+            "learned": self._tdp_learned_info(self._current_appid),
+            "presets": self._tdp_presets(self._automatic_limits(safe_limits)),
+            # Selectable firmware performance modes; empty on devices without them.
+            "firmware_modes": self._firmware_choices(),
+            "firmware_mode": self._firmware_mode(),
+            "low_battery_hold": {
+                "available": hold_available,
+                "enabled": hold_enabled,
+                "active": hold_active,
+                "verified": hold_active and hold_verified,
+                "status": (
+                    "recovery_pending"
+                    if self._low_battery_hold_recovery_pending
+                    else "verified" if hold_active and hold_verified
+                    else "unverified" if hold_active
+                    else "failed" if (
+                        self._low_battery_hold_last_failure
+                        and (
+                            self._low_battery_hold_backend is not None
+                            or low_battery_hold.active
+                        )
+                    ) or (
+                        low_battery_hold.active
+                        and self._tdp_status == "rejected"
+                    )
+                    else "inactive"
+                ),
+                "applied_w": applied_w if hold_active and hold_verified else None,
+                "reason": self._low_battery_hold_last_failure or low_battery_hold.reason,
+            },
+            "ownership": self._tdp_ownership_state(observation),
+            # Master switch + one-time-notice flags (durable across reboot; the
+            # frontend gates monitor-only mode + the first-run modals off these).
+            "tdp_control_enabled": self._tdp_control_on(),
+            "seen_autotdp_notice": bool(self._settings.get("seen_autotdp_notice", False)),
+            "seen_tdp_conflict_takeover": bool(
+                self._settings.get("seen_tdp_conflict_takeover", False)),
+        }
+
+    def _tdp_ownership_state(self, observation):
+        requested = (
+            dict(self._tdp_targets.requested)
+            if self._tdp_targets is not None
+            else {}
+        )
+        target = (
+            dict(self._tdp_targets.target)
+            if self._tdp_targets is not None
+            else {}
+        )
+        applied = {}
+        observation_backend = self._tdp_observation_backend()
+        primary = observation.surfaces.get(observation_backend.name, {})
+        for rail, reading in primary.items():
+            applied[rail] = reading.applied_w
+        return {
+            "status": self._tdp_status,
+            "reason": self._tdp_reason,
+            "requested": requested,
+            "target": target,
+            "applied": applied,
+            "surfaces": observation.as_dict()["surfaces"],
+            "conflict_persistent": self._tdp_conflict_persistent,
+            "failures": self._tdp_reconcile_memory.failures,
+            "handoff_required": self._os_id == "anatase",
+            "external_owner": self._tdp_external_owner,
+            "overshoot": self._overshoot_view(),
+            "menu_floor": bool(self._tdp_menu_rail_floors()) and self._tdp_menu_context(),
+        }
+
+    def _overshoot_clock(self):
+        return getattr(self, "_tdp_overshoot_clock", None) or time.monotonic()
+
+    def _overshoot_view(self):
+        monitor = self._overshoot_monitor()
+        last = monitor.last
+        clock = self._overshoot_clock()
+        if (
+            last is None
+            or self._current_appid is None
+            or monitor.observed_at is None
+            or clock - monitor.observed_at > _OVERSHOOT_VIEW_STALE_S
+        ):
+            return None
+        age = clock - float(last["at"])
+        if last["state"] == "restored" and age > 90.0:
+            return None
+        return {
+            "state": last["state"],
+            "target_w": last["target_w"],
+            "peak_w": last["peak_w"],
+            "age_s": round(age, 1),
+        }
+
+    @staticmethod
+    def _auto_focus_kind(focus):
+        if focus is None:
+            return None
+        return "steam" if focus == "steam" else "game"
+
+    def _auto_report_event(self, event, now):
+        if not isinstance(event, dict):
+            return None
+        out = {
+            key: event.get(key)
+            for key in (
+                "state",
+                "reason",
+                "setpoint",
+                "fps",
+                "target_fps",
+                "signal_age_s",
+                "seed_source",
+                "seed_watts",
+                "held_watts",
+                "pending_min_fps",
+            )
+        }
+        out["focus"] = self._auto_focus_kind(event.get("focus"))
+        try:
+            out["age_s"] = round(max(0.0, now - float(event["at"])), 3)
+        except (KeyError, TypeError, ValueError, OverflowError):
+            out["age_s"] = None
+        return out
+
+    def _auto_tdp_diagnostics(self, tdp_state, power_state):
+        tdp_state = tdp_state if isinstance(tdp_state, dict) else {}
+        power_state = power_state if isinstance(power_state, dict) else {}
+        now = _monotonic()
+        status = dict(getattr(self, "_auto_status", {}) or {})
+        config = tdp_state.get("auto_config")
+        config = config if isinstance(config, dict) else {}
+        auto_limits = tdp_state.get("auto_limits")
+        auto_limits = auto_limits if isinstance(auto_limits, dict) else {}
+        ownership = tdp_state.get("ownership")
+        ownership = ownership if isinstance(ownership, dict) else {}
+        enabled = config.get("enabled")
+        if enabled is None:
+            enabled = power_state.get("auto_tdp")
+        supported = tdp_state.get("supports_auto_tdp")
+        if supported is None:
+            supported = tdp_state.get("auto_supported")
+
+        transitions = [
+            self._auto_report_event(event, now)
+            for event in list(getattr(self, "_auto_transitions", ()))
+        ]
+        transitions = [event for event in transitions if event is not None]
+        samples = [
+            self._auto_report_event(event, now)
+            for event in list(getattr(self, "_auto_history", ()))
+        ]
+        samples = [event for event in samples if event is not None]
+        last_pre_ui = self._auto_report_event(
+            getattr(self, "_auto_last_pre_ui", None),
+            now,
+        )
+        if last_pre_ui is None:
+            last_pre_ui = next(
+                (
+                    event
+                    for event in reversed(samples)
+                    if event.get("reason") != "ui_active"
+                ),
+                None,
+            )
+
+        stats_diagnostics = getattr(self._gamescope_stats, "diagnostics", None)
+        signal = stats_diagnostics() if callable(stats_diagnostics) else {}
+        signal = dict(signal) if isinstance(signal, dict) else {}
+        signal["reader_requested"] = bool(self._auto_stats_reader_active)
+        gpu_diagnostics = getattr(self._power_reader, "gpu_diagnostics", None)
+        gpu_activity = gpu_diagnostics() if callable(gpu_diagnostics) else None
+        if isinstance(gpu_activity, dict):
+            signal["gpu_activity"] = gpu_activity
+        signal_source = last_pre_ui if status.get("reason") == "ui_active" else status
+        if signal_source:
+            signal["focus"] = self._auto_focus_kind(signal_source.get("focus"))
+            if signal.get("fps") is None:
+                signal["fps"] = signal_source.get("fps")
+            if signal.get("sample_age_s") is None:
+                signal["sample_age_s"] = signal_source.get("signal_age_s")
+
+        on_ac = tdp_state.get("on_ac")
+        active_max = auto_limits.get("max_ac") if on_ac else auto_limits.get("max")
+        minimum = auto_limits.get("min")
+        configured_minimum = config.get("min_tdp")
+        configured_maximum = config.get("max_tdp")
+        if minimum is not None and active_max is not None:
+            if configured_minimum is not None:
+                minimum = max(minimum, min(configured_minimum, active_max))
+            if configured_maximum is not None:
+                active_max = max(
+                    auto_limits.get("min"),
+                    min(configured_maximum, active_max),
+                )
+        try:
+            learning = self._auto_learning.diagnostics(
+                self._current_appid,
+                config.get("target_fps") or status.get("target_fps") or 40,
+                bool(on_ac),
+                minimum if minimum is not None else 0,
+                active_max if active_max is not None else minimum or 0,
+            )
+        except Exception as error:  # noqa: BLE001
+            learning = {"error": type(error).__name__}
+        learning = {
+            "enabled": bool(self._settings.get("telemetry_enabled", True)),
+            "active": bool(self._learning_active()),
+            "seed_source": status.get("seed_source"),
+            "seed_watts": status.get("seed_watts"),
+            **learning,
+        }
+
+        game_present = self._current_appid is not None
+        module_enabled = self._module_enabled("autoTdp")
+        profile_enabled = bool(enabled)
+        firmware_custom = self._firmware_mode() == _CUSTOM_MODE
+        control_enabled = self._tdp_control_on()
+        write_authorized = self._tdp_write_authorized()
+        eco_clear = not bool(self._settings.get("eco_enabled"))
+        eligible = bool(
+            game_present
+            and module_enabled
+            and profile_enabled
+            and firmware_custom
+            and control_enabled
+            and write_authorized
+            and eco_clear
+            and supported
+        )
+        task = getattr(self, "_auto_task", None)
+        last_tick = getattr(self, "_auto_last_tick_at", None)
+        retry_at = float(getattr(self, "_auto_apply_retry_at", 0.0) or 0.0)
+        blocked = bool(getattr(self, "_auto_apply_blocked", False))
+        active = bool(
+            getattr(self, "_auto_controller", None) is not None
+            and self._auto_setpoint is not None
+            and eligible
+        )
+
+        return {
+            "schema": 1,
+            "supported": supported,
+            "enabled": enabled,
+            "eligible": eligible,
+            "active": active,
+            "state": status.get("state"),
+            "reason": status.get("reason"),
+            "target_fps": status.get("target_fps") or config.get("target_fps"),
+            "fps": status.get("fps"),
+            "signal_age_s": status.get("signal_age_s"),
+            "setpoint_w": status.get("setpoint", power_state.get("setpoint")),
+            "applied_w": tdp_state.get("applied_w", power_state.get("applied")),
+            "on_ac": on_ac,
+            "profile_scope": (
+                "global"
+                if not game_present
+                else "follow_global"
+                if tdp_state.get("follows_global")
+                else "game"
+            ),
+            "configured": {
+                "target_fps": config.get("target_fps"),
+                "initial_tdp_w": config.get("initial_tdp"),
+                "min_tdp_w": config.get("min_tdp"),
+                "max_tdp_w": config.get("max_tdp"),
+            },
+            "effective_range": {"min_w": minimum, "max_w": active_max},
+            "gates": {
+                "game_present": game_present,
+                "module_enabled": module_enabled,
+                "profile_enabled": profile_enabled,
+                "firmware_custom": firmware_custom,
+                "control_enabled": control_enabled,
+                "write_authorized": write_authorized,
+                "eco_clear": eco_clear,
+            },
+            "signal": signal,
+            "apply": {
+                "confirmed": bool(getattr(self, "_auto_applied", False)),
+                "blocked": blocked,
+                "attempts": int(getattr(self, "_auto_apply_attempts", 0)),
+                "retry_in_s": round(max(0.0, retry_at - now), 3) if blocked else 0.0,
+                "exhausted": bool(
+                    getattr(self, "_auto_apply_exhausted", False)
+                ),
+                "tdp_status": ownership.get("status"),
+                "tdp_reason": ownership.get("reason"),
+            },
+            "ui": {
+                "active": bool(self._ui_active),
+                "focus_hold": bool(self._auto_focus_hold_active),
+                "held_watts": status.get("held_watts"),
+            },
+            "learning": learning,
+            "task": {
+                "alive": bool(task is not None and not task.done()),
+                "last_tick_age_s": (
+                    round(max(0.0, now - float(last_tick)), 3)
+                    if last_tick is not None
+                    else None
+                ),
+                "last_error": getattr(self, "_auto_last_error", None),
+            },
+            "last_pre_ui": last_pre_ui,
+            "transitions": transitions,
+            "samples": samples,
+        }
+
+    def _tdp_diagnostics(self):
+        return {
+            "generation": self._tdp_generation,
+            "backend": self._tdp_backend.name,
+            "backend_descriptor": self._tdp_backend_diagnostics(),
+            "backend_history": list(self._tdp_backend_history),
+            "desktop_recognition_migration": {
+                "pending": bool(
+                    getattr(self, "_desktop_recognition_migration_pending", False)
+                ),
+                "last_failure": getattr(
+                    self,
+                    "_desktop_recognition_migration_last_failure",
+                    None,
+                ),
+            },
+            "history": list(self._tdp_history),
+            "menu_rail_floors": {
+                "floors": self._tdp_menu_rail_floors(),
+                "active": self._tdp_menu_context(),
+            },
+            "overshoot": {
+                **self._overshoot_monitor().as_dict(),
+                "profile_change": self._platform_profile_watch().last_change,
+            },
+            "auto": {
+                "status": dict(self._auto_status),
+                "history": list(self._auto_history),
+            },
+            "steamdeck_ppt": {
+                "previous": self._settings.get("steamdeck_ppt_previous"),
+                "overclock": self._steamdeck_overclock_state(),
+                "recovery_blocked": bool(
+                    getattr(self, "_steamdeck_ppt_recovery_blocked", False)
+                ),
+                "last_failure": getattr(self, "_steamdeck_ppt_last_failure", None),
+                "history": list(getattr(self, "_steamdeck_ppt_history", ())),
+            },
+        }
+
+    @staticmethod
+    def _probe_tdp_candidate(candidate) -> dict:
+        probe = getattr(candidate, "probe", None)
+        if not callable(probe):
+            return {"ready": bool(candidate.supported), "error": None}
+        try:
+            return {"ready": bool(probe()), "error": None}
+        except Exception as error:  # noqa: BLE001
+            decky.logger.warning(
+                "TDP backend probe failed (%s): %s",
+                candidate.name,
+                type(error).__name__,
+            )
+            return {"ready": False, "error": type(error).__name__}
+
+    def _record_tdp_backend_transition(
+        self,
+        previous,
+        probe,
+        release,
+        replacement,
+        replacement_probe,
+        outcome,
+        handoff=None,
+    ) -> None:
+        event = {
+            "at": round(time.monotonic(), 3),
+            "previous": previous.name,
+            "probe": dict(probe),
+            "release": release,
+            "selected": replacement.name if replacement is not None else None,
+            "selection_trace": [
+                dict(item)
+                for item in getattr(replacement, "probe_trace", ())
+            ],
+            "replacement_probe": replacement_probe,
+            "outcome": outcome,
+            "handoff": handoff,
+        }
+        last = self._tdp_backend_history[-1] if self._tdp_backend_history else None
+        if last is not None and all(
+            last.get(key) == value for key, value in event.items() if key != "at"
+        ):
+            last["repeats"] = last.get("repeats", 0) + 1
+            last["last_at"] = event["at"]
+            return
+        self._tdp_backend_history.append(event)
+        log = decky.logger.info if outcome == "reselected" else decky.logger.warning
+        log(
+            "TDP backend transition %s",
+            json.dumps(event, sort_keys=True, separators=(",", ":")),
+        )
+
+    def _replace_unviable_tdp_backend(self, previous, probe) -> bool:
+        if getattr(previous, "safety_locked", False):
+            recovered = self._recover_tdp_backend_if_owned()
+            if recovered:
+                retry = self._probe_tdp_candidate(previous)
+                if retry["ready"]:
+                    self._tdp_status = "settling"
+                    self._tdp_reason = ""
+                    self._record_tdp_backend_transition(
+                        previous,
+                        retry,
+                        None,
+                        previous,
+                        retry,
+                        "recovered",
+                    )
+                    return True
+            self._tdp_status = "unsupported"
+            self._tdp_reason = "recovery_pending"
+            self._record_tdp_backend_transition(
+                previous, probe, None, None, None, "recovery_pending"
+            )
+            return False
+        selection_ready = getattr(previous, "selection_ready", None)
+        if callable(selection_ready):
+            try:
+                route_viable = bool(selection_ready())
+            except Exception as error:  # noqa: BLE001
+                route_viable = False
+                decky.logger.warning(
+                    "TDP route viability check failed (%s): %s",
+                    previous.name,
+                    type(error).__name__,
+                )
+            if route_viable:
+                self._tdp_status = "unsupported"
+                self._tdp_reason = "temporarily_unready"
+                self._record_tdp_backend_transition(
+                    previous,
+                    probe,
+                    None,
+                    None,
+                    None,
+                    "temporarily_unready",
+                )
+                return False
+        if self._tdp_backend_used and not getattr(
+            previous,
+            "reselection_safe_after_use",
+            False,
+        ):
+            self._tdp_status = "unsupported"
+            self._tdp_reason = "backend_in_use"
+            handoff = self._restore_hhd_after_tdp_route_loss()
+            if handoff is not None and not handoff.get("ok"):
+                self._tdp_status = "rejected"
+                self._tdp_reason = "handoff_failed"
+            self._record_tdp_backend_transition(
+                previous,
+                probe,
+                None,
+                None,
+                None,
+                "backend_in_use",
+                handoff,
+            )
+            return False
+        if not self._desktop_power.can_replace_cpu_backend():
+            self._tdp_status = "unverifiable"
+            self._tdp_reason = "desktop_power_owned"
+            self._record_tdp_backend_transition(
+                previous, probe, None, None, None, "desktop_power_owned"
+            )
+            return False
+        release = getattr(previous, "release", None)
+        released = True
+        release_error = None
+        if callable(release):
+            try:
+                released = bool(release())
+            except Exception as error:  # noqa: BLE001
+                released = False
+                release_error = type(error).__name__
+                decky.logger.warning(
+                    "TDP backend release failed (%s): %s",
+                    previous.name,
+                    release_error,
+                )
+        release_result = {"ok": released}
+        if release_error is not None:
+            release_result["error"] = release_error
+        if not released:
+            self._tdp_status = "rejected"
+            self._tdp_reason = "release_failed"
+            self._record_tdp_backend_transition(
+                previous,
+                probe,
+                release_result,
+                None,
+                None,
+                "release_failed",
+            )
+            return False
+        self._tdp_backend_used = False
+        self._advance_tdp_generation()
+        self._tdp_targets = None
+        self._tdp_observation = TdpObservation(
+            readable=bool(getattr(previous, "readback", True)),
+        )
+        self._tdp_observation_at = float("-inf")
+        self._tdp_conflict_persistent = False
+        selection_error = None
+        try:
+            replacement = tdp_factory.select_backend(
+                self._device,
+                os_id=self._os_id,
+                desktop_ceiling_hint_w=handoff_cpu_ceiling_w(
+                    self._settings.get("desktop_power_handoff")),
+            )
+        except Exception as error:  # noqa: BLE001
+            selection_error = type(error).__name__
+            decky.logger.warning(
+                "TDP backend selection failed: %s",
+                selection_error,
+            )
+            replacement = NullBackend("backend selection failed")
+            replacement.probe_trace = ({
+                "candidate": "factory",
+                "backend": None,
+                "supported": False,
+                "error": selection_error,
+            },)
+        self._desktop_power.replace_cpu_backend(replacement)
+        self._tdp_backend = replacement
+        self._reset_power_values_on_unit_change()
+        self._tdp_observation = TdpObservation(
+            readable=bool(getattr(replacement, "readback", True)),
+        )
+        self._tdp_observation_at = float("-inf")
+        self._tdp_conflict_persistent = False
+        if not self._recover_tdp_backend_if_owned():
+            self._tdp_status = "unsupported"
+            self._tdp_reason = "recovery_pending"
+            self._record_tdp_backend_transition(
+                previous,
+                probe,
+                release_result,
+                replacement,
+                None,
+                "recovery_pending",
+            )
+            return False
+        replacement_probe = self._probe_tdp_candidate(replacement)
+        ready = replacement_probe["ready"]
+        if ready:
+            self._tdp_status = "settling"
+            self._tdp_reason = ""
+            outcome = "reselected"
+        else:
+            self._tdp_status = "unsupported"
+            if selection_error is not None:
+                self._tdp_reason = "selection_failed"
+                outcome = "selection_failed"
+            else:
+                self._tdp_reason = "readback_unavailable"
+                outcome = "replacement_unready"
+        handoff = None if ready else self._restore_hhd_after_tdp_route_loss()
+        if handoff is not None and not handoff.get("ok"):
+            self._tdp_status = "rejected"
+            self._tdp_reason = "handoff_failed"
+        self._record_tdp_backend_transition(
+            previous,
+            probe,
+            release_result,
+            replacement,
+            replacement_probe,
+            outcome,
+            handoff,
+        )
+        return ready
+
+    async def _probe_tdp_backend(self, *, force: bool = False) -> bool:
+        async with self._tdp_probe_lock:
+            backend = self._tdp_backend
+            now = _monotonic()
+            if not force and now < self._tdp_reprobe_at:
+                return False
+            probe = getattr(backend, "probe", None)
+            if (
+                callable(probe)
+                and not force
+                and not getattr(backend, "probe_pending", True)
+            ):
+                return bool(backend.supported)
+            probe_result = await self._offload_call(
+                lambda: self._probe_tdp_candidate(backend)
+            )
+            if probe_result["ready"]:
+                self._tdp_reprobe_at = 0.0
+                return True
+            ready = bool(await self._offload_call(
+                lambda: self._replace_unviable_tdp_backend(
+                    backend,
+                    probe_result,
+                )
+            ))
+            self._tdp_reprobe_at = (
+                0.0 if ready else now + _TDP_BACKEND_REPROBE_S
+            )
+            self._start_tdp_guard_loop()
+            return ready
+
+    def _tdp_delayed_recovery_pending(self) -> bool:
+        return bool(
+            self._os_id == "bazzite"
+            and self._device.key == "legion_go_2"
+            and self._tdp_backend.name == "firmware-attr:lenovo-wmi-other"
+            and getattr(self._tdp_backend, "safety_locked", False)
+        )
+
+    async def _retry_delayed_tdp_recovery(self) -> bool:
+        if not self._tdp_delayed_recovery_pending():
+            return False
+        recovered = bool(
+            await self._offload_call(self._recover_tdp_runtime_transaction)
+        )
+        if recovered:
+            self._advance_tdp_generation()
+            self._tdp_targets = None
+            self._tdp_status = "settling"
+            self._tdp_reason = ""
+            self._start_tdp_guard_loop()
+        return recovered
+
+    def _recover_tdp_runtime_transaction(self) -> bool:
+        if not getattr(self._tdp_backend, "safety_locked", False):
+            return True
+        recover = getattr(self._tdp_backend, "recover_runtime_transaction", None)
+        if not callable(recover):
+            return True
+        try:
+            result = recover()
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error(
+                "Interrupted TDP transaction recovery failed: %s",
+                type(error).__name__,
+            )
+            return False
+        ok = bool(isinstance(result, dict) and result.get("ok"))
+        log = decky.logger.info if ok else decky.logger.warning
+        detail = result.get("detail") if isinstance(result, dict) else "invalid response"
+        log("Interrupted TDP transaction recovery: %s", detail)
+        return ok
+
+    def _recover_tdp_backend_if_owned(self) -> bool:
+        if not getattr(self._tdp_backend, "safety_locked", False):
+            return True
+        if not self._tdp_write_authorized():
+            return False
+        return self._recover_tdp_runtime_transaction()
+
+    def _tdp_supported(self) -> bool:
+        if getattr(self, "_low_battery_hold_recovery_pending", False):
+            return False
+        if not self._tdp_backend.supported:
+            return False
+        ready = getattr(self._tdp_backend, "ready", None)
+        if not callable(ready):
+            return True
+        try:
+            return bool(ready())
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _auto_tdp_supported(self) -> bool:
+        return bool(
+            self._tdp_supported()
+            and getattr(self._tdp_backend, "readback", True)
+            and getattr(self._tdp_backend, "auto_tdp_safe", True)
+            and getattr(self._tdp_backend, "auto_tdp_supported", True)
+        )
+
+    def _tdp_backend_diagnostics(self):
+        errors = {}
+        try:
+            limits = self._limits()
+            limit_values = {
+                "min": limits.min_w,
+                "default": limits.default_w,
+                "max": limits.max_w,
+                "max_ac": limits.max_ac_w,
+            }
+            limits_source = "backend"
+        except Exception as exc:  # noqa: BLE001
+            errors["limits"] = type(exc).__name__
+            limit_values = {
+                "min": self._device.tdp_min,
+                "default": self._device.tdp_default,
+                "max": self._device.tdp_max,
+                "max_ac": self._device.tdp_max_charger,
+            }
+            limits_source = "profile_fallback"
+        try:
+            level_limits = self._tdp_backend.level_limits()
+        except Exception as exc:  # noqa: BLE001
+            errors["level_limits"] = type(exc).__name__
+            level_limits = {}
+        backend_diagnostics = getattr(self._tdp_backend, "diagnostics", None)
+        try:
+            backend_detail = backend_diagnostics() if callable(backend_diagnostics) else {}
+        except Exception as exc:  # noqa: BLE001
+            errors["backend_diagnostics"] = type(exc).__name__
+            backend_detail = {}
+        try:
+            levels = self._tdp_backend.physical_levels(
+                self._tdp_profiles.effective(None)
+            )
+            rails = sorted(levels)
+        except Exception as exc:  # noqa: BLE001
+            errors["rails"] = type(exc).__name__
+            rails = []
+        hold = self._low_battery_hold_decision()
+        sidecar = getattr(self, "_low_battery_hold_backend", None)
+        sidecar_diagnostics = getattr(sidecar, "diagnostics", None)
+        if sidecar is None:
+            sidecar_detail = None
+        else:
+            try:
+                details = sidecar_diagnostics() if callable(sidecar_diagnostics) else {}
+            except Exception as exc:  # noqa: BLE001
+                details = {"diagnostics_error": type(exc).__name__}
+            sidecar_detail = {
+                "backend": getattr(sidecar, "name", "unknown"),
+                "supported": bool(getattr(sidecar, "supported", False)),
+                **details,
+            }
+        observation_backend = sidecar if sidecar is not None else self._tdp_backend
+        hold_verified = self._tdp_targets_match_observation(
+            self._tdp_observation,
+            observation_backend,
+        )
+        hold_active = (
+            hold.active
+            and not self._low_battery_hold_recovery_pending
+            and (
+                self._low_battery_sidecar_active()
+                and not self._low_battery_hold_last_failure
+                if sidecar is not None
+                else hold_verified
+            )
+        )
+        return {
+            "device_key": self._device.key,
+            "generic": bool(self._device.is_generic),
+            "vendor": self._device.vendor,
+            "backend": self._tdp_backend.name,
+            "supported": self._tdp_supported(),
+            "readback": bool(getattr(self._tdp_backend, "readback", True)),
+            "primary_rail": getattr(self._tdp_backend, "primary_rail", "pl1"),
+            "rails": rails,
+            "guard_interval_s": float(
+                getattr(self._tdp_backend, "guard_interval_s", 0.0)
+            ),
+            "heartbeat_s": getattr(self._tdp_backend, "heartbeat_s", None),
+            "authoritative_reassert_s": getattr(
+                self._tdp_backend,
+                "authoritative_reassert_s",
+                None,
+            ),
+            "low_battery_hold": {
+                "strategy": self._low_battery_hold_capability_strategy(),
+                "enabled": self._settings.get("low_battery_tdp_hold") is True,
+                "active": hold_active,
+                "verified": hold_active and hold_verified,
+                "recovery_pending": self._low_battery_hold_recovery_pending,
+                "reason": self._low_battery_hold_last_failure or hold.reason,
+                "battery_percent": hold.battery_percent,
+                "sidecar": sidecar_detail,
+            },
+            "read_tolerance_w": int(
+                getattr(self._tdp_backend, "read_tolerance_w", 0)
+            ),
+            "limits": limit_values,
+            "limits_source": limits_source,
+            "level_limits": level_limits,
+            "backend_detail": backend_detail,
+            "rail_floors": dict(
+                getattr(self._tdp_backend, "_rail_floors", {}) or {}
+            ),
+            "probe_trace": [
+                dict(item)
+                for item in getattr(self._tdp_backend, "probe_trace", ())
+            ],
+            "errors": errors,
+        }
+
+    def _log_tdp_backend_diagnostics(self):
+        descriptor = self._tdp_backend_diagnostics()
+        encoded = json.dumps(
+            descriptor,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        log = (
+            decky.logger.info
+            if descriptor["supported"] and not descriptor["errors"]
+            else decky.logger.warning
+        )
+        log("TDP backend %s", encoded)
+
+    def _tdp_presets(self, limits) -> dict:
+        """Quick-preset watts for the arc's preset buttons. Curated per-model values
+        (device profile) when present, else derived from the rail limits. Clamped to
+        the rail so a preset can never sit above the active ceiling."""
+        p = self._device.tdp_presets
+        if len(p) == 4:
+            quiet, balanced, turbo, turbo_ac = p
+        else:
+            quiet, balanced = limits.min_w, limits.default_w
+            turbo, turbo_ac = limits.max_w, limits.max_ac_w
+        return {"quiet": limits.clamp(quiet), "balanced": limits.clamp(balanced),
+                "turbo": limits.clamp(turbo), "turbo_ac": limits.clamp(turbo_ac)}
+
+    def _resolve_scope(self, scope, appid):
+        """Normalize scope/appid; returns scope or None if invalid."""
+        if scope not in ("global", "game"):
+            self._journal_ignored("invalid_scope", scope=scope, appid=appid)
+            return None
+        if scope == "game" and appid is None:
+            return "global"
+        if scope == "game" and appid is not None:
+            self._set_current_appid(appid)
+        return scope
+
+    @staticmethod
+    def _apply_result(res) -> dict:
+        return {"requested_w": res.requested_w, "applied_w": res.applied_w,
+                "ok": res.ok, "detail": res.detail}
+
+    async def set_tdp_watts(
+        self, watts: int, scope: str, appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if (
+            context_appid is not _RPC_CONTEXT_UNSET
+            and not self._scope_context_is_current(scope, appid, context_appid)
+        ):
+            return {"requested_w": watts, "applied_w": None, "ok": False,
+                    "detail": "stale-context"}
+        if not self._tdp_control_on():
+            return {"requested_w": watts, "applied_w": None, "ok": False,
+                    "detail": "tdp-control-disabled"}
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return {"requested_w": watts, "applied_w": None, "ok": False,
+                    "detail": f"unknown scope: {scope}"}
+        self._clear_eco()  # manual TDP change exits download mode (after scope is valid)
+        self._exit_firmware_mode()  # moving the slider means "I want custom"
+        limits = self._limits()
+        active = self._active_max(limits, read_on_ac())
+        clamped = self._clamp_tdp_request(watts, active)
+        self._tdp_profiles.set_pl1(resolved, clamped, appid=appid)
+        res = await self._apply_tdp_now("manual-watts")
+        return self._apply_result(res)
+
+    async def set_tdp_follow_global(
+        self, follow: bool, appid, context_appid=_RPC_CONTEXT_UNSET
+    ) -> dict:
+        """Toggle a game between its own TDP profile and following the global one,
+        keeping its stored values (never deletes). Re-applies and returns full state."""
+        self._init()
+        if (
+            context_appid is not _RPC_CONTEXT_UNSET
+            and not self._scope_context_is_current(
+                "game", appid, context_appid
+            )
+        ):
+            return await self._read_tdp_state()
+        if appid is not None:
+            self._clear_eco()
+            appid = str(appid)
+            self._set_current_appid(appid)
+            # "Use own" on a game with no profile yet: seed it from the current global so
+            # there's an editable starting value (nothing is ever deleted).
+            if not follow and not self._tdp_profiles.has_game(appid):
+                self._tdp_profiles.create_game_from_global(appid)
+            self._tdp_profiles.set_follow_global(appid, bool(follow))
+            self._reset_auto_session("scope_changed")
+            if (
+                self._tdp_profiles.auto_tdp(self._current_appid)
+                and self._auto_tdp_supported()
+            ):
+                self._ensure_auto_session(
+                    read_on_ac(),
+                    observation=self._tdp_observation,
+                )
+                await self._apply_auto_seed("follow-global")
+            else:
+                await self._apply_tdp_now("follow-global")
+        return await self._read_tdp_state()
+
+    async def set_tdp_firmware_mode(self, mode: str) -> dict:
+        """Select a firmware performance mode (Legion Go original). 'low-power' /
+        'balanced' / 'performance' hand power + fan + LED to the firmware; 'custom'
+        returns control to our TDP slider. Device-global. Returns the fresh TDP state."""
+        self._init()
+        if not self._device.firmware_modes:
+            return await self.get_tdp_state()
+        valid = set(self._firmware_choices()) | {_CUSTOM_MODE}
+        if mode not in valid:
+            return await self.get_tdp_state()
+        self._clear_eco()
+        previous = self._firmware_mode()
+        self._settings["firmware_mode"] = mode
+        result = await self._apply_tdp_now("firmware-mode")
+        if result.ok:
+            self._save()
+        else:
+            self._settings["firmware_mode"] = previous
+            await self._apply_tdp_now("firmware-mode-rollback")
+            self._tdp_status = "rejected"
+            self._tdp_reason = "firmware_mode_rejected"
+        return await self.get_tdp_state()
+
+    async def set_tdp_levels(
+        self, off2: int, off3: int, scope: str, appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        self._init()
+        if (
+            context_appid is not _RPC_CONTEXT_UNSET
+            and not self._scope_context_is_current(scope, appid, context_appid)
+        ):
+            return {"requested_w": 0, "applied_w": None, "ok": False,
+                    "detail": "stale-context"}
+        if not self._tdp_control_on():
+            return {"requested_w": 0, "applied_w": None, "ok": False,
+                    "detail": "tdp-control-disabled"}
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return {"requested_w": 0, "applied_w": None, "ok": False,
+                    "detail": f"unknown scope: {scope}"}
+        self._clear_eco()
+        self._exit_firmware_mode()
+        self._tdp_profiles.set_offsets(resolved, off2, off3, appid=appid)
+        res = await self._apply_tdp_now("manual-levels")
+        # requested_w/applied_w reflect resulting sustained pl1 (readback), not the offsets
+        return self._apply_result(res)
+
+    async def set_tdp_boost_mode(
+        self, mode: str, scope: str, appid=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        """Set the boost behaviour (estable/auto/custom) for a scope and re-apply.
+        Returns the full new state so the UI updates the segmented control + rails in
+        ONE round-trip (the frontend does setTdp with it), avoiding a transient
+        mode/rails mismatch."""
+        self._init()
+        if (
+            context_appid is not _RPC_CONTEXT_UNSET
+            and not self._scope_context_is_current(scope, appid, context_appid)
+        ):
+            return await self._read_tdp_state()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is not None:  # invalid scope → no-op (never from the UI)
+            self._clear_eco()
+            self._tdp_profiles.set_boost_mode(resolved, mode, appid=appid)
+            await self._apply_tdp_now("boost-mode")
+        return await self._read_tdp_state()
+
+    def _preset_wclamp(self):
+        lim = (
+            self._automatic_limits(self._profile_storage_limits(extra=False))
+            if self._device.key == "gpd_win_mini_2025"
+            else self._automatic_limits()
+        )
+        return self._tdp_request_min(), lim.max_ac_w
+
+    async def get_power_presets(self) -> dict:
+        self._init()
+        self._retry_tdp_storage_migrations()
+        return self._power_presets.state()
+
+    async def create_power_preset(self, watts: int, icon: str, boost=None, name="") -> dict:
+        self._init()
+        self._retry_tdp_storage_migrations()
+        lo, hi = self._preset_wclamp()
+        return self._power_presets.create(
+            watts, icon, boost, name=name, min_w=lo, max_w=hi
+        )
+
+    async def update_power_preset(self, cid: str, watts: int, icon: str, boost=None, name="") -> dict:
+        self._init()
+        self._retry_tdp_storage_migrations()
+        lo, hi = self._preset_wclamp()
+        return self._power_presets.update(
+            cid, watts, icon, boost, name=name, min_w=lo, max_w=hi
+        )
+
+    async def delete_power_preset(self, cid: str) -> dict:
+        self._init()
+        self._retry_tdp_storage_migrations()
+        return self._power_presets.delete(cid)
+
+    async def move_power_preset(self, cid: str, direction: int) -> dict:
+        self._init()
+        self._retry_tdp_storage_migrations()
+        return self._power_presets.move(cid, direction)
+
+    async def set_power_preset_hidden(self, cid: str, hidden: bool) -> dict:
+        self._init()
+        self._retry_tdp_storage_migrations()
+        return self._power_presets.set_hidden(cid, bool(hidden))
+
+    async def apply_power_preset(
+        self, watts: int, scope: str, appid=None, boost=None,
+        context_appid=_RPC_CONTEXT_UNSET,
+    ) -> dict:
+        """Apply a preset atomically: sustained watts (+ optional boost mode/offsets) in
+        one re-apply. Mirrors set_tdp_watts' guards. boost=None leaves boost untouched."""
+        self._init()
+        if (
+            context_appid is not _RPC_CONTEXT_UNSET
+            and not self._scope_context_is_current(scope, appid, context_appid)
+        ):
+            return {"requested_w": watts, "applied_w": None, "ok": False,
+                    "detail": "stale-context"}
+        if not self._tdp_control_on():
+            return {"requested_w": watts, "applied_w": None, "ok": False,
+                    "detail": "tdp-control-disabled"}
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return {"requested_w": watts, "applied_w": None, "ok": False,
+                    "detail": f"unknown scope: {scope}"}
+        self._clear_eco()
+        self._exit_firmware_mode()
+        limits = self._automatic_limits()
+        active = self._active_max(limits, read_on_ac())
+        requested = self._clamp_tdp_request(watts, active)
+        self._tdp_profiles.apply_preset(resolved, requested, boost, appid=appid)
+        res = await self._apply_tdp_now("preset")
+        return self._apply_result(res)
+
+    async def create_game_profile(self, appid) -> None:
+        self._init()
+        self._tdp_profiles.create_game_from_global(appid)
+        self._set_current_appid(appid)
+
+    async def set_current_game(self, appid, name=None) -> dict:
+        self._init()
+        next_appid = str(appid) if appid is not None else None
+        next_name = str(name) if (appid is not None and name) else None
+        if (
+            next_appid is not None
+            and next_appid == self._current_appid
+            and next_name != self._current_game_name
+        ):
+            self._current_game_name = next_name
+            await self._refresh_pdc_metrics()
+            return await self.get_tdp_state()
+        leaving_game = self._current_appid is not None and next_appid is None
+        self._set_current_appid(next_appid)
+        self._current_game_name = next_name
+        self._reset_auto_session("context_changed")
+        self._reapply_ticks = 0        # fresh ~30 min re-fit window for the new game
+        self._adaptive_applied = False  # re-arm the mid-session adaptive drive for this game
+        self._last_adaptive_points = None  # anti-churn baseline resets with the game
+        self._maybe_drive_adaptive_fan_curve()
+        self._reapply_all(
+            tdp_reason=(
+                "auto-game-exit"
+                if leaving_game and self._auto_control_active()
+                else "lifecycle"
+            )
+        )
+        # The TDP re-apply is off-loop; wait for it so the returned state's hardware
+        # readback (applied_w) reflects the new game, not the previous setpoint.
+        await self._drain_offloaded()
+        return await self.get_tdp_state()
+
+    def _sync_fremont_fan_handoff_marker(self) -> bool:
+        if getattr(getattr(self, "_device", None), "key", None) != "steam_machine":
+            return True
+        required = bool(getattr(self._fan_ctrl, "handoff_required", False))
+        previous = self._settings.get("fremont_fan_handoff_pending") is True
+        if required == previous:
+            return True
+        self._settings["fremont_fan_handoff_pending"] = required
+        try:
+            self._save()
+            return True
+        except Exception:  # noqa: BLE001
+            self._settings["fremont_fan_handoff_pending"] = previous
+            return False
+
+    def _arm_fremont_fan_handoff_marker(self) -> bool:
+        if getattr(getattr(self, "_device", None), "key", None) != "steam_machine":
+            return True
+        if self._settings.get("fremont_fan_handoff_pending") is True:
+            return True
+        self._settings["fremont_fan_handoff_pending"] = True
+        try:
+            self._save()
+            return True
+        except Exception:  # noqa: BLE001
+            self._settings["fremont_fan_handoff_pending"] = False
+            return False
+
+    def _recover_fremont_fan_handoff(self) -> bool:
+        if (
+            getattr(getattr(self, "_device", None), "key", None) != "steam_machine"
+            or self._settings.get("fremont_fan_handoff_pending") is not True
+        ):
+            return True
+        recover = getattr(self._fan_ctrl, "recover_pending_release", None)
+        if not callable(recover):
+            return False
+        try:
+            result = recover()
+        except Exception:  # noqa: BLE001
+            return False
+        if not isinstance(result, dict) or not result.get("ok"):
+            return False
+        previous = self._settings["fremont_fan_handoff_pending"]
+        self._settings["fremont_fan_handoff_pending"] = False
+        try:
+            self._save()
+            return True
+        except Exception:  # noqa: BLE001
+            self._settings["fremont_fan_handoff_pending"] = previous
+            return False
+
+    def _restore_fans_safe(self) -> bool:
+        if (
+            getattr(getattr(self, "_device", None), "key", None) == "steam_machine"
+            and self._settings.get("fremont_fan_handoff_pending") is True
+        ):
+            return self._recover_fremont_fan_handoff()
+        released = True
+        try:
+            if getattr(self, "_fan_ctrl", None) is not None:
+                result = self._fan_ctrl.restore_auto()
+                released = bool(
+                    isinstance(result, dict) and result.get("ok")
+                )
+        except Exception:  # noqa: BLE001
+            released = False
+        marker_saved = self._sync_fremont_fan_handoff_marker()
+        return released and marker_saved
+
+    def _restore_desktop_power_safe(self) -> bool:
+        try:
+            coordinator = getattr(self, "_desktop_power", None)
+            if coordinator is None:
+                return True
+            result = coordinator.restore()
+            return bool(result.get("ok")) if isinstance(result, dict) else False
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _restore_hud_safe(self) -> None:
+        try:
+            cap = self._detect_hud()
+            managed_path = self._hud_managed_path or cap["presetsPath"]
+            if clear_presets(
+                managed_path,
+                owner=self._hud_owner,
+                trusted_root=self._hud_home,
+            ):
+                self._remember_hud_path(None)
+                if cap["supported"] and cap["running"]:
+                    self._reload_mangoapp(cap["sessions"])
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _restore_color_safe(self) -> None:
+        """Clear any applied color LUT (back to the panel's native look) so a
+        disabled/uninstalled plugin leaves no lingering color. Guarded."""
+        try:
+            cb = getattr(self, "_color_backend", None)
+            if cb is not None and cb.supported:
+                cb.apply(dict(COLOR_NATIVE))
+        except Exception:  # noqa: BLE001
+            pass
+
+    # ---- Sonido: audio EQ ---------------------------------------------------
+    def _current_route(self) -> str:
+        try:
+            return self._audio.current_route()
+        except Exception:  # noqa: BLE001
+            return "speaker"
+
+    def _effective_audio(self, route) -> dict:
+        return self._audio_eq.effective(self._current_appid, route)
+
+    def _reapply_audio(self) -> None:
+        """Apply the effective EQ off the event loop (rewrites a conf + restarts the
+        filter-chain service). Only offloads when the EQ is enabled — disabling tears the
+        sink down explicitly, so a disabled EQ needs no work on resume/game change."""
+        if self._audio_shutdown or not self._settings.get("audio_eq_enabled"):
+            return
+        self._offload(self._reapply_audio_sync)
+
+    def _log_audio_transition(self, action: str, **fields) -> None:
+        decky.logger.info(
+            "Audio transition %s",
+            json.dumps({"action": action, **fields}, sort_keys=True, separators=(",", ":")),
+        )
+
+    def _record_audio_apply_failure(self, detail) -> None:
+        self._audio_last_apply = dict(detail)
+        self._audio_apply_failures += 1
+        if (
+            self._audio_apply_failures
+            & (self._audio_apply_failures - 1)
+            == 0
+        ):
+            decky.logger.warning(
+                "audio EQ apply rejected: %s",
+                json.dumps(detail, sort_keys=True, separators=(",", ":")),
+            )
+
+    def _reapply_audio_sync(self) -> None:
+        try:
+            if not self._settings.get("audio_eq_enabled"):
+                return
+            route = self._current_route()
+            setting = self._effective_audio(route)
+            gains, bass = self._guarded_gains(route, setting["gains"], setting["bass"])
+            applied = self._audio.set_gains(
+                gains, bass, setting["loudness"], setting["balance"]
+            )
+            if not applied:
+                diagnostics = getattr(self._audio, "apply_diagnostics", None)
+                detail = diagnostics() if callable(diagnostics) else {"ok": False}
+                self._record_audio_apply_failure(detail)
+            else:
+                if self._audio_apply_failures:
+                    self._log_audio_transition("recovered", failures=self._audio_apply_failures)
+                self._audio_apply_failures = 0
+                self._audio_runtime_expected = True
+                diagnostics = getattr(self._audio, "apply_diagnostics", None)
+                self._audio_last_apply = (
+                    diagnostics()
+                    if callable(diagnostics)
+                    else {"ok": True}
+                )
+                if not self._audio_last_apply.get("unchanged"):
+                    self._log_audio_transition(
+                        "apply", route=route, downstream=self._audio_last_apply.get("downstream")
+                    )
+        except Exception as e:  # noqa: BLE001
+            self._record_audio_apply_failure({
+                "ok": False,
+                "reason": "exception",
+                "error": type(e).__name__,
+            })
+
+    def _guarded_gains(self, route, gains, bass):
+        if route == "speaker" and self._settings.get("speaker_guard_enabled", True):
+            key = getattr(self._device, "key", None)
+            gains = audio_safe.clamp_gains(gains, audio_safe.band_ceilings(key))
+            bass = audio_safe.clamp_bass(bass, audio_safe.bass_ceiling(key))
+        return gains, bass
+
+    def _start_audio_loop(self) -> None:
+        if self._audio_task is not None and not self._audio_task.done():
+            return
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return  # no event loop in tests — skip task creation safely
+        self._audio_task = asyncio.create_task(self._audio_loop())
+
+    async def _stop_audio_loop(self) -> None:
+        task = self._audio_task
+        self._audio_task = None
+        if task is not None:
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
+
+    def _audio_check(self) -> dict:
+        """Off-loop probe for the watcher: active route + confirmed EQ ownership."""
+        active = self._audio.is_active()
+        if active:
+            sync_state = getattr(self._audio, "sync_state", None)
+            active = not callable(sync_state) or sync_state() is True
+        volume = None
+        if active and journal.active is not None:
+            eq_volume = getattr(self._audio, "eq_volume", None)
+            volume = eq_volume() if callable(eq_volume) else None
+        return {"route": self._current_route(), "active": active, "volume": volume}
+
+    def _journal_audio_volume(self, volume) -> None:
+        diary = journal.active
+        previous = getattr(self, "_audio_volume_seen", None)
+        self._audio_volume_seen = volume
+        if diary is not None and volume is not None and previous is not None and volume != previous:
+            diary.write("INFO", "audio", "volume_seen", sink="eq", before=previous, after=volume)
+
+    async def _audio_loop(self) -> None:
+        """While the EQ is enabled, keep it live with the QAM closed: re-apply when the
+        output route changes (headphones ↔ speakers, each keeps its own curve) OR when our
+        sink is no longer the default (WirePlumber re-picked the physical device on
+        resume/hotplug → the effect silently dropped). Cheap: one off-loop probe every few
+        seconds; _reapply_audio is diff-gated so a stable state does no audible work."""
+        while True:
+            try:
+                await asyncio.sleep(_AUDIO_POLL_S)
+                enabled = bool(self._settings.get("audio_eq_enabled"))
+                supported = enabled and self._audio.is_supported()
+                if not enabled or not supported:
+                    if self._audio_runtime_expected:
+                        self._audio_cleanup_pending = True
+                    self._audio_runtime_expected = False
+                    self._audio_route_last = None
+                    if self._audio_cleanup_pending:
+                        await self._offload_call(self._restore_audio_safe)
+                    continue
+                self._audio_runtime_expected = True
+                now = _monotonic()
+                failures = self._audio_apply_failures
+                if failures and now < self._audio_watch_resume_at:
+                    continue
+                probe = await self._offload_call(self._audio_check)
+                self._journal_audio_volume(probe.get("volume"))
+                if not probe["active"] or probe["route"] != self._audio_route_last:
+                    self._log_audio_transition(
+                        "watch", route=probe["route"], previous=self._audio_route_last,
+                        active=probe["active"], test=self._test_sample is not None,
+                    )
+                    self._audio_route_last = probe["route"]
+                    self._reapply_audio()
+                self._audio_watch_resume_at = now + min(
+                    _AUDIO_RETRY_MAX_S, _AUDIO_POLL_S * 2 ** min(failures, 5)
+                )
+            except asyncio.CancelledError:
+                break
+            except Exception as error:  # noqa: BLE001
+                decky.logger.warning("Audio watch failed: %s: %s", type(error).__name__, error)
+
+    def _restore_audio_safe(self) -> None:
+        """Remove the EQ sink and restore the previous default output so a
+        disabled/uninstalled plugin leaves the audio untouched. Guarded."""
+        try:
+            if getattr(self, "_audio", None) is not None:
+                cleaned = self._audio.teardown()
+                self._audio_cleanup_pending = cleaned is not True
+                self._audio_runtime_expected = False
+                diagnostics = self._audio.apply_diagnostics()
+                if isinstance(diagnostics, dict):
+                    self._audio_last_apply = dict(diagnostics)
+        except Exception as error:  # noqa: BLE001
+            self._audio_cleanup_pending = True
+            self._audio_last_apply = {
+                "ok": False,
+                "reason": "exception",
+                "error": type(error).__name__,
+            }
+
+    def _audio_state(self) -> dict:
+        route = self._current_route()
+        eff = self._effective_audio(route)
+        apply_diagnostics = getattr(self._audio, "apply_diagnostics", None)
+        active = getattr(self._audio, "is_active", None)
+        last_apply = getattr(self, "_audio_last_apply", None)
+        if last_apply is None and callable(apply_diagnostics):
+            last_apply = apply_diagnostics()
+        return {
+            "supported": self._audio.is_supported(),
+            "enabled": bool(self._settings.get("audio_eq_enabled", False)),
+            "active": bool(active()) if callable(active) else False,
+            "last_apply": dict(last_apply) if isinstance(last_apply, dict) else None,
+            "route": route,
+            "appid": self._current_appid,
+            "follows_global": self._audio_eq.is_following_global(self._current_appid),
+            "has_game_profile": (self._current_appid is not None
+                                 and self._audio_eq.has_game(self._current_appid)),
+            "preset": eff["preset"],
+            "gains": eff["gains"],
+            "bass": eff["bass"],
+            "loudness": eff["loudness"],
+            "balance": eff["balance"],
+            "test_playing": self._audio.is_test_playing(),
+            "test_sample": self._test_sample if self._audio.is_test_playing() else None,
+            "test_samples": audio_tone.sample_ids(),
+            "presets": audio_presets.list_presets(getattr(self._device, "key", None)),
+            "profiles": self._audio_profiles.list(),
+            "device_name": self._device.display_name,
+            "guard": bool(self._settings.get("speaker_guard_enabled", True)),
+            "safe_limits": audio_safe.safe_limits(getattr(self._device, "key", None)),
+        }
+
+    async def get_audio_state(self) -> dict:
+        self._init()
+        return await self._offload_call(self._audio_state)
+
+    async def set_audio_enabled(self, enabled: bool) -> dict:
+        self._init()
+        self._settings["audio_eq_enabled"] = bool(enabled)
+        self._store.save(self._settings)
+        self._log_audio_transition("enabled" if enabled else "disabled")
+        if enabled:
+            self._reapply_audio()
+        else:
+            self._audio_cleanup_pending = True
+            self._audio_runtime_expected = False
+            self._offload(self._restore_audio_safe)
+        return await self._offload_call(self._audio_state)
+
+    async def set_speaker_guard(self, enabled: bool) -> dict:
+        self._init()
+        self._settings["speaker_guard_enabled"] = bool(enabled)
+        self._store.save(self._settings)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def _audio_route_for_write(self, expected_route=None):
+        route = await self._offload_call(self._current_route)
+        if expected_route is not None and expected_route != route:
+            return None
+        return route
+
+    async def apply_audio_preset(
+        self, preset: str, scope: str = "global", appid=None, expected_route=None
+    ) -> dict:
+        """Apply a preset to the active route for the given scope. device_tuned resolves
+        to the per-machine speaker correction (flat on headphones)."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._offload_call(self._audio_state)
+        route = await self._audio_route_for_write(expected_route)
+        if route is None:
+            return await self._offload_call(self._audio_state)
+        setting = audio_presets.resolve_preset(getattr(self._device, "key", None), preset, route)
+        self._audio_eq.set_setting(resolved, route, setting, appid=appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def set_audio_band(
+        self, index: int, gain: float, scope: str, appid=None, expected_route=None
+    ) -> dict:
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._offload_call(self._audio_state)
+        route = await self._audio_route_for_write(expected_route)
+        if route is None:
+            return await self._offload_call(self._audio_state)
+        self._audio_eq.set_band(resolved, route, int(index), float(gain), appid=appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def set_audio_bands(
+        self, gains: list, scope: str, appid=None, expected_route=None
+    ) -> dict:
+        """Replace all 10 band gains for the active route (drag-commit of the whole curve)."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._offload_call(self._audio_state)
+        route = await self._audio_route_for_write(expected_route)
+        if route is None:
+            return await self._offload_call(self._audio_state)
+        self._audio_eq.set_bands(resolved, route, gains, appid=appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def set_audio_loudness(
+        self, on: bool, scope: str, appid=None, expected_route=None
+    ) -> dict:
+        """Toggle volume leveling (compression) for the active route — dialogue stays
+        audible without loud peaks blasting; also protects small speakers."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._offload_call(self._audio_state)
+        route = await self._audio_route_for_write(expected_route)
+        if route is None:
+            return await self._offload_call(self._audio_state)
+        self._audio_eq.set_loudness(resolved, route, bool(on), appid=appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def set_audio_balance(
+        self, value: int, scope: str, appid=None, expected_route=None
+    ) -> dict:
+        """Set the L/R balance (-100..100) for the active route. Applies instantly — it
+        only offsets the downstream pin, no filter-chain restart."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._offload_call(self._audio_state)
+        route = await self._audio_route_for_write(expected_route)
+        if route is None:
+            return await self._offload_call(self._audio_state)
+        self._audio_eq.set_balance(resolved, route, int(value), appid=appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def save_audio_profile(self, name: str) -> dict:
+        """Save the active route's current curve + bass as a named, reusable profile."""
+        self._init()
+        route = await self._offload_call(self._current_route)
+        eff = self._effective_audio(route)
+        self._audio_profiles.save(name, eff["gains"], eff["bass"])
+        return await self._offload_call(self._audio_state)
+
+    async def apply_audio_profile(
+        self, name: str, scope: str, appid=None, expected_route=None
+    ) -> dict:
+        """Apply a saved profile's curve + bass to the active route for the given scope."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        prof = self._audio_profiles.get(name)
+        if resolved is None or prof is None:
+            return await self._offload_call(self._audio_state)
+        route = await self._audio_route_for_write(expected_route)
+        if route is None:
+            return await self._offload_call(self._audio_state)
+        self._audio_eq.set_bands(resolved, route, prof["gains"], appid=appid)
+        self._audio_eq.set_bass(resolved, route, prof["bass"], appid=appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def delete_audio_profile(self, name: str) -> dict:
+        self._init()
+        self._audio_profiles.delete(name)
+        return await self._offload_call(self._audio_state)
+
+    async def set_audio_test(self, playing: bool, sample: str = "full") -> dict:
+        self._init()
+        if playing:
+            self._offload(lambda: self._start_audio_test_sync(sample))
+        else:
+            self._test_sample = None
+            self._log_audio_transition("test_stop")
+            self._offload(self._audio.stop_test)
+        return await self._offload_call(self._audio_state)
+
+    def _start_audio_test_sync(self, sample: str) -> None:
+        try:
+            if sample not in audio_tone.sample_ids():
+                sample = "full"
+            name = f"pdc_test_{sample}_{audio_tone.CACHE_TAG}.wav"
+            path = os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, name)
+            if not os.path.exists(path):
+                audio_tone.write_wav(path, audio_tone.render(sample))
+            self._audio.start_test(path)
+            self._test_sample = sample
+            self._log_audio_transition("test_start", sample=sample)
+        except Exception as e:  # noqa: BLE001
+            self._test_sample = None
+            self._log_audio_transition("test_failed", error=type(e).__name__)
+
+    async def set_audio_curve(
+        self, gains: list, bass: int, scope: str, appid=None, expected_route=None
+    ) -> dict:
+        """Set the EQ gains and the bass-enhancement amount together in one apply (the tone
+        sliders drive both — the Graves slider engages the bass enhancer)."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._offload_call(self._audio_state)
+        route = await self._audio_route_for_write(expected_route)
+        if route is None:
+            return await self._offload_call(self._audio_state)
+        self._audio_eq.set_bands(resolved, route, gains, appid=appid)
+        self._audio_eq.set_bass(resolved, route, int(bass), appid=appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def set_audio_follow_global(self, follow: bool, appid) -> dict:
+        self._init()
+        if appid is not None:
+            appid = str(appid)
+            if not follow and not self._audio_eq.has_game(appid):
+                self._audio_eq.create_game_from_global(appid)
+            self._audio_eq.set_follow_global(appid, bool(follow))
+            self._set_current_appid(appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    async def reset_audio(
+        self, scope: str = "global", appid=None, expected_route=None
+    ) -> dict:
+        """Flatten the active route's EQ for the given scope."""
+        self._init()
+        resolved = self._resolve_scope(scope, appid)
+        if resolved is None:
+            return await self._offload_call(self._audio_state)
+        route = await self._audio_route_for_write(expected_route)
+        if route is None:
+            return await self._offload_call(self._audio_state)
+        self._audio_eq.reset(resolved, route, appid=appid)
+        self._reapply_audio()
+        return await self._offload_call(self._audio_state)
+
+    # ---- lifecycle ----------------------------------------------------------
+    def _log_controller_event(self, event) -> None:
+        encoded = json.dumps(event, sort_keys=True, separators=(",", ":"))
+        log = decky.logger.info if event.get("ok") else decky.logger.warning
+        log("Controller transition %s", encoded)
+
+    def _log_lifecycle_event(self, event) -> None:
+        if event.get("event") == "resume_detected":
+            self._reset_auto_session("resume")
+        if event.get("event") in ("resume_detected", "ac_changed"):
+            expedite = getattr(self._tdp_backend, "expedite_handoff_retry", None)
+            if callable(expedite):
+                expedite()
+        encoded = json.dumps(event, sort_keys=True, separators=(",", ":"))
+        log = (
+            decky.logger.warning
+            if event.get("event") in ("apply_failed", "poll_failed")
+            else decky.logger.info
+        )
+        log("Lifecycle transition %s", encoded)
+
+    async def _main(self) -> None:
+        self._start_journal()
+        self._init()
+        # Single-worker executor for subprocess-backed applies (gamescopectl /
+        # systemctl / ryzenadj) → keeps them off the event loop AND serialised.
+        # Created here (not _init) so unit tests that never call _main run inline.
+        self._ensure_apply_executor()
+        await self._offload_call(self._recover_recognised_desktop_migration)
+        await self._recover_tdp_startup_state()
+        await self._probe_tdp_backend(force=True)
+        if self._tdp_control_on() and self._retired_experimental_tdp_unlock():
+            retired = await self._retire_experimental_tdp_unlock_or_disable()
+            if not retired.get("ok"):
+                decky.logger.warning(
+                    "Retired experimental TDP ceiling remains pending: %s",
+                    retired.get("detail"),
+                )
+        self._theme_executor = ThreadPoolExecutor(max_workers=1)
+        self._theme_accepting_work = True
+        try:
+            recovered = await self._offload_theme_call(
+                lambda: theme_packages.recover_theme_transactions(
+                    self._themes_root(),
+                    receipts_path=self._theme_receipts_path(),
+                )
+            )
+            if recovered:
+                decky.logger.warning(
+                    "Rolled back %s interrupted theme transaction(s)", len(recovered)
+                )
+            quarantine = await self._offload_theme_call(
+                lambda: theme_packages.theme_transaction_diagnostics(self._themes_root())
+            )
+            if quarantine["quarantined"]:
+                decky.logger.warning(
+                    "Theme transactions kept in quarantine: %s (last: %s)",
+                    quarantine["quarantined"],
+                    (quarantine["last_quarantine"] or {}).get("reason"),
+                )
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Interrupted theme recovery failed: %s", error)
+        device = getattr(self, "_device", None)
+        decky.logger.info(
+            "Panel de Control v%s loaded (euid=%s device=%s arch=%s)",
+            read_version(),
+            os.geteuid(),
+            getattr(device, "key", None),
+            getattr(device, "arch", None),
+        )
+        self._log_tdp_backend_diagnostics()
+        # Legion Go S hides its fan sensor unless lenovo_wmi_other is loaded with
+        # expose_all_fans=Y — enable it (idempotent, no-op elsewhere, never raises).
+        if fan_expose.ensure_fan_sensor():
+            decky.logger.info("Legion fan sensor exposed (lenovo_wmi_other)")
+        await self._recover_gpd_fan()
+        self._restore_board_fans()
+        if getattr(self, "_fan_reader", None) is not None:
+            self._fan_reader.invalidate()
+        await self._offload_call(self._recover_fremont_fan_handoff)
+        await self._prime_tdp_ownership()
+        await self._resume_hhd_takeover()
+        try:
+            if self._settings.get("steamdeck_ppt_previous") is not None:
+                await self._offload_call(self._restore_steamdeck_startup_ppt)
+            self._reapply_all()
+            self._start_charge_limit_full_once_monitor()
+            self._lifecycle.start()
+            self._start_tdp_guard_loop()
+            self._start_night_loop()
+            # Re-assert the look across gamescope's session bringup, when a single apply
+            # doesn't stick (see _await_display_backend). Always runs, not just cold boot.
+            self._display_wait_task = asyncio.create_task(self._await_display_backend())
+            # Auto-TDP is per-game: the loop always runs and each tick gates on the current
+            # game's effective auto_tdp (holds when off), so it activates for a game that
+            # has it on without waiting for the QAM.
+            self._start_auto_loop()
+            self._start_audio_loop()
+            self._start_support_watch()
+            self._kiosk_task = asyncio.create_task(self._kiosk.supervise())
+            if self._learning_active():
+                self._start_sampler()
+        except Exception as e:  # noqa: BLE001
+            decky.logger.error("TDP startup failed: %s", e)
+
+    async def _unload(self) -> None:
+        decky.logger.info("Shutdown stage unload:begin")
+        self._prepare_shutdown()
+        await self._stop_kiosk()
+        try:
+            drained = self._drain_offloaded_sync(_SHUTDOWN_DRAIN_TIMEOUT_S)
+            if drained:
+                decky.logger.info("Shutdown stage unload:drained")
+                self._perform_shutdown_handoff("unload")
+                self._shutdown_apply_executor()
+            else:
+                decky.logger.warning("Shutdown stage unload:drain-timeout")
+                self._handoff_after_drain_timeout("unload")
+        finally:
+            self._shutdown_controller_action_executor()
+            self._finish_theme_shutdown_sync()
+        decky.logger.info("Panel de Control unloaded")
+        self._stop_journal()
+
+    def _start_journal(self) -> None:
+        if journal.active is not None:
+            return
+        runtime_dir = getattr(decky, "DECKY_PLUGIN_RUNTIME_DIR", "")
+        if not runtime_dir:
+            return
+        try:
+            diary = journal.Journal(os.path.join(runtime_dir, "logs"))
+            diary.start()
+            handler = journal.JournalHandler(diary)
+            decky.logger.addHandler(handler)
+            self._journal_handler = handler
+            self._journal_restore_handlers = journal.queue_logger_handlers(decky.logger)
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Journal unavailable: %s", error)
+            return
+        journal.active = diary
+        self._loop_watchdog = journal.LoopWatchdog(diary)
+        self._loop_watchdog_task = asyncio.get_running_loop().create_task(self._loop_watchdog.beat())
+        self._loop_watchdog.start()
+        diary.write(
+            "INFO",
+            "session",
+            "start",
+            version=read_version(),
+            decky=os.environ.get("DECKY_VERSION"),
+        )
+
+    @staticmethod
+    def _journal_report() -> dict | None:
+        diary = journal.active
+        if diary is None:
+            return None
+        try:
+            report = journal.collect(diary.directory)
+        except Exception as error:  # noqa: BLE001
+            return {"schema": 1, "error": type(error).__name__}
+        report["dropped"] = diary.dropped
+        report["write_failures"] = diary.write_failures
+        return report
+
+    def _start_support_watch(self) -> None:
+        if journal.active is None:
+            return
+        task = getattr(self, "_support_task", None)
+        if task is not None and not task.done():
+            return
+        self._support_task = asyncio.create_task(self._support_watch_loop())
+
+    def _read_support_context(self) -> dict:
+        home = getattr(decky, "DECKY_USER_HOME", None) or os.path.expanduser("~")
+        homebrew = os.path.join(home, "homebrew")
+        return journal_context.context_snapshot(
+            os.path.join(homebrew, "plugins"),
+            os.path.join(homebrew, "settings", "loader.json"),
+            self._run_capture,
+        )
+
+    async def _support_sample(self) -> dict:
+        power = await self.get_power_draw()
+        fans = await self.get_fan_state()
+        cpu_c, gpu_c = extract_cpu_gpu_temps(fans)
+        rpm = next(
+            (fan.get("rpm") for fan in (fans.get("fans") or []) if isinstance(fan, dict)),
+            None,
+        )
+        try:
+            battery = self._battery.read().get("percent")
+        except Exception:  # noqa: BLE001
+            battery = None
+        watts = power.get("watts")
+        return {
+            "game": self._current_appid,
+            "ac": power.get("on_ac"),
+            "tdp_w": power.get("applied"),
+            "set_w": power.get("setpoint"),
+            "control": (power.get("ownership") or {}).get("status"),
+            "w": round(watts, 1) if isinstance(watts, (int, float)) else None,
+            "gpu_busy": power.get("gpu_busy"),
+            "cpu_c": cpu_c,
+            "gpu_c": gpu_c,
+            "rpm": rpm,
+            "bat": battery,
+        }
+
+    def _journal_after_action(self) -> None:
+        self._support_refresh_due = time.monotonic() + _SUPPORT_AFTER_ACTION_S
+
+    async def _support_watch_loop(self) -> None:
+        watcher = journal_context.StateWatcher()
+        loop = asyncio.get_running_loop()
+        next_context = 0.0
+        diary = journal.active
+        if diary is None:
+            return
+        last_context, last_sections = await loop.run_in_executor(
+            None,
+            lambda: (
+                journal.last_record(diary.directory, "context"),
+                journal.merged_sections(diary.directory),
+            ),
+        )
+        while not self._shutting_down:
+            diary = journal.active
+            if diary is None:
+                return
+            try:
+                refresh_due = getattr(self, "_support_refresh_due", None)
+                if refresh_due is not None and time.monotonic() >= refresh_due:
+                    self._support_refresh_due = None
+                    next_context = 0.0
+                if time.monotonic() >= next_context:
+                    next_context = time.monotonic() + _SUPPORT_CONTEXT_INTERVAL_S
+                    context = await loop.run_in_executor(None, self._read_support_context)
+                    self._support_context = context
+                    if journal_context.needs_snapshot(last_context, context, ("plugins", "services", "rivals")):
+                        changes = journal_context.context_changes(last_context, context)
+                        diary.write("INFO", "context", "snapshot", **context, **({"changes": changes} if changes else {}))
+                        last_context = {"t": time.time(), **context}
+                    sections = await self._support_section_states()
+                    if journal_context.needs_snapshot(last_sections, {}, (), now=time.time()):
+                        diary.write("INFO", "sections", "snapshot", sections=sections)
+                        last_sections = {"t": time.time(), "sections": sections}
+                    else:
+                        changed = journal_context.section_changes(last_sections.get("sections"), sections)
+                        changed = {
+                            name: state for name, state in changed.items()
+                            if journal_context.canonical(state)
+                            != journal_context.canonical(last_sections["sections"].get(name))
+                        }
+                        if changed:
+                            diary.write("INFO", "sections", "changed", sections=changed)
+                            last_sections = {"t": time.time(), "sections": {**last_sections["sections"], **changed}}
+                sample = await self._support_sample()
+                reason = watcher.observe(sample, time.time())
+                if reason is not None:
+                    diary.write("INFO", "state", reason, **sample)
+            except asyncio.CancelledError:
+                raise
+            except Exception as error:  # noqa: BLE001
+                diary.write("WARNING", "state", "sample_failed", error=type(error).__name__)
+            await self._support_pause()
+
+    async def _support_pause(self) -> None:
+        deadline = time.monotonic() + _SUPPORT_SAMPLE_INTERVAL_S
+        while time.monotonic() < deadline:
+            refresh_due = getattr(self, "_support_refresh_due", None)
+            if refresh_due is not None and time.monotonic() >= refresh_due:
+                return
+            await asyncio.sleep(1.0)
+
+    def _support_launch_state(self) -> dict:
+        return {
+            "custom_vars": len(launch_custom_vars.coerce_custom_vars(self._settings.get("custom_launch_vars"))),
+            "games_with_options": len(self._settings.get("launch_usage") or {}),
+        }
+
+    @staticmethod
+    def _support_custom_artwork() -> dict:
+        home = getattr(decky, "DECKY_USER_HOME", None) or os.path.expanduser("~")
+        return journal_context.custom_artwork(os.path.join(home, ".local", "share", "Steam", "userdata"))
+
+    @staticmethod
+    def _support_ambient_state() -> dict:
+        return {"available": False}
+
+    def _support_settings_state(self) -> dict:
+        prefs = self._settings.get("ui_prefs")
+        prefs = prefs if isinstance(prefs, dict) else {}
+        return {
+            "language": prefs.get("panel-de-control-lang"),
+            "qam_layout": prefs.get("pdc:qamLayout"),
+            "disabled_modules": self._settings.get("disabled_modules"),
+            "telemetry_enabled": self._settings.get("telemetry_enabled"),
+            "fan_experimental": self._settings.get("fan_experimental"),
+            "desktop_mode_enabled": self._settings.get("desktop_mode_enabled"),
+            "kiosk_enabled": self._settings.get("kiosk_enabled"),
+            "kiosk_brightness": self._settings.get("kiosk_brightness"),
+        }
+
+    async def _support_call(self, name: str):
+        method = getattr(self, name)
+        if inspect.iscoroutinefunction(method):
+            return await method()
+        if name == "_theme_report_diagnostics":
+            return await self._offload_theme_call(method)
+        return await asyncio.get_running_loop().run_in_executor(None, method)
+
+    async def _support_section_states(self) -> dict:
+        states = {}
+        for section, sources in _SUPPORT_SECTIONS.items():
+            summary: dict = {}
+            for getter, fields in sources:
+                try:
+                    value = journal_context.pick_fields(await self._support_call(getter), fields)
+                except Exception as error:  # noqa: BLE001
+                    value = {"unavailable": type(error).__name__}
+                if len(sources) == 1 and isinstance(value, dict):
+                    summary.update(value)
+                else:
+                    summary[getter.removeprefix("_").removeprefix("get_")] = value
+            states[section] = journal_context.bounded(journal.compact_event(summary))
+        return states
+
+    def _journal_external_tdp_write(self, event: dict, previous: dict | None) -> None:
+        diary = journal.active
+        if diary is None or event.get("status_reason") != "external_drift":
+            return
+        if previous is not None and previous.get("status_reason") == "external_drift":
+            return
+        context = getattr(self, "_support_context", None) or {}
+        diary.write(
+            "WARNING",
+            "tdp",
+            "external_write",
+            requested=event.get("requested"),
+            observation=journal.compact_event(event.get("observation")),
+            game=self._current_appid,
+            rivals=context.get("rivals", []),
+        )
+
+    def _stop_journal(self) -> None:
+        diary = journal.active
+        if diary is None:
+            return
+        journal.active = None
+        watchdog = getattr(self, "_loop_watchdog", None)
+        if watchdog is not None:
+            watchdog.stop()
+        task = getattr(self, "_loop_watchdog_task", None)
+        if task is not None:
+            task.cancel()
+        diary.write("INFO", "session", "stop")
+        restore = getattr(self, "_journal_restore_handlers", None)
+        if restore is not None:
+            restore()
+        handler = getattr(self, "_journal_handler", None)
+        if handler is not None:
+            decky.logger.removeHandler(handler)
+        diary.stop(timeout=1.0)
+
+    def _prepare_shutdown(self) -> None:
+        self._cancel_charge_limit_reconcile("shutdown")
+        self._stop_charge_limit_full_once_monitor()
+        self._shutting_down = True
+        if not getattr(self, "_hud_shutdown", False):
+            self._hud_shutdown = True
+            self._hud_generation = int(getattr(self, "_hud_generation", 0)) + 1
+            coordinator = getattr(self, "_hud_coordinator", None)
+            if coordinator is not None:
+                coordinator.close(self._hud_generation, self._restore_hud_safe)
+        self._cpu_shutdown = True
+        self._gpu_shutdown = True
+        self._next_cpu_generation()
+        self._next_gpu_generation()
+        self._begin_theme_shutdown()
+        self._begin_tdp_shutdown()
+        self._cancel_color_revert()
+        wait_task = getattr(self, "_display_wait_task", None)
+        if wait_task is not None:
+            wait_task.cancel()
+            self._display_wait_task = None
+        self._stop_night_loop()
+        self._audio_shutdown = True
+        audio_task = getattr(self, "_audio_task", None)
+        self._audio_task = None
+        if audio_task is not None:
+            audio_task.cancel()
+        support_task = getattr(self, "_support_task", None)
+        self._support_task = None
+        if support_task is not None:
+            support_task.cancel()
+        if getattr(self, "_sampler", None) is not None:
+            self._sampler.stop()
+        self._cancel_queued_offloads()
+        self._close_steam_cleaner_sync()
+
+    def _perform_shutdown_handoff(
+        self, stage: str, preserve_recovery=False
+    ) -> None:
+        fans_released = self._restore_fans_safe()
+        desktop_power_released = self._restore_desktop_power_safe()
+        self._restore_color_safe()
+        self._restore_audio_safe()
+        decky.logger.info("Shutdown stage %s:peripheral-handoff-attempted", stage)
+        decky.logger.info(
+            "Shutdown stage %s:fan-handoff ok=%s",
+            stage,
+            fans_released,
+        )
+        decky.logger.info(
+            "Shutdown stage %s:desktop-power-handoff ok=%s",
+            stage,
+            desktop_power_released,
+        )
+        cpu_released = (
+            self._release_cpu_controls_sync(
+                stage, preserve_frequency_ownership=True
+            )
+            if preserve_recovery
+            else self._release_cpu_controls_sync(stage)
+        )
+        decky.logger.info(f"Shutdown stage {stage}:cpu-handoff ok=%s", cpu_released)
+        gpu_released = (
+            self._release_gpu_clock_sync(stage, preserve_ownership=True)
+            if preserve_recovery
+            else self._release_gpu_clock_sync(stage)
+        )
+        decky.logger.info(f"Shutdown stage {stage}:gpu-handoff ok=%s", gpu_released)
+        power_released = (
+            self._restore_power_handoff(preserve_ownership=True)
+            if preserve_recovery
+            else self._restore_power_handoff()
+        )
+        power_status = (
+            "deferred"
+            if power_released is None
+            else "complete" if power_released
+            else "failed"
+        )
+        decky.logger.info(
+            f"Shutdown stage {stage}:power-handoff status=%s",
+            power_status,
+        )
+
+    def _defer_shutdown_handoff(self, stage: str, remove_fan_conf: bool = False) -> bool:
+        executor = getattr(self, "_apply_executor", None)
+        if executor is None:
+            return False
+
+        def finish():
+            self._perform_shutdown_handoff(stage)
+            if remove_fan_conf:
+                fan_expose.remove_conf()
+            decky.logger.info("Shutdown stage %s:deferred-complete", stage)
+
+        try:
+            executor.submit(finish)
+            return True
+        except Exception:  # noqa: BLE001
+            decky.logger.exception("Shutdown stage %s:deferred-submit-failed", stage)
+            return False
+
+    def _handoff_after_drain_timeout(
+        self, stage: str, remove_fan_conf: bool = False
+    ) -> None:
+        self._perform_shutdown_handoff(
+            f"{stage}-emergency", preserve_recovery=True
+        )
+        if remove_fan_conf:
+            fan_expose.remove_conf()
+        self._defer_shutdown_handoff(
+            f"{stage}-final", remove_fan_conf=remove_fan_conf
+        )
+        self._shutdown_apply_executor(cancel_futures=False)
+
+    def _shutdown_apply_executor(self, cancel_futures: bool = True) -> None:
+        ex = getattr(self, "_apply_executor", None)
+        if ex is not None:
+            try:
+                ex.shutdown(wait=False, cancel_futures=cancel_futures)
+            except TypeError:
+                ex.shutdown(wait=False)
+            self._apply_executor = None
+
+    def _shutdown_controller_action_executor(self) -> None:
+        executor = getattr(self, "_controller_action_executor", None)
+        if executor is not None:
+            try:
+                executor.shutdown(wait=False, cancel_futures=True)
+            except TypeError:
+                executor.shutdown(wait=False)
+            self._controller_action_executor = None
+
+    def _finish_theme_shutdown_sync(self) -> None:
+        executor = getattr(self, "_theme_executor", None)
+
+        def recover() -> list[dict]:
+            return theme_packages.recover_theme_transactions(
+                self._themes_root(),
+                receipts_path=self._theme_receipts_path(),
+            )
+
+        try:
+            recovered = executor.submit(recover).result() if executor is not None else recover()
+            if recovered:
+                decky.logger.warning("Rolled back %s pending theme transaction(s)", len(recovered))
+        except Exception as error:  # noqa: BLE001
+            decky.logger.error("Pending theme rollback failed: %s", error)
+        finally:
+            self._shutdown_theme_executor()
+
+    def _shutdown_theme_executor(self) -> None:
+        ex = getattr(self, "_theme_executor", None)
+        if ex is not None:
+            ex.shutdown(wait=True)
+            self._theme_executor = None
+
+    async def _uninstall(self) -> None:
+        decky.logger.info("Shutdown stage uninstall:begin")
+        self._prepare_shutdown()
+        try:
+            drained = self._drain_offloaded_sync(_SHUTDOWN_DRAIN_TIMEOUT_S)
+            if drained:
+                decky.logger.info("Shutdown stage uninstall:drained")
+                self._perform_shutdown_handoff("uninstall")
+                fan_expose.remove_conf()
+                self._shutdown_apply_executor()
+            else:
+                decky.logger.warning("Shutdown stage uninstall:drain-timeout")
+                self._handoff_after_drain_timeout("uninstall", remove_fan_conf=True)
+        finally:
+            self._finish_theme_shutdown_sync()
+        decky.logger.info("Panel de Control uninstalled")
+        self._stop_journal()
+
+
+journal.trace_calls(
+    Plugin,
+    untraced=frozenset({"set_ui_active", "set_current_game", "set_ui_prefs", "kiosk_steam_result"}),
+    automatic=frozenset({"load_theme_extension"}),
+    hidden_arguments=frozenset({"submit_report", "set_aside_theme_leftovers"}),
+    untraced_when={"kiosk_steam": lambda args: bool(args) and str(args[0]) in kiosk_bridge_reads},
+)

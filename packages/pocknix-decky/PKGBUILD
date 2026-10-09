@@ -14,7 +14,11 @@ pkgver=0.1.0
 #     theme on first boot (fetched from the official catalogue and sha256-verified; the theme
 #     itself is NOT redistributed). Also drops the deckthemes class-mappings snapshot at
 #     /usr/share/pocknix/css_translations.json as an offline fallback for the plugin.
-pkgrel=49
+# 50: ship Hooandee's "Panel de Control" (v0.66.0, GPL-3.0) as /usr/share/decky-plugins/Panel de
+#     Control. Unlike every other OS-shipped plugin it SELF-UPDATES on its own release cadence,
+#     so pocknix-decky-sync seeds it ONLY when missing (never re-copies over the user's update);
+#     see the PANEL DE CONTROL exception in that script.
+pkgrel=50
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -65,6 +69,16 @@ package() {
   cp -a "${css}/dist" "${dest_css}/"
   rm -f "${dest_css}/dist"/*.map
   find "${dest_css}" -name __pycache__ -type d -prune -exec rm -rf {} +
+
+  # Hooandee's "Panel de Control" (v0.66.0, GPL-3.0): pure Python backend + prebuilt dist JS.
+  # This plugin self-updates, so pocknix-decky-sync seeds it ONLY when missing and never stomps
+  # a user's own update; keep the folder name with the space — it is Decky's real plugin dir and
+  # what the self-updater rewrites in place.
+  local pdc="${startdir}/panel-de-control" dest_pdc="${pkgdir}/usr/share/decky-plugins/Panel de Control"
+  install -d -m755 "${dest_pdc}"
+  cp -a "${pdc}/." "${dest_pdc}/"
+  rm -f "${dest_pdc}/dist"/*.map
+  find "${dest_pdc}" -name __pycache__ -type d -prune -exec rm -rf {} +
 
   local mako="${startdir}/mako" dest_mako="${pkgdir}/usr/share/decky-plugins/Mako"
   install -d -m755 "${dest_mako}"
