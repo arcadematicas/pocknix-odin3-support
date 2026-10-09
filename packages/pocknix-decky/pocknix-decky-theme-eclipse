@@ -1,0 +1,87 @@
+#!/bin/bash
+# pocknix-decky-theme-eclipse — install + activate the default CSS Loader theme.
+#
+# The theme (Hooandee Eclipse) is NOT redistributed with the image: this script fetches
+# it from the official catalogue on first boot and verifies its sha256. The package only
+# ships the URL + hash. Idempotent (a user's active config is never touched) and
+# offline-tolerant: any failure exits 0 so the boot transaction is never blocked; the
+# script simply retries at the next boot. See docs/DECKY-CSS-LOADER-ECLIPSE.md.
+set -u
+
+user_name=deck
+user_home="/home/${user_name}"
+homebrew="${user_home}/homebrew"
+themes_dir="${homebrew}/themes"
+theme_name="Hooandee Eclipse"
+theme_dir="${themes_dir}/${theme_name}"
+steam_dir="${user_home}/.steam/steam"
+
+theme_url="https://hooandee.github.io/panel-de-control/themes/v1/hooandee-eclipse/0.2.5/theme.zip"
+theme_sha256="c8da01e28119eae00f9a05148f756a9a43fc3b03635de1c90e95f8e6c1fe7e43"
+
+# Optional fallback of the deckthemes class mappings (the plugin downloads its own once
+# online; this is only used when it has none yet, e.g. a first boot while offline).
+snapshot_src="/usr/share/pocknix/css_translations.json"
+
+log() { printf '[pocknix-decky-theme-eclipse] %s\n' "$*"; }
+
+[ "$(id -u)" -eq 0 ] || { log "not root, skipping"; exit 0; }
+
+# --- 1. Enable CEF remote debugging so CSS Loader can reach the Steam UI -------
+if [ -d "${steam_dir}" ]; then
+    touch "${steam_dir}/.cef-enable-remote-debugging" 2>/dev/null || true
+    chown "${user_name}:${user_name}" "${steam_dir}/.cef-enable-remote-debugging" 2>/dev/null || true
+fi
+
+# --- 2. Seed the class-mappings snapshot if the plugin has none yet -----------
+if [ ! -d "${themes_dir}" ]; then
+    install -d -o "${user_name}" -g "${user_name}" -m 0755 "${themes_dir}" 2>/dev/null \
+        || mkdir -p "${themes_dir}" 2>/dev/null || true
+fi
+if [ ! -f "${themes_dir}/css_translations.json" ] && [ -f "${snapshot_src}" ]; then
+    install -o "${user_name}" -g "${user_name}" -m 0644 "${snapshot_src}" \
+        "${themes_dir}/css_translations.json" 2>/dev/null || true
+fi
+
+# --- 3. Install + activate the theme (only if absent; never touch a user config) --
+if [ -d "${theme_dir}" ]; then
+    log "theme '${theme_name}' already installed; leaving its config untouched"
+    exit 0
+fi
+
+tmp="$(mktemp -d /tmp/eclipse-theme.XXXXXX)" || { log "mktemp failed"; exit 0; }
+trap 'rm -rf "${tmp}"' EXIT
+
+if ! curl -fsSL --connect-timeout 20 --max-time 180 -o "${tmp}/theme.zip" "${theme_url}"; then
+    log "download failed (offline?); will retry at the next boot"
+    exit 0
+fi
+
+actual="$(sha256sum "${tmp}/theme.zip" | awk '{print $1}')"
+if [ "${actual}" != "${theme_sha256}" ]; then
+    log "sha256 mismatch (got ${actual}, want ${theme_sha256}); refusing to install"
+    exit 0
+fi
+
+if command -v bsdtar >/dev/null 2>&1; then
+    bsdtar -xf "${tmp}/theme.zip" -C "${themes_dir}" || { log "extract failed"; exit 0; }
+elif command -v unzip >/dev/null 2>&1; then
+    unzip -q -o "${tmp}/theme.zip" -d "${themes_dir}" || { log "extract failed"; exit 0; }
+else
+    log "no zip extractor available"
+    exit 0
+fi
+
+if [ ! -f "${theme_dir}/theme.json" ]; then
+    log "theme.json not found after extraction; aborting"
+    exit 0
+fi
+
+# Activate it. Only 'active' matters: every patch falls back to its manifest default,
+# which is exactly the look the theme ships with. Written as config_USER.json — the
+# file the plugin reads for USER != root (see css_theme.py: configPath + "_USER.json").
+printf '{"active": true}\n' > "${theme_dir}/config_USER.json"
+chown -R "${user_name}:${user_name}" "${theme_dir}" 2>/dev/null || true
+
+log "installed and activated '${theme_name}'"
+exit 0

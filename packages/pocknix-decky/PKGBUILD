@@ -9,17 +9,24 @@ pkgver=0.1.0
 #     --overwrite policy), with a degraded in-module pacman fallback. Also appends the unit's
 #     stderr to /run/pocknix-update.log so the log cannot end on an error line ahead of the
 #     POCKNIX_UPDATE_EXIT marker.
-pkgrel=48
-pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control QAM plugin"
+# 49: ship CSS Loader (SDH-CssLoader 2.1.2, GPL) as /usr/share/decky-plugins/CSSLoader plus the
+#     new pocknix-decky-theme-eclipse oneshot that installs + activates the Hooandee Eclipse
+#     theme on first boot (fetched from the official catalogue and sha256-verified; the theme
+#     itself is NOT redistributed). Also drops the deckthemes class-mappings snapshot at
+#     /usr/share/pocknix/css_translations.json as an offline fallback for the plugin.
+pkgrel=49
+pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
 license=('GPL2')
 depends=('fex-emu' 'fex-rootfs')
 _loaderver=v3.2.9
 source=('pocknix-decky-run' 'pocknix-decky-sync' 'pocknix-decky-killall' 'pocknix-decky-sync.service'
-        'pocknix-decky-loader.service' 'PluginLoader.json'
+        'pocknix-decky-loader.service' 'pocknix-decky-theme-eclipse' 'pocknix-decky-theme-eclipse.service'
+        'css_translations.json' 'PluginLoader.json'
         "PluginLoader-${_loaderver}::https://github.com/SteamDeckHomebrew/decky-loader/releases/download/${_loaderver}/PluginLoader")
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'SKIP' 'SKIP' 'SKIP' 'SKIP'
             '0a5246db98f2df93a6685ac8230e0acfbfa6e91d99b41b8dbbf1f94c308dedce')
 
 package() {
@@ -30,11 +37,16 @@ package() {
   install -Dm755 "${srcdir}/pocknix-decky-run"       "${pkgdir}/usr/lib/pocknix/pocknix-decky-run"
   install -Dm755 "${srcdir}/pocknix-decky-sync"      "${pkgdir}/usr/lib/pocknix/pocknix-decky-sync"
   install -Dm755 "${srcdir}/pocknix-decky-killall"   "${pkgdir}/usr/lib/pocknix/decky-bin/killall"
+  install -Dm755 "${srcdir}/pocknix-decky-theme-eclipse" "${pkgdir}/usr/lib/pocknix/pocknix-decky-theme-eclipse"
   install -Dm644 "${srcdir}/pocknix-decky-sync.service"   "${pkgdir}/usr/lib/systemd/system/pocknix-decky-sync.service"
   install -Dm644 "${srcdir}/pocknix-decky-loader.service" "${pkgdir}/usr/lib/systemd/system/pocknix-decky-loader.service"
+  install -Dm644 "${srcdir}/pocknix-decky-theme-eclipse.service" "${pkgdir}/usr/lib/systemd/system/pocknix-decky-theme-eclipse.service"
   # Decky's self-updater restarts plugin_loader.service; the symlink aliases it to ours.
   ln -s pocknix-decky-loader.service "${pkgdir}/usr/lib/systemd/system/plugin_loader.service"
   install -Dm644 "${srcdir}/PluginLoader.json"       "${pkgdir}/usr/share/fex-emu/AppConfig/PluginLoader.json"
+
+  # Offline fallback for CSS Loader's class mappings (deckthemes stable snapshot).
+  install -Dm644 "${srcdir}/css_translations.json"   "${pkgdir}/usr/share/pocknix/css_translations.json"
 
 
   local plug="${startdir}/pocknix-control" dest="${pkgdir}/usr/share/decky-plugins/PocknixControl"
@@ -43,6 +55,16 @@ package() {
   cp -a "${plug}/py_modules" "${plug}/dist" "${dest}/"
   rm -f "${dest}/dist"/*.map
   find "${dest}" -name __pycache__ -type d -prune -exec rm -rf {} +
+
+  # CSS Loader (SDH-CssLoader 2.1.2): pure Python backend + prebuilt dist JS. No native code.
+  local css="${startdir}/css-loader" dest_css="${pkgdir}/usr/share/decky-plugins/CSSLoader"
+  install -d -m755 "${dest_css}"
+  cp -a "${css}/plugin.json" "${css}/package.json" "${css}/main.py" \
+        "${css}/LICENSE" "${css}/README.md" "${dest_css}/"
+  cp -a "${css}"/css_*.py "${dest_css}/"
+  cp -a "${css}/dist" "${dest_css}/"
+  rm -f "${dest_css}/dist"/*.map
+  find "${dest_css}" -name __pycache__ -type d -prune -exec rm -rf {} +
 
   local mako="${startdir}/mako" dest_mako="${pkgdir}/usr/share/decky-plugins/Mako"
   install -d -m755 "${dest_mako}"

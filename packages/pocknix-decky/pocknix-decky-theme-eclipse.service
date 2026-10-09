@@ -1,0 +1,15 @@
+[Unit]
+Description=Install and activate the default CSS Loader theme (Hooandee Eclipse)
+# Needs the network to fetch the theme from the official catalogue; runs after the
+# homebrew seed so ~/homebrew exists and is owned by deck. Ordered before Decky so the
+# theme is already active when CSS Loader first scans ~/homebrew/themes.
+After=network-online.target pocknix-decky-sync.service
+Wants=network-online.target
+Before=pocknix-decky-loader.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/pocknix/pocknix-decky-theme-eclipse
+
+[Install]
+WantedBy=multi-user.target
