@@ -37,8 +37,8 @@ POCKNIX_REPO_GPG_KEY=85C433EE12621EED POCKNIX_REPO_RCLONE_REMOTE=r2:pocknix make
 ```
 
 ## AVISO PARA DAVIDUSKY (y cualquiera)
-**NO actualizar** hasta que el repo esté publicado y FIRMADO ⚠️ — si actualiza ahora, pacman tirará de
-`[alarm]`/`[aur]` y la consola quedará sin arrancar (la chimera ✗).
+**✅ YA se puede actualizar con seguridad**: el repo está publicado y FIRMADO. Pasos exactos en
+`docs/ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-09.md`. (El aviso antiguo de "no actualizar" queda LEVANTADO.)
 
 ## ESTADO DE LAS TARJETAS
 - **128 GB**: sistema del 26-sep (kernel 7.2.4) — **FUNCIONA** ✓ (es la buena; NO tocar sin backup)
