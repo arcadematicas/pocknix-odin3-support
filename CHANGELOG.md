@@ -59,6 +59,16 @@ en la Odin.
 - **Guía de actualización para terceros** (Davidusky y su IA): [`docs/ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-09.md`](docs/ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-09.md).
 - **Recuperación de la tarjeta de 1 TB** (reflasheo + datos): [`docs/1TB-RECUPERACION-2026-10-09.md`](docs/1TB-RECUPERACION-2026-10-09.md).
 
+### 🔎 Issue externo #1 (proyecto Holodor) — ACD del Adreno 830: NO nos afecta
+- Otro proyecto (**Holodor**) que usa nuestro kernel reportó que los OPP altos del Adreno 830
+  corren a media velocidad por `qcom,opp-acd-level` (`0038`/`0049`). **Reproducido: NO.** En
+  7.2.9 el **FP32 escala lineal con el OPP** (338 GFLOPS @1100 vs 203 @660 → ratio 1,666 ≈ ratio
+  de reloj) y en OpenGL igual (glmark2 1100 > 660) → **no tenemos el "half clock"**; su kernel es
+  `7.1.3-33`. Respondido en el issue.
+- **Sí** confirmamos su punto **térmico**: `gpuss0..7` sin cooling map → ver parche del trip
+  pasivo ~95 °C.
+- Detalle en [`docs/ADRENO830-ACD-INVESTIGACION-2026-10-09.md`](docs/ADRENO830-ACD-INVESTIGACION-2026-10-09.md).
+
 ---
 
 ## 📅 27–28 de septiembre 2026 — HDR, kernel 7.2.6, s2idle, sesión SteamOS y limpiezas
