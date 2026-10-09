@@ -30,7 +30,7 @@ source=('pocknix-decky-run' 'pocknix-decky-sync' 'pocknix-decky-killall' 'pockni
         'css_translations.json' 'PluginLoader.json'
         "PluginLoader-${_loaderver}::https://github.com/SteamDeckHomebrew/decky-loader/releases/download/${_loaderver}/PluginLoader")
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'SKIP' 'SKIP' 'SKIP'
             '0a5246db98f2df93a6685ac8230e0acfbfa6e91d99b41b8dbbf1f94c308dedce')
 
 package() {
