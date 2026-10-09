@@ -9,7 +9,7 @@ pkgver=0.1.0
 #     --overwrite policy), with a degraded in-module pacman fallback. Also appends the unit's
 #     stderr to /run/pocknix-update.log so the log cannot end on an error line ahead of the
 #     POCKNIX_UPDATE_EXIT marker.
-# 49: ship CSS Loader (SDH-CssLoader 2.1.2, GPL) as /usr/share/decky-plugins/CSSLoader plus the
+# 49: ship CSS Loader (SDH-CssLoader 2.1.2, GPL) as /usr/share/decky-plugins/SDH-CssLoader plus the
 #     new pocknix-decky-theme-eclipse oneshot that installs + activates the Hooandee Eclipse
 #     theme on first boot (fetched from the official catalogue and sha256-verified; the theme
 #     itself is NOT redistributed). Also drops the deckthemes class-mappings snapshot at
@@ -18,7 +18,11 @@ pkgver=0.1.0
 #     Control. Unlike every other OS-shipped plugin it SELF-UPDATES on its own release cadence,
 #     so pocknix-decky-sync seeds it ONLY when missing (never re-copies over the user's update);
 #     see the PANEL DE CONTROL exception in that script.
-pkgrel=50
+# 51: fix the CSS Loader install path: it was packaged as /usr/share/decky-plugins/CSSLoader,
+#     but Decky's store id (and the dir the plugin actually loads from) is "SDH-CssLoader".
+#     pocknix-decky-sync copies by basename, so the old name created a duplicate CSSLoader dir
+#     and never updated the real SDH-CssLoader. Ship it as /usr/share/decky-plugins/SDH-CssLoader.
+pkgrel=51
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -61,7 +65,10 @@ package() {
   find "${dest}" -name __pycache__ -type d -prune -exec rm -rf {} +
 
   # CSS Loader (SDH-CssLoader 2.1.2): pure Python backend + prebuilt dist JS. No native code.
-  local css="${startdir}/css-loader" dest_css="${pkgdir}/usr/share/decky-plugins/CSSLoader"
+  # The packaged dir MUST be "SDH-CssLoader" — that is Decky's plugin id (what the store and the
+  # loader use, and where the live plugin already lives). The vendored SOURCE dir stays
+  # "css-loader"; only this DESTINATION name matters (sync copies by basename).
+  local css="${startdir}/css-loader" dest_css="${pkgdir}/usr/share/decky-plugins/SDH-CssLoader"
   install -d -m755 "${dest_css}"
   cp -a "${css}/plugin.json" "${css}/package.json" "${css}/main.py" \
         "${css}/LICENSE" "${css}/README.md" "${dest_css}/"
