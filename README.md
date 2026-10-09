@@ -13,15 +13,15 @@ documentación. El árbol de compilación (`pocknix-os`) **se regenera desde aqu
 
 ---
 
-## 📊 Estado actual (28/09/2026)
+## 📊 Estado actual (09/10/2026)
 
 | Área | Estado |
 |---|---|
-| **Arranque** | ✅ Kernel **7.2.6** + DTS del Odin 3. Arranque en ~20 s (`pocknix-diag` a timer, no bloquea) |
+| **Arranque** | ✅ Kernel **7.2.9** + DTS del Odin 3. Arranque en ~20 s |
 | **Rotación de pantalla** | ✅ **POR HARDWARE** — el DPU rota en scanout (`rotation=8`/`ROTATE_270`), sin coste de GPU. Ver [`docs/ROTACION-HARDWARE.md`](docs/ROTACION-HARDWARE.md) |
 | **Sesión de juego** | ✅ **gamescope-session-plus** (modelo SteamOS, portado de armadaOS) + Steam gamepadui. Reversible vía `~deck/.use-gsplus`. Ver [`CHANGELOG.md`](CHANGELOG.md) |
 | **HDR** | ✅ **FUNCIONANDO** — panel edidless con perfil propio (650 nits, gamma 2.2) + color pipelines por plano en el kernel. Verificado en `Ori and the Will of the Wisps` |
-| **Gráficos** | ✅ **Mesa 26.2.3** + **Turnip 20260918** (Adreno 830, Vulkan 1.4.354) + payload Turnip de Valve (`pocknix-vk-valve`) |
+| **Gráficos** | ✅ **Mesa 26.3.0** + Turnip propia (Adreno 830) + **Turnip de Valve 0.5.x** (`pocknix-vk-valve`, per-game: mejor 1 % low) |
 | **Mando + táctil** | ✅ InputPlumber, incluido el gamepad UART (driver `rsinput`) |
 | **WiFi / Bluetooth** | ✅ NetworkManager + `hci0` (ath12k **WCN7860**) |
 | **Audio** | ✅ Sound card `SM8750AYN` (ADSP + stack LPASS completo) + UCM |
@@ -30,7 +30,9 @@ documentación. El árbol de compilación (`pocknix-os`) **se regenera desde aqu
 | **Escritorio (Plasma)** | ✅ KScreen enumera el panel ([`docs/KSCREEN-ISSUE.md`](docs/KSCREEN-ISSUE.md)) |
 | **Bootloader** | ✅ **ABL 1.1.8** en ambos slots (`pocknix-update-abl --status` → `uptodate`) |
 | **Emulación** | ✅ DeckStation ARM en `/opt/deckstation/` (capa de emulación propia) + WProton |
-| **Panel Decky** | ✅ PocknixControl (potencia, luces, OLED care, **interruptor de HDR**, scheduler SCX) |
+| **Actualizaciones** | ✅ **Repo propio en R2** (`sm8750`+`shared`+`base`, firmado) — las Odin se actualizan con `pacman -Syu` |
+| **Panel Decky** | ✅ PocknixControl + **CSS Loader** + **tema Eclipse** (de serie) + **Panel de Control** (Hooandee) |
+| **QAM** | ✅ Overlay **por encima** del juego (sin `--force-composition`; ver `docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md`) |
 | **Sensores IIO** | ⚠️ `hexagonrpcd` sale al arrancar y no expone IIO → **sin auto-rotación ni brillo adaptativo** |
 
 > El historial reciente está en [`CHANGELOG.md`](CHANGELOG.md); el detalle de la sesión del 20/09, en

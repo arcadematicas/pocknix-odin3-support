@@ -15,6 +15,52 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 05–09 de octubre 2026 — repo propio (R2), kernel 7.2.9, Decky completo y el QAM
+
+Semana de cierre del sistema: estrenamos **repo de actualizaciones propio**, subimos el kernel, dejamos **Decky
+“de serie”** (CSS Loader + tema Eclipse + Panel de Control) y **arreglamos el QAM detrás del juego**. Todo verificado
+en la Odin.
+
+### 🚀 Repo propio en Cloudflare R2 (las Odin se actualizan solas)
+- **`[pocknix]`** (`…r2.dev/sm8750`) + **`[pocknix-shared]`** (`…r2.dev/shared`) + **`[pocknix-base]`**
+  (`…r2.dev/base`), **firmados** con nuestra clave `85C433EE12621EED`. Se **quita `[aur]`** (era el veneno: ofrecía
+  paquetes que bajaban versiones). `devices/sm8750/profile.conf` pasa a `POCKNIX_SHIP_SOC_REPO=1`.
+- La **base ALARM** (snapshot `20260826.2`) queda espejada en `r2:pocknix/base` (893 paquetes + tarball) → un `-Syu`
+  resuelve la base del snapshot, **no de la ALARM viva**.
+- **Actualización real verificada**: una Odin pasó de 7.2.4 → 7.2.6 (y luego 7.2.9) **sin “signature invalid”**, sin
+  mezclar con ALARM y **sin errores BTF**. **Aclarado**: el fallo histórico **no era el kernel, era la mezcla de
+  paquetes**. Ver [`docs/REPO-R2-CAUSA-RAIZ-2026-10-09.md`](docs/REPO-R2-CAUSA-RAIZ-2026-10-09.md).
+
+### 🚀 Kernel 7.2.9 (+ parches externos)
+- Bump 7.2.6 → **7.2.9** con **scan-priority de ath12k**, vblank TE en command-mode, `hw_done` antes del flip y
+  **rails de WiFi always-on** (ArmadaOS/ROCKNIX). Ver `docs/KERNEL-7.2.9-BUMP-2026-10-06.md` y
+  `docs/KERNEL-7.2.9-2-EXTERNAL-PATCHES-2026-10-06.md`.
+
+### 🚀 Decky “de serie”: CSS Loader + tema Eclipse + Panel de Control
+- **CSS Loader** (`SDH-CssLoader`, GPL) empaquetado y sembrado en `~/homebrew/plugins`; se instala como
+  **`SDH-CssLoader`** (el nombre que usa Decky). Ver `docs/DECKY-CSS-LOADER-ECLIPSE.md`.
+- **Tema Hooandee Eclipse**: un servicio de primer arranque lo **descarga del catálogo oficial, verifica el sha256 y
+  lo deja ACTIVADO** (no se redistribuye). `pocknix-decky-theme-eclipse.service`.
+- **Panel de Control** (Hooandee, GPL, v0.66.0) de serie, con **siembra-solo-si-falta** para que se autoactualice.
+  En la Odin **funciona de verdad**: **TDP** (backend `arm-frequency-levels`, CPU+GPU), ecualizador, pantalla (color),
+  límite de carga y mandos; los **ventiladores no** los detecta (van por `pocknix-fancontrol`).
+
+### ✅ QAM detrás del juego — ARREGLADO
+- **Se quita `--force-composition`** de `pocknix-steam` y de `sessions.d/steam`: con la base gamescope **OGC** (la que
+  metimos por el HDR) ese flag **peleaba** con la composición y el QAM se quedaba **detrás**. ArmadaOS **no** lo usa; la
+  base ya clasifica el overlay interactivo por `root_width`. Ver [`docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md`](docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md).
+
+### ✅ Turnip de Valve a la 0.5.x
+- `pocknix-vk-valve` sube de la 0.4.x (`gitabc426bb`) a la **0.5.x** (`gite07916b4`), como **payload per-game**.
+- **Medida** (Dead Island): **FPS empate** (+0,5 %), **1 % low +31 %**, **tirones 22 → 3** → más suave. Ver
+  [`docs/MESA-VALVE-0.5.x-PRUEBAS-2026-10-09.md`](docs/MESA-VALVE-0.5.x-PRUEBAS-2026-10-09.md).
+
+### 🚀 Extras
+- **Guía de actualización para terceros** (Davidusky y su IA): [`docs/ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-09.md`](docs/ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-09.md).
+- **Recuperación de la tarjeta de 1 TB** (reflasheo + datos): [`docs/1TB-RECUPERACION-2026-10-09.md`](docs/1TB-RECUPERACION-2026-10-09.md).
+
+---
+
 ## 📅 27–28 de septiembre 2026 — HDR, kernel 7.2.6, s2idle, sesión SteamOS y limpiezas
 
 Dos días muy intensos: se recupera el kernel 7.2.6, se porta todo el trabajo de energía de armadaOS,
