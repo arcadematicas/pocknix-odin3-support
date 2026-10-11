@@ -10,7 +10,7 @@ pkgname=linux-pocknix-sm8750
 # correctos y /usr/lib/pocknix/kernelrelease decia la verdad, pero el NOMBRE
 # del paquete mentia y pacman -Q tambien).
 pkgver=7.2.9
-pkgrel=1
+pkgrel=2
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"
