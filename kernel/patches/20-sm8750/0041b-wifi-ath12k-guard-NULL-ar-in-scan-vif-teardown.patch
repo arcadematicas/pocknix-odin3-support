@@ -1,0 +1,30 @@
+--- a/drivers/net/wireless/ath/ath12k/mac.c
++++ b/drivers/net/wireless/ath/ath12k/mac.c
+@@ -5927,7 +5927,7 @@
+ 
+ 	for_each_set_bit(link_id, &links_map, ATH12K_NUM_MAX_LINKS) {
+ 		arvif = wiphy_dereference(hw->wiphy, ahvif->link[link_id]);
+-		if (!arvif || !arvif->is_created ||
++		if (!arvif || !arvif->is_created || !arvif->ar ||
+ 		    arvif->ar->scan.arvif != arvif)
+ 			continue;
+ 
+@@ -11066,6 +11066,8 @@
+ 			continue;
+ 
+ 		ar = arvif->ar;
++		if (!ar)
++			continue;
+ 
+ 		/* Scan abortion is in progress since before this, cancel_hw_scan()
+ 		 * is expected to be executed. Since link is anyways going to be removed
+@@ -12478,6 +12480,9 @@
+ 		return;
+ 
+ 	ar = arvif->ar;
++	if (!ar)
++		return;
++
+ 	ab = ar->ab;
+ 
+ 	ath12k_dbg(ab, ATH12K_DBG_MAC,
