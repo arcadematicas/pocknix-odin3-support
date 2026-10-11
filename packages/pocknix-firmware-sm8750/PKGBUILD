@@ -27,7 +27,7 @@
 #      ADSP/CDSP, the ASoC topologies, the ADSP .jsn service configs, the BT and VPU blobs.
 pkgname=pocknix-firmware-sm8750
 pkgver=0.1.0
-pkgrel=1
+pkgrel=3
 pkgdesc="SM8750 family vendor firmware (AYN Odin 3: WCN7860 wifi, battery-auth ADSP charger, CDSP, audio topology, VPU; KONKR PF Elite), immune to linux-firmware updates"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
