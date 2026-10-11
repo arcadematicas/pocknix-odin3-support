@@ -9,6 +9,45 @@ from os.path import dirname, abspath, join, exists
 # cargarse, asi que SDL necesita un driver valido igualmente: se fuerza "dummy"
 # ANTES de importar pygame. Sin esto: "pygame.error: No available video device".
 _HEADLESS = any(a in sys.argv for a in ("--install-all", "--bios-check"))
+
+# ── Resolucion de releases SIN la API de GitHub -----------------------------------
+# La API sin token son 60 peticiones/HORA por IP: una instalacion completa (~30 apps
+# x 2 consultas) la agota y alguna app se queda sin bajar (HTTP 403). Estas dos vias
+# NO consumen cuota: el feed Atom de releases y el HTML "expanded_assets" del tag.
+def gh_noapi_tags(repo_path, limit=15):
+    """Tags recientes de un repo GitHub sin tocar la API (feed Atom)."""
+    try:
+        r = requests.get("https://github.com/%s/releases.atom" % repo_path, timeout=15)
+        if r.status_code != 200:
+            return []
+        return re.findall(r"<id>tag:github\.com,2008:Repository/\d+/([^<]+)</id>", r.text)[:limit]
+    except Exception:
+        return []
+
+
+def gh_noapi_assets(repo_path, tag):
+    """Assets de un tag sin tocar la API (HTML expanded_assets), con forma de la API."""
+    try:
+        url = "https://github.com/%s/releases/expanded_assets/%s" % (repo_path, tag)
+        r = requests.get(url, timeout=15)
+        if r.status_code != 200:
+            return []
+        out = []
+        for h in re.findall(r'href="(/[^"]+/releases/download/[^"]+)"', r.text):
+            out.append({"name": h.rsplit("/", 1)[-1],
+                        "browser_download_url": "https://github.com" + h})
+        return out
+    except Exception:
+        return []
+
+
+def gh_noapi_result(repo_path, limit=15):
+    """[(tag, nombre_asset), ...] resuelto sin API (o [] si no se puede)."""
+    res = []
+    for i, t in enumerate(gh_noapi_tags(repo_path, limit)):
+        assets = gh_noapi_assets(repo_path, t) if i == 0 else []
+        res.append((t, assets[0]["name"] if assets else t))
+    return res
 if _HEADLESS:
     os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
@@ -1039,6 +1078,13 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                 elif response.status_code == 403:
                     reset_ts = int(response.headers.get("X-RateLimit-Reset", 0))
                     wait = max(0, reset_ts - int(time.time()))
+                    if repo_type == "github":
+                        noapi = gh_noapi_result(repo_path)
+                        if noapi:
+                            print(f"Rate limit GitHub ({wait}s al reset): resuelto sin API")
+                            result = [{"version": t, "name": nm, "date": ""} for t, nm in noapi]
+                            self._cache_set(f"releases_{app_name}", result)
+                            return result
                     print(f"Rate limit GitHub. Espera {wait}s o pon token en github_token.txt")
                     return None
                 elif response.status_code == 401:
@@ -1068,6 +1114,13 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                 continue
 
         if not tags:
+            # Plan B sin cuota (la API puede haber dado 403 por rate limit)
+            for combo2 in combinations:
+                noapi = gh_noapi_result(f"{GITHUB_ORG}/{combo2}")
+                if noapi:
+                    result = [{"version": t, "name": nm, "date": ""} for t, nm in noapi]
+                    self._cache_set(f"releases_{app_name}", result)
+                    return result
             return None
 
         result = []
@@ -1126,10 +1179,19 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         if repo_type != "static":
             try:
                 res = requests.get(url, headers=req_headers, timeout=15)
-                if res.status_code != 200:
+                if res.status_code in (403, 429) and repo_type == "github":
+                    noapi = gh_noapi_assets(repo_path, tag)
+                    if not noapi:
+                        self.state = "EMU_MENU"
+                        self.status_msg = f"Error HTTP {res.status_code} al consultar release"
+                        return
+                    data = {"assets": noapi}
+                elif res.status_code != 200:
                     self.state = "EMU_MENU"
                     self.status_msg = f"Error HTTP {res.status_code} al consultar release"
                     return
+                else:
+                    data = res.json()
                 data = res.json()
                 # Gitea devuelve la LISTA de releases (GitHub, un release suelto):
                 # hay que quedarse con el que corresponde al tag elegido. Sin esto
