@@ -89,7 +89,12 @@ export STEAM_GAMESCOPE_HAS_TEARING_SUPPORT=1
 # Enable tearing controls in steam
 export STEAM_GAMESCOPE_TEARING_SUPPORTED=1
 
-export STEAM_GAMESCOPE_HDR_SUPPORTED=1
+# HDR OFF por defecto (Fransis, 11/10/2026): con HDR global el cliente Steam pone
+# GAMESCOPE_DISPLAY_HDR_ENABLED=1 y el tonemap por frame sobre TODO (tambien SDR) hacia
+# caer el QAM y mangoapp DETRAS del juego (ver docs/QAM-DETRAS-DEL-JUEGO y memoria 4717+).
+# No anunciamos HDR al cliente -> arranca en SDR. El toggle de PocknixControl sigue ahi
+# para activarlo a mano por juego/sesion cuando interese.
+export STEAM_GAMESCOPE_HDR_SUPPORTED=0
 
 # Workaround for steam getting killed immediatly during reboot
 # (gamescope-session-plus es quien honra estos sentinels al final de la sesion, asi que los
