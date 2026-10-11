@@ -16,8 +16,9 @@ theme_name="Hooandee Eclipse"
 theme_dir="${themes_dir}/${theme_name}"
 steam_dir="${user_home}/.steam/steam"
 
-theme_url="https://hooandee.github.io/panel-de-control/themes/v1/hooandee-eclipse/0.2.5/theme.zip"
-theme_sha256="c8da01e28119eae00f9a05148f756a9a43fc3b03635de1c90e95f8e6c1fe7e43"
+theme_version="0.3.2"   # version pineada = nuestro canal de actualizacion
+theme_url="https://hooandee.github.io/panel-de-control/themes/v1/hooandee-eclipse/${theme_version}/theme.zip"
+theme_sha256="3ec5b776d5d9b8680bd9e7ed78083e7a5db6cfa9da7355ecbd476915b0623bc2"
 
 # Optional fallback of the deckthemes class mappings (the plugin downloads its own once
 # online; this is only used when it has none yet, e.g. a first boot while offline).
@@ -43,10 +44,19 @@ if [ ! -f "${themes_dir}/css_translations.json" ] && [ -f "${snapshot_src}" ]; t
         "${themes_dir}/css_translations.json" 2>/dev/null || true
 fi
 
-# --- 3. Install + activate the theme (only if absent; never touch a user config) --
-if [ -d "${theme_dir}" ]; then
-    log "theme '${theme_name}' already installed; leaving its config untouched"
+# --- 3. Instalar o ACTUALIZAR el tema (sin tocar la config del usuario) --------
+# La version va PINNEADA (nuestro canal). Si hay una mas vieja, se refresca
+# conservando config_USER.json (ajustes del usuario: active + opciones por parche).
+installed_version=""
+if [ -f "${theme_dir}/theme.json" ]; then
+    installed_version="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${theme_dir}/theme.json" | head -1)"
+fi
+if [ -n "${installed_version}" ] && [ "${installed_version}" = "${theme_version}" ]; then
+    log "theme '${theme_name}' ya en ${theme_version}; nada que hacer"
     exit 0
+fi
+if [ -n "${installed_version}" ]; then
+    log "actualizando '${theme_name}': ${installed_version} -> ${theme_version} (conservando config_USER.json)"
 fi
 
 tmp="$(mktemp -d /tmp/eclipse-theme.XXXXXX)" || { log "mktemp failed"; exit 0; }
@@ -63,13 +73,24 @@ if [ "${actual}" != "${theme_sha256}" ]; then
     exit 0
 fi
 
+extract_to="${tmp}/extract"
+mkdir -p "${extract_to}"
 if command -v bsdtar >/dev/null 2>&1; then
-    bsdtar -xf "${tmp}/theme.zip" -C "${themes_dir}" || { log "extract failed"; exit 0; }
+    bsdtar -xf "${tmp}/theme.zip" -C "${extract_to}" || { log "extract failed"; exit 0; }
 elif command -v unzip >/dev/null 2>&1; then
-    unzip -q -o "${tmp}/theme.zip" -d "${themes_dir}" || { log "extract failed"; exit 0; }
+    unzip -q -o "${tmp}/theme.zip" -d "${extract_to}" || { log "extract failed"; exit 0; }
 else
     log "no zip extractor available"
     exit 0
+fi
+src_dir="${extract_to}"
+[ -d "${extract_to}/${theme_name}" ] && src_dir="${extract_to}/${theme_name}"
+had_config=0
+[ -f "${theme_dir}/config_USER.json" ] && had_config=1
+if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete --exclude=config_USER.json "${src_dir}/" "${theme_dir}/" || { log "sync failed"; exit 0; }
+else
+    cp -a "${src_dir}/." "${theme_dir}/" 2>/dev/null || true
 fi
 
 if [ ! -f "${theme_dir}/theme.json" ]; then
@@ -80,7 +101,11 @@ fi
 # Activate it. Only 'active' matters: every patch falls back to its manifest default,
 # which is exactly the look the theme ships with. Written as config_USER.json — the
 # file the plugin reads for USER != root (see css_theme.py: configPath + "_USER.json").
-printf '{"active": true}\n' > "${theme_dir}/config_USER.json"
+if [ "${had_config}" -eq 0 ]; then
+    printf '{"active": true}\n' > "${theme_dir}/config_USER.json"
+else
+    log "conservo el config_USER.json del usuario"
+fi
 chown -R "${user_name}:${user_name}" "${theme_dir}" 2>/dev/null || true
 
 log "installed and activated '${theme_name}'"
