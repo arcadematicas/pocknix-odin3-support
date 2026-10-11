@@ -197,6 +197,7 @@ trap cleanup EXIT
 env -u WAYLAND_DISPLAY \
   GAMESCOPE_FAKE_OUTPUT_MM="${PANEL_MM}" \
   gamescope "${GS_OUTPUT[@]}" -W "${GS_W}" -H "${GS_H}" -r "${REFRESH}" --xwayland-count 2 --mangoapp --backend drm \
+    --fake-output-mm "${PANEL_MM}" \
     --force-orientation "${ORIENT}" "${GS_ROTATE[@]}" -e -- \
     /usr/lib/pocknix/pocknix-steam-splash "${GS_W}x${GS_H}" -- \
     env LD_LIBRARY_PATH="${LDLP}" "${CLIENT}" -gamepadui -steamos3 -steampal -steamdeck -noverifyfiles -noshaders \
