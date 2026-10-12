@@ -73,3 +73,26 @@ el resultado igual que hoy (`self._cache_set`).
 ## Reproducir
 `api.github.com/rate_limit` -> `core.limit = 60` (sin token). Lanzar el setup con el cupo
 consumido (o ~60 consultas seguidas desde la misma red) y ver el `[WARN] Algun emulador fallo`.
+
+---
+
+## ✅ VALIDADO EN PRODUCCIÓN — calvos-1.2 (12/10/2026)
+
+**Instalación inicial limpia** sobre la SD de 128 GB recién grabada con `calvos-1.2`
+(`deckstation-arm 1.0.0-15`, updater nuevo md5 `5f74c858…`):
+
+| Comprobación | Resultado |
+|---|---|
+| Emuladores esperados (`git.txt`: 31) | **31/31 instalados** — ninguno falta |
+| RetroArch | instalado como **binario** (no AppImage) + 3,1 GB de cores/assets |
+| ES-DE | **3.5.0** + **221 sistemas** |
+| `Apps/` total | **4,7 GB** |
+| `[WARN] Algun emulador fallo` | **0 ocurrencias** |
+| **Cuota de la API de GitHub** | **0/60 — AGOTADA durante la instalación** |
+
+**Conclusion: el plan B sin API (`gh_noapi_tags`/`gh_noapi_assets`) funciona.** La API se agotó
+y la instalación **igual bajo todo**, de forma automática y sin token. El fallo que motivó este
+informe ya no se reproduce; no hace falta espejo propio ni token.
+
+**Cosmetico pendiente**: quedó una carpeta vacía duplicada `Apps/xenia_edge` (0 B) por un error de
+mayúsculas antiguo; el emulador real vive en `Apps/Xenia_Edge`. Se borra cuando se quiera.
