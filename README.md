@@ -214,3 +214,11 @@ mantenedor. Toda nuestra evolución del día a día vive en `odin3-sm8750`.
 
 - Sin credenciales ni binarios de terceros en el repo (los blobs de firmware se descargan).
 - Trabajo hecho en un fork; los artefactos están listos para portar/mergear.
+
+---
+
+## ⚖️ Licencia
+
+**GPL-2.0** (igual que [pocknix-os](https://github.com/shuuri-labs/pocknix-os) y ROCKNIX).
+Los componentes de terceros que vendorizamos mantienen **su** licencia (p. ej. DeckStation / WProton: GPL-3.0).
+Ver [`LICENSE.md`](LICENSE.md).
