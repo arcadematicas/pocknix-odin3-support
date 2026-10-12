@@ -1,44 +1,79 @@
-# pocknix-odin3-support — AYN Odin 3 (SM8750 / Snapdragon 8 Elite)
+<div align="center">
 
-**El centro de nuestro trabajo** para hacer que [pocknix-os](https://github.com/shuuri-labs/pocknix-os)
-(Arch Linux ARM) corra en la **AYN Odin 3** (Qualcomm **SM8750** / **Adreno 830**).
+# 🎮 CalvOS
 
-Este repo es la **fuente de verdad**: parches de kernel y gamescope, paquetes propios
-(Mesa/Turnip, bootloader, BSP, DeckStation…), overlay de sistema, herramientas y toda la
-documentación. El árbol de compilación (`pocknix-os`) **se regenera desde aquí**, nunca al revés.
+**Arch Linux ARM + Steam, gamescope y emulación para la AYN Odin 3**
+*(Qualcomm Snapdragon 8 Elite · SM8750 · Adreno 830)*
 
-> ⚠️ **No es un fork del sistema.** El sistema vive en
-> **`arcadematicas/pocknix-os`** (rama **`odin3-sm8750`**), que mezcla upstream + lo de aquí.
-> Este repo solo contiene *lo nuestro*.
+[![Release](https://img.shields.io/github/v/release/arcadematicas/pocknix-odin3-support?label=CalvOS&color=2f81f7)](https://github.com/arcadematicas/pocknix-odin3-support/releases/latest)
+[![Arch](https://img.shields.io/badge/arch-aarch64-orange)]()
+[![Kernel](https://img.shields.io/badge/kernel-7.2.9--2-informational)]()
+[![License](https://img.shields.io/badge/license-GPL--3.0-green)]()
+[![Upstream](https://img.shields.io/badge/upstream-pocknix--os-8957e5)](https://github.com/shuuri-labs/pocknix-os)
+
+**CalvOS** convierte la **AYN Odin 3** en una consola/PC de juegos con la experiencia de *SteamOS*:
+Steam en **modo juego** dentro de **gamescope**, juegos de Windows con **Proton ARM64 (FEX)**,
+**emuladores listos con DeckStation**, plugins con **Decky** y un escritorio **KDE Plasma** completo.
+
+Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido sobre
+**[pocknix-os](https://github.com/shuuri-labs/pocknix-os)** (Arch Linux ARM).
+
+</div>
 
 ---
 
-## 📊 Estado actual (09/10/2026)
+## ✨ Lo que llevas de serie
+
+| | |
+|---|---|
+| 🕹️ **Juegos de Steam** | Cliente **Steam ARM64** nativo en modo juego (gamepadui) dentro de **gamescope** (base OGC). UI a escala correcta (`--fake-output-mm`). |
+| 🪟 **Juegos de Windows** | **Proton ARM64 + FEX**; **WProton** (`1.72`) para lanzar `.wsquashfs` con sus runners. |
+| 🎮 **Emulación** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 emuladores aarch64 (RetroArch + 200 cores, Dolphin, Duckstation, Cemu, Eden, MAME…). Instalación inicial **sin límites**: resuelve los assets sin la API de GitHub. |
+| 🧩 **Plugins (Decky)** | **PocknixControl** (TDP, HDR a mano, OLED care, snapshots, updates), **CSS Loader** y el tema **Eclipse 0.3.2** (autoactualizable). |
+| 🖥️ **Escritorio** | **KDE Plasma 6 (Wayland + Plasma Mobile)** con KScreen funcionando. |
+| 🖼️ **Pantalla** | **Rotación por hardware** del DPU (sin coste de GPU) y **HDR apagado por defecto** (evita que el QAM/MangoHUD caigan detrás; se enciende a mano). |
+| 🔋 **Energía** | Suspensión **s2idle real** (~0,37 W), carga con autenticación de batería y % estimado. |
+| 🔊 **Audio y mandos** | Stack LPASS + UCM (`SM8750AYN`) y **InputPlumber** (gamepad UART + paddles). |
+| 📦 **Actualizaciones** | **Repo pacman propio en Cloudflare R2**, firmado y **sin `[aur]`** → `pacman -Syu` trae todo (kernel, Mesa, Steam, Decky…). |
+| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.9-2`** (parches de aceleración, GPU Adreno 830, WiFi `ath12k` WCN7860, batería) + parche **anti‑bucle** en ath12k. |
+
+## 📥 Instalar
+
+1. **Descarga** la última imagen desde **[Releases](https://github.com/arcadematicas/pocknix-odin3-support/releases/latest)** (`pocknix-sm8750-sd.img`, ~25,6 GB).
+2. **Graba** en una microSD **64 GB o mayor**:
+   ```sh
+   sudo dd if=pocknix-sm8750-sd.img of=/dev/sdX bs=4M conv=fsync status=progress
+   ```
+   *(comprueba el disco con `lsblk` antes — es un `dd`, no perdona)*
+3. **Arranca** la Odin con la SD puesta. Usuario **`deck`** / root: contraseña **`pocknix`**.
+   SSH viene **OFF** (actívalo en *Pocknix Tools*).
+
+> 💡 La primera vez tarda un poco: la raíz btrfs se expande a toda la tarjeta y Steam se prepara.
+
+## 🔄 Actualizar
+
+```sh
+sudo pacman -Syu      # o desde el QAM / PocknixControl
+```
+
+## 📸 Capturas
+
+> *Pendiente:* añadir capturas reales (menú de juegos, QAM, DeckStation, Plasma).
+
+## 📊 Estado actual (12/10/2026)
 
 | Área | Estado |
 |---|---|
-| **Arranque** | ✅ Kernel **7.2.9** + DTS del Odin 3. Arranque en ~20 s |
-| **Rotación de pantalla** | ✅ **POR HARDWARE** — el DPU rota en scanout (`rotation=8`/`ROTATE_270`), sin coste de GPU. Ver [`docs/ROTACION-HARDWARE.md`](docs/ROTACION-HARDWARE.md) |
-| **Sesión de juego** | ✅ **gamescope-session-plus** (modelo SteamOS, portado de armadaOS) + Steam gamepadui. Reversible vía `~deck/.use-gsplus`. Ver [`CHANGELOG.md`](CHANGELOG.md) |
-| **HDR** | ✅ **FUNCIONANDO** — panel edidless con perfil propio (650 nits, gamma 2.2) + color pipelines por plano en el kernel. Verificado en `Ori and the Will of the Wisps` |
-| **Gráficos** | ✅ **Mesa 26.3.0** + Turnip propia (Adreno 830) + **Turnip de Valve 0.5.x** (`pocknix-vk-valve`, per-game: mejor 1 % low) |
-| **Mando + táctil** | ✅ InputPlumber, incluido el gamepad UART (driver `rsinput`) |
-| **WiFi / Bluetooth** | ✅ NetworkManager + `hci0` (ath12k **WCN7860**) |
-| **Audio** | ✅ Sound card `SM8750AYN` (ADSP + stack LPASS completo) + UCM |
-| **Batería** | ✅ Carga + % estimado por OCV (ver [`docs/BATTERY-ISSUE.md`](docs/BATTERY-ISSUE.md)) |
-| **Suspensión** | ✅ `s2idle` real (PCIe/D3cold/regulator de armadaOS, ~0.37 W) con ADSP que duerme aunque haya audio |
-| **Escritorio (Plasma)** | ✅ KScreen enumera el panel ([`docs/KSCREEN-ISSUE.md`](docs/KSCREEN-ISSUE.md)) |
-| **Bootloader** | ✅ **ABL 1.1.8** en ambos slots (`pocknix-update-abl --status` → `uptodate`) |
-| **Emulación** | ✅ DeckStation ARM en `/opt/deckstation/` (capa de emulación propia) + WProton |
-| **Actualizaciones** | ✅ **Repo propio en R2** (`sm8750`+`shared`+`base`, firmado) — las Odin se actualizan con `pacman -Syu` |
-| **Panel Decky** | ✅ PocknixControl + **CSS Loader** + **tema Eclipse** (de serie) + **Panel de Control** (Hooandee) |
-| **QAM** | ✅ Overlay **por encima** del juego (sin `--force-composition`; ver `docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md`) |
-| **Sensores IIO** | ⚠️ `hexagonrpcd` sale al arrancar y no expone IIO → **sin auto-rotación ni brillo adaptativo** |
-
-> El historial reciente está en [`CHANGELOG.md`](CHANGELOG.md); el detalle de la sesión del 20/09, en
-> [`docs/PENDIENTE-2026-09-20.md`](docs/PENDIENTE-2026-09-20.md)
-
----
+| **Arranque** | ✅ Kernel **7.2.9-2** + DTS del Odin 3 |
+| **Rotación** | ✅ **Por hardware** (DPU en scanout) |
+| **Steam** | ✅ Sesión gamescope + Steam gamepadui, UI a escala correcta |
+| **HDR** | ⚠️ **OFF por defecto** (a propósito: con HDR global el QAM/MangoHUD caían detrás). Toggle manual en PocknixControl |
+| **Gráficos** | ✅ **Mesa 26.3.0** + Turnip propia + **Turnip de Valve** (`pocknix-vk-valve`, per‑game) |
+| **Emulación** | ✅ **DeckStation**: instalación inicial completa (**31/31**) con la API de GitHub agotada |
+| **WProton** | ✅ **1.72** (`arm-2026-10-11a`) — runners por descargar en su menú |
+| **WiFi / BT** | ✅ `ath12k` WCN7860 + **parche anti‑bucle** (`0041b`) |
+| **Audio / mandos / batería** | ✅ LPASS + UCM · InputPlumber · carga autenticada |
+| **Suspensión** | ✅ s2idle real |
 
 ## 🎯 El hito: rotación por hardware
 
