@@ -2,7 +2,7 @@
 
 **Fecha**: 11/10/2026 · **Artefacto**: `pocknix-sm8750-sd.img` (25.6 GB)
 ```
-sha256  $SHA
+sha256  316278ca6e87d44bfd4b197b21c2769bc0c86dffa79d27cc2d311fbfaab843e8
 ```
 
 ## Cambios vs CalvOS 1.1
