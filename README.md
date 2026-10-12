@@ -2,13 +2,15 @@
 
 # 🎮 CalvOS
 
+*(🇬🇧 [English version](README.en.md))*
+
 **Arch Linux ARM + Steam, gamescope y emulación para la AYN Odin 3**
 *(Qualcomm Snapdragon 8 Elite · SM8750 · Adreno 830)*
 
 [![Release](https://img.shields.io/github/v/release/arcadematicas/pocknix-odin3-support?label=CalvOS&color=2f81f7)](https://github.com/arcadematicas/pocknix-odin3-support/releases/latest)
 [![Arch](https://img.shields.io/badge/arch-aarch64-orange)]()
 [![Kernel](https://img.shields.io/badge/kernel-7.2.9--2-informational)]()
-[![License](https://img.shields.io/badge/license-GPL--3.0-green)]()
+[![License](https://img.shields.io/badge/license-GPL--2.0-green)]()
 [![Upstream](https://img.shields.io/badge/upstream-pocknix--os-8957e5)](https://github.com/shuuri-labs/pocknix-os)
 
 **CalvOS** convierte la **AYN Odin 3** en una consola/PC de juegos con la experiencia de *SteamOS*:
