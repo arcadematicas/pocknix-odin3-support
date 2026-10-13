@@ -1,0 +1,27 @@
+#!/bin/bash
+# pocknix-hdr-restore — aplica la preferencia de HDR guardada por pocknix-control.
+# El atomo vive en el Xwayland de gamescope (:0) y solo lo puede tocar `deck`.
+set -u
+PREF=/var/lib/pocknix/hdr-enabled          # "1" | "0"  (lo escribe pocknix-control)
+DEF_CFG=/etc/pocknix/hdr.conf
+want_default="0"
+[ -f "$DEF_CFG" ] && grep -qE '^POCKNIX_HDR_DEFAULT=on' "$DEF_CFG" && want_default="1"
+
+xprop_deck() { runuser -u deck -- env DISPLAY=:0 xprop "$@" 2>/dev/null; }
+
+# 1) esperar a que exista el atomo (hasta 3 min: la sesion tarda en levantar)
+for i in $(seq 1 90); do
+  v="$(xprop_deck -root GAMESCOPE_DISPLAY_HDR_ENABLED | grep -oE '[01]$' | head -1)"
+  [ -n "${v:-}" ] && break
+  sleep 2
+done
+[ -n "${v:-}" ] || { echo "pocknix-hdr-restore: sin atomo GAMESCOPE_DISPLAY_HDR_ENABLED (¿sin sesion gamescope?)"; exit 0; }
+
+want="$want_default"
+[ -f "$PREF" ] && want="$(cat "$PREF" 2>/dev/null | tr -d '[:space:]')"
+case "$want" in 0|1) ;; *) want="$want_default" ;; esac
+
+# 2) aplicarlo (dos pasadas: el cliente Steam lo pone a 1 al arrancar)
+apply() { xprop_deck -root -f GAMESCOPE_DISPLAY_HDR_ENABLED 32c -set GAMESCOPE_DISPLAY_HDR_ENABLED "$1" >/dev/null 2>&1; }
+apply "$want"; sleep 5; apply "$want"
+echo "pocknix-hdr-restore: HDR=$want (preferencia: ${PREF}${want:+ …})"

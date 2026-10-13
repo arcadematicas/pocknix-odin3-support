@@ -9,7 +9,7 @@
 # packages/pocknix-system-overlay/rootfs/ (mapping `overlay "overlay" "packages/pocknix-system-overlay/rootfs"`).
 pkgname=pocknix-system-overlay
 pkgver=0.1.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Nuestros ficheros de sistema (perfil del panel gamescope, reglas udev, pipewire, diag/oobe)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"

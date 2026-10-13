@@ -1,6 +1,9 @@
 post_install() {
-  # udev: que las reglas nuevas (ath12k/mando/paddles) se apliquen ya, sin reiniciar
   command -v udevadm >/dev/null 2>&1 && udevadm control --reload-rules 2>/dev/null || true
-  echo "   pocknix-system-overlay: reglas udev recargadas"
+  # servicios/unidades de nuestro overlay
+  systemctl enable pocknix-hdr-restore.service  >/dev/null 2>&1 || true
+  systemctl enable pocknix-diag.timer           >/dev/null 2>&1 || true
+  systemctl enable pocknix-oobe-marker.service  >/dev/null 2>&1 || true
+  echo "   pocknix-system-overlay: udev recargado + unidades habilitadas"
 }
 post_upgrade() { post_install; }

@@ -1,0 +1,13 @@
+[Unit]
+Description=Aplicar la preferencia de HDR (gamescope) al arrancar la sesion
+# despues de la sesion grafica (Steam ya ha puesto su estado, lo corregimos nosotros)
+After=graphical.target pocknix-decky-loader.service
+Wants=graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-hdr-restore
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

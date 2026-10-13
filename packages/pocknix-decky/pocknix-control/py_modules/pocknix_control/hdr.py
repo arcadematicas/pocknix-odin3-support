@@ -117,6 +117,7 @@ def set_hdr(enabled: bool) -> dict:
         return estado
 
     valor = 1 if enabled else 0
+    _guardar_preferencia(enabled)
     cp = _run_xprop(["-root", "-f", ATOM_HDR_ENABLED, "32c",
                      "-set", ATOM_HDR_ENABLED, str(valor)])
     if cp is None:
@@ -124,3 +125,13 @@ def set_hdr(enabled: bool) -> dict:
               flush=True)
     # Si fallo, se devuelve el estado real para que la UI revierta el toggle.
     return hdr_status()
+
+
+def _guardar_preferencia(enabled: bool) -> None:
+    """Apunta la eleccion para que pocknix-hdr-restore la reaplique al arrancar."""
+    try:
+        os.makedirs("/var/lib/pocknix", exist_ok=True)
+        with open("/var/lib/pocknix/hdr-enabled", "w") as f:
+            f.write("1" if enabled else "0")
+    except OSError:
+        pass
