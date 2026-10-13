@@ -70,10 +70,10 @@ switch|title.keys|claves de titulos||
 3ds|seeddb.bin|3DS seed database||
 
 # --- Xbox (Xemu: bootrom.bin obligatorio; flash/hdd los genera Xemu) ---
-xbox|mcpx_1.0.bin|Xbox MCPX Boot ROM||c838f432a6a552fd2878f1a681150092
-xbox|Complex_4627v1.03.bin|Xbox BIOS (1.03)||3b8fc0ca159941f155ce4a9df20f4c8e
-xbox|xbox_hdd.qcow2|Xbox HDD Image (qcow2)||
-xbox|xbox_eeprom.bin|Xbox EEPROM||
+xbox|mcpx_1.0.bin|Xbox MCPX Boot ROM (cualquier bootrom MCPX/256KB valido) - 512B|bootrom.bin|c838f432a6a552fd2878f1a681150092,d49c52a4102f6df7bcf8d0617ac475ed
+xbox|Complex_4627v1.03.bin|Xbox BIOS retail (1.03) - Cualquier BIOS retail de 256 KB o debug de 1 MB sirve|xbox-5838.bin,xbox-4627_debug.bin|3b8fc0ca159941f155ce4a9df20f4c8e,c5907d241de37c22b083b6e30fa934b0,e8dd61cc6abdbd06aac185e371312dc1
+xbox|xbox_hdd.qcow2|Xbox HDD Image (qcow2). El HDD lo crea xemu si no existe|xbox_hdd.qcow2|552b4cf5e7b07d4c9f109cd244091e16
+xbox|xbox_eeprom.bin|Xbox EEPROM. Lo genera xemu - NO es necesario copiarlo||
 
 # --- Nintendo DS (MelonDS: bios9 + bios7 + firmware) -------------------
 nds|bios9.bin|NDS ARM9 BIOS|dsi_bios9.bin|87b665fce118f76251271c3732532777

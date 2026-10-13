@@ -2952,6 +2952,8 @@
         <extension>.iso .ISO .squashfs</extension>
         <command label="xemu (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_XEMU% -dvd_path %ROM%</command>
         <command label="Xemu (Squashfs)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% ./ROMs/xbox/unsquashfs.sh %ROMRAW%</command>
+        <command label="xemu (RetroArch)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/xemu_libretro.so %ROM%</command>
+        <!-- La segunda opcion (core de libretro xemu_libretro.so) aparecera solo cuando exista el core en la carpeta portable de cores. deckstation-cores-sync.sh podara este comando mientras el .so no este presente. -->
         <platform>xbox</platform>
         <theme>xbox</theme>
     </system>

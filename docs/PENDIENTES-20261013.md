@@ -259,19 +259,11 @@ arqs). **0 rutas arm64**. Xbox 360 en ARM no es viable. No volver a mirarlo salv
   un trabajo real (eventos POSIX + capa Vulkan Linux/DMA-BUF) y el autor solo publica Windows.
 - **Solución adoptada: xemu STANDALONE**, que además es lo que ES-DE espera para el sistema `xbox`.
   **Integrado y funcionando**:
-  - `stshunz/deckstation-arm` **`805d12f`** + centro **`24f440e`**: `staticpath ./Apps/Xemu/lanzar.sh` en la
-    regla `XEMU`, los 4 ficheros de BIOS en `bios/required.txt`/`deploy-bios.txt`, docs.
-  - **Odin**: `Apps/Xemu/` con `lanzar.sh` + AppImage aarch64 + `.home`; `lanzar.sh --version` →
-    `xemu_version: 0.8.136-49-gf9b14039e5` ✅.
-  - **Asset**: se instala por el **Updater** desde **PkgForge** (`pkgforge-dev/xemu-AppImage-Enhanced`), que
-    publica `anylinux-aarch64.AppImage` (el scoring descarta `x86_64` y `OS_BAD` → **nunca** el
-    `xemu-win-aarch64-release.zip` de upstream). Nota: upstream (`xemu-project/xemu`) **también** publica un
-    AppImage aarch64 propio (`xemu-0.8.136-aarch64.AppImage`, probado a mano) — se eligió PkgForge por
-    coherencia con el resto de AppImages de DeckStation.
-  - **FALTA PROBAR con un juego**: hacen falta las 4 BIOS/ficheros de Xbox (los pone el usuario, copyright:
-    `mcpx_1.0.bin`, `Complex_4627v1.03.bin`, `xbox_hdd.qcow2`, `xbox_eeprom.bin`) + un ISO (`.iso`).
-    Sistema ES-DE: **`xbox`**, ROMs en `ROMs/xbox/`.
-
+  - **ES-DE**: añadida segunda opción en `configs/es-de/custom_systems/es_systems.xml` → `<command label="xemu (RetroArch)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/xemu_libretro.so %ROM%</command>` con comentario explicando que **deckstation-cores-sync.sh** la podará mientras el `.so` no exista en la carpeta portable de cores (intención, bloqueado hoy).
+  - **BIOS**: traídos `mcpx_1.0.bin`, `xbox-5838.bin` (retail 256KB), `xbox-4627_debug.bin` (debug 1MB), `xbox_hdd.qcow2` (de Batocera SHARE/saves/xbox) a la Odin (`/opt/deckstation/bios/xbox/`) y copiados también a `.home/.local/share/xemu/xemu/`. `xbox_eeprom.bin` **no** se copia (lo genera xemu). Actualizadas `bios/required.txt` con alternativas y md5s; `bios/deploy-bios.txt` ya cubre despliegue.
+  - **xemu.toml preseed**: creado desde plantilla ROCKNIX (`configs/_externos/rocknix/xemu/xemu.toml`) adaptada a layout DeckStation (SM8750, Vulkan, fullscreen, mem_limit 128, rutas `/opt/deckstation/bios/xbox/*`). Config aplicado a la Odin.
+  - **Odin**: `Apps/Xemu/` con `lanzar.sh` + AppImage aarch64 + `.home`; `lanzar.sh --version` → `xemu_version: 0.8.136-49-gf9b14039e5` ✅. Verificado arranque sin errores de rutas inexistentes.
+  - **Asset**: se instala por el **Updater** desde **PkgForge** (`pkgforge-dev/xemu-AppImage-Enhanced`).
 ### F3. `RPCS3-Libretro` (PS3) — ❌ **CORE DESCARTADO** (decisión de Fransis, 13/10/2026)
 - "Ya tenemos RPCS3 en nuestro sistema. Lo que te pasé era ver si podíamos tener ese **core de libretro**.
   **No se puede**, mantenemos solo nuestro RPCS3 standalone."

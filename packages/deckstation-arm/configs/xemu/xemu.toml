@@ -1,7 +1,41 @@
+[general]
+show_welcome = false
+screenshot_dir = '/opt/deckstation/screenshots'
+skip_boot_anim = true
+
+[input]
+gamepad_mappings = [
+    { gamepad_id = '0300bb95202000000130000001000000'}
+    ]
+
+[input.bindings]
+port1_driver = 'usb-xbox-gamepad'
+port1 = '0300bb95202000000130000001000000'
+
 [display]
-renderer = "vulkan"
+renderer = 'VULKAN'
+
+[display.vulkan]
+preferred_physical_device = 'Adreno (TM) 830'
+
+[display.window]
+fullscreen_on_startup = true
+
+[display.ui]
+show_menubar = false
+fit = 'stretch'
+aspect_ratio = 'native'
+scale = 2
 
 [sys]
-boot_rom_path = "/opt/deckstation/bios/xbox/bootrom.bin"
-flash_path = "/opt/deckstation/bios/xbox/flash.bin"
-hdd_path = "/opt/deckstation/bios/xbox/xbox_hdd.qcow2"
+mem_limit = '128'
+
+[sys.files]
+bootrom_path = '/opt/deckstation/bios/xbox/mcpx_1.0.bin'
+flashrom_path = '/opt/deckstation/bios/xbox/xbox-5838.bin'
+eeprom_path = '/opt/deckstation/Apps/Xemu/xemu_Nightly-0.8.136.r49.gf9b1403-1-anylinux-aarch64.AppImage.home/.local/share/xemu/xemu/eeprom.bin'
+hdd_path = '/opt/deckstation/bios/xbox/xbox_hdd.qcow2'
+
+[perf]
+cache_shaders = false
+

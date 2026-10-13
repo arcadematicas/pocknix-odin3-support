@@ -74,5 +74,5 @@ o similar). Los configs de ES-DE importados viven en `configs/es-de/`
 - **Sistema**: `xbox` (standalone, NO core de libretro para Linux ARM).
 - **Origen del AppImage**: `xemu-project/xemu` vía `pkgforge-dev/xemu-AppImage-Enhanced` (score del updater asegura `.AppImage` aarch64).
 - **Wrapper**: `./Apps/Xemu/lanzar.sh` (exporta HOME al `.home` portable).
-- **BIOS**: `mcpx_1.0.bin`, `Complex_4627v1.03.bin`, `xbox_hdd.qcow2`, `xbox_eeprom.bin` — se listan en `bios/required.txt` y se despliegan según `bios/deploy-bios.txt` (incluyendo el `.home` de Xemu). El HDD es una imagen qcow2 (no BIOS).
+- **BIOS**: `mcpx_1.0.bin` (MCPX boot ROM, también válido `bootrom.bin`), `Complex_4627v1.03.bin` (BIOS retail) — se aceptan alternativas (`xbox-5838.bin` retail 256KB, `xbox-4627_debug.bin` debug 1MB). `xbox_hdd.qcow2` y `xbox_eeprom.bin`: el HDD puede existir (proveniente de Batocera) y se copia; el EEPROM lo genera xemu automáticamente. Todo se lista en `bios/required.txt` y se despliega según `bios/deploy-bios.txt` (incluyendo el `.home` de Xemu). El HDD es una imagen qcow2 (no BIOS).
 - **Trampa**: releases de upstream incluyen `xemu-win-aarch64-release.zip` — el filtro de arquitectura/SO evita que sea elegido.
