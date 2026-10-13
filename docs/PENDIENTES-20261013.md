@@ -15,10 +15,38 @@
 - Traer su `main` y rebasar nuestro centro/arbol; decidir: `oops=panic` si/no y que cmdline usamos.
 - Nuestro extra (guarda **ath12k 0041b**) va como **PR propio a `kernel/common`** (ellos lo dijeron).
 
-### A3. `pocknix-vk-valve` → build del Deckard `-5`  ⭐ preparado
+### A3. `pocknix-vk-valve` → build del Deckard `-5`  ⭐ PREPARADO (PKGBUILD bumpeado; NO compilado)
 - `_valve_pkg` = `deckard-mesa-linux-aarch64-26.3.0_devel+gite07916b4-5-aarch64.pkg.tar.zst`
 - sha256 `c30eb810cf537e839f5b7ff66b1088e3c29cf67e17bcbf44856b3ac38064b7cb` (19.334.706 B)
 - Bump `pkgver`/`pkgrel` + recompilar + publicar en R2. Medir (el `-1` daba +13,4% FPS).
+
+**Hecho el 13/10/2026 (tarea A3, sin compilar — el PC esta ocupado con A1):**
+- **sha256/tamano REALES verificados descargando el fichero** (a `/tmp/opencode`, luego limpiado):
+  `c30eb810cf537e839f5b7ff66b1088e3c29cf67e17bcbf44856b3ac38064b7cb`, **19.334.706 B** → **cuadra
+  con la nota al byte**. (URL con `%2B` por el `+`: `...26.3.0_devel%2Bgite07916b4-5...`.)
+- **PKGBUILD tocado (SOLO el del centro, fuente de verdad)**: `packages/pocknix-vk-valve/PKGBUILD`
+  - `pkgver 20261009 → 20261013`, `pkgrel 1` (sin cambio); `_valve_pkg …-1 → …-5`;
+    `sha256sums 1bc065a1… → c30eb810…`; comentarios derivados (`# …gite07916b4-5`) actualizados.
+  - `_mesa_series`/`_payload` **NO cambian** (`26.3.0-valve`) → la clave del tweak sigue igual.
+  - La copia del arbol (`pocknix-os/packages/shared/pocknix-vk-valve/PKGBUILD`) **sigue en `-1`**:
+    es un `overlay` del centro, se reescribe al `sync-to-os.sh` (NO se edita a mano).
+- **Que cambia `-5` ademas del numero** (comparado con el `-1` descargado, mismo commit `e07916b4`):
+  - `.PKGINFO`: deps **identicas** (libdrm, wayland, libxshmfence, libelf, libdisplay-info, libglvnd,
+    zstd, vulkan-icd-loader, lua, libconfig) → sin deps nuevas; listado de ficheros identico (124 entradas).
+  - El binario **si cambia**: Turnip `.so` 18.850.752 B (`ec8e3510…`) → **18.857.136 B**
+    (`6bed18a0…`, el del informe) — rebuild de Valve, no solo el `pkgrel`.
+  - `DT_NEEDED` igual salvo **`libdisplay-info.so.1` → `libdisplay-info.so.3`**: con `-5` el payload
+    pide directamente el soname que sirve ALARM (el alias `.so.1` del paquete sigue creandose, inocuo).
+- **Comando de build corregido** (el flujo real esta en `BUILD.md` §3 y `docs/PRUEBAS-MESA.md` §7;
+  `tools/sync-to-os.sh` vive en el CENTRO, NO en `pocknix-os` — la ruta de la tarea era erronea):
+  ```
+  cd /home/fransis/pocknix-odin3-project/pocknix-odin3-support
+  ./tools/sync-to-os.sh && ./tools/check-sync.sh
+  cd ../pocknix-os
+  sudo DEVICE=sm8750 make packages PKG="pocknix-vk-valve"
+  ```
+- **Pendiente**: (1) compilar (comando de arriba); (2) publicar en R2; (3) medir **B7** (`-5` vs `-1`,
+  el `-1` daba +13,4% en Dead Island).
 
 ### A4. FEX → 2610  🟡 PREPARADO (PKGBUILD bumpeado + parches verificados; NO compilado)
 - ROCKNIX no lo "tiene": lo compila de **upstream FEX-Emu** → coger **FEX-2610** de upstream.
@@ -73,6 +101,25 @@
 
 ### A6. ROCKNIX: `set default wifi country`
 - `cb4b9e8e` — relacionado con nuestro problema de **regdom/DFS** (el AP en canal 116).
+
+**Hecho el 13/10/2026 (tarea A6 — regdom permanente; sin compilar ni tocar la Odin):**
+- **Kernel (`pocknix-os/kernel/sm8750/config/linux.aarch64.conf`, rama `odin3-sm8750`)**: solo
+  `CONFIG_CFG80211=y→m` (l.1708) y `CONFIG_MAC80211=y→m` (l.1717); el resto de `CONFIG_CFG80211_*`
+  /`CONFIG_MAC80211_*` **intacto** (grep previo: sin sorpresas; único driver WLAN `ATH12K=m`).
+  md5 `c9a429f1…` → `92bfbf80…`. **`MAC80211=m` es imprescindible** (un módulo no puede depender
+  de un built-in) y **cfg80211 como módulo** hace que el `85-regulatory.rules` de `wireless-regdb`
+  se dispare en el arranque y cargue `regulatory.db` → dominio **ES**.
+- **País en la imagen (mecanismo oficial)**: `.install` de **`pocknix-system-overlay`** →
+  `_pocknix_set_wireless_regdom()` idempotente que fija `WIRELESS_REGDOM="ES"` en
+  `/etc/conf.d/wireless-regdom` (activa/se descomenta/se añade) + llama a `set-wireless-regdom`.
+  ⚠️ **NO como fichero del paquete**: ese fichero es propiedad de `wireless-regdb` (backup) y
+  pacman daría conflicto duro (reproducido con fakeroot) → rompería build de imagen y `-Syu`.
+- **Delta del kernel documentado**: `docs/KERNEL-CONFIG-DELTA-20261013.md` (líneas exactas, motivo,
+  cómo re-aplicarlo tras `make sync` — ese fichero lo sobrescribe el sync y NO lo cubre
+  `sync-to-os.sh`).
+- **Pendiente**: compilar (`sudo DEVICE=sm8750 make kernel`), deploy, y verificar en la Odin
+  (`dmesg | grep -i regulatory`, `iw reg get` → `country ES: DFS-ETSI`, `iw phy phy0 info` sin
+  `(no IR)`).
 
 ### A7. VBoyColor como **core de libretro** (para DeckStation)  ✅ HECHO (13/10/2026)
 - Paquete **`vboycolor-libretro`** creado (`packages/`, patron `suyu-libretro`, release fijada
