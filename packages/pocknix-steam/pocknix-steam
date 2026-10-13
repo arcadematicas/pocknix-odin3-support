@@ -130,12 +130,10 @@ export STEAM_USE_MANGOAPP=1
 export STEAM_USE_DYNAMIC_VRS=1
 export STEAM_GAMESCOPE_HAS_TEARING_SUPPORT=1
 export STEAM_GAMESCOPE_TEARING_SUPPORTED=1
-# HDR OFF por defecto (Fransis, 11/10/2026): con HDR global el cliente Steam pone
-# GAMESCOPE_DISPLAY_HDR_ENABLED=1 y el tonemap por frame sobre TODO (tambien SDR) hacia
-# caer el QAM y mangoapp DETRAS del juego (ver docs/QAM-DETRAS-DEL-JUEGO y memoria 4717+).
-# No anunciamos HDR al cliente -> arranca en SDR. El toggle de PocknixControl sigue ahi
-# para activarlo a mano por juego/sesion cuando interese.
-export STEAM_GAMESCOPE_HDR_SUPPORTED=0
+# HDR: el panel SI se anuncia como HDR-capable (si no, el toggle de PocknixControl dice
+# "el panel no reporta HDR" y no sirve; ver PENDIENTES bloque E). El HDR por defecto APAGADO
+# se resuelve aparte (sembrar el cliente con HDR off / forzar el atomo en la sesion).
+export STEAM_GAMESCOPE_HDR_SUPPORTED=1
 # Identifica el panel interno (edidless) para que gamescope enganche el perfil de color/HDR de
 # /usr/share/gamescope/scripts/10-armada/ayn.icna3520.oled.lua (650 nits, gamma 2.2). Sin esto el
 # panel de la Odin no reporta HDR y el QAM no ofrece la opcion. (portado de armada-os)

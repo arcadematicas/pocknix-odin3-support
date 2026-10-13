@@ -34,7 +34,8 @@ license=('GPL2')
 # python is for the button/OLED/pergame/MangoHud daemons and the session-manager shim; sudo is
 # for the sudoers.d drop-in that lets the shim switch power profiles without a password.
 # pocknix-firmware-sm8750 is ours (pocknix-os localrepo), so it is visible to the build chroot.
-depends=('pocknix-bsp-common' 'pocknix-firmware-sm8750' 'python' 'sudo' 'sdl2')
+depends=('pocknix-bsp-common' 'pocknix-firmware-sm8750' 'python' 'sudo' 'sdl2'
+          'pocknix-system-overlay')
 # gcc + SDL2 headers to build the OLED pixel refresher (see build()).
 makedepends=('sdl2')
 # Exactly one device BSP may be installed (wrong-device guard for a shared repo).

@@ -1,0 +1,31 @@
+# pocknix-system-overlay — NUESTROS ficheros de sistema (antes en overlay/, que solo copiaba
+# build-sd-image.sh y por tanto NUNCA llegaba a un dispositivo ya instalado con -Syu).
+#
+# Sintoma real (13/10/2026): un dispositivo actualizado no tenia el perfil Lua del panel
+# (-> GAMESCOPE_DISPLAY_SUPPORTS_HDR=0 y el toggle de HDR decia "el panel no reporta HDR"),
+# ni las reglas udev (ath12k, mando, paddles) ni el conf de buffers de pipewire.
+#
+# El contenido lo pone tools/sync-to-os.sh: copia el `overlay/` del centro a
+# packages/pocknix-system-overlay/rootfs/ (mapping `overlay "overlay" "packages/pocknix-system-overlay/rootfs"`).
+pkgname=pocknix-system-overlay
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Nuestros ficheros de sistema (perfil del panel gamescope, reglas udev, pipewire, diag/oobe)"
+arch=('any')
+url="https://github.com/arcadematicas/pocknix-odin3-support"
+license=('GPL2')
+# OJO: los ficheros que el usuario puede tocar van a backup para no pisarlos
+backup=('etc/xdg/baloofilerc')
+install='pocknix-system-overlay.install'
+
+package() {
+  # 1) contenido del overlay (lo trae el sync)
+  if [ -d "${startdir}/rootfs" ]; then
+    cp -a "${startdir}/rootfs/." "${pkgdir}/"
+  else
+    echo "ERROR: falta ${startdir}/rootfs — ejecuta tools/sync-to-os.sh" >&2
+    return 1
+  fi
+  # 2) limpieza: el zip del bootanimation no es config
+  [ -f "${pkgdir}/bootanimation-odin3.zip" ] && chmod 644 "${pkgdir}/bootanimation-odin3.zip"
+}

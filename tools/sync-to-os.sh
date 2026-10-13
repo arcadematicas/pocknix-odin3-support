@@ -71,6 +71,9 @@ mirror "packages/gamescope-session-steam" "packages/shared/gamescope-session-ste
 
 # --- our files that the build copies verbatim into the rootfs ----------------
 overlay "overlay" "overlay"
+# El MISMO overlay, tambien dentro del paquete pocknix-system-overlay: asi llega a los
+# dispositivos ya instalados por -Syu (antes solo lo copiaba build-sd-image).
+overlay "overlay" "packages/pocknix-system-overlay/rootfs"
 
 # --- our override of the package-build harness -------------------------------
 # scripts/build-packages.sh: adds MAKEFLAGS=-j$(nproc) to the chroot's makepkg.conf (the ALARM
