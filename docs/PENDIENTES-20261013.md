@@ -272,15 +272,19 @@ arqs). **0 rutas arm64**. Xbox 360 en ARM no es viable. No volver a mirarlo salv
     `mcpx_1.0.bin`, `Complex_4627v1.03.bin`, `xbox_hdd.qcow2`, `xbox_eeprom.bin`) + un ISO (`.iso`).
     Sistema ES-DE: **`xbox`**, ROMs en `ROMs/xbox/`.
 
-### F3. `RPCS3-Libretro` (PS3) — ⏸️ **APUNTADO PARA DESPUÉS** (decisión de Fransis, prioridad baja)
-- RPCS3 upstream **no publica binarios** (0 assets en sus releases) → hay que **compilar**.
-- Señales a favor: el core tiene `#ifdef _WIN32` (a diferencia de xemu, aquí **sí** hay camino no-Windows),
-  existe `.ci/build-linux-aarch64.sh` y un backend `rpcs3/Emu/CPU/Backends/AArch64/` (~400 líneas → **parece
-  parcial**).
-- Señales en contra: el `.info` pide **`OpenGL Core >= 4.3`**, está marcado **`is_experimental = true`** y
-  **`libretro_saves = false`** (no guarda partidas por libretro); el build es **pesado** (LLVM + Qt).
-- **Cuando se retome**: intento de **build nativo en la Odin** (aarch64, sin qemu) del core
-  (`rpcs3/libretro`, con `-DUSE_NATIVE_INSTRUCTIONS=OFF`). Expectativa moderada.
+### F3. `RPCS3-Libretro` (PS3) — ❌ **CORE DESCARTADO** (decisión de Fransis, 13/10/2026)
+- "Ya tenemos RPCS3 en nuestro sistema. Lo que te pasé era ver si podíamos tener ese **core de libretro**.
+  **No se puede**, mantenemos solo nuestro RPCS3 standalone."
+- Motivos técnicos (por si se retoma): RPCS3 upstream **no publica binarios** (0 assets) → habría que compilar;
+  el `.info` del core pide **`OpenGL Core >= 4.3`**, está marcado **`is_experimental = true`** y
+  **`libretro_saves = false`**; el backend `Emu/CPU/Backends/AArch64/` es pequeño (~400 líneas, parcial).
+- **El standalone SÍ existe y ya lo tenemos**: en la Odin hay
+  **`Apps/RPCS3/rpcs3-v0.0.42-19759-ffc50905_linux_aarch64.AppImage`** (80,4 MB, del 02/10) + su `.home` con
+  `config.yml`. ⚠️ **Corrección**: la nota vieja "RPCS3 sin ARM" era **errónea**. Además ROCKNIX, para
+  **SM8750**, usa `rpcs3-sa` (standalone) como única opción — igual que nosotros.
+- Nuestro `es_systems.xml` ya tiene el sistema `ps3` (`%EMULATOR_RPCS3%`, `./Apps/RPCS3/rpcs3.AppImage`) y en
+  el repo está la config de ROCKNIX (`configs/_externos/rocknix/rpcs3/`: `config.yml`, `Default.yml`,
+  `CurrentSettings.ini`). **No hay nada que hacer aquí.**
 
 ### Nota sobre el punto 3 del bloque E (HDR)
 El diseño **implementado el 13/10** es `pocknix-hdr-restore` (forzar el átomo a la preferencia guardada /
