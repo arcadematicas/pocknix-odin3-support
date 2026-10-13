@@ -60,7 +60,30 @@ sudo pacman -Syu      # o desde el QAM / PocknixControl
 
 ## 📸 Capturas
 
-> *Pendiente:* añadir capturas reales (menú de juegos, QAM, DeckStation, Plasma).
+<p align="center">
+  <img src="docs/screenshots/01-biblioteca.jpg" width="49%">
+  <img src="docs/screenshots/02-qam-pocknixcontrol.jpg" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/03-qam-tema-eclipse.jpg" width="49%">
+  <img src="docs/screenshots/04-deckstation.jpg" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/05-wproton.jpg" width="49%">
+  <img src="docs/screenshots/06-plasma.jpg" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/07-pocknix-tools.jpg" width="49%">
+  <img src="docs/screenshots/08-ajustes-steam.jpg" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/09-qam-juego-detras.jpg" width="49%">
+  <img src="docs/screenshots/10-sistema.jpg" width="49%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/11-informacion-sistema.jpg" width="49%">
+  <img src="docs/screenshots/12-menu-inicio-plasma.jpg" width="49%">
+</p>
 
 ## 📊 Estado actual (12/10/2026)
 
