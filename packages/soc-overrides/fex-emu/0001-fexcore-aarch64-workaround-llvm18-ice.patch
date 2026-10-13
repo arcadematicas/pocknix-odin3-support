@@ -1,0 +1,18 @@
+Rebased for FEX-2610: upstream inserted an `if (MINGW) ... endif()` block between
+`target_link_libraries(FEXCore_Base ...)` and `AddDefaultOptionsToTarget(...)`, which
+shifted the hunk context. Only the context lines were updated; the inserted lines are
+byte-identical to the FEX-2608 version (built OK there). Now applies with 0 fuzz.
+
+--- a/FEXCore/Source/CMakeLists.txt
++++ b/FEXCore/Source/CMakeLists.txt
+@@ -261,6 +261,10 @@ endfunction()
+ 
+ # Build FEXCore_Base static library
+ add_library(FEXCore_Base STATIC ${FEXCORE_BASE_SRCS})
++set_source_files_properties(
++    Interface/Core/Interpreter/Fallbacks/InterpreterFallbacks.cpp
++    PROPERTIES COMPILE_FLAGS "-O0 -fno-lto"
++)
+ target_link_libraries(FEXCore_Base PUBLIC ${LIBS})
+ if (MINGW)
+   target_link_libraries(FEXCore_Base PUBLIC ntdll)
