@@ -115,6 +115,35 @@ Medido el 13/10: rootfs 22 GB -> ~17,3 GB. **USA `tools/build-odin3.sh`** para q
 - ⚠️ **No usar `timeout`** en `make build`/`repo-add` (qemu tarda mucho).
 - ⬜ Al terminar cada imagen: comparar `du -sh` por directorio vs la anterior (regresiones de peso).
 
+## E. EL `overlay/` DEBE IR EN UN PAQUETE (bug SISTEMICO, 13/10/2026)
+
+**Sintoma**: en la SD de 1 TB (imagen de junio + `-Syu`), el toggle de HDR de PocknixControl dice
+*"el panel no reporta HDR"*; `xprop -root` da `GAMESCOPE_DISPLAY_SUPPORTS_HDR = 0`.
+**Diagnostico**: faltan **6 de los 11 ficheros de `overlay/`**:
+- `usr/share/gamescope/scripts/10-armada/ayn.icna3520.oled.lua` (perfil del panel -> HDR)
+- `etc/udev/rules.d/60-ath12k-iommu-fq.rules`
+- `etc/udev/rules.d/60-input-id2-odin3-gamepad.rules`
+- `etc/udev/rules.d/61-gpio-paddles-no-joystick.rules`
+- `usr/share/pipewire/pipewire.conf.d/99-pocknix-buffers.conf` (audio)
+- `etc/xdg/baloofilerc`
+
+**Causa raiz**: `overlay/` lo copia `build-sd-image.sh` -> **no es un paquete** -> un dispositivo ya
+instalado **nunca lo recibe** con `-Syu`. Afecta a **todas** nuestras imagenes desde el principio.
+*(Mitigado a mano en la 1TB el 13/10 copiando los 6 ficheros; falta el arreglo de verdad.)*
+
+**Arreglo (correcto, por defecto)**:
+1. **Empaquetar el overlay**: paquete nuevo `pocknix-system-overlay` (o meterlo en
+   `pocknix-bsp-<soc>`) que instale `overlay/**` en `/`; `pocknix-bsp-sm8750` en `depends=` y publicar
+   en R2 -> los dispositivos lo reciben con `-Syu`.
+2. **Quitar del overlay** lo que ya entregue el paquete (que la imagen no lo copie dos veces).
+3. **HDR por defecto**: decidir el diseno final:
+   - volver a `STEAM_GAMESCOPE_HDR_SUPPORTED=1` (para que el panel reporte HDR y **el toggle funcione**), y
+   - **sembrar el cliente Steam con HDR apagado** (`gamescope_hdr_enabled=0` en el `config.vdf` del seed)
+     para arrancar en **SDR**.
+   Estado actual: gate=0 -> **el toggle no funciona**; y `GAMESCOPE_DISPLAY_HDR_ENABLED=1` de todas formas
+   -> HDR encendido. **Es el peor de los dos mundos.**
+4. **Verificar** en la 1TB tras reiniciar la sesion: `xprop -root | grep HDR` -> `SUPPORTS_HDR=1` (OK el 13/10).
+
 ## C. HECHO (para no repetir)
 - ✅ **calvos-1.2** publicada y grabada (SD 128 GB) — sha256 `316278ca…`
 - ✅ **HDR off por defecto** + documentado · ✅ ath12k `0041b` + informe + PR #81
