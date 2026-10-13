@@ -55,11 +55,21 @@ echo "==> 2/5  sync-to-os.sh   (reaplica NUESTRO contenido ENCIMA)"
 echo "==> 3/5  check-sync.sh   (si falta algo nuestro, aborta AQUI)"
 "${HERE}/tools/check-sync.sh"
 
-echo "==> 4/5  kernel + imagen + SD"
+echo "==> 4/5  kernel + rootfs"
 if [ "$(id -u)" -eq 0 ]; then
-  ( cd "${OS}" && make kernel && make build && make sd-image )
+  ( cd "${OS}" && make kernel && make build )
 else
-  ( cd "${OS}" && sudo make kernel && sudo make build && sudo make sd-image )
+  ( cd "${OS}" && sudo make kernel && sudo make build )
+fi
+
+echo "==> 4.5/5  slim-rootfs.sh   (quita cache de pacman, doc y firmware x86)"
+"${HERE}/tools/slim-rootfs.sh"
+
+echo "==> 5/5  sd-image"
+if [ "$(id -u)" -eq 0 ]; then
+  ( cd "${OS}" && make sd-image )
+else
+  ( cd "${OS}" && sudo make sd-image )
 fi
 
 echo
