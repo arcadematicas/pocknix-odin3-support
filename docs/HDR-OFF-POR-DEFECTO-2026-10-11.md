@@ -46,3 +46,34 @@ correcta y el panel se identifica), y el **toggle manual de `pocknix-control`**
 - Memoria: 09/10/2026 — hipotesis "HDR global ON -> tonemap por frame -> MangoHUD/QAM detras"
   y decision "si se confirma el HDR -> dejarlo OFF".
 - `docs/ARMADAOS-ROCKNIX-SEGUNDA-PASADA.md`: armada deja HDR apagado por defecto.
+
+---
+
+# 🛠️ ACTUALIZACIÓN 13/10/2026 — **el gate NO basta** (comprobado en la Odin)
+
+**Corrección importante de este documento**: el fix del 11/10 (`STEAM_GAMESCOPE_HDR_SUPPORTED=0`)
+**no impide** que HDR arranque encendido. Medido en la Odin el 13/10:
+
+- El gate **sí llega**: `STEAM_GAMESCOPE_HDR_SUPPORTED=0` esta en el env de `gamescope`, del cliente
+  `steam` y de **todos** los `steamwebhelper`.
+- **Y aun asi** `GAMESCOPE_DISPLAY_HDR_ENABLED=1` al arrancar la sesion: el cliente Steam ARM64 pone
+  el atomo a 1 por su cuenta (el panel se anuncia HDR-capable via el perfil Lua +
+  `GAMESCOPE_INTERNAL_DEVICE_ID`).
+- Por eso el paso 2 de "**Como verificar**" (esperar `GAMESCOPE_DISPLAY_HDR_ENABLED = 0` solo con el
+  gate) es **incorrecto**: da 1.
+
+**El mecanismo que de verdad lo apaga (13/10)** es **`pocknix-hdr-restore`**: fuerza el atomo a la
+preferencia guardada (`/var/lib/pocknix/hdr-enabled`, que escribe pocknix-control) o al defecto de
+`/etc/pocknix/hdr.conf` (**off**), con **dos pasadas** (su propio comentario: *"el cliente Steam lo
+pone a 1 al arrancar"*). Va en `pocknix-system-overlay` (overlay `etc/systemd/system/
+pocknix-hdr-restore.service`, `WantedBy=multi-user.target`) y el `.install` la **habilita**.
+
+**Ojo con el gate**: el centro lleva a proposito `STEAM_GAMESCOPE_HDR_SUPPORTED=1` en
+`packages/pocknix-steam` (comentario del propio fichero: el panel **debe** anunciarse HDR o el toggle
+de PocknixControl dice "el panel no reporta HDR"; el apagado por defecto lo resuelve el restore).
+Es decir, el `⛔ NO reintroducir` de arriba esta **superado**: lo prohibido es dejarlo en 1 **sin** el
+restore.
+
+**Verificacion buena (13/10)**: `xprop -root GAMESCOPE_DISPLAY_HDR_ENABLED` -> **0** con el servicio
+`pocknix-hdr-restore` activo + el QAM/mangoapp **encima** del juego. Medido en la Odin: paso de 1 a 0
+al arrancar el servicio.
