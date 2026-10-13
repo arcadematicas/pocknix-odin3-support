@@ -20,9 +20,48 @@
 - sha256 `c30eb810cf537e839f5b7ff66b1088e3c29cf67e17bcbf44856b3ac38064b7cb` (19.334.706 B)
 - Bump `pkgver`/`pkgrel` + recompilar + publicar en R2. Medir (el `-1` daba +13,4% FPS).
 
-### A4. FEX → 2610
+### A4. FEX → 2610  🟡 PREPARADO (PKGBUILD bumpeado + parches verificados; NO compilado)
 - ROCKNIX no lo "tiene": lo compila de **upstream FEX-Emu** → coger **FEX-2610** de upstream.
 - Revisar tambien `fex-rootfs` (nuestro va en `20260108-9`).
+
+**Hecho el 13/10/2026 (tarea A4, sin compilar — el PC esta ocupado con el build de A1):**
+- **PKGBUILD bumpeado** en el arbol: `pocknix-os/packages/soc/fex-emu/PKGBUILD`
+  (`_commit=e869aa64…` → **`14c92681f4d62cf84d901460e0358de09c8847a7`**, `pkgver` `2608.20260804.e869aa64`
+  → **`2610.20261007.14c92681`**, `pkgrel` `3` → **`1`**).
+- ⚠️ **El centro NO tiene copia del PKGBUILD de fex-emu**: solo `packages/soc-overrides/fex-emu/socs`
+  (que ya lista `sm8750`, sin cambios). Como `sync-to-os.sh`/`check-sync.sh` solo transportan ese
+  `socs` (bucle `packages/soc-overrides/*` → `packages/soc/*`), **el bump vive SOLO en el arbol** y
+  **no hay que tocar los scripts de sync**. (Recomendacion futura: traer el PKGBUILD+parches de
+  fex-emu al centro como override completo, para que queden versionados/vigilados aqui.)
+- **Los 4 parches propios contra el tag `FEX-2610`** (`git clone --depth 1 --branch FEX-2610`):
+  - `0001-fexcore-aarch64-workaround-llvm18-ice`: **REBASADO**. Upstream inserto un bloque
+    `if (MINGW) … endif()` entre `target_link_libraries(FEXCore_Base …)` y
+    `AddDefaultOptionsToTarget(…)` → el hunk viejo solo aplicaba con **fuzz 2** (y fallaba con
+    `--fuzz=0`). Actualizadas SOLO las lineas de contexto (las 4 lineas insertadas son identicas);
+    ahora aplica con **0 fuzz / 0 offset**.
+  - `0002-split-thunk-build-thunkgen-only`: OK, **offset +39** (0 fuzz).
+  - `0005-host-thunks-aarch64-char-signed-char`: OK, limpio.
+  - `0006-thunkgen-march-armv8-sve`: OK, **offset −2** (0 fuzz).
+  - Un `patch -p1` en orden (el comando exacto del `prepare()`) aplica los 4, rc=0.
+- **Cambios upstream 2608→2610 que nos afectan**:
+  - Minimo de clang **sin cambios** (`CLANG_MINIMUM_VERSION 13.0`).
+  - Submodules pinneados que **cambian**: `External/vixl`, `External/fmt`, `External/rpmalloc`,
+    `External/Vulkan-Headers` (el resto igual) — los baja `git submodule update --init --recursive`
+    en `prepare()`, sin accion por nuestra parte.
+  - Upstream anade un switch `BUILD_STEAM_SUPPORT` (**default OFF** → no cambia nuestro build) y en
+    arm64 `TUNE_ARCH` pasa a `-march=<cpu>+crc` (nuestro `TUNE_CPU=cortex-a78` → `cortex-a78+crc`;
+    clang lo soporta).
+- **Comando de build listo** (NO ejecutado):
+  ```
+  cd /home/fransis/pocknix-odin3-project/pocknix-os && tools/sync-to-os.sh && sudo DEVICE=sm8750 make packages PKG=fex-emu
+  ```
+  ⚠️ `tools/sync-to-os.sh` hoy arrastra drift de OTROS trabajos (HDR, deckstation-arm, kernel…);
+  el PKGBUILD de fex-emu no depende de eso (no lo toca el sync).
+- **`fex-rootfs`**: sigue en `20260108-9` (de `rootfs.fex-emu.gg/ArchLinux/20260108/ArchLinux.sqsh`).
+  El indice de ese servidor **NO es listable** desde aqui → para ver si hay rootfs nuevo hay que
+  mirar la doc/releases de FEX a mano.
+- **Pendiente**: (1) compilar el paquete (comando de arriba); (2) instalar en la Odin (nuevo `FEX` +
+  thunks); (3) medir **FEX-2610 vs 2608** con juegos x86 (B7).
 
 ### A5. Paquetes del Deckard a EVALUAR (repo `holo-packages.steamos.cloud/archlinux-deckard-hotfixes/`)
 - **`deckard-gamescope-layer-x86_64-3.16.30-4`** → capa gamescope WSI mas nueva (vamos con 3.16.29).
