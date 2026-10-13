@@ -2754,8 +2754,9 @@
     <system>
         <name>virtualboy</name>
         <fullname>Nintendo Virtual Boy</fullname>
-        <path>%ROMPATH%/virtualboy</path>
+        <path>%ROMPATH%/vbc</path>
         <extension>.bin .BIN .vb .VB .vboy .VBOY .7z .7Z .zip .ZIP</extension>
+        <command label="VBoy Color (color)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vboycolor_libretro.so %ROM%</command>
         <command label="Beetle VB">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_vb_libretro.so %ROM%</command>
         <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module vb %ROM%</command>
         <platform>virtualboy</platform>
