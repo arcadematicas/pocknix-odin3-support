@@ -2754,11 +2754,23 @@
     <system>
         <name>virtualboy</name>
         <fullname>Nintendo Virtual Boy</fullname>
+        <path>%ROMPATH%/virtualboy</path>
+        <extension>.bin .BIN .vb .VB .vboy .VBOY .7z .7Z .zip .ZIP</extension>
+        <command label="Beetle VB">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_vb_libretro.so %ROM%</command>
+        <command label="VBoy Color">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vboycolor_libretro.so %ROM%</command>
+        <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module vb %ROM%</command>
+        <platform>virtualboy</platform>
+        <theme>virtualboy</theme>
+    </system>
+    <!-- Anadido 13/10/2026: sistema PROPIO para VBoyColor (Virtual Boy en color).
+         Sistema aparte del clasico (Fransis): ROMs en ROMs/vbc. Plataforma
+         virtualboy para que el scraper lo reconozca como Virtual Boy. -->
+    <system>
+        <name>virtualboycolor</name>
+        <fullname>Nintendo Virtual Boy Color</fullname>
         <path>%ROMPATH%/vbc</path>
         <extension>.bin .BIN .vb .VB .vboy .VBOY .7z .7Z .zip .ZIP</extension>
-        <command label="VBoy Color (color)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vboycolor_libretro.so %ROM%</command>
-        <command label="Beetle VB">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/mednafen_vb_libretro.so %ROM%</command>
-        <command label="Mednafen (Standalone)">%EMULATOR_MEDNAFEN% -force_module vb %ROM%</command>
+        <command label="VBoy Color">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/vboycolor_libretro.so %ROM%</command>
         <platform>virtualboy</platform>
         <theme>virtualboy</theme>
     </system>

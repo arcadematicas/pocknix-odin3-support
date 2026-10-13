@@ -175,6 +175,16 @@ overlay "packages/pocknix-tools" "packages/shared/pocknix-tools"
 # /usr/lib/libretro/; la integracion con el RetroArch portable de DeckStation
 # (copia al dir de cores) es un pendiente aparte.
 overlay "packages/suyu-libretro" "packages/shared/suyu-libretro"
+
+# --- vboycolor-libretro: core de Virtual Boy EN COLOR para RetroArch -----------
+# Core PRECOMPILADO: la release linux-arm64 de github.com/yuk27/VBoyColor (GPL-3.0)
+# ya trae el .so + el .info, asi que el paquete no compila nada. Se instala en
+# /usr/lib/libretro/ + /usr/share/libretro/info/, que es justo lo que recoge
+# DeckStation (deckstation-cores.sh y deckstation-cores-sync.sh): al existir
+# vboycolor_libretro.so aparece el <command> "VBoy Color" en los sistemas
+# `virtualboy` y `virtualboycolor` de es_systems.xml.
+overlay "packages/vboycolor-libretro" "packages/shared/vboycolor-libretro"
+
 overlay "packages/libretro-cores-pocknix" "packages/shared/libretro-cores-pocknix"
 overlay "packages/pocknix-decky"   "packages/shared/pocknix-decky"
 
@@ -217,7 +227,6 @@ overlay "packages/pocknix-steam-full" "packages/shared/pocknix-steam-full"
 
 # --- pocknix-system-overlay: nuestro overlay/ como PAQUETE (llega por -Syu) ---
 overlay "packages/pocknix-system-overlay" "packages/shared/pocknix-system-overlay"
-overlay "packages/vboycolor-libretro" "packages/shared/vboycolor-libretro"
 overlay "overlay" "packages/shared/pocknix-system-overlay/rootfs"
 
 # --- NOT synced (needs manual work — see the note below) ---------------------

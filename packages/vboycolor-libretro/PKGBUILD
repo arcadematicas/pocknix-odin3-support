@@ -1,28 +1,73 @@
-# vboycolor-libretro — core de libretro de VBoy Color (Virtual Boy EN COLOR, yuk27/VBoyColor).
-# Release oficial: publica .so + .info para linux-arm64 (GPL-3.0). Se instala en el sistema; el
-# RetroArch portable de DeckStation lo recibe como el resto de cores nuestros (ver
-# docs/VBOYCOLOR-LIBRETRO-PENDIENTE.md).
-_tag="v1.0.0-beta.9"
+# Maintainer: Fransis <arcadematicas>
+# Core de libretro de VBoy Color (Virtual Boy EN COLOR) para aarch64.
+#
+# QUE ES:
+#   VBoy Color (github.com/yuk27/VBoyColor) es Beetle VB (la emulacion de
+#   Virtual Boy de Mednafen, via libretro/beetle-vb-libretro) con el coloreado
+#   propio de VBoy Color: packs de color pintados a mano para muchos juegos,
+#   colores automaticos para el resto, paletas multicolor y el 3D (lado a lado,
+#   arriba/abajo o gafas de color). Es GPL-3.0.
+#
+# POR QUE EXISTE ESTE PAQUETE:
+#   La release publica un core de libretro YA COMPILADO para linux-arm64; no hay
+#   que compilar nada. Se empaqueta el .so + su .info (el zip de la release trae
+#   ambos) para que el core llegue a una imagen limpia de Pocknix y a la Odin
+#   por paquete, igual que suyu-libretro / libretro-azahar.
+#
+# LICENCIA:
+#   GPL-3.0 (LICENSE del repo y THIRD-PARTY-NOTICES.md dentro del zip): permite
+#   redistribuir. El zip incluye las licencias de terceros en licenses/.
+#
+# VERSION:
+#   Fijada a la release v1.0.0-beta.11 (asset linux-arm64) con sha256 real:
+#   es una beta, asi que NO se usa un ref flotante.
+#
+# INTEGRACION CON DECKSTATION (automatica):
+#   Se instala en /usr/lib/libretro/ (ubicacion estandar) + su .info en
+#   /usr/share/libretro/info/. Entonces:
+#     - scripts/deckstation-cores.sh  copia el .so y el .info a la carpeta
+#       portable de cores del RetroArch de DeckStation.
+#     - scripts/deckstation-cores-sync.sh regenera el es_systems.xml ACTIVO a
+#       partir del source: al existir ya vboycolor_libretro.so, el <command>
+#       "VBoy Color" (sistemas `virtualboy` y `virtualboycolor`) aparece solo.
+#   No hace falta nada mas: con el paquete instalado, queda integrado.
 pkgname=vboycolor-libretro
-pkgver=1.0.0beta9
+pkgver=1.0.0.beta.11
 pkgrel=1
-pkgdesc="VBoy Color — emulador de Virtual Boy en color (core de libretro, aarch64)"
+pkgdesc="Virtual Boy in color (VBoy Color) libretro core for aarch64"
 arch=('aarch64')
 url="https://github.com/yuk27/VBoyColor"
-license=('GPL3')
+license=('GPL-3.0-only')
+# Solo glibc + libstdc++ (gcc-libs); el core enlaza todo lo demas dentro.
 depends=('gcc-libs')
-options=('!strip')
-source=("vboycolor_libretro-${_tag}-linux-arm64.zip::${url}/releases/download/${_tag}/vboycolor_libretro-${_tag}-linux-arm64.zip")
-sha256sums=('fa136785df5e4d4e8b730d78b8c8e19a8bcd98d44dbeb8148c2345e9201bc0df')
+# El zip solo se descomprime: no hay compilacion.
+makedepends=('unzip')
+
+_gh="https://github.com/yuk27/VBoyColor"
+_tag="v1.0.0-beta.11"
+_asset="vboycolor_libretro-${_tag}-linux-arm64.zip"
+# Nombre del directorio que crea el propio zip al descomprimirse.
+_zipdir="vboycolor_libretro-${_tag}-linux-arm64"
+
+source=("${_asset}::${_gh}/releases/download/${_tag}/${_asset}")
+sha256sums=('7d12179d5bc7ed80777be71451fc507a5be45fdfd160855565df427003aebd15')
+# El source es un .zip: lo extraemos a mano en prepare() para no depender del
+# autodetect de makepkg.
+noextract=("${_asset}")
+
+prepare() {
+    unzip -q "${srcdir}/${_asset}" -d "${srcdir}"
+}
 
 package() {
-  local d="${srcdir}/vboycolor_libretro-${_tag}-linux-arm64"
-  install -Dm755 "${d}/vboycolor_libretro.so"   "${pkgdir}/usr/lib/libretro/vboycolor_libretro.so"
-  install -Dm644 "${d}/vboycolor_libretro.info" "${pkgdir}/usr/share/libretro/info/vboycolor_libretro.info"
-  install -Dm644 "${d}/LICENSE"                 "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
-  install -Dm644 "${d}/THIRD-PARTY-NOTICES.md"  "${pkgdir}/usr/share/licenses/${pkgname}/THIRD-PARTY-NOTICES.md"
-  if [ -d "${d}/licenses" ]; then
-    install -d "${pkgdir}/usr/share/licenses/${pkgname}/third-party"
-    cp -a "${d}/licenses/." "${pkgdir}/usr/share/licenses/${pkgname}/third-party/"
-  fi
+    # El .so ya viene compilado y stripped (ELF 64-bit aarch64).
+    install -Dm755 "${srcdir}/${_zipdir}/vboycolor_libretro.so" \
+        "${pkgdir}/usr/lib/libretro/vboycolor_libretro.so"
+    # El .info lo trae la propia release (no se genera uno a mano) y es lo que
+    # hace que RetroArch/ES-DE listen los .vb/.vboy (ver INSTALL.txt del zip).
+    install -Dm644 "${srcdir}/${_zipdir}/vboycolor_libretro.info" \
+        "${pkgdir}/usr/share/libretro/info/vboycolor_libretro.info"
+    # GPL-3.0: se acompana el texto de la licencia.
+    install -Dm644 "${srcdir}/${_zipdir}/LICENSE" \
+        "${pkgdir}/usr/share/licenses/vboycolor-libretro/LICENSE"
 }

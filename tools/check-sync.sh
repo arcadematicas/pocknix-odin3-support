@@ -74,6 +74,7 @@ cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix
 cmp_tree "${HERE}/packages/deckstation-arm"   "${OS}/packages/shared/deckstation-arm"
 cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pygame-ce"
   cmp_tree "${HERE}/packages/suyu-libretro"     "${OS}/packages/shared/suyu-libretro"
+  cmp_tree "${HERE}/packages/vboycolor-libretro" "${OS}/packages/shared/vboycolor-libretro"
   cmp_tree "${HERE}/packages/libretro-cores-pocknix" "${OS}/packages/shared/libretro-cores-pocknix"
 # Librerias + shims de los cores precompilados (ARMSX2/uae4arm los piden por
 # soname). Sin estas lineas, un cambio aqui podria quedarse SIN sincronizar y el

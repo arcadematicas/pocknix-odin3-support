@@ -35,9 +35,12 @@
 ### A6. ROCKNIX: `set default wifi country`
 - `cb4b9e8e` — relacionado con nuestro problema de **regdom/DFS** (el AP en canal 116).
 
-### A7. VBoyColor como **core de libretro** (para DeckStation)
-- Ver `docs/VBOYCOLOR-LIBRETRO-PENDIENTE.md` (PKGBUILD patron `suyu-libretro`, RetroArch portable,
-  ES-DE `virtualboy`, **ROMs en `vbc`**, comprobar licencia).
+### A7. VBoyColor como **core de libretro** (para DeckStation)  ✅ HECHO (13/10/2026)
+- Paquete **`vboycolor-libretro`** creado (`packages/`, patron `suyu-libretro`, release fijada
+  `v1.0.0-beta.11` + sha256 real) + ES-DE `virtualboy` (VBoy Color primero) y sistema propio
+  **`virtualboycolor`** (ROMs en `vbc`) + registrado en `tools/sync-to-os.sh`/`tools/check-sync.sh`.
+- Licencia **GPL-3.0** (redistribuible). Detalle en `docs/VBOYCOLOR-LIBRETRO-PENDIENTE.md`.
+- **Pendiente**: probar con una ROM `.vb` real en la Odin.
 
 ### A8. DEKSTATION/limpieza y varios
 - Borrar la carpeta duplicada `Apps/xenia_edge` (0 B) en la Odin.
@@ -78,7 +81,8 @@
 
 ### B6. calvos-1.2 (SD de 128 GB)
 - [x] ✅ instalacion inicial de DeckStation **31/31** con la API a 0 (12/10)
-- [ ] emuladores + ES-DE + (nuevo) VBoyColor
+- [~] emuladores + ES-DE + **VBoyColor** — integracion HECHA (core + `virtualboy`/`virtualboycolor`
+      en ES-DE, 13/10); **falta probar** con una ROM `.vb` real
 
 ### B7. Los bumps (A3/A4/A5): medir antes/despues
 - [ ] **vk-valve `-5`** vs `-1` — FPS/frametimes con MangoHud (`DXVK_HUD=compiler`)
