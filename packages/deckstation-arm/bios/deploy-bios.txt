@@ -58,6 +58,7 @@ misc|{HOME:RetroArch}/.config/retroarch/system
 
 # --- Xbox (Xemu: rutas absolutas en xemu.toml) -------------------------
 xbox|/opt/deckstation/bios/xbox
+xbox|/opt/deckstation/Apps/Xemu/xemu*.AppImage.home/.local/share/xemu/xemu/
 
 # --- Nintendo DS (MelonDS: rutas absolutas en melonDS.ini) -------------
 nds|/opt/deckstation/bios/nds

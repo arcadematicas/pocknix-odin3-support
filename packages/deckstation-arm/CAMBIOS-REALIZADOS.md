@@ -328,3 +328,10 @@ este fix, el tile arrancaría a negro.**
    segunda opción del sistema `psp`.
 
 
+
+## 14. Xbox (xemu) — integración standalone
+
+- `configs/es-de/custom_systems/es_find_rules.xml`: añadido `staticpath` `./Apps/Xemu/lanzar.sh` en `<emulator name="XEMU">` (patrón igual a otros standalone: `./Apps/*/lanzar.sh`).
+- `updater/git.txt`: mantenida la entrada `Xemu` a `pkgforge-dev/xemu-AppImage-Enhanced/releases`. El scorer del updater premia `.AppImage` aarch64 y descarta `x86_64`, así que elige `xemu-*-anylinux-aarch64.AppImage` (no el `xemu-win-*aarch64*.zip`).
+- `bios/required.txt`: añadidos `mcpx_1.0.bin`, `Complex_4627v1.03.bin`, `xbox_hdd.qcow2`, `xbox_eeprom.bin` para el sistema `xbox`.
+- `bios/deploy-bios.txt`: se despliegan también a `/opt/deckstation/Apps/Xemu/xemu*.AppImage.home/.local/share/xemu/xemu/` (además de `/opt/deckstation/bios/xbox/`) para cubrir el caso en que xemu busque relativos al `.home`. `xbox_hdd.qcow2` va al directorio de datos de xemu (no exclusivamente `bios/`) según configuración estándar de xemu.

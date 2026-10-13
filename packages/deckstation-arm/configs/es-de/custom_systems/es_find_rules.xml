@@ -966,7 +966,6 @@
         </rule>
         <rule type="staticpath">
             <entry>./Apps/Xemu/lanzar.sh</entry>
-
         </rule>
     </emulator>
     <emulator name="XEMU_CHIHIRO">
@@ -999,7 +998,7 @@
         <!-- Microsoft Xbox 360 emulator xenia -->
         <rule type="staticpath">
 
-            <entry>./Apps/xenia_edge/lanzar.sh</entry>
+            <entry>./Apps/xenia_edge/xenia_edge_linux.AppImage</entry>
 
         </rule>
     </emulator>

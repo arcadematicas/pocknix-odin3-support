@@ -69,3 +69,10 @@ Este directorio está reservado para el home portable de ES-DE (`.emulationstati
 o similar). Los configs de ES-DE importados viven en `configs/es-de/`
 (`custom_systems/` y `settings/`), con rutas relativas (`./Apps/...` y
 `%ROMPATH%/...`).
+### Xbox (xemu)
+
+- **Sistema**: `xbox` (standalone, NO core de libretro para Linux ARM).
+- **Origen del AppImage**: `xemu-project/xemu` vía `pkgforge-dev/xemu-AppImage-Enhanced` (score del updater asegura `.AppImage` aarch64).
+- **Wrapper**: `./Apps/Xemu/lanzar.sh` (exporta HOME al `.home` portable).
+- **BIOS**: `mcpx_1.0.bin`, `Complex_4627v1.03.bin`, `xbox_hdd.qcow2`, `xbox_eeprom.bin` — se listan en `bios/required.txt` y se despliegan según `bios/deploy-bios.txt` (incluyendo el `.home` de Xemu). El HDD es una imagen qcow2 (no BIOS).
+- **Trampa**: releases de upstream incluyen `xemu-win-aarch64-release.zip` — el filtro de arquitectura/SO evita que sea elegido.
