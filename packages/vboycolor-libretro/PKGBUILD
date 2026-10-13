@@ -1,0 +1,28 @@
+# vboycolor-libretro — core de libretro de VBoy Color (Virtual Boy EN COLOR, yuk27/VBoyColor).
+# Release oficial: publica .so + .info para linux-arm64 (GPL-3.0). Se instala en el sistema; el
+# RetroArch portable de DeckStation lo recibe como el resto de cores nuestros (ver
+# docs/VBOYCOLOR-LIBRETRO-PENDIENTE.md).
+_tag="v1.0.0-beta.9"
+pkgname=vboycolor-libretro
+pkgver=1.0.0beta9
+pkgrel=1
+pkgdesc="VBoy Color — emulador de Virtual Boy en color (core de libretro, aarch64)"
+arch=('aarch64')
+url="https://github.com/yuk27/VBoyColor"
+license=('GPL3')
+depends=('gcc-libs')
+options=('!strip')
+source=("vboycolor_libretro-${_tag}-linux-arm64.zip::${url}/releases/download/${_tag}/vboycolor_libretro-${_tag}-linux-arm64.zip")
+sha256sums=('fa136785df5e4d4e8b730d78b8c8e19a8bcd98d44dbeb8148c2345e9201bc0df')
+
+package() {
+  local d="${srcdir}/vboycolor_libretro-${_tag}-linux-arm64"
+  install -Dm755 "${d}/vboycolor_libretro.so"   "${pkgdir}/usr/lib/libretro/vboycolor_libretro.so"
+  install -Dm644 "${d}/vboycolor_libretro.info" "${pkgdir}/usr/share/libretro/info/vboycolor_libretro.info"
+  install -Dm644 "${d}/LICENSE"                 "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 "${d}/THIRD-PARTY-NOTICES.md"  "${pkgdir}/usr/share/licenses/${pkgname}/THIRD-PARTY-NOTICES.md"
+  if [ -d "${d}/licenses" ]; then
+    install -d "${pkgdir}/usr/share/licenses/${pkgname}/third-party"
+    cp -a "${d}/licenses/." "${pkgdir}/usr/share/licenses/${pkgname}/third-party/"
+  fi
+}

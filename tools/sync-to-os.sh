@@ -217,6 +217,7 @@ overlay "packages/pocknix-steam-full" "packages/shared/pocknix-steam-full"
 
 # --- pocknix-system-overlay: nuestro overlay/ como PAQUETE (llega por -Syu) ---
 overlay "packages/pocknix-system-overlay" "packages/shared/pocknix-system-overlay"
+overlay "packages/vboycolor-libretro" "packages/shared/vboycolor-libretro"
 overlay "overlay" "packages/shared/pocknix-system-overlay/rootfs"
 
 # --- NOT synced (needs manual work — see the note below) ---------------------
