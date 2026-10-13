@@ -85,6 +85,36 @@
 - [ ] **FEX-2610** vs 2608 — juegos x86
 - [ ] capa gamescope x86_64 3.16.30 — composicion/rotacion/VRR
 
+## D. ALIGERAR LA IMAGEN (revisar uno a uno)
+
+Objetivo: que **cada build salga lo mas limpia posible** (menos peso, cero basura).
+
+**HECHO YA ✅**: `tools/slim-rootfs.sh` (cache de pacman ~3,9 GB + firmware x86 ~630 MB +
+`/usr/share/doc` ~173 MB) enganchado en `build-odin3.sh` **antes** de `make sd-image`.
+Medido el 13/10: rootfs 22 GB -> ~17,3 GB. **USA `tools/build-odin3.sh`** para que corra.
+
+| # | Idea | Ahorro | Estado | Riesgo |
+|---|---|---|---|---|
+| D1 | ⭐ **Steam duplicado**: `usr/share/steam` 4,1 GB vs `home` 3,3 GB -> **hardlinks** si son copias | ~3 GB | ⬜ comprobar | bajo si son copias |
+| D2 | `usr/lib/libretro` 2,4 GB (256 cores): duplicados / variantes viejas | ~300-500 MB | ⬜ revisar | bajo |
+| D3 | `locale` 464 MB -> dejar `es`/`en` | ~350 MB | ⬜ decidir | medio (idiomas) |
+| D4 | firmware `qcom` 536 MB -> recortar a kaanapali/sm8750 | ~200-300 MB | ⬜ evaluar | medio |
+| D5 | `man` 105 MB + `icons`/`fonts` 679 MB | ~400 MB | ⬜ evaluar | bajo-medio |
+| D6 | modulos del kernel 360 MB -> quitar subsistemas ausentes | ~100-150 MB | ⬜ evaluar | alto |
+| D7 | comprimir la imagen mas (btrfs `zstd:15` en vez de `zstd:1`) | 10-15% de **imagen** | ⬜ evaluar | bajo (mas lento) |
+| D8 | firmware `ath11k` (la Odin usa **ath12k**) | 65 MB | ⬜ | bajo |
+| D9 | no instalar los `linux-firmware-*` que no usamos (base.list) | evita D4/D5/D8 | ⬜ | bajo |
+| D10 | `var/lib/pacman/sync` | 11 MB | ⬜ | nulo |
+
+### Housekeeping de build (para que salgan limpias SIEMPRE)
+- ✅ Usar **`tools/build-odin3.sh`** (engancha el slim automaticamente).
+- ✅ **Clon nuevo**: copiar `build/localrepo/{sm8750,shared}` de un arbol ya construido
+  (si no, `make packages` compila TODO bajo qemu -> horas).
+- ⚠️ **NUNCA `chown -R`** sobre un directorio que contiene un chroot (rompe el setuid de `sudo`).
+- ⚠️ Un `repo-add`/`makepkg` **matado a medias deja `.lck`** -> borrar `build/localrepo/*/*.lck`.
+- ⚠️ **No usar `timeout`** en `make build`/`repo-add` (qemu tarda mucho).
+- ⬜ Al terminar cada imagen: comparar `du -sh` por directorio vs la anterior (regresiones de peso).
+
 ## C. HECHO (para no repetir)
 - ✅ **calvos-1.2** publicada y grabada (SD 128 GB) — sha256 `316278ca…`
 - ✅ **HDR off por defecto** + documentado · ✅ ath12k `0041b` + informe + PR #81
