@@ -86,3 +86,41 @@ to execute correctly`.
 >
 > **Notas**: (a) vuestro cmdline no lleva `oops=panic panic=5` (el nuestro sí) → ¿lo metemos?;
 > (b) …
+
+---
+
+## D) Fallos del **`make sd-image`** de su rama (14/10/2026) — **también suyos**
+
+Al pasar de `make build` (rootfs OK) a `make sd-image` aparecen **dos** fallos consecutivos, ambos en su árbol.
+Nosotros ya tenemos los dos cubiertos en el fork, así que la imagen de la Odin 3 **no se puede generar desde su
+rama sin parchearlos**:
+
+**D1. `SD_SLACK_MIB` demasiado bajo** → aborta el poblado del btrfs:
+```
+error btrfs root has only 493 MiB free after populate (< 512 MiB) — raise SD_SLACK_MIB or check compression
+make: *** [Makefile:35: sd-image] Error 1
+```
+- Su `config/pocknix.conf:79`: `: "${SD_SLACK_MIB:=1024}"` · `scripts/build-sd-image.sh:283` exige **≥512 MiB libres**.
+- **Nosotros lo subimos a `2048` el 26/09** exactamente por esto.
+- Como la línea usa `:=`, **la variable de entorno manda** → se arregla sin tocar su fichero:
+  `sudo DEVICE=sm8750 SD_SLACK_MIB=2048 make sd-image` ✅ (así lo hemos hecho).
+
+**D2. `copy_abl_kit()` usa `rsync -a` sobre una partición vfat** → al copiar el kit del ABL a la FAT:
+```
+rsync: [generator] chown ".../rocknix_abl" failed: Operation not permitted (1)
+rsync: [receiver]  chown ".../rocknix_abl/.abl_signed-SM8750.elf..." failed: Operation not permitted (1)
+rsync error: some files/attrs were not transferred (see previous errors) (code 23)
+make: *** [Makefile:35: sd-image] Error 23
+```
+- **`vfat` no soporta dueños** y `-a` incluye `-o -g` → `chown` da EPERM.
+- Afecta a `copy_abl_kit` (**camino ABL/qcom, el de la Odin 3**) y a `populate_arm_efi_boot` (arm-efi).
+  La línea 265 (`rsync -aHAX --numeric-ids ROOTFS/ MNT/`) va a **btrfs** → ahí `-o/-g` sí valen y **no se toca**.
+- Fix mínimo aplicado en local (con backup del script):
+```diff
+-  rsync -a "${kit}" "${mnt}/"
++  rsync -rltD --no-owner --no-group "${kit}" "${mnt}/"
+-  rsync -a "${bl}/EFI" "${bl}/boot" "${mnt}/"
++  rsync -rltD --no-owner --no-group "${bl}/EFI" "${bl}/boot" "${mnt}/"
+```
+- ⚠️ **D2 solo aparece después de arreglar D1** (el aborto por espacio ocurría antes) → **probablemente nadie ha
+  llegado a generar una imagen de la Odin 3 desde su rama todavía**. Con los dos parcheados, completa.
