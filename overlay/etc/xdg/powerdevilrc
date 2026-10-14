@@ -1,0 +1,13 @@
+# Default de sistema (/etc/xdg/powerdevilrc); el ~/.config/powerdevilrc del usuario manda.
+# Viene del paquete pocknix-desktop-kde de shuuri-labs/pocknix-os (GPL-2.0-or-later).
+# PowerButtonAction=1 es "Sleep"; Plasma 6 solo lee esta clave en mayusculas (la minuscula era el
+# nombre de Plasma 5). powerdevil inhibe el manejo de la tecla por logind mientras corre la sesion,
+# asi que tiene que hacerlo el mismo. El default de Plasma Mobile solo apaga la pantalla.
+[AC][SuspendAndShutdown]
+PowerButtonAction=1
+
+[Battery][SuspendAndShutdown]
+PowerButtonAction=1
+
+[LowBattery][SuspendAndShutdown]
+PowerButtonAction=1
