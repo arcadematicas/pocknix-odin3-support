@@ -150,7 +150,7 @@ export function ConfigSection({ game, reload }: {
       <PanelSectionRow>
         <ButtonItem layout="below" onClick={doImport}>Import Game Config</ButtonItem>
       </PanelSectionRow>
-      <div className="pocknix-note">Per-game tweaks and Proton pick; fan settings and defaults stay local</div>
+      <div className="pocknix-note">Per-game tweaks and Proton pick; defaults stay local</div>
     </PanelSection>
   );
 }

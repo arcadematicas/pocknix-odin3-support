@@ -1,8 +1,8 @@
 import { PanelSection, ToggleField } from "@decky/ui";
 import type { Dispatch, SetStateAction } from "react";
-import { setFanMode, setLavdMode, setScxMode, setScxScheduler } from "../backend";
+import { setLavdMode, setScxMode, setScxScheduler } from "../backend";
 import { ConfigSection } from "../components/ConfigSection";
-import { EnvVarsButton, PerfFields, TweakFields, audioLatencyOptions, fanOptions, lavdOptions, scxModeOptions, scxSchedulerOptions } from "../components/GameFields";
+import { EnvVarsButton, PerfFields, TweakFields, audioLatencyOptions, lavdOptions, scxModeOptions, scxSchedulerOptions } from "../components/GameFields";
 import { MakoToggle } from "../components/MakoToggle";
 import { SelectEdit } from "../components/widgets";
 import { availableGames, editTargetOptions } from "../lib/games";
@@ -65,12 +65,12 @@ export function Games({ config, setConfig, reload }: {
     setConfig((current) => (current ? { ...current, selectedGame: saved || null } : current));
   };
 
-  // Default target: FEX/audio/env edit tweaks.global; fan + scheduler are the LIVE system
-  // modes, applied immediately through the backend.
+  // Default target: FEX/audio/env edit tweaks.global; scheduler is the LIVE system
+  // mode, applied immediately through the backend.
   const applyMode = async (setter: (mode: string) => Promise<Config>, mode: string) => {
     try {
       const next = await setter(mode);
-      setConfig((current) => (current ? { ...current, fanMode: next.fanMode, lavdMode: next.lavdMode, scxScheduler: next.scxScheduler, scxMode: next.scxMode } : current));
+      setConfig((current) => (current ? { ...current, lavdMode: next.lavdMode, scxScheduler: next.scxScheduler, scxMode: next.scxMode } : current));
     } catch (error) {
       reload();
     }
@@ -103,7 +103,6 @@ export function Games({ config, setConfig, reload }: {
               {config.scxScheduler !== "auto" ? (
                 <SelectEdit label="Scheduler Mode" value={config.scxMode} options={scxModeOptions[config.scxScheduler] || scxModeOptions.lavd} onChange={(m) => applyMode(setScxMode, m)} />
               ) : null}
-              <SelectEdit label="Fan Curve" value={config.fanMode} options={fanOptions} onChange={(mode) => applyMode(setFanMode, mode)} />
             </>
           ) : (
             <PerfFields values={values} patch={patchSettings} />

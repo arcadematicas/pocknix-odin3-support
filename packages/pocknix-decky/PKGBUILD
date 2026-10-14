@@ -22,7 +22,7 @@ pkgver=0.1.0
 #     but Decky's store id (and the dir the plugin actually loads from) is "SDH-CssLoader".
 #     pocknix-decky-sync copies by basename, so the old name created a duplicate CSSLoader dir
 #     and never updated the real SDH-CssLoader. Ship it as /usr/share/decky-plugins/SDH-CssLoader.
-pkgrel=51
+pkgrel=52
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"

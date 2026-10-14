@@ -15,11 +15,6 @@ export const audioLatencyOptions = [
   { data: "120", label: "120 ms" },
 ];
 
-export const fanOptions = [
-  { data: "quiet", label: "Quiet" },
-  { data: "moderate", label: "Moderate" },
-  { data: "performance", label: "Performance" },
-];
 export const lavdOptions = [
   { data: "autopilot", label: "Autopilot" },
   { data: "performance", label: "Performance" },
@@ -81,21 +76,18 @@ export function EnvVarsButton({ value, onSave }: { value: string; onSave: (next:
   );
 }
 
-/** Per-game fan/scheduler overrides ("" = follow the global mode). */
+/** Per-game scheduler overrides ("" = follow the global mode). */
 export function PerfFields({ values, patch }: {
   values: Record<string, any>;
   patch: (patch: Record<string, any>) => void;
 }) {
-  const perGameFan = [globalChoice, ...fanOptions];
   const perGameLavd = [globalChoice, ...lavdOptions];
-  const fanValue = perGameFan.some((option) => option.data === String(values.fanMode ?? "")) ? String(values.fanMode ?? "") : "";
   const lavdValue = perGameLavd.some((option) => option.data === String(values.lavdMode ?? "")) ? String(values.lavdMode ?? "") : "";
   const pinValue = cpuPinOptions.some((option) => option.data === String(values.cpuPin ?? "")) ? String(values.cpuPin ?? "") : "";
   return (
     <>
       <SelectEdit label="CPU Scheduler" value={lavdValue} options={perGameLavd} onChange={(id) => patch({ lavdMode: id })} />
       <SelectEdit label="CPU Cores" value={pinValue} options={cpuPinOptions} onChange={(id) => patch({ cpuPin: id })} />
-      <SelectEdit label="Fan Curve" value={fanValue} options={perGameFan} onChange={(id) => patch({ fanMode: id })} />
     </>
   );
 }
