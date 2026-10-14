@@ -124,3 +124,41 @@ make: *** [Makefile:35: sd-image] Error 23
 ```
 - ⚠️ **D2 solo aparece después de arreglar D1** (el aborto por espacio ocurría antes) → **probablemente nadie ha
   llegado a generar una imagen de la Odin 3 desde su rama todavía**. Con los dos parcheados, completa.
+
+---
+
+## E) WiFi en la Odin 3 con su rama — hallazgos de la PRUEBA EN VIVO (14/10/2026)
+
+Probado **con la imagen ya flasheada en la SD** (parcheando la SD offline desde el PC, sin rehacer el build).
+
+**E1. `wlan0` SÍ se crea** — pero **falta el blob `WCN7860`**: en la imagen, `usr/lib/firmware/ath12k/`
+trae `IPQ5424`, `QCC2072`, `QCN9274`, **`WCN7850`**… y **no `WCN7860`** (en su árbol,
+`vendor/rocknix-extra-firmware/` está **vacío**). Aun así el chip arranca (tira del `WCN7850`):
+```
+[19:52:02] systemd: Found device /sys/subsystem/net/devices/wlan0.
+[19:52:12] iwd: udev interface=wlan0 ifindex=3   ·   iwd: Wiphy: 0, Name: phy0
+[19:52:13] NetworkManager: (wlan0): new 802.11 Wi-Fi device
+```
+→ **no es la causa del problema**, pero **convendría traer el `WCN7860`** (nuestro fork sí lo lleva; el
+`ath12k` lo pide por el chip real).
+
+**E2. 🔴 BLOQUEANTE de UX en un dispositivo recién flasheado** (esto es lo que deja al usuario tirado):
+- NM usa **`iwd` como backend** (`device (wlan0): new IWD device state is disconnected`).
+- **No hay ninguna red guardada.**
+- **El asistente de Steam (cliente ARM64) NO ofrece configurar WiFi** → el usuario llega al login **sin red**.
+- Y su build **apaga SSH**: aviso del propio build → *"SSH is OFF in this image"*.
+- ⇒ **Un dispositivo recién flasheado queda atascado** (sin WiFi, sin SSH y sin manera de configurarlo desde la UI).
+
+  **Lo que hicimos para poder seguir probando** (parcheando la SD a mano):
+  1. `/etc/NetworkManager/system-connections/<SSID>.nmconnection` (keyfile NM, 600 root:root) **+**
+  2. `/var/lib/iwd/<SSID>.psk` (`[Security] Passphrase=…`) — **NM NO le pasa la PSK del keyfile a iwd**,
+     hay que darla por separado;
+  3. `systemctl enable sshd` (symlink en `multi-user.target.wants`) + clave en `/root/.ssh/authorized_keys`.
+
+  **Sugerencia para el PR**: (a) que la imagen traiga un **mecanismo de primer arranque para la WiFi**
+  (o que `sshd` venga encendido en las de prueba), o (b) exponer el selector de red en el asistente.
+
+**E3. `ath12k` se cae y se recupera** (2 veces en un arranque) — `Hardware restart was requested`,
+`failed to stopt 11d scan vdev 0 ret: -108`, `failed to submit WMI_VDEV_DELETE_CMDID`. Es el bucle que
+**nosotros paramos con nuestro parche `0041b`**, que va como **PR aparte a `kernel/common`** (como acordamos).
+En su árbol no está → la WiFi puede quedar inestable.
