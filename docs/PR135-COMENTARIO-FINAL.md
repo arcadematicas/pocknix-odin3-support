@@ -68,7 +68,7 @@ Two things here:
 
 - Your question about the numbers: the pack itself answers it —
   `/sys/class/power_supply/battery/model_name` = `8055207_QUECTEL_LIVESTREAMING_8000MAH_AVERAGED_MASTERSLAVE_SEP7TH2025`
-  (it literally says `8000MAH`), `charge_full ≈ 7852514 uAh`, and AYN's product page says *8000 mAh*.
+  (it literally says `8000MAH`), `charge_full ≈ 7852514 uAh` (measured on our image, where the node still exists), and AYN's product page says *8000 mAh*.
   The `18500000 uWh` (18.5 Wh) that produced the original "5000" is the inconsistent value
   (18.5 Wh / 3.7 V ≈ 5000 mAh), so `charge_full_design = 8000 mAh` with a consistent `energy_full_design`
   is the right shape.
