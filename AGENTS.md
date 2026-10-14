@@ -1211,3 +1211,46 @@ kernel **rechaza los módulos** (`failed to validate module ... BTF: -22`), lo q
       batería/rsinput; portarlos si se quiere estrujar más.
 - [ ] **Desfase relacionado** (mismo commit `92c6b96`): instalar en la Odin `pocknix-steam-full`
       `-3`, `pocknix-vk-valve` (Turnip de Valve) y `python-pygame-ce` (los PKGBUILD ya compilan).
+
+## 🔄 ALINEACIÓN CON UPSTREAM (pocknix) — `tools/check-upstream-packages.sh` (14/10/2026)
+
+**Qué es**: compara los paquetes de `packages/shared/*` de **nuestro árbol** con **`origin/main`**
+(`shuuri-labs/pocknix-os`, upstream) y saca solo las diferencias: `NUEVO` (upstream lo tiene y nosotros no),
+`DESFASADO?` (existe en los dos y cambia pkgver/pkgrel) y `solo nuestro` (no está en upstream).
+
+**Cuándo usarla**:
+- **Después de cada `git fetch origin`** (o tras mergear upstream), para saber **cuánto vamos por detrás**.
+- **Antes de un build de imagen**: decide si merece la pena meter los bumps en esa imagen.
+- Cuando Fransis diga *"¿vamos al día con pocknix?"* → es la respuesta en un comando.
+
+```bash
+cd ~/pocknix-odin3-project/pocknix-os && git fetch origin        # primero, para tener origin/main fresco
+~/pocknix-odin3-project/pocknix-odin3-support/tools/check-upstream-packages.sh
+#   (o:  tools/check-upstream-packages.sh /ruta/al/arbol   ·   UPSTREAM_REF=origin/otra-rama  ...)
+```
+
+**Cómo interpretarla (¡ojo, no es un "checkout a ciegas"!)**:
+- **`solo nuestro`** = nuestros paquetes (DeckStation, vk-valve, wsquashfs, pygame-ce, system-overlay,
+  gamescope-session*, plutovg/svg…) → **no se tocan**.
+- Puede marcar como `DESFASADO?` cosas donde **nosotros vamos por delante** (`pocknix-decky` -51 vs -44,
+  `libretro-cores-pocknix` -7 vs -3, `pocknix-base`) → mirar la columna, no el aviso.
+- **Falsos positivos**: solo mira `packages/shared/` (los de `packages/soc/` —mesa, gamescope, mangohud,
+  fex-emu…— no se comparan); y los `pkgver` con `${...}` dinámicos no dicen nada.
+- ⚠️ **Varios paquetes llevan DELTA NUESTRO** → subirlos exige **re-aplicar el delta**, no copiar:
+  `inputplumber` (nuestro mapa del mando), `pocknix-bsp-common` (fancontrol/display-sleep/oled/powerkey…),
+  `pocknix-steam` (gates de entorno + HDR + libs x86 de proton-inject).
+
+**Flujo para adoptar un bump** (solo los que **no** llevan delta):
+```bash
+cd ~/pocknix-odin3-project/pocknix-os
+git checkout origin/main -- packages/shared/<paquete>      # trae la versión de upstream
+# compilar + publicar en NUESTRO repo (R2 → https://pub-<id>.r2.dev/<soc>):
+sudo DEVICE=sm8750 make packages PKG="<paquete>"
+scripts/publish-repo.sh                                    # sube el localrepo a R2
+# y el dispositivo:  pacman -Sy && pacman -S <paquete>      (NO -Syu: la base va congelada)
+```
+- Los que **sí** llevan delta (`inputplumber`, `bsp-common`, `steam`) y **el kernel**: mejor **en un solo
+  pase con el merge de upstream** + el **detector de regresiones** de este mismo AGENTS, y un build para
+  probarlo todo junto.
+- El **kernel** de upstream (p.ej. 7.2.10) vive en la **rama del PR** (`origin/sm8750-odin3`) hasta que se
+  mergee → el rebase de CalvOS (A2 del roadmap) se hace **cuando mergee**.
