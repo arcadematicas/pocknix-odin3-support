@@ -51,7 +51,7 @@ copy_abl_kit() {
   local mnt="$1" kit="${ROOTFS_DIR}/usr/share/pocknix/bootloader/rocknix_abl"
   [ -f "${kit}/abl_signed-${SOC^^}.elf" ] \
     || die "${kit#${ROOTFS_DIR}}/abl_signed-${SOC^^}.elf missing from the rootfs — is pocknix-bootloader-${SOC} built and installed? (make packages + make build)"
-  rsync -a "${kit}" "${mnt}/"
+  rsync -rltD --no-owner --no-group "${kit}" "${mnt}/"   # vfat no soporta duenos
 }
 
 # GRUB + cfg + grubenv come from pocknix-bootloader-${SOC} in the rootfs (its alpm hook
@@ -62,7 +62,7 @@ populate_arm_efi_boot() {
     || die "arm-efi: ${bl#${ROOTFS_DIR}}/EFI/BOOT/bootaa64.efi missing from the rootfs — is pocknix-bootloader-${SOC} built and installed? (make packages + make build)"
   [ -f "${bl}/boot/grub/grub.cfg" ] \
     || die "arm-efi: ${bl#${ROOTFS_DIR}}/boot/grub/grub.cfg missing from the rootfs"
-  rsync -a "${bl}/EFI" "${bl}/boot" "${mnt}/"
+  rsync -rltD --no-owner --no-group "${bl}/EFI" "${bl}/boot" "${mnt}/"   # vfat: sin duenos
   cp "${KOUT}/dtbs/"*.dtb "${mnt}/boot/grub/"
   copy_abl_kit "${mnt}"
 }
