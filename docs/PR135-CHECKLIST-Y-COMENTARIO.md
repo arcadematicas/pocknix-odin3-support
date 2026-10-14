@@ -193,3 +193,54 @@ Con la SD preparada (WiFi sembrado + sshd), la Odin arranca y **es accesible**: 
 
 **Pendiente (a mano)**: sonido por el altavoz y el jack, suspender/despertar, gamepad+paddles, un juego
 (rotación/30 fps + QAM/mangoapp encima), DP del dock, y los **3-5 arranques en frío con `PANEL_WAIT=0`**.
+
+---
+
+## G) HALLAZGOS del 14/10 (tarde) — prueba de uso real de su imagen
+
+### G1. 🔴 **La imagen NO puede instalar/actualizar paquetes** (y por eso el updater revienta)
+`/etc/pacman.conf` de su imagen (SM8750):
+```
+[pocknix]        Server = https://pocknix.shuuri.net/repo/sm8750   ← 404 SIEMPRE (upstream no publica sm8750)
+[pocknix-shared] Server = .../shared
+[pocknix-base]   Server = .../base
+   ↑ y NO hay [core] ni [extra] de ALARM (0 stanzas)
+```
+Consecuencia medida: `pacman -Sy` → `error: failed retrieving file 'pocknix.db' ... 404` +
+`failed to synchronize all databases` → y el **updater de PocknixControl** (Decky) muere con traceback:
+```
+decky_loader/... Exception: Could not refresh package databases: error: failed retrieving file
+'pocknix.db' from pocknix.shuuri.net ... error: failed to synchronize all databases
+```
+⇒ **La imagen no puede instalar NADA** (paquetes, emuladores, lo que sea).
+**Lo que hacemos nosotros** (y les sirve tal cual): `render_pacman_conf()` en `scripts/build-image.sh`
+**añade SIEMPRE `[core]/[extra]/[alarm]/[aur]` de ALARM** por debajo de las stanzas pocknix
+(commit `ee47098`), y la stanza per-SoC se puede omitir con **`POCKNIX_SHIP_SOC_REPO=0`** cuando el repo
+del SoC no existe. Nosotros hoy la enviamos a **nuestro propio repo (R2)**, que sí existe.
+
+### G2. 🟠 **La batería no muestra tiempo estimado** (solo %) — y es por quitar el nodo `simple-battery`
+`upower -d` en su imagen:
+```
+energy: 0 Wh   energy-empty: 0 Wh   energy-full: 0 Wh   energy-full-design: 0 Wh   percentage: 55%
+```
+Sin `energy-full` UPower **no puede estimar** el tiempo. Es exactamente lo que se pierde al quitar el nodo
+`simple-battery` (`charge_full`/`energy_full` salen **vacíos** en `/sys/class/power_supply/battery/`).
+**Con el nodo restaurado vuelve el tiempo estimado**, y para los valores están las 3 fuentes del comentario
+(el pack dice `…8000MAH…`, `charge_full ≈ 7,85 Ah`, ficha de AYN) → `charge_full_design = 8000 mAh`
+(+ `energy_full_design` coherente con ese valor; el `18500000 uWh` (18,5 Wh) que traíamos **no cuadra**
+con 8000 mAh: 18,5 Wh / 3,7 V ≈ 5000 mAh — de ahí salió el "5000" original).
+
+### G3. 🔊 Ruido repetido en el arranque
+`qcom,apr 6800000.remoteproc: Handover signaled, but it already happened` **×88-200 por arranque**
+(ADSP; acaba `running` con `qcom/sm8750/ayn/odin3/adsp.mbn`). Y en el arranque con audio:
+`qcom-soundwire 7630000.soundwire: dout-ports (0) mismatch with controller (1)` +
+`qcom-apm gprsvc:service:2:1: CMD timeout for [1001021] opcode`.
+
+---
+
+## H) COSAS QUE SU IMAGEN HACE MEJOR QUE LA NUESTRA (a portar a la nuestra)
+
+| Qué | De donde sale en su imagen | Qué hacer en la nuestra |
+|---|---|---|
+| **Botón de encendido correcto** (mantener = menú de apagado; no apaga la pantalla al tocar) | `/etc/xdg/powerdevilrc` → `[AC]/[Battery]/[LowBattery][SuspendAndShutdown] PowerButtonAction=1` (lo trae **`pocknix-desktop-kde` 0.1.0-2**) | Que nuestra imagen traiga ese `/etc/xdg/powerdevilrc` (o la versión al día de `pocknix-desktop-kde`) |
+| **Fondo + iconos del escritorio** | **`pocknix-branding` 0.1.0-2**: `/usr/share/wallpapers/PocknixOS/` (PNG 1920x1080, 28 KB), `pocknix-branding-init` (+ unidad de usuario en `plasma-plasmashell.service.wants/`) que siembra el wallpaper en el primer login; la sesión es **plasma-mobile** (`pocknix-desktop-plasma-mobile`, plasma-mobile 6.7.4) | **Instalar `pocknix-branding`** (¡ya está en nuestro árbol en `packages/shared/pocknix-branding`!) — hoy **no está en ninguna lista** de nuestra imagen |
