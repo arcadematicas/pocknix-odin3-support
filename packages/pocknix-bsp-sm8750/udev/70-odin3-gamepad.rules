@@ -16,7 +16,12 @@
 
 # Gamepads por /dev/input/event*: cualquier mando con BTN_GAMEPAD (0x130).
 # ATTRS{capabilities/abs} y KEY se evaluan en el device padre; usamos
-# ENV{ID_INPUT_JOYSTICK} que systemd/udev ya setea para joysticks.
+# ENV{ID_INPUT_JOYSTICK} para casar joysticks.
+# OJO: NO asumir que el builtin input_id ya la pone. En el Odin 3 el mando UART
+# interno ("AYN Odin3 Gamepad", sin idVendor) queda marcado como RATON y SIN
+# ID_INPUT_JOYSTICK -> esta regla no se disparaba. Lo arregla
+# 60-input-id2-odin3-gamepad.rules, que fija ID_INPUT_JOYSTICK=1 y tiene que
+# ordenarse ANTES que este fichero (por eso este es 70- y aquel 60-).
 KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_INPUT_JOYSTICK}=="1", \
   MODE="0660", GROUP="input", TAG+="uaccess"
 

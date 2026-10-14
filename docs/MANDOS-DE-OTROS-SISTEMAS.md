@@ -484,16 +484,38 @@ arriba, Y = izquierda, y el mapeo A/B ya está cruzado a propósito: `a=1`=B,
 
 ---
 
-## 11. Aviso pendiente para Fransis
+## 11. La regla del mando: HECHA y permanente (antes era un test)
 
-En la Odin sigue instalado un **test temporal de un subagente**:
+Lo que el 03/10 era un **test temporal** hoy está **instalado en firme**
+(15/10/2026) en la Odin:
 
 ```
 /etc/udev/rules.d/60-input-id2-odin3-gamepad.rules
 ```
 
-Añade `ENV{ID_INPUT_JOYSTICK}=1` al `AYN Odin3 Gamepad`. Su propio comentario
-dice `remove with: sudo rm …`. Si quieres el comportamiento limpio de Batocera
-(es decir, `ID_INPUT_JOYSTICK=1` **y** `ID_INPUT_MOUSE=0`, ver
-`batocera/udev/99-ayn-odin3.rules`), lo correcto es borrar ese temporal y
-copiar el de Batocera, no parchearlo.
+Fija `ENV{ID_INPUT_JOYSTICK}=1` al `AYN Odin3 Gamepad` (el builtin `input_id` de
+udev lo clasifica como **ratón** y deja SDL3 sin ver ningún mando). El nombre
+`60-input-id2-…` es deliberado: tiene que ordenarse **después** de
+`60-input-id.rules` (que lo calcula mal) y **antes** de
+`60-persistent-input.rules`.
+
+- **Versionado** en el centro en `overlay/etc/udev/rules.d/60-input-id2-odin3-gamepad.rules`
+  (ruta que entra en la imagen: `build-sd-image.sh` copia `overlay/**` a `/`, y el
+  paquete `pocknix-system-overlay` lo reparte por `-Syu`).
+- **Desbloquea** la regla de permisos `70-odin3-gamepad.rules`, que dependía de
+  `ID_INPUT_JOYSTICK` y por tanto no se disparaba; su comentario (que asumía que
+  udev ya marcaba el joystick) está corregido.
+- `install-odin3-gamepad-perms.sh` instala ahora **las dos** reglas (clasificación
+  primero).
+
+**`pocknix-gamepad-quit`** (START+SELECT): también instalado. Servicio de
+**usuario** (`~/.config/systemd/user/pocknix-gamepad-quit.service`) que cierra la
+app en curso de ES-DE (SIGTERM y, si no muere, SIGKILL). Lee el mando **sin
+capturarlo** (el emulador sigue viendo sus botones; el acceso lo da el grupo
+`input`). Fuente: `tools/pocknix-gamepad-quit` + `tools/pocknix-gamepad-quit.service`,
+instalador `tools/install-gamepad-quit.sh`.
+
+> Queda **solo** la duda de cosmética que ya estaba: Batocera añade además
+> `ID_INPUT_MOUSE=0` (`batocera/udev/99-ayn-odin3.rules`). No hace falta para que
+> SDL vea el mando (basta `ID_INPUT_JOYSTICK=1`), y quitarlo del todo podría tener
+> efectos en el táctil; se deja como está.

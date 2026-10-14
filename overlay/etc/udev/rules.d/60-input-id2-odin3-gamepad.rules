@@ -1,7 +1,6 @@
-# El mando fisico de la Odin 3 (vendor 2020 / product 3001) NO lleva
-# ID_INPUT_JOYSTICK por defecto: udev lo clasifica como raton, y SDL filtra la
-# enumeracion por esa variable -> SDL no ve el mando y los emuladores se quedan
-# sin control. Con esta regla SDL pasa de 0 a 1 mando.
-#
-# Ver docs/MANDO-ODIN3-RETROARCH.md y docs/MANDOS-DE-OTROS-SISTEMAS.md
+# El builtin input_id de udev clasifica el mando UART interno del Odin 3
+# (AYN Odin3 Gamepad, sin idVendor) como RATON, no como joystick.
+# SDL3 filtra por ID_INPUT_JOYSTICK -> el mando desaparece (0 joysticks) y los
+# emuladores SDL/ES-DE dejan de verlo.  El nombre hay que ordenarlo DESPUES de
+# 60-input-id.rules (que lo calcula mal) y ANTES de 60-persistent-input.rules.
 SUBSYSTEM=="input", ATTRS{name}=="AYN Odin3 Gamepad", ENV{ID_INPUT_JOYSTICK}="1"
