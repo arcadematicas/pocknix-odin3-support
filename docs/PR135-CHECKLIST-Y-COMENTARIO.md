@@ -162,3 +162,34 @@ trae `IPQ5424`, `QCC2072`, `QCN9274`, **`WCN7850`**… y **no `WCN7860`** (en su
 `failed to stopt 11d scan vdev 0 ret: -108`, `failed to submit WMI_VDEV_DELETE_CMDID`. Es el bucle que
 **nosotros paramos con nuestro parche `0041b`**, que va como **PR aparte a `kernel/common`** (como acordamos).
 En su árbol no está → la WiFi puede quedar inestable.
+
+---
+
+## F) RESULTADOS EN VIVO de la checklist B1 (14/10/2026, Odin 3, imagen de su rama, kernel 7.2.10)
+
+Con la SD preparada (WiFi sembrado + sshd), la Odin arranca y **es accesible**: `192.168.4.21`, `deck`/`pocknix`.
+
+| # | Prueba | Resultado |
+|---|---|---|
+| 1 | **WiFi** | ✅ **Conecta a `Lacueva`**, canal **52 (DFS)**, **-24 dBm**, **1200/1080 Mbit/s** (80 MHz, HE-MCS 11). `iwd: State connected` |
+| 2 | **ath12k** | ✅ 0 recuperaciones en este arranque (el bucle `-108`/`Hardware restart` que vi era del arranque anterior) |
+| 3 | **Suspensión** | ✅ `[s2idle] deep` + `mem_sleep_default=s2idle` en el cmdline |
+| 4 | **Batería** | ✅ `capacity=56`, `status=Discharging`; `battery/model_name` = `…8000MAH…` ⬅️ **dato para el PR** (`charge_full` sale **vacío** en su imagen, porque quitaron el nodo `simple-battery`) |
+| 5 | **Servicios** | ✅ **0 unidades fallidas** · PipeWire activo, 2 sinks (Speaker por defecto + Headphones) |
+| 6 | **Mandos** | ✅ `event0..event6` presentes |
+| 7 | **Panel/rotación** | ✅ `card0-DSI-1 connected`, modo nativo `1080x1920` y la sesión se ve en horizontal correcta (gamescope 3.16.31 ROCKNIX + rotación inline) |
+| 8 | **`POCKNIX_PANEL_WAIT=0`** | ✅ puesto (`/etc/pocknix/device.conf`) → **pendiente: 3-5 arranques en frío** |
+
+**Hallazgos nuevos (para el PR):**
+1. ⚠️ **HDR arranca ENCENDIDO** (`GAMESCOPE_DISPLAY_HDR_ENABLED=1`): es el caso que nosotros neutralizamos
+   (el cliente ARM64 lo enciende solo y el QAM/mangoapp caen **detrás** del juego). Les podemos ofrecer
+   nuestro `pocknix-hdr-restore` + `hdr.conf`.
+2. ⚠️ **`country 00: DFS-UNSET`** — **el mismo problema de regdb que arreglamos en A6** existe también aquí:
+   `cfg80211=y` built-in ⇒ `regulatory.db` nunca carga ⇒ `iw reg set` es un no-op ⇒ **todo el 5 GHz
+   pasivo**. No bloquea la conexión (van a -24 dBm en el canal 52), pero conviene que lo sepan.
+3. 🔊 **`qcom,apr 6800000.remoteproc: Handover signaled, but it already happened` ×200** en un arranque
+   (ADSP, que acaba `running` con `qcom/sm8750/ayn/odin3/adsp.mbn`) → ruido repetido, candidato a limpiar.
+4. (Ya en §E) El bloqueante de UX: **sin red guardada + el asistente no ofrece WiFi + SSH apagado**.
+
+**Pendiente (a mano)**: sonido por el altavoz y el jack, suspender/despertar, gamepad+paddles, un juego
+(rotación/30 fps + QAM/mangoapp encima), DP del dock, y los **3-5 arranques en frío con `PANEL_WAIT=0`**.
