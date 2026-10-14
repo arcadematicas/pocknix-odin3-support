@@ -21,7 +21,20 @@ kernel **7.2.10**, BSP en layout `root/`+`boards/`, ABL **1.2**, `POCKNIX_PANEL_
 | 5 | **Rotación en gamescope** ⚠️ | Parche **NUEVO** de rotación inline: vigilar **pantalla negra** o **30 fps fijos**. Mirar `xprop -root \| grep -i GAMESCOPE` y FPS con MangoHUD | |
 | 6 | **Salida DP del dock** | Conectar el dock y `kscreen-doctor -o` / poner un juego | |
 | 7 | **Batería** coherente | `upower -d` · `cat /sys/class/power_supply/*/capacity` · estado de carga | |
-| 8 | **Arranques en frío con `POCKNIX_PANEL_WAIT=0`** | Añadir a la cmdline y ver si el panel sigue saliendo (si ya no hace falta el wait, se quita la clave) | |
+| 8 | **Arranques en frío con `POCKNIX_PANEL_WAIT=0`** | ⬅️ **PETICIÓN EXPLÍCITA DE SHUURI**: *"could you cold boot **3-5 times** with the panel wait off"* → `echo POCKNIX_PANEL_WAIT=0 \| sudo tee -a /etc/pocknix/device.conf` · y **arrancar en frío 3-5 veces** mirando si el panel sale **negro** alguna vez (si nunca, él quita la clave) | |
+
+### Lo que shuuri pidió vigilar (texto literal de su comentario del 12/10)
+> *"Please look out for: **black screen or being locked to 30 fps in gamescope** (ROCKNIX's inline rotation patch),
+> **dock DP output**, and **battery values in `/sys/class/power_supply`**."*
+
+> *"Also, could you **cold boot 3-5 times with the panel wait off** (`echo POCKNIX_PANEL_WAIT=0 | sudo tee -a
+> /etc/pocknix/device.conf`)? Neither ROCKNIX nor armada needs it, and the panel driver changed in this sync,
+> so if it never actually comes up black I'll drop it."*
+
+> Sobre la batería: *"I dropped the simple-battery node for now, since 5000 mAh doesn't match the 8000 mAh AYN
+> quotes on their website and it does show up in sysfs. **If you have a source for the numbers I can put it
+> back up**."* → **ya respondido por nosotros el 13/10** con 3 fuentes (el `model_name` del propio pack
+> `…8000MAH…`, `charge_full ≈ 7,85 Ah` y la ficha de AYN) → pendiente de que él la reponga.
 
 > Docs relacionados en este repo: `ROTACION-HARDWARE.md`, `PRUEBAS-MESA.md`, `SUSPEND-ISSUE.md`,
 > `BATTERY-ISSUE.md`, `ODIN3-ARRANQUE-Y-WIFI-2026-10-08.md`, `INCIDENTE-2026-09-25-nologreplay.md`.
