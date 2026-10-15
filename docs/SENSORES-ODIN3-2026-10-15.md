@@ -234,3 +234,25 @@ pueda usar. Si algún día se resuelve lo anterior, añadirlo ahí.
 5. Faltaba el consumidor de los `.jsn`: **`pd-mapper`**. Compilado a mano (aarch64) y probado:
    `no pd maps available` → hasta enlazar los `.jsn` en el directorio correcto
    (`/run/msm-firmware-loader/target/qcom/sm8750/`). **A partir de ahí: magnetómetro y `rotv` en vivo.**
+
+---
+
+## 6-ter. Por qué el escritorio NO puede auto-rotar (investigado y **descartado a propósito**)
+
+El SSC ya expone `rotv` ✓, pero `iio-sensor-proxy` **no publica el acelerómetro** y por eso Plasma
+Mobile no tiene orientación (`HasAccelerometer=false`, `AccelerometerOrientation="undefined"`).
+
+- La **mount-matrix** (atributo `ACCEL_MOUNT_MATRIX`, en `accel-attributes.c` del binario) **no se le
+  pide al ADSP**: en Linux la asigna systemd **por modelo de máquina (DMI)** desde `60-sensor.hwdb`.
+- **La Odin 3 no expone DMI**: `/sys/class/dmi/id/{modalias,sys_vendor,product_name,board_name}` están
+  **vacíos** → ninguna entrada casa → matriz indefinida → sin acelerómetro. Forzarla por variable de
+  entorno NO funciona (probado): es una propiedad udev, no una opción.
+- Además `iio-sensor-proxy` es `static` y **sin activación D-Bus** → no arranca solo tras reiniciar.
+- **Armada tampoco tiene auto-rotate**: su repo (`armada-elite`) usa **rotación FIJA por dispositivo**
+  (`ARMADA_PANEL_ORIENTATION` + `ARMADA_GAMESCOPE_USE_ROTATION_SHADER`), exactamente igual que nuestro
+  `odin3-post-boot-setup.sh` (Plasma rotation fija + gamescope rotando). No vamos por detrás.
+
+**Decisión (15/10/2026, Fransis): no es nuestra guerra.** Queda documentado por si algún día interesa.
+Vías si se retomara: (a) parche a `iio-sensor-proxy` para aceptar la matriz de un fichero/ajuste
+cuando no hay DMI (~10 líneas, ofrecible upstream); (b) daemon propio con `libssc` publicando
+`net.hadess.SensorProxy`. **No se persigue.**
