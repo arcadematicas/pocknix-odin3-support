@@ -21,15 +21,25 @@
 # mano o desde un cron/timer.
 #
 # Uso:
-#   tools/check-armada-deckard.sh [--dias N] [--json]
+#   tools/check-armada-deckard.sh [--dias N] [--merges] [--json]
 #
 #     --dias N   ventana de commits de armada, en dias (por defecto 14)
+#     --merges   incluye los commits de merge (por defecto se excluyen)
 #     --json     imprime el mismo informe en JSON
 #     -h,--help  esta ayuda
 #
-# Opcional: exporta GITHUB_TOKEN (o GH_TOKEN) para subir el limite de la API de
-# GitHub (60 peticiones/hora sin token -> puede no alcanzar para detallar cada
-# commit de armada; la herramienta avisa y degrada sin romperse).
+# Token (opcional, sube el limite de la API de GitHub; 60 peticiones/hora sin
+# token -> puede no alcanzar para detallar cada commit de armada; la herramienta
+# avisa y degrada sin romperse). Orden de precedencia:
+#   1) $GITHUB_TOKEN
+#   2) $GH_TOKEN
+#   3) $HOME/.config/opencode/opencode.jsonc ->
+#      mcp.github.environment.GITHUB_PERSONAL_ACCESS_TOKEN (parseado con python3)
+# El token NUNCA se imprime ni aparece en la salida.
+#
+# Los commits de merge (Merge pull request / Merge branch / Merge remote-tracking,
+# o con mas de un padre) se excluyen por defecto: inflan el recuento sin aportar
+# paquetes. Usa --merges para incluirlos.
 #
 # Manejo de errores: sin red / HTTP != 200 / rate-limit (403/429) -> mensaje claro
 # y salida 0 (es informativo, nunca debe romper un build/script que lo llame).
@@ -41,25 +51,29 @@ export LC_ALL=C
 # ------------------------------------------------------------------ parametros
 DIAS=14
 MODO="texto"
+INCLUIR_MERGES=0
 
 ayuda() {
     printf '%s\n' \
         "check-armada-deckard.sh — vigilancia de paquetes/parches de armada y Deckard" \
         "" \
-        "Uso: tools/check-armada-deckard.sh [--dias N] [--json]" \
+        "Uso: tools/check-armada-deckard.sh [--dias N] [--merges] [--json]" \
         "" \
         "  --dias N   ventana de commits de armada, en dias (por defecto 14)" \
+        "  --merges   incluye los commits de merge (por defecto se excluyen)" \
         "  --json     imprime el mismo informe en JSON" \
         "  -h,--help  esta ayuda" \
         "" \
         "Solo INFORMA (no cambia nada). Para subir el limite de la API de GitHub," \
-        "exporta GITHUB_TOKEN o GH_TOKEN."
+        "exporta GITHUB_TOKEN o GH_TOKEN (o define el token de GitHub MCP en" \
+        "~/.config/opencode/opencode.jsonc)."
 }
 
 while [ $# -gt 0 ]; do
     case "$1" in
         --dias)    DIAS="${2:-}"; shift 2 ;;
         --dias=*)  DIAS="${1#*=}"; shift ;;
+        --merges)  INCLUIR_MERGES=1; shift ;;
         --json)    MODO="json"; shift ;;
         -h|--help) ayuda; exit 0 ;;
         *) echo "opcion desconocida: $1 (usa -h para la ayuda)"; exit 0 ;;
@@ -79,7 +93,42 @@ DECKARD_URL="https://holo-packages.steamos.cloud/archlinux-deckard-hotfixes/"
 INTERES_ARMADA="gamescope gamescope-session gamescope-session-steam inputplumber mangohud kernel kwin powerdevil plasma-mobile umtp-responder networkmanager wpa_supplicant steamos-manager scx-scheds mesa mesa-x86 fex fex-rootfs-archlinux proton-cachyos lepton"
 INTERES_DECKARD="deckard-mesa-linux-aarch64 deckard-mesa-android deckard-vulkan-layers-linux-aarch64 deckard-audio-config deckard-hw-support mangohud steamos-manager linux-72-deckard scx-scheds"
 
+# Token de la API de GitHub. Orden de precedencia:
+#   1) $GITHUB_TOKEN   2) $GH_TOKEN
+#   3) mcp.github.environment.GITHUB_PERSONAL_ACCESS_TOKEN de
+#      ~/.config/opencode/opencode.jsonc (parseado con python3, sin jq)
+# Si no hay ninguno, se degrada con aviso (60 peticiones/hora). El valor NUNCA
+# se imprime ni se escribe en la salida (ni en texto ni en JSON).
 TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+if [ -z "$TOKEN" ]; then
+    _OC_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/opencode.jsonc"
+    if [ -r "$_OC_CFG" ]; then
+        TOKEN=$(python3 -c '
+import json, re, sys
+try:
+    s = open(sys.argv[1], encoding="utf-8").read()
+except OSError:
+    sys.exit(0)
+def load(t):
+    return json.loads(t)
+try:
+    d = load(s)
+except ValueError:
+    # jsonc con comentarios: quitarlos (solo lineas de comentario y // tras
+    # espacios, para no romper las URLs "http://..." de dentro de las cadenas)
+    t = re.sub(r"(?m)^[ \t]*//.*$", "", s)
+    t = re.sub(r"(?m)\s//.*$", "", t)
+    try:
+        d = load(t)
+    except ValueError:
+        sys.exit(0)
+v = ((d.get("mcp") or {}).get("github") or {}).get("environment") or {}
+tok = v.get("GITHUB_PERSONAL_ACCESS_TOKEN", "")
+sys.stdout.write(tok if isinstance(tok, str) else "")
+' "$_OC_CFG" 2>/dev/null || true)
+        case "$TOKEN" in ''|*[!A-Za-z0-9_-]*) TOKEN="" ;; esac
+    fi
+fi
 AUTH=()
 if [ -n "$TOKEN" ]; then
     AUTH=(-H "Authorization: Bearer $TOKEN")
@@ -123,14 +172,23 @@ while : ; do
         break
     fi
     n=$(python3 -c "import json;print(len(json.load(open('$TMP/arm_page.json'))))" 2>/dev/null || echo 0)
-    python3 -c "
-import json
-d=json.load(open('$TMP/arm_page.json'))
-with open('$TMP/arm_commits.tsv','a') as f:
+    python3 - "$TMP/arm_page.json" "$TMP/arm_commits.tsv" "$INCLUIR_MERGES" <<'PY' 2>/dev/null || true
+import json, re, sys
+src, dst, merges = sys.argv[1], sys.argv[2], sys.argv[3]
+# Los commits de merge se excluyen por defecto (--merges los incluye).
+RX_MERGE = re.compile(r"^Merge (pull request|branch|remote-tracking)")
+try:
+    d = json.load(open(src, encoding="utf-8"))
+except Exception:
+    d = []
+with open(dst, "a", encoding="utf-8") as f:
     for c in d:
-        msg=c['commit']['message'].splitlines()[0].replace('\t',' ').strip()
-        f.write('%s\t%s\t%s\n' % (c['commit']['author']['date'], c['sha'], msg))
-" 2>/dev/null || true
+        msg = c["commit"]["message"].splitlines()[0].replace("\t", " ").strip()
+        es_merge = bool(RX_MERGE.match(msg)) or len(c.get("parents") or []) > 1
+        if es_merge and merges != "1":
+            continue
+        f.write("%s\t%s\t%s\n" % (c["commit"]["author"]["date"], c["sha"], msg))
+PY
     [ "$n" -lt 100 ] && break
     pag=$((pag+1))
     [ "$pag" -gt 10 ] && break
@@ -224,11 +282,12 @@ PY
 fi
 
 # ================================================================== informe
-python3 - "$TMP" "$MODO" "$DIAS" "$INTERES_ARMADA" "$INTERES_DECKARD" "$ARM_ERR" "$ARM_NOTA" "$DECK_ERR" <<'PY'
+python3 - "$TMP" "$MODO" "$DIAS" "$INTERES_ARMADA" "$INTERES_DECKARD" "$ARM_ERR" "$ARM_NOTA" "$DECK_ERR" "$INCLUIR_MERGES" <<'PY'
 import sys, json, datetime
 from collections import OrderedDict
 
 tmp, modo, dias, inter_arm, inter_deck, arm_err, arm_nota, deck_err = sys.argv[1:9]
+merges = sys.argv[9] == "1"
 inter_arm = set(inter_arm.split())
 inter_deck = inter_deck.split()   # conserva el orden
 
@@ -289,6 +348,7 @@ recientes = [(n, d) for n, d, _ in deck_valido[:20]]
 mas_reciente = (deck_valido[0][0], deck_valido[0][1]) if deck_valido else None
 
 def es_debug(n):
+    # -debug y -assert siguen excluidos (el filtro de -assert se mantiene a proposito)
     return "-debug" in n or "-assert" in n
 
 inter_res = []
@@ -306,6 +366,7 @@ if modo == "json":
         "generado": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "armada": {
             "repo": "armada-os/armada", "rama": "main", "dias": int(dias),
+            "merges_incluidos": merges,
             "commits_total": len(commits), "commits_detallados": len(files),
             "error": arm_err or None, "nota": arm_nota or None,
             "grupos": [
@@ -342,6 +403,8 @@ if arm_err:
 else:
     print("  commits en la ventana : %d" % len(commits))
     print("  commits detallados    : %d" % len(files))
+    print("  merges                : %s" %
+          ("incluidos" if merges else "excluidos (usa --merges para incluirlos)"))
     if arm_nota:
         print("  aviso                 : %s" % arm_nota)
     print()
