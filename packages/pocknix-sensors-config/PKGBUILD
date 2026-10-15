@@ -1,0 +1,26 @@
+# pocknix-sensors-config — configuracion del ADSP para los sensores del Odin 3 (SM8750).
+#
+# Extraida del firmware Android de stock (Odin3_20251206, particion vendor super_7.img,
+# /etc/sensors) con `debugfs -R "rdump /etc/sensors <dir>"`. Es lo que el ADSP necesita para
+# arrancar la PD de sensores (registro sns + los ~140 JSON de config). El firmware (adsp.mbn,
+# adsp_dtb.mbn) ya lo trae la imagen: aqui solo van las configs.
+#
+# Sin esto, hexagonrpcd arranca pero la PD de sensores no sube (visto en agosto: el ADSP se
+# queda en "Unexpected buffer count" tras INIT_ATTACH_SNS).
+pkgname=pocknix-sensors-config
+pkgver=20251206
+pkgrel=1
+pkgdesc="ADSP sensor configuration for the AYN Odin 3 (from the stock Android vendor partition)"
+arch=('any')
+license=('custom')
+source=('sns_reg_config' 'sns_odp_config' 'hals.conf')
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+package() {
+  local dst="${pkgdir}/usr/lib/firmware/sensors"
+  install -d "${dst}/config" "${dst}/registry"
+  cp -a "${srcdir}/config/." "${dst}/config/"
+  install -Dm644 "${srcdir}/sns_reg_config"    "${dst}/sns_reg.conf"
+  install -Dm644 "${srcdir}/sns_odp_config"    "${dst}/sns_odp_config"
+  install -Dm644 "${srcdir}/hals.conf"         "${dst}/hals.conf"
+}

@@ -99,6 +99,7 @@ cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-too
 cmp_tree "${HERE}/packages/libssc"              "${OS}/packages/shared/libssc"
 cmp_tree "${HERE}/packages/hexagonrpc"          "${OS}/packages/shared/hexagonrpc"
 cmp_tree "${HERE}/packages/msm-firmware-loader" "${OS}/packages/shared/msm-firmware-loader"
+cmp_tree "${HERE}/packages/pocknix-sensors-config" "${OS}/packages/shared/pocknix-sensors-config"
 cmp_tree "${HERE}/packages/pocknix-steam-full" "${OS}/packages/shared/pocknix-steam-full"
 cmp_tree "${HERE}/packages/gamescope-session"       "${OS}/packages/shared/gamescope-session"
 cmp_tree "${HERE}/packages/gamescope-session-steam" "${OS}/packages/shared/gamescope-session-steam"
