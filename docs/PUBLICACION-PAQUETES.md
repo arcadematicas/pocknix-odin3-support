@@ -115,3 +115,26 @@ tools/sync-to-os.sh && tools/check-sync.sh
 **Visto el 15/10/2026**: `pc-local` estaba en `98fff0e` (BSP `pkgrel=7`, sin `sensors/`) mientras el
 portátil ya tenía `008a9d6` (BSP `-8` + bring-up) → tres publicaciones seguidas construyeron con el
 árbol viejo y no se publicó nada nuevo. Un `git pull` de 10 segundos lo habría evitado.
+
+### Por qué los subagentes se quedaban "cancelados" (15/10/2026)
+
+No era un fallo técnico: **hacían una `question` al usuario y la pregunta se rechazaba**
+(`question.rejected` en el log del bot de Telegram) → sin respuesta, el subagente termina su turno y
+opencode lo marca como cancelado. **Y preguntaban porque `make packages` exige root**
+(`error must run as root (chroot/mount needed): try 'sudo make build-packages'`) y **el sobremesa
+pide contraseña de sudo** (la del PC no es la de la Odin).
+
+**Reparto de trabajo que funciona**:
+1. **Humano (o quien tenga la contraseña de `pc-local`)**: lanza el build ‡
+   ```sh
+   cd ~/pocknix-odin3-project/pocknix-os
+   sudo DEVICE=sm8750 make build-packages PKG="pd-mapper libqrtr hexagonrpc libssc msm-firmware-loader \
+        pocknix-sensors-config pocknix-system-overlay pocknix-bsp-sm8750 pocknix-desktop"
+   ```
+   ⚠️ En background (`setsid nohup … > /tmp/publish-fase1.log 2>&1 &`) para no bloquear la sesión.
+2. **Sin root** (lo puede hacer el agente): `make stage-shared PKG="…"` → `make publish-shared`;
+   y `make stage PKG="…"` → `make publish` para los del SoC; luego verificar por URL + `gpg`.
+   `rclone` ya tiene el remoto `r2:` dado de alta en `pc-local`.
+
+Y regla para futuros subagentes: **no deben usar `question`**; si falta un permiso, que lo digan en el
+informe final en vez de bloquearse.
