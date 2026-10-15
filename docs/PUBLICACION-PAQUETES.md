@@ -90,3 +90,28 @@ en el árbol antes de publicar, o las consolas se quedarán atrás.
 El script puede colgarse de un `post-commit`/hook del centro o de un paso del `Makefile` para que
 avise solo cuando la deuda cambie. Hoy es manual a propósito (el flujo de publicación exige red,
 GPG y el sobremesa).
+
+---
+
+## ⚠️ PASO 0 (el que faltaba): sincronizar `pc-local` antes de compilar
+
+Los builds se hacen en el **sobremesa** (`pc-local`), y su copia del centro **hay que actualizarla**:
+si no, `tools/sync-to-os.sh` aplica contenido **viejo** al árbol y **los paquetes salen sin lo nuevo** ✗.
+(Y `tools/check-sync.sh` da un **falso OK** ✗ porque compara el árbol local con el centro **local**: si
+ambos están viejos, coinciden.)
+
+```sh
+# en pc-local
+cd ~/pocknix-odin3-project/pocknix-odin3-support
+git pull --ff-only                       # ← si aborta, aparta los ficheros sucios que vengan en el pull
+cd ../pocknix-os
+git fetch arcadematicas                  # el fork (el portátil pushea ahí)
+git reset --mixed arcadematicas/odin3-sm8750   # realinear a la punta del fork (no toca ficheros)
+cd ../pocknix-odin3-support
+tools/sync-to-os.sh && tools/check-sync.sh
+# y solo entonces:  DEVICE=sm8750 make packages PKG="..."   (¡DEVICE es obligatorio!)
+```
+
+**Visto el 15/10/2026**: `pc-local` estaba en `98fff0e` (BSP `pkgrel=7`, sin `sensors/`) mientras el
+portátil ya tenía `008a9d6` (BSP `-8` + bring-up) → tres publicaciones seguidas construyeron con el
+árbol viejo y no se publicó nada nuevo. Un `git pull` de 10 segundos lo habría evitado.
