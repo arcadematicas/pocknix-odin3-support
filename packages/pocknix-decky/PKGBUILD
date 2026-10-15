@@ -14,7 +14,7 @@ pkgver=0.1.0
 #     theme on first boot (fetched from the official catalogue and sha256-verified; the theme
 #     itself is NOT redistributed). Also drops the deckthemes class-mappings snapshot at
 #     /usr/share/pocknix/css_translations.json as an offline fallback for the plugin.
-# 50: ship Hooandee's "Panel de Control" (v0.66.0, GPL-3.0) as /usr/share/decky-plugins/Panel de
+# 50: ship Hooandee's "Panel de Control" (v0.70.1, GPL-3.0) as /usr/share/decky-plugins/Panel de
 #     Control. Unlike every other OS-shipped plugin it SELF-UPDATES on its own release cadence,
 #     so pocknix-decky-sync seeds it ONLY when missing (never re-copies over the user's update);
 #     see the PANEL DE CONTROL exception in that script.
@@ -22,7 +22,13 @@ pkgver=0.1.0
 #     but Decky's store id (and the dir the plugin actually loads from) is "SDH-CssLoader".
 #     pocknix-decky-sync copies by basename, so the old name created a duplicate CSSLoader dir
 #     and never updated the real SDH-CssLoader. Ship it as /usr/share/decky-plugins/SDH-CssLoader.
-pkgrel=52
+# 52: (previous) Panel de Control v0.66.0.
+# 53: re-vendor Hooandee's "Panel de Control" to v0.70.1 (release panel-de-control-v0.70.1,
+#     2026-10-14): brings the AYN Odin 3 device profile (upstream b0b7d612) plus remote_access
+#     (dropbear) and display input_wake/screen_sleep. LOCAL PATCH (pocknix, TEMPORARY): add
+#     hdr=True to the ayn_odin3 profile (PR #947 a Hooandee, pending merge) — see
+#     panel-de-control/NOTES.pocknix.md.
+pkgrel=53
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -77,7 +83,7 @@ package() {
   rm -f "${dest_css}/dist"/*.map
   find "${dest_css}" -name __pycache__ -type d -prune -exec rm -rf {} +
 
-  # Hooandee's "Panel de Control" (v0.66.0, GPL-3.0): pure Python backend + prebuilt dist JS.
+  # Hooandee's "Panel de Control" (v0.70.1, GPL-3.0): pure Python backend + prebuilt dist JS.
   # This plugin self-updates, so pocknix-decky-sync seeds it ONLY when missing and never stomps
   # a user's own update; keep the folder name with the space — it is Decky's real plugin dir and
   # what the self-updater rewrites in place.

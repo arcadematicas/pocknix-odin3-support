@@ -165,6 +165,8 @@ function LuZap (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M5 12h14"},"child":[]},{"tag":"path","attr":{"d":"M12 5v14"},"child":[]}]})(props);
 }function LuPlug (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M12 22v-5"},"child":[]},{"tag":"path","attr":{"d":"M9 8V2"},"child":[]},{"tag":"path","attr":{"d":"M15 8V2"},"child":[]},{"tag":"path","attr":{"d":"M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"},"child":[]}]})(props);
+}function LuPlugZap (props) {
+  return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"},"child":[]},{"tag":"path","attr":{"d":"m2 22 3-3"},"child":[]},{"tag":"path","attr":{"d":"M7.5 13.5 10 11"},"child":[]},{"tag":"path","attr":{"d":"M10.5 16.5 13 14"},"child":[]},{"tag":"path","attr":{"d":"m18 3-4 4h6l-4 4"},"child":[]}]})(props);
 }function LuPlay (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"polygon","attr":{"points":"6 3 20 12 6 21 6 3"},"child":[]}]})(props);
 }function LuPlane (props) {
@@ -193,6 +195,8 @@ function LuZap (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"},"child":[]}]})(props);
 }function LuMonitor (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"rect","attr":{"width":"20","height":"14","x":"2","y":"3","rx":"2"},"child":[]},{"tag":"line","attr":{"x1":"8","x2":"16","y1":"21","y2":"21"},"child":[]},{"tag":"line","attr":{"x1":"12","x2":"12","y1":"17","y2":"21"},"child":[]}]})(props);
+}function LuMonitorOff (props) {
+  return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M17 17H4a2 2 0 0 1-2-2V5c0-1.5 1-2 1-2"},"child":[]},{"tag":"path","attr":{"d":"M22 15V5a2 2 0 0 0-2-2H9"},"child":[]},{"tag":"path","attr":{"d":"M8 21h8"},"child":[]},{"tag":"path","attr":{"d":"M12 17v4"},"child":[]},{"tag":"path","attr":{"d":"m2 2 20 20"},"child":[]}]})(props);
 }function LuMonitorCog (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M12 17v4"},"child":[]},{"tag":"path","attr":{"d":"m15.2 4.9-.9-.4"},"child":[]},{"tag":"path","attr":{"d":"m15.2 7.1-.9.4"},"child":[]},{"tag":"path","attr":{"d":"m16.9 3.2-.4-.9"},"child":[]},{"tag":"path","attr":{"d":"m16.9 8.8-.4.9"},"child":[]},{"tag":"path","attr":{"d":"m19.5 2.3-.4.9"},"child":[]},{"tag":"path","attr":{"d":"m19.5 9.7-.4-.9"},"child":[]},{"tag":"path","attr":{"d":"m21.7 4.5-.9.4"},"child":[]},{"tag":"path","attr":{"d":"m21.7 7.5-.9-.4"},"child":[]},{"tag":"path","attr":{"d":"M22 13v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"},"child":[]},{"tag":"path","attr":{"d":"M8 21h8"},"child":[]},{"tag":"circle","attr":{"cx":"18","cy":"6","r":"3"},"child":[]}]})(props);
 }function LuMinus (props) {
@@ -412,6 +416,7 @@ const takeTdpControl = callable("take_tdp_control");
 // One-time-notice flags (durable, backend-persisted).
 const setSeenAutotdpNotice = callable("set_seen_autotdp_notice");
 const setSeenTdpConflictTakeover = callable("set_seen_tdp_conflict_takeover");
+const dismissChargerNotice = callable("dismiss_charger_notice");
 // Learning on/off (get/set_telemetry_enabled) is driven via the module editor now
 // (learning module → set_ui_module), so it has no dedicated frontend binding.
 // Wipe all learned usage data (start from scratch). Doesn't touch manual profiles.
@@ -451,6 +456,7 @@ const setCpuFrequencyAuto = callable("set_cpu_frequency_auto");
 const setCpuFollowGlobal = callable("set_cpu_follow_global");
 const getEcoState = callable("get_eco_state");
 const setEco = callable("set_eco");
+const setEcoScreen = callable("set_eco_screen");
 const checkUpdate = callable("check_update");
 const installUpdate = callable("install_update");
 const restartLoader = callable("restart_loader");
@@ -505,6 +511,14 @@ const setAudioTest = callable("set_audio_test");
 const saveAudioProfile = callable("save_audio_profile");
 const applyAudioProfile = callable("apply_audio_profile");
 const deleteAudioProfile = callable("delete_audio_profile");
+const getDeveloperOptions = callable("get_developer_options");
+const setDeveloperOptions = callable("set_developer_options");
+const getRemoteAccessState = callable("get_remote_access_state");
+const setRemoteAccessEnabled = callable("set_remote_access_enabled");
+const openRemoteAccessPairing = callable("open_remote_access_pairing");
+const closeRemoteAccessPairing = callable("close_remote_access_pairing");
+const answerRemoteAccessPairing = callable("answer_remote_access_pairing");
+const forgetRemoteAccessKeys = callable("forget_remote_access_keys");
 
 function format(template, params) {
     if (!params)
@@ -716,6 +730,26 @@ const it = {
     "nav.audio.desc": "Controlli audio disponibili.",
     "nav.mandos": "Controller",
     "nav.mandos.desc": "Stato e opzioni disponibili del controller.",
+    "settings.devUnlocked": "Opzioni sviluppatore attivate.",
+    "dev.title": "Opzioni sviluppatore",
+    "dev.hide": "Nascondi opzioni sviluppatore",
+    "dev.ssh": "Accesso remoto (SSH)",
+    "dev.ssh.desc": "Server SSH solo con chiave sulla porta {port}. Entrano solo i computer abbinati.",
+    "dev.ssh.running": "Attivo: ssh -p {port} {user}@{address}",
+    "dev.ssh.starting": "Avvio del server…",
+    "dev.ssh.error": "Il server non si avvia ({error}). Riproverà da solo.",
+    "dev.ssh.unsupported": "Nessun server SSH incluso per questa architettura.",
+    "dev.ssh.noUser": "L'account attuale non ha una voce in /etc/passwd, quindi l'accesso non è possibile.",
+    "dev.ssh.pair": "Abbina un computer",
+    "dev.ssh.pair.desc": "Apre una finestra di 2 minuti per ricevere la chiave pubblica del computer.",
+    "dev.ssh.pair.waiting": "In attesa della chiave ({seconds} s). Sul computer: nc {address} {port} < ~/.ssh/id_ed25519.pub",
+    "dev.ssh.pair.request": "{peer} chiede l'accesso. Verifica che l'impronta coincida con quella del computer:",
+    "dev.ssh.pair.accept": "Accetta",
+    "dev.ssh.pair.reject": "Rifiuta",
+    "dev.ssh.pair.cancel": "Chiudi finestra",
+    "dev.ssh.keys": "Computer abbinati: {count}",
+    "dev.ssh.forget": "Dimentica i computer abbinati",
+    "dev.ssh.forget.confirm": "Premi di nuovo per dimenticarli",
     "settings.kiosk": "Schermo inferiore",
     "settings.kiosk.desc": "Trasforma lo schermo inferiore in un centro di controllo touch mentre giochi.",
     "settings.kiosk.running": "Panel de Control è visibile sullo schermo inferiore.",
@@ -1355,6 +1389,7 @@ const it = {
     "mandos.remap.uncalibrated": "Il controller di questo modello non si può ancora rimappare da qui. La rimappatura per gioco si configura in Steam Input.",
     "mandos.remap.nobuttons": "Al momento non sono stati rilevati pulsanti rimappabili. Se hai appena riavviato, attendi qualche secondo.",
     "mandos.remap.noextra": "Questo modello non ha tasti extra da rimappare. I layout per gioco si impostano in Steam Input.",
+    "mandos.remap.dropped": "Con l'emulazione del controller attuale, i tasti non assegnati non arrivano ai giochi. Assegnagli un tasto qui o usa l'emulazione Steam Deck.",
     "mandos.modules.title": "Magic Modules",
     "mandos.modules.left": "Modulo sinistro",
     "mandos.modules.right": "Modulo destro",
@@ -1518,9 +1553,15 @@ const it = {
     "system.off": "disattivato",
     "system.eco.title": "Modalità download",
     "system.eco.desc": "Riduce il consumo mentre scarichi i giochi.",
-    "system.eco.effect.tdp": "TDP → {watts} W",
-    "system.eco.effect.brightness": "Luminosità → attenuazione automatica",
-    "system.eco.effect.boost": "Turbo disattivato",
+    "system.eco.countdown": "Lo schermo si spegne tra",
+    "system.eco.row.tdp": "TDP",
+    "system.eco.row.level": "Prestazioni",
+    "system.eco.value.level": "Livello {level}",
+    "system.eco.row.screen": "Schermo",
+    "system.eco.value.screenOff": "Spento",
+    "system.eco.value.screenBlack": "Nero",
+    "system.eco.row.turbo": "Turbo",
+    "system.eco.value.turboOff": "Disattivato",
     "system.rgb.title": "Illuminazione RGB",
     "system.rgb.desc.installed": "Controlla i LED RGB del dispositivo con Colores.",
     "system.rgb.desc.install": "Installa Colores per controllare l'illuminazione RGB del dispositivo.",
@@ -1618,7 +1659,6 @@ const it = {
     "tdp.reset.default.level": "Ripristina livello predefinito ({w})",
     "tdp.level.value": "Livello {level}",
     "tdp.level.inline": "livello {level}",
-    "system.eco.effect.level": "Prestazioni → livello {level}",
     "tdp.fwmode.low-power": "Silenziosa",
     "tdp.fwmode.balanced": "Bilanciata",
     "tdp.fwmode.performance": "Prestazioni",
@@ -1650,7 +1690,7 @@ const it = {
     "tdp.auto.ui_floor": "TDP aumentato per mantenere fluido il menu · verrà regolato di nuovo nel gioco",
     "tdp.lowBatteryHold.title": "Mantieni il TDP con batteria scarica",
     "tdp.lowBatteryHold.experimental": "Sperimentale",
-    "tdp.lowBatteryHold.hint": "Mantiene il valore selezionato con il 20% di batteria o meno.",
+    "tdp.lowBatteryHold.hint": "Mantiene il valore selezionato con il 20% di batteria o meno e, se il sistema continua a limitarlo, anche con il caricatore.",
     "tdp.ceiling.battery": "Massimo a batteria: {max} W. Collega il caricatore per aumentarlo.",
     "tdp.ceiling.charger": "Massimo del dispositivo: {max} W.",
     "tdp.extra.label": "Extra",
@@ -1658,17 +1698,14 @@ const it = {
     "tdp.extra.high": "Sopra {max} W decide il firmware: Panel lo richiede, ma il sistema potrebbe non accettarlo.",
     "tdp.extra.highAccessory": "Sopra {max} W decide il firmware e potrebbe non accettarlo. Se il tuo dispositivo ha bisogno di raffreddamento esterno, collegalo.",
     "tdp.extra.low": "Sotto {min} W decide il firmware: Panel lo richiede, ma il sistema potrebbe non accettarlo.",
-    "tdp.ownership.constrained": "Hai richiesto {requested} W · il firmware ora consente {applied} W",
-    "tdp.ownership.boostFloorMenu": "Nei menu, SPPT e FPPT restano a {pl2} e {pl3} W per mantenere tutto fluido",
-    "tdp.ownership.boostFloor": "SPPT e FPPT restano a {pl2} e {pl3} W su questo dispositivo",
-    "tdp.ownership.powerLimited": "L'alimentazione o il firmware limita temporaneamente la potenza · l'impostazione resta selezionata",
-    "tdp.ownership.settling": "Applicazione e verifica del limite di potenza…",
-    "tdp.ownership.rejected": "Il firmware non ha accettato {target} W · mantiene {applied} W",
-    "tdp.ownership.unverifiable": "Limite di {target} W inviato al processore. Questo dispositivo non permette di rileggerlo: il consumo reale indica se viene rispettato.",
-    "tdp.ownership.conflict": "Un altro gestore o il firmware sta modificando il TDP · Pannello di controllo lo mantiene",
-    "tdp.ownership.overshootCorrecting": "Il firmware ha alzato il limite e il consumo arriva a {peak} W · ripristino a {target} W",
-    "tdp.ownership.overshootRestored": "Il firmware ha alzato il limite e il consumo è arrivato a {peak} W · ripristinato a {target} W",
-    "tdp.ownership.overshootUnresolved": "Il consumo resta a {peak} W con il limite a {target} W · il firmware non lo rispetta",
+    "tdp.ownership.constrained": "Il dispositivo limita la potenza a {applied} W per ora.",
+    "tdp.ownership.powerLimited": "Il dispositivo limita la potenza a {applied} W con questa alimentazione.",
+    "tdp.ownership.minimum": "Il dispositivo non scende sotto {applied} W.",
+    "tdp.ownership.rejectedUnknown": "Il dispositivo non consente questo valore in questo momento.",
+    "tdp.ownership.conflict": "Qualcosa sul dispositivo sta cambiando il limite di potenza.",
+    "tdp.ownership.rejected": "Il dispositivo non consente {target} W in questo momento. Resta a {applied} W.",
+    "tdp.ownership.rejectedNoValue": "Il dispositivo non consente {target} W in questo momento.",
+    "tdp.ownership.overshootUnresolved": "Il dispositivo non sta rispettando il limite di {target} W.",
     "tdp.arc.auto": "AUTO",
     "tdp.arc.overclocked": "OVERCLOCK",
     "tdp.arc.target": "OBIETTIVO",
@@ -1687,6 +1724,9 @@ const it = {
     "tdp.conflict.take.confirm": "Disattivali e lascia fare a me",
     "tdp.conflict.take.later": "Non ora",
     "tdp.conflict.take.fine": "È reversibile e compare una sola volta.",
+    "tdp.charger.title": "Rilevato un problema al caricatore",
+    "tdp.charger.desc": "L'alimentazione è saltata ed è tornata {n} volte in poco tempo. Può dipendere dal caricatore, dal cavo o dalla porta USB-C. Finché succede, TDP e ricarica possono variare. Conviene provare un altro cavo o caricatore.",
+    "tdp.charger.dismiss": "Ho capito",
     "tdp.conflict.card.title": "Sono attivi altri gestori TDP",
     "tdp.conflict.card.desc": "Entrano in conflitto e il TDP oscilla. Lascia il controllo solo a Pannello di controllo.",
     "tdp.conflict.card.desc.powerstation": "Due gestori non possono controllare il TDP insieme, perché continuerebbero a sovrascriversi.",
@@ -1978,6 +2018,26 @@ const de = {
     "nav.audio.desc": "Verfügbare Audiosteuerung.",
     "nav.mandos": "Controller",
     "nav.mandos.desc": "Controllerstatus und verfügbare Optionen.",
+    "settings.devUnlocked": "Entwickleroptionen aktiviert.",
+    "dev.title": "Entwickleroptionen",
+    "dev.hide": "Entwickleroptionen ausblenden",
+    "dev.ssh": "Fernzugriff (SSH)",
+    "dev.ssh.desc": "SSH-Server nur mit Schlüssel auf Port {port}. Nur gekoppelte Computer können sich anmelden.",
+    "dev.ssh.running": "Aktiv: ssh -p {port} {user}@{address}",
+    "dev.ssh.starting": "Server wird gestartet…",
+    "dev.ssh.error": "Der Server startet nicht ({error}). Neuer Versuch folgt automatisch.",
+    "dev.ssh.unsupported": "Für diese Architektur ist kein SSH-Server enthalten.",
+    "dev.ssh.noUser": "Das aktuelle Konto hat keinen Eintrag in /etc/passwd, daher ist keine Anmeldung möglich.",
+    "dev.ssh.pair": "Computer koppeln",
+    "dev.ssh.pair.desc": "Öffnet ein 2-Minuten-Fenster, um den öffentlichen Schlüssel des Computers zu empfangen.",
+    "dev.ssh.pair.waiting": "Warte auf Schlüssel ({seconds} s). Auf dem Computer: nc {address} {port} < ~/.ssh/id_ed25519.pub",
+    "dev.ssh.pair.request": "{peer} bittet um Zugriff. Prüfen, ob der Fingerabdruck mit dem des Computers übereinstimmt:",
+    "dev.ssh.pair.accept": "Annehmen",
+    "dev.ssh.pair.reject": "Ablehnen",
+    "dev.ssh.pair.cancel": "Fenster schließen",
+    "dev.ssh.keys": "Gekoppelte Computer: {count}",
+    "dev.ssh.forget": "Gekoppelte Computer vergessen",
+    "dev.ssh.forget.confirm": "Erneut drücken zum Vergessen",
     "settings.kiosk": "Unterer Bildschirm",
     "settings.kiosk.desc": "Macht den unteren Bildschirm beim Spielen zu einem Touch-Kontrollzentrum.",
     "settings.kiosk.running": "Panel de Control wird auf dem unteren Bildschirm angezeigt.",
@@ -2748,6 +2808,7 @@ const de = {
     "mandos.remap.uncalibrated": "Die Controller-Tasten dieses Modells werden derzeit nicht neu belegt. Die Neubelegung je Spiel erfolgt in Steam Input.",
     "mandos.remap.nobuttons": "Derzeit wurden keine neu belegbaren Tasten erkannt. Wenn du gerade neu gestartet hast, warte einige Sekunden.",
     "mandos.remap.noextra": "Dieses Modell hat keine zusätzlichen Tasten zum Neubelegen. Layouts pro Spiel werden in Steam Input festgelegt.",
+    "mandos.remap.dropped": "Mit der aktuellen Controller-Emulation kommen nicht belegte Tasten nicht in Spielen an. Belege sie hier oder nutze die Steam-Deck-Emulation.",
     "display.oled.title": "OLED-Look",
     "display.oled.desc": "Lässt die Farben deines Bildschirms lebendiger und tiefer wirken, ähnlich wie bei einem OLED-Display. Das Display selbst wird nicht verändert, nur die Farbdarstellung.",
     "display.oled.apply": "Anwenden",
@@ -2889,9 +2950,15 @@ const de = {
     "system.off": "deaktiviert",
     "system.eco.title": "Downloadmodus",
     "system.eco.desc": "Senkt den Verbrauch beim Herunterladen von Spielen.",
-    "system.eco.effect.tdp": "TDP → {watts} W",
-    "system.eco.effect.brightness": "Helligkeit → automatisch gedimmt",
-    "system.eco.effect.boost": "Turbo aus",
+    "system.eco.countdown": "Bildschirm geht aus in",
+    "system.eco.row.tdp": "TDP",
+    "system.eco.row.level": "Leistung",
+    "system.eco.value.level": "Stufe {level}",
+    "system.eco.row.screen": "Bildschirm",
+    "system.eco.value.screenOff": "Aus",
+    "system.eco.value.screenBlack": "Schwarz",
+    "system.eco.row.turbo": "Turbo",
+    "system.eco.value.turboOff": "Aus",
     "system.rgb.title": "RGB-Beleuchtung",
     "system.rgb.desc.installed": "Steuere die RGB-LEDs deines Geräts mit Colores.",
     "system.rgb.desc.install": "Installiere Colores, um die RGB-Beleuchtung deines Geräts zu steuern.",
@@ -2992,7 +3059,6 @@ const de = {
     "tdp.reset.default.level": "Auf Standardstufe zurücksetzen ({w})",
     "tdp.level.value": "Stufe {level}",
     "tdp.level.inline": "Stufe {level}",
-    "system.eco.effect.level": "Leistung → Stufe {level}",
     "tdp.fwmode.low-power": "Leise",
     "tdp.fwmode.balanced": "Ausgewogen",
     "tdp.fwmode.performance": "Leistung",
@@ -3024,7 +3090,7 @@ const de = {
     "tdp.auto.ui_floor": "TDP für ein flüssiges Menü erhöht · wird im Spiel neu eingestellt",
     "tdp.lowBatteryHold.title": "TDP bei niedrigem Akkustand halten",
     "tdp.lowBatteryHold.experimental": "Experimentell",
-    "tdp.lowBatteryHold.hint": "Behält den gewählten Wert bei 20 % Akkustand oder weniger bei.",
+    "tdp.lowBatteryHold.hint": "Behält den gewählten Wert bei 20 % Akkustand oder weniger bei und, solange das System ihn weiter begrenzt, auch am Ladegerät.",
     "tdp.ceiling.battery": "Maximum im Akkubetrieb: {max} W. Schließe das Netzteil an, um den Wert weiter zu erhöhen.",
     "tdp.ceiling.charger": "Gerätemaximum: {max} W.",
     "tdp.extra.label": "Extra",
@@ -3032,17 +3098,14 @@ const de = {
     "tdp.extra.high": "Über {max} W entscheidet die Firmware: Panel fordert es an, aber das System nimmt es vielleicht nicht an.",
     "tdp.extra.highAccessory": "Über {max} W entscheidet die Firmware und nimmt es vielleicht nicht an. Wenn dein Gerät externe Kühlung braucht, schließ sie an.",
     "tdp.extra.low": "Unter {min} W entscheidet die Firmware: Panel fordert es an, aber das System nimmt es vielleicht nicht an.",
-    "tdp.ownership.constrained": "Angefordert: {requested} W · derzeit von der Firmware erlaubt: {applied} W",
-    "tdp.ownership.boostFloorMenu": "In Menüs bleiben SPPT und FPPT bei {pl2} und {pl3} W, damit alles flüssig läuft",
-    "tdp.ownership.boostFloor": "SPPT und FPPT bleiben auf diesem Gerät bei {pl2} und {pl3} W",
-    "tdp.ownership.powerLimited": "Stromversorgung oder Firmware begrenzt die Leistung vorübergehend · deine Einstellung bleibt ausgewählt",
-    "tdp.ownership.settling": "Leistungslimit wird angewendet und überprüft…",
-    "tdp.ownership.rejected": "Die Firmware hat {target} W nicht akzeptiert · {applied} W bleiben aktiv",
-    "tdp.ownership.unverifiable": "Limit von {target} W an den Prozessor gesendet. Dieses Gerät kann es nicht zurücklesen: Der tatsächliche Verbrauch zeigt, ob es eingehalten wird.",
-    "tdp.ownership.conflict": "Ein anderer Controller oder die Firmware ändert die TDP · das Kontrollzentrum hält dagegen",
-    "tdp.ownership.overshootCorrecting": "Die Firmware hat das Limit angehoben, der Verbrauch erreicht {peak} W · {target} W werden wiederhergestellt",
-    "tdp.ownership.overshootRestored": "Die Firmware hatte das Limit angehoben, der Verbrauch erreichte {peak} W · auf {target} W wiederhergestellt",
-    "tdp.ownership.overshootUnresolved": "Der Verbrauch bleibt bei {peak} W trotz Limit von {target} W · die Firmware hält es nicht ein",
+    "tdp.ownership.constrained": "Das Gerät begrenzt die Leistung vorerst auf {applied} W.",
+    "tdp.ownership.powerLimited": "Das Gerät begrenzt die Leistung mit dieser Stromversorgung auf {applied} W.",
+    "tdp.ownership.minimum": "Das Gerät geht nicht unter {applied} W.",
+    "tdp.ownership.rejectedUnknown": "Das Gerät erlaubt diesen Wert gerade nicht.",
+    "tdp.ownership.conflict": "Etwas auf dem Gerät ändert das Leistungslimit.",
+    "tdp.ownership.rejected": "Das Gerät erlaubt gerade keine {target} W. Es bleibt bei {applied} W.",
+    "tdp.ownership.rejectedNoValue": "Das Gerät erlaubt gerade keine {target} W.",
+    "tdp.ownership.overshootUnresolved": "Das Gerät hält das Limit von {target} W nicht ein.",
     "tdp.arc.auto": "AUTO",
     "tdp.arc.overclocked": "OVERCLOCK",
     "tdp.arc.target": "ZIEL",
@@ -3061,6 +3124,9 @@ const de = {
     "tdp.conflict.take.confirm": "Andere deaktivieren und selbst verwalten",
     "tdp.conflict.take.later": "Jetzt nicht",
     "tdp.conflict.take.fine": "Umkehrbar. Wird nur einmal angezeigt.",
+    "tdp.charger.title": "Ladegerätfehler erkannt",
+    "tdp.charger.desc": "Die Stromversorgung ist in kurzer Zeit {n}-mal weggefallen und zurückgekommen. Ursache kann das Ladegerät, das Kabel oder der USB-C-Anschluss sein. Solange das passiert, können TDP und Laden schwanken. Am besten ein anderes Kabel oder Ladegerät ausprobieren.",
+    "tdp.charger.dismiss": "Verstanden",
     "tdp.conflict.card.title": "Andere TDP-Manager sind aktiv",
     "tdp.conflict.card.desc": "Sie überschreiben sich gegenseitig und die TDP schwankt. Lass nur das Kontrollzentrum die TDP steuern.",
     "tdp.conflict.card.desc.powerstation": "Zwei Manager können die TDP nicht gleichzeitig steuern, weil sie ihre Werte laufend überschreiben.",
@@ -3347,6 +3413,26 @@ const ptBR = {
     "nav.audio.desc": "Controles de som disponíveis.",
     "nav.mandos": "Controles",
     "nav.mandos.desc": "Estado e opções disponíveis do controle.",
+    "settings.devUnlocked": "Opções de desenvolvedor ativadas.",
+    "dev.title": "Opções de desenvolvedor",
+    "dev.hide": "Ocultar opções de desenvolvedor",
+    "dev.ssh": "Acesso remoto (SSH)",
+    "dev.ssh.desc": "Servidor SSH só com chave na porta {port}. Só entram computadores pareados.",
+    "dev.ssh.running": "Ativo: ssh -p {port} {user}@{address}",
+    "dev.ssh.starting": "Iniciando o servidor…",
+    "dev.ssh.error": "O servidor não inicia ({error}). Vai tentar de novo sozinho.",
+    "dev.ssh.unsupported": "Não há servidor SSH incluído para esta arquitetura.",
+    "dev.ssh.noUser": "A conta atual não tem entrada em /etc/passwd, então o login não funciona.",
+    "dev.ssh.pair": "Parear computador",
+    "dev.ssh.pair.desc": "Abre uma janela de 2 minutos para receber a chave pública do computador.",
+    "dev.ssh.pair.waiting": "Aguardando chave ({seconds} s). No computador: nc {address} {port} < ~/.ssh/id_ed25519.pub",
+    "dev.ssh.pair.request": "{peer} está pedindo acesso. Confira se a impressão digital é a mesma do computador:",
+    "dev.ssh.pair.accept": "Aceitar",
+    "dev.ssh.pair.reject": "Recusar",
+    "dev.ssh.pair.cancel": "Fechar janela",
+    "dev.ssh.keys": "Computadores pareados: {count}",
+    "dev.ssh.forget": "Esquecer computadores pareados",
+    "dev.ssh.forget.confirm": "Pressione de novo para esquecer",
     "settings.kiosk": "Tela inferior",
     "settings.kiosk.desc": "Transforma a tela inferior em uma central de controle por toque enquanto você joga.",
     "settings.kiosk.running": "O Panel de Control está aparecendo na tela inferior.",
@@ -4093,6 +4179,7 @@ const ptBR = {
     "mandos.remap.uncalibrated": "O controle deste modelo ainda não pode ser remapeado aqui. Os layouts de controle por jogo são feitos no Steam Input.",
     "mandos.remap.nobuttons": "Nenhum botão remapeável detectado no momento. Se você acabou de reiniciar, espere alguns segundos.",
     "mandos.remap.noextra": "Este modelo não tem botões extras para remapear. Layouts por jogo são definidos no Steam Input.",
+    "mandos.remap.dropped": "Com a emulação de controle atual, botões sem atribuição não chegam aos jogos. Atribua um botão aqui ou use a emulação Steam Deck.",
     "mandos.modules.title": "Módulos Mágicos",
     "mandos.modules.left": "Módulo esquerdo",
     "mandos.modules.right": "Módulo direito",
@@ -4258,9 +4345,15 @@ const ptBR = {
     "system.off": "Desligado",
     "system.eco.title": "Modo de download",
     "system.eco.desc": "Reduz o consumo de energia enquanto um jogo é baixado.",
-    "system.eco.effect.tdp": "TDP → {watts} W",
-    "system.eco.effect.brightness": "Brilho → escurece automaticamente",
-    "system.eco.effect.boost": "Turbo desligado",
+    "system.eco.countdown": "A tela desliga em",
+    "system.eco.row.tdp": "TDP",
+    "system.eco.row.level": "Desempenho",
+    "system.eco.value.level": "Nível {level}",
+    "system.eco.row.screen": "Tela",
+    "system.eco.value.screenOff": "Desligada",
+    "system.eco.value.screenBlack": "Preta",
+    "system.eco.row.turbo": "Turbo",
+    "system.eco.value.turboOff": "Desligado",
     "system.rgb.title": "Iluminação RGB",
     "system.rgb.desc.installed": "Controle os LEDs RGB do seu dispositivo com Colores.",
     "system.rgb.desc.install": "Instale Colores para controlar a iluminação RGB do seu dispositivo.",
@@ -4361,7 +4454,6 @@ const ptBR = {
     "tdp.reset.default.level": "Redefinir para o nível padrão ({w})",
     "tdp.level.value": "Nível {level}",
     "tdp.level.inline": "nível {level}",
-    "system.eco.effect.level": "Desempenho → nível {level}",
     "tdp.fwmode.low-power": "Silencioso",
     "tdp.fwmode.balanced": "Equilibrado",
     "tdp.fwmode.performance": "Desempenho",
@@ -4423,7 +4515,7 @@ const ptBR = {
     "tdp.auto.ui_floor": "TDP aumentado para manter o menu fluido · é reajustado no jogo",
     "tdp.lowBatteryHold.title": "Manter o TDP com a bateria baixa",
     "tdp.lowBatteryHold.experimental": "Experimental",
-    "tdp.lowBatteryHold.hint": "Mantém o valor selecionado em 20% de bateria ou menos.",
+    "tdp.lowBatteryHold.hint": "Mantém o valor selecionado em 20% de bateria ou menos e, se o sistema continuar limitando, também no carregador.",
     "tdp.ceiling.battery": "Máx. na bateria: {max} W. Conecte o carregador para usar um valor maior.",
     "tdp.ceiling.charger": "Máx. do dispositivo: {max} W.",
     "tdp.extra.label": "Extra",
@@ -4431,17 +4523,14 @@ const ptBR = {
     "tdp.extra.high": "Acima de {max} W quem decide é o firmware: o Panel pede, mas o sistema pode não aceitar.",
     "tdp.extra.highAccessory": "Acima de {max} W quem decide é o firmware, que pode não aceitar. Se o seu aparelho precisa de refrigeração externa, conecte-a.",
     "tdp.extra.low": "Abaixo de {min} W quem decide é o firmware: o Panel pede, mas o sistema pode não aceitar.",
-    "tdp.ownership.constrained": "Você solicitou {requested} W · o firmware atualmente permite {applied} W",
-    "tdp.ownership.boostFloorMenu": "Nos menus, SPPT e FPPT ficam em {pl2} e {pl3} W para manter tudo fluido",
-    "tdp.ownership.boostFloor": "SPPT e FPPT ficam em {pl2} e {pl3} W neste aparelho",
-    "tdp.ownership.powerLimited": "A alimentação ou o firmware limita temporariamente a potência · sua configuração permanece selecionada",
-    "tdp.ownership.settling": "Aplicando e verificando o limite de energia...",
-    "tdp.ownership.rejected": "O firmware não aceitou {target} W · permanece em {applied} W",
-    "tdp.ownership.unverifiable": "Limite de {target} W enviado ao processador. Este dispositivo não permite lê-lo de volta: o consumo real mostra se ele está sendo respeitado.",
-    "tdp.ownership.conflict": "Outro controle ou o firmware está alterando o TDP · o Painel de Controle mantém o valor escolhido",
-    "tdp.ownership.overshootCorrecting": "O firmware elevou o limite e o consumo chega a {peak} W · restaurando {target} W",
-    "tdp.ownership.overshootRestored": "O firmware elevou o limite e o consumo chegou a {peak} W · restaurado para {target} W",
-    "tdp.ownership.overshootUnresolved": "O consumo continua em {peak} W com o limite em {target} W · o firmware não está respeitando",
+    "tdp.ownership.constrained": "O aparelho está limitando a potência a {applied} W por enquanto.",
+    "tdp.ownership.powerLimited": "O aparelho limita a potência a {applied} W com esta fonte de energia.",
+    "tdp.ownership.minimum": "O aparelho não fica abaixo de {applied} W.",
+    "tdp.ownership.rejectedUnknown": "O aparelho não permite esse valor agora.",
+    "tdp.ownership.conflict": "Algo no aparelho está mudando o limite de potência.",
+    "tdp.ownership.rejected": "O aparelho não permite {target} W agora. Continua em {applied} W.",
+    "tdp.ownership.rejectedNoValue": "O aparelho não permite {target} W agora.",
+    "tdp.ownership.overshootUnresolved": "O aparelho não está respeitando o limite de {target} W.",
     "tdp.arc.auto": "AUTO",
     "tdp.arc.overclocked": "OVERCLOCK",
     "tdp.arc.target": "ALVO",
@@ -4460,6 +4549,9 @@ const ptBR = {
     "tdp.conflict.take.confirm": "Desligue-os e deixe-me gerenciar",
     "tdp.conflict.take.later": "Agora não",
     "tdp.conflict.take.fine": "Reversível. Exibe apenas uma vez.",
+    "tdp.charger.title": "Falha detectada no carregador",
+    "tdp.charger.desc": "A energia caiu e voltou {n} vezes em pouco tempo. Pode ser o carregador, o cabo ou a porta USB-C. Enquanto isso acontecer, o TDP e o carregamento podem variar. Vale testar outro cabo ou carregador.",
+    "tdp.charger.dismiss": "Entendi",
     "tdp.conflict.card.title": "Outros gerenciadores de TDP estão ativos",
     "tdp.conflict.card.desc": "Eles se sobrepõem mutuamente e o TDP flutua. Deixe apenas o Painel de Controle no comando.",
     "tdp.conflict.card.desc.powerstation": "Dois gerenciadores não podem controlar o TDP ao mesmo tempo: eles se sobrepõem continuamente.",
@@ -4728,6 +4820,26 @@ const es = {
     "nav.audio.desc": "Controles disponibles de sonido.",
     "nav.mandos": "Mandos",
     "nav.mandos.desc": "Estado y opciones disponibles del mando.",
+    "settings.devUnlocked": "Opciones de desarrollador activadas.",
+    "dev.title": "Opciones de desarrollador",
+    "dev.hide": "Ocultar opciones de desarrollador",
+    "dev.ssh": "Acceso remoto (SSH)",
+    "dev.ssh.desc": "Servidor SSH solo con clave en el puerto {port}. Solo entran los ordenadores emparejados.",
+    "dev.ssh.running": "Activo: ssh -p {port} {user}@{address}",
+    "dev.ssh.starting": "Arrancando el servidor…",
+    "dev.ssh.error": "El servidor no arranca ({error}). Se reintenta solo.",
+    "dev.ssh.unsupported": "No hay servidor SSH incluido para esta arquitectura.",
+    "dev.ssh.noUser": "La cuenta actual no tiene usuario en /etc/passwd, así que no se puede iniciar sesión.",
+    "dev.ssh.pair": "Emparejar ordenador",
+    "dev.ssh.pair.desc": "Abre una ventana de 2 minutos para recibir la clave pública del ordenador.",
+    "dev.ssh.pair.waiting": "Esperando clave ({seconds} s). En el ordenador: nc {address} {port} < ~/.ssh/id_ed25519.pub",
+    "dev.ssh.pair.request": "{peer} pide acceso. Comprueba que la huella coincide con la del ordenador:",
+    "dev.ssh.pair.accept": "Aceptar",
+    "dev.ssh.pair.reject": "Rechazar",
+    "dev.ssh.pair.cancel": "Cerrar ventana",
+    "dev.ssh.keys": "Ordenadores emparejados: {count}",
+    "dev.ssh.forget": "Olvidar ordenadores emparejados",
+    "dev.ssh.forget.confirm": "Pulsa otra vez para olvidarlos",
     "settings.kiosk": "Pantalla inferior",
     "settings.kiosk.desc": "Convierte la pantalla inferior en un centro de control táctil mientras juegas.",
     "settings.kiosk.running": "Panel de Control se está mostrando en la pantalla inferior.",
@@ -5493,6 +5605,7 @@ const es = {
     "mandos.remap.uncalibrated": "En este modelo el mando aún no se puede remapear desde aquí. El remapeo por juego se hace en Steam Input.",
     "mandos.remap.nobuttons": "No hay botones remapeables ahora mismo. Si acabas de reiniciar, espera unos segundos.",
     "mandos.remap.noextra": "Este modelo no tiene botones extra que remapear. La disposición por juego se cambia en Steam Input.",
+    "mandos.remap.dropped": "Con la emulación de mando actual, los botones sin asignar no llegan a los juegos. Dales un botón aquí o usa la emulación Steam Deck.",
     "mandos.modules.title": "Magic Modules",
     "mandos.modules.left": "Módulo izquierdo",
     "mandos.modules.right": "Módulo derecho",
@@ -5660,9 +5773,15 @@ const es = {
     "system.off": "desactivado",
     "system.eco.title": "Modo Descarga",
     "system.eco.desc": "Baja el consumo mientras descargas juegos.",
-    "system.eco.effect.tdp": "TDP → {watts} W",
-    "system.eco.effect.brightness": "Brillo → dim automático",
-    "system.eco.effect.boost": "Turbo apagado",
+    "system.eco.countdown": "La pantalla se apagará en",
+    "system.eco.row.tdp": "TDP",
+    "system.eco.row.level": "Rendimiento",
+    "system.eco.value.level": "Nivel {level}",
+    "system.eco.row.screen": "Pantalla",
+    "system.eco.value.screenOff": "Apagada",
+    "system.eco.value.screenBlack": "En negro",
+    "system.eco.row.turbo": "Turbo",
+    "system.eco.value.turboOff": "Apagado",
     "system.rgb.title": "Iluminación RGB",
     "system.rgb.desc.installed": "Controla los LEDs RGB de tu equipo con Colores.",
     "system.rgb.desc.install": "Instala Colores para controlar la iluminación RGB de tu equipo.",
@@ -5763,7 +5882,6 @@ const es = {
     "tdp.reset.default.level": "Restablecer al nivel predeterminado ({w})",
     "tdp.level.value": "Nivel {level}",
     "tdp.level.inline": "nivel {level}",
-    "system.eco.effect.level": "Rendimiento → nivel {level}",
     "tdp.fwmode.low-power": "Silencioso",
     "tdp.fwmode.balanced": "Equilibrado",
     "tdp.fwmode.performance": "Rendimiento",
@@ -5795,7 +5913,7 @@ const es = {
     "tdp.auto.ui_floor": "TDP subido para mostrar el menú con fluidez · se reajustará dentro del juego",
     "tdp.lowBatteryHold.title": "Mantener TDP con batería baja",
     "tdp.lowBatteryHold.experimental": "Experimental",
-    "tdp.lowBatteryHold.hint": "Conserva el valor seleccionado con un 20 % de batería o menos.",
+    "tdp.lowBatteryHold.hint": "Conserva el valor seleccionado con un 20 % de batería o menos y, si el sistema lo sigue limitando, también con el cargador.",
     "tdp.ceiling.battery": "Máximo en batería: {max} W. Conecta el cargador para subir más.",
     "tdp.ceiling.charger": "Máximo del dispositivo: {max} W.",
     "tdp.extra.label": "Extra",
@@ -5803,17 +5921,14 @@ const es = {
     "tdp.extra.high": "Por encima de {max} W lo decide el firmware: Panel lo pide, pero el sistema puede no aceptarlo.",
     "tdp.extra.highAccessory": "Por encima de {max} W lo decide el firmware y puede no aceptarlo. Si tu equipo necesita refrigeración externa, conéctala.",
     "tdp.extra.low": "Por debajo de {min} W lo decide el firmware: Panel lo pide, pero el sistema puede no aceptarlo.",
-    "tdp.ownership.constrained": "Pediste {requested} W · el firmware admite {applied} W ahora",
-    "tdp.ownership.boostFloorMenu": "En los menús, SPPT y FPPT se mantienen en {pl2} y {pl3} W para que todo vaya fluido",
-    "tdp.ownership.boostFloor": "SPPT y FPPT se mantienen en {pl2} y {pl3} W en este equipo",
-    "tdp.ownership.powerLimited": "La alimentación o el firmware limita temporalmente la potencia · conservamos tu ajuste",
-    "tdp.ownership.settling": "Aplicando y verificando el límite de potencia…",
-    "tdp.ownership.rejected": "El firmware no ha aceptado {target} W · mantiene {applied} W",
-    "tdp.ownership.unverifiable": "Límite de {target} W enviado al procesador. Este equipo no deja leerlo de vuelta: el consumo real indica si se está respetando.",
-    "tdp.ownership.conflict": "Otro controlador o el firmware está cambiando el TDP · Panel de Control lo mantiene",
-    "tdp.ownership.overshootCorrecting": "El firmware ha subido el límite y el consumo llega a {peak} W · restaurando {target} W",
-    "tdp.ownership.overshootRestored": "El firmware subió el límite y el consumo llegó a {peak} W · restaurado a {target} W",
-    "tdp.ownership.overshootUnresolved": "El consumo sigue en {peak} W con el límite en {target} W · el firmware no lo está respetando",
+    "tdp.ownership.constrained": "El equipo limita la potencia a {applied} W por ahora.",
+    "tdp.ownership.powerLimited": "El equipo limita la potencia a {applied} W con esta alimentación.",
+    "tdp.ownership.minimum": "El equipo no baja de {applied} W.",
+    "tdp.ownership.rejectedUnknown": "El equipo no permite ese valor ahora mismo.",
+    "tdp.ownership.conflict": "Algo en el equipo está cambiando el límite de potencia.",
+    "tdp.ownership.rejected": "El equipo no permite {target} W ahora mismo. Sigue en {applied} W.",
+    "tdp.ownership.rejectedNoValue": "El equipo no permite {target} W ahora mismo.",
+    "tdp.ownership.overshootUnresolved": "El equipo no está respetando el límite de {target} W.",
     "tdp.arc.auto": "AUTO",
     "tdp.arc.overclocked": "OVERCLOCK",
     "tdp.arc.target": "OBJETIVO",
@@ -5833,6 +5948,9 @@ const es = {
     "tdp.conflict.take.confirm": "Desactivarlos y gestionar yo",
     "tdp.conflict.take.later": "Ahora no",
     "tdp.conflict.take.fine": "Reversible. Solo aparece una vez.",
+    "tdp.charger.title": "Fallo detectado en el cargador",
+    "tdp.charger.desc": "La corriente se ha ido y ha vuelto {n} veces en poco tiempo. Puede ser el cargador, el cable o el puerto USB-C. Mientras pase, el TDP y la carga pueden variar. Conviene probar con otro cable o cargador.",
+    "tdp.charger.dismiss": "Entendido",
     "tdp.conflict.card.title": "Hay otros gestores de TDP activos",
     "tdp.conflict.card.desc": "Se pisan entre ellos y el TDP fluctúa. Deja solo a Panel de Control al mando.",
     "tdp.conflict.card.desc.powerstation": "Dos gestores no pueden controlar el TDP a la vez: se sobrescriben continuamente.",
@@ -6120,6 +6238,26 @@ const en = {
     "nav.audio.desc": "Available sound controls.",
     "nav.mandos": "Controllers",
     "nav.mandos.desc": "Controller status and available options.",
+    "settings.devUnlocked": "Developer options enabled.",
+    "dev.title": "Developer options",
+    "dev.hide": "Hide developer options",
+    "dev.ssh": "Remote access (SSH)",
+    "dev.ssh.desc": "Key-only SSH server on port {port}. Only paired computers can log in.",
+    "dev.ssh.running": "Running: ssh -p {port} {user}@{address}",
+    "dev.ssh.starting": "Starting the server…",
+    "dev.ssh.error": "The server won't start ({error}). It retries on its own.",
+    "dev.ssh.unsupported": "No bundled SSH server for this architecture.",
+    "dev.ssh.noUser": "The current account has no /etc/passwd entry, so logins can't work.",
+    "dev.ssh.pair": "Pair a computer",
+    "dev.ssh.pair.desc": "Opens a 2-minute window to receive the computer's public key.",
+    "dev.ssh.pair.waiting": "Waiting for a key ({seconds} s). On the computer: nc {address} {port} < ~/.ssh/id_ed25519.pub",
+    "dev.ssh.pair.request": "{peer} is asking for access. Check the fingerprint matches the computer's:",
+    "dev.ssh.pair.accept": "Accept",
+    "dev.ssh.pair.reject": "Reject",
+    "dev.ssh.pair.cancel": "Close window",
+    "dev.ssh.keys": "Paired computers: {count}",
+    "dev.ssh.forget": "Forget paired computers",
+    "dev.ssh.forget.confirm": "Press again to forget them",
     "settings.kiosk": "Bottom screen",
     "settings.kiosk.desc": "Turns the bottom screen into a touch control center while you play.",
     "settings.kiosk.running": "Panel de Control is showing on the bottom screen.",
@@ -6886,6 +7024,7 @@ const en = {
     "mandos.remap.uncalibrated": "Controller remapping isn't available on this model yet. Per-game controller layouts are done in Steam Input.",
     "mandos.remap.nobuttons": "No remappable buttons detected right now. If you just restarted, give it a few seconds.",
     "mandos.remap.noextra": "This model has no extra buttons to remap. Per-game layouts are set in Steam Input.",
+    "mandos.remap.dropped": "With the current controller emulation, unassigned buttons don't reach games. Give them a button here or use Steam Deck emulation.",
     "mandos.modules.title": "Magic Modules",
     "mandos.modules.left": "Left module",
     "mandos.modules.right": "Right module",
@@ -7053,9 +7192,15 @@ const en = {
     "system.off": "off",
     "system.eco.title": "Download mode",
     "system.eco.desc": "Lowers power while a game downloads.",
-    "system.eco.effect.tdp": "TDP → {watts} W",
-    "system.eco.effect.brightness": "Brightness → auto dim",
-    "system.eco.effect.boost": "Turbo off",
+    "system.eco.countdown": "Screen turns off in",
+    "system.eco.row.tdp": "TDP",
+    "system.eco.row.level": "Performance",
+    "system.eco.value.level": "Level {level}",
+    "system.eco.row.screen": "Screen",
+    "system.eco.value.screenOff": "Off",
+    "system.eco.value.screenBlack": "Black",
+    "system.eco.row.turbo": "Turbo",
+    "system.eco.value.turboOff": "Off",
     "system.rgb.title": "RGB lighting",
     "system.rgb.desc.installed": "Control your device's RGB LEDs with Colores.",
     "system.rgb.desc.install": "Install Colores to control your device's RGB lighting.",
@@ -7156,7 +7301,6 @@ const en = {
     "tdp.reset.default.level": "Reset to default level ({w})",
     "tdp.level.value": "Level {level}",
     "tdp.level.inline": "level {level}",
-    "system.eco.effect.level": "Performance → level {level}",
     "tdp.fwmode.low-power": "Quiet",
     "tdp.fwmode.balanced": "Balanced",
     "tdp.fwmode.performance": "Performance",
@@ -7188,7 +7332,7 @@ const en = {
     "tdp.auto.ui_floor": "TDP raised so the menu stays smooth · it re-adjusts in-game",
     "tdp.lowBatteryHold.title": "Keep TDP on low battery",
     "tdp.lowBatteryHold.experimental": "Experimental",
-    "tdp.lowBatteryHold.hint": "Keeps the selected value at 20% battery or less.",
+    "tdp.lowBatteryHold.hint": "Keeps the selected value at 20% battery or less, and on the charger while the system keeps limiting it.",
     "tdp.ceiling.battery": "Battery max: {max} W. Plug in the charger to go higher.",
     "tdp.ceiling.charger": "Device max: {max} W.",
     "tdp.extra.label": "Extra",
@@ -7196,17 +7340,14 @@ const en = {
     "tdp.extra.high": "Above {max} W the firmware decides: Panel asks for it, but the system may not accept it.",
     "tdp.extra.highAccessory": "Above {max} W the firmware decides and may not accept it. If your device needs external cooling, attach it.",
     "tdp.extra.low": "Below {min} W the firmware decides: Panel asks for it, but the system may not accept it.",
-    "tdp.ownership.constrained": "You requested {requested} W · the firmware currently allows {applied} W",
-    "tdp.ownership.boostFloorMenu": "In menus, SPPT and FPPT stay at {pl2} and {pl3} W so everything stays smooth",
-    "tdp.ownership.boostFloor": "SPPT and FPPT stay at {pl2} and {pl3} W on this device",
-    "tdp.ownership.powerLimited": "Power delivery or firmware is temporarily limiting power · your setting remains selected",
-    "tdp.ownership.settling": "Applying and verifying the power limit…",
-    "tdp.ownership.rejected": "The firmware did not accept {target} W · it remains at {applied} W",
-    "tdp.ownership.unverifiable": "{target} W limit sent to the processor. This device can't read it back: actual power draw shows whether it is being respected.",
-    "tdp.ownership.conflict": "Another controller or the firmware is changing TDP · Panel de Control is maintaining it",
-    "tdp.ownership.overshootCorrecting": "The firmware raised the limit and power reached {peak} W · restoring {target} W",
-    "tdp.ownership.overshootRestored": "The firmware raised the limit and power reached {peak} W · restored to {target} W",
-    "tdp.ownership.overshootUnresolved": "Power is still at {peak} W with the limit at {target} W · the firmware is not honouring it",
+    "tdp.ownership.constrained": "This device is limiting power to {applied} W for now.",
+    "tdp.ownership.powerLimited": "This device is limiting power to {applied} W on this power source.",
+    "tdp.ownership.minimum": "This device won't go below {applied} W.",
+    "tdp.ownership.rejectedUnknown": "This device won't allow that value right now.",
+    "tdp.ownership.conflict": "Something on this device is changing the power limit.",
+    "tdp.ownership.rejected": "This device won't allow {target} W right now. Staying at {applied} W.",
+    "tdp.ownership.rejectedNoValue": "This device won't allow {target} W right now.",
+    "tdp.ownership.overshootUnresolved": "This device isn't respecting the {target} W limit.",
     "tdp.arc.auto": "AUTO",
     "tdp.arc.overclocked": "OVERCLOCKED",
     "tdp.arc.target": "TARGET",
@@ -7226,6 +7367,9 @@ const en = {
     "tdp.conflict.take.confirm": "Turn them off and let me manage",
     "tdp.conflict.take.later": "Not now",
     "tdp.conflict.take.fine": "Reversible. Only shows once.",
+    "tdp.charger.title": "Charger fault detected",
+    "tdp.charger.desc": "Power dropped and came back {n} times in a short while. It may be the charger, the cable or the USB-C port. While it happens, TDP and charging can vary. Try another cable or charger.",
+    "tdp.charger.dismiss": "Got it",
     "tdp.conflict.card.title": "Other TDP managers are active",
     "tdp.conflict.card.desc": "They override each other and the TDP fluctuates. Leave only Panel de Control in charge.",
     "tdp.conflict.card.desc.powerstation": "Two managers cannot control TDP at the same time: they continuously override each other.",
@@ -7699,6 +7843,137 @@ function useI18n() {
     };
 }
 
+const DEFAULT_BUTTONS = Object.freeze({
+    up: 9,
+    down: 10,
+    confirm: 1,
+    cancel: 2,
+});
+function getSteamNavigationController() {
+    const scope = globalThis;
+    return scope.GamepadNavTree?.m_context?.m_controller ?? scope.FocusNavController;
+}
+const MAX_SEARCHED_NODES = 20000;
+const GAMEPAD_FOCUS_SOURCE = 3;
+// Steam no longer exposes FocusElement and ignores DOM focus(); only the owning node moves focus.
+function findNavigationNode(tree, element) {
+    const pending = [tree];
+    const seen = new Set();
+    let searched = 0;
+    while (pending.length > 0 && searched < MAX_SEARCHED_NODES) {
+        const current = pending.pop();
+        if (!current || typeof current !== "object" || seen.has(current))
+            continue;
+        seen.add(current);
+        searched += 1;
+        const candidate = current;
+        if (candidate.m_element === element)
+            return candidate;
+        if (candidate.m_Root)
+            pending.push(candidate.m_Root);
+        for (const list of [candidate.m_rgChildren, candidate.m_rgChildNavTrees]) {
+            if (Array.isArray(list))
+                pending.push(...list);
+        }
+    }
+    return null;
+}
+// With a game in front, closing a modal can leave Steam with no active context until
+// the next button press; focus taken in the last context is where that press resumes.
+function inactiveContextTrees(controller) {
+    const context = controller?.m_ActiveContext ?? controller?.m_LastActiveContext;
+    const trees = context?.m_rgGamepadNavigationTrees;
+    return Array.isArray(trees) ? { m_rgChildNavTrees: trees } : null;
+}
+function focusThroughNavigationNode(controller, element, allowInactiveContext) {
+    const tree = controller?.GetActiveNavTree?.() ?? (allowInactiveContext ? inactiveContextTrees(controller) : null);
+    if (!tree)
+        return false;
+    const node = findNavigationNode(tree, element);
+    if (typeof node?.BTakeFocus !== "function")
+        return false;
+    return Boolean(node.BTakeFocus(GAMEPAD_FOCUS_SOURCE));
+}
+function consumeInput(event) {
+    if (!event || typeof event !== "object")
+        return;
+    for (const method of ["preventDefault", "stopPropagation", "stopImmediatePropagation"]) {
+        const callback = Reflect.get(event, method);
+        if (typeof callback === "function")
+            callback.call(event);
+    }
+}
+function createThemeNavigationAccess({ getController = getSteamNavigationController, buttons = DEFAULT_BUTTONS, allowInactiveContext = false, } = {}) {
+    return Object.freeze({
+        focus(element) {
+            let hostFocused = false;
+            try {
+                const controller = getController();
+                if (typeof controller?.FocusElement === "function") {
+                    controller.FocusElement(element);
+                    hostFocused = true;
+                }
+                else if (focusThroughNavigationNode(controller, element, allowInactiveContext)) {
+                    return true;
+                }
+            }
+            catch {
+                hostFocused = false;
+            }
+            try {
+                element.focus({ preventScroll: true });
+            }
+            catch {
+                return hostFocused;
+            }
+            return hostFocused || element.ownerDocument.activeElement === element;
+        },
+        capture(handler) {
+            let tree;
+            try {
+                tree = getController()?.GetActiveNavTree?.();
+            }
+            catch {
+                return () => { };
+            }
+            const register = tree?.RegisterGlobalButtonHandler;
+            if (!tree || typeof register !== "function")
+                return () => { };
+            const releases = [];
+            const bindings = [
+                [buttons.up, "up"],
+                [buttons.down, "down"],
+                [buttons.confirm, "confirm"],
+                [buttons.cancel, "cancel"],
+            ];
+            try {
+                for (const [button, action] of bindings) {
+                    const release = register.call(tree, button, (event) => {
+                        consumeInput(event);
+                        handler(action);
+                        return true;
+                    });
+                    if (typeof release === "function")
+                        releases.push(release);
+                }
+            }
+            catch {
+                for (const release of releases.splice(0).reverse())
+                    release();
+                return () => { };
+            }
+            let active = true;
+            return () => {
+                if (!active)
+                    return;
+                active = false;
+                for (const release of releases.splice(0).reverse())
+                    release();
+            };
+        },
+    });
+}
+
 // User-selectable accent — pure core. theme.color.accent reads the getters here, so a
 // real hex reaches CSS, SVG attributes and react-icons. No React/storage import so this
 // stays a light leaf; the hook + durable persistence live in ./useAccent.
@@ -8140,7 +8415,7 @@ function createThemeCleanupHost(host) {
 
 // Big Picture, the main menu and the Quick Access menu each own a document; notification toasts
 // are not reachable from here.
-function steamDocuments() {
+function steamDocuments$1() {
     const documents = new Set();
     try {
         const main = DFL.findSP()?.document;
@@ -8166,7 +8441,7 @@ async function readSteamDisplay() {
         view = DFL.findSP() ?? null;
     }
     catch { }
-    return steamDisplayState(settings, view, steamDocuments());
+    return steamDisplayState(settings, view, steamDocuments$1());
 }
 function useThemeHealth(controller) {
     const [backend, setBackend] = SP_REACT.useState(null);
@@ -8215,7 +8490,7 @@ function useThemeHealth(controller) {
         needsCleanup: plan !== null && cleanupNeeded(plan),
         undo: backend?.undo ?? null,
         recheck,
-        cleanUp: (keepActive) => run((keep) => controller.cleanUp(keep, () => removeCssLoaderStyles(steamDocuments()), keepActive), (health) => health.folders.some((folder) => SET_ASIDE_KINDS.has(folder.kind))),
+        cleanUp: (keepActive) => run((keep) => controller.cleanUp(keep, () => removeCssLoaderStyles(steamDocuments$1()), keepActive), (health) => health.folders.some((folder) => SET_ASIDE_KINDS.has(folder.kind))),
         undoCleanup: () => run(controller.undoCleanup, (health) => health.undo.available),
     };
 }
@@ -11510,6 +11785,10 @@ function buildFocusCss() {
   position: relative;
   z-index: 1;
 }
+/* Steam scrolls a newly focused control just into view; the margin keeps it off the edge. */
+.${PDC_ROOT} .Focusable {
+  scroll-margin-block: 120px;
+}
 .${PDC_ROOT} .pdc-hud-slider {
   margin-inline: 0 !important;
   padding-block: 6px !important;
@@ -11697,6 +11976,84 @@ const FocusRoot = ({ children, style, publishDocument }) => {
     SP_REACT.useEffect(() => (panelDocument ? watchThemeAccent(panelDocument) : undefined), [panelDocument]);
     const vars = { [`--pdc-accent-rgb`]: currentAccentRgb() };
     return (SP_JSX.jsx("div", { className: PDC_ROOT, ref: ref, style: { ...vars, ...style }, children: children }));
+};
+
+const gamepadNavigation$6 = createThemeNavigationAccess({ allowInactiveContext: true });
+const RETURN_RETRY_MS = 50;
+const RETURN_WINDOW_MS = 2000;
+function controlLabel$1(element) {
+    return (element.getAttribute("aria-label") || element.getAttribute("title") || element.textContent || "").trim();
+}
+// Steam closes the QAM under a modal and reopens it afterwards, which remounts the
+// panel: the opener is usually a fresh node by then, found again by its label.
+function findOpener(doc, opener, label) {
+    if (opener.isConnected)
+        return opener;
+    if (!label)
+        return null;
+    return Array.from(doc.querySelectorAll(".pdc-root .Focusable"))
+        .find((element) => controlLabel$1(element) === label) ?? null;
+}
+// The reopened QAM registers its navigation tree a moment after the modal closes,
+// later still with a game running; retry until the control really holds focus.
+function returnFocus(doc, opener, label) {
+    const view = doc.defaultView;
+    if (!view)
+        return;
+    const deadline = Date.now() + RETURN_WINDOW_MS;
+    const attempt = () => {
+        const current = getQamDocument() ?? doc;
+        const target = findOpener(current, opener, label);
+        const moved = current.querySelector(".pdc-root .gpfocus");
+        if (moved && moved !== target)
+            return;
+        if (target) {
+            gamepadNavigation$6.focus(target);
+            if (target.classList.contains("gpfocus"))
+                return;
+        }
+        if (Date.now() < deadline)
+            view.setTimeout(attempt, RETURN_RETRY_MS);
+    };
+    view.setTimeout(attempt, 0);
+}
+// Decky's own defaults when a caller passes no props.
+const DECKY_MODAL_DEFAULTS = { strTitle: "Decky Dialog", bHideMainWindowForPopouts: false };
+const openModals = new Set();
+// Steam drops gamepad focus to the QAM tab strip when a modal closes; hand it back
+// to the panel control that opened it. A modal opened from another one has no panel
+// control to return to, even if a stale one under the first modal still looks focused.
+const showModal = (modal, parent, props) => {
+    const doc = openModals.size === 0 ? getQamDocument() : null;
+    const opener = doc?.querySelector(".pdc-root .gpfocus") ?? null;
+    const label = opener ? controlLabel$1(opener) : "";
+    const token = Symbol();
+    openModals.add(token);
+    let closed = false;
+    const onClose = () => {
+        if (closed)
+            return;
+        closed = true;
+        openModals.delete(token);
+        props?.fnOnClose?.();
+        if (doc && opener)
+            returnFocus(doc, opener, label);
+    };
+    try {
+        const result = DFL.showModal(modal, parent, { ...DECKY_MODAL_DEFAULTS, ...props, fnOnClose: onClose });
+        return {
+            ...result,
+            Close: () => {
+                result.Close();
+                onClose();
+            },
+        };
+    }
+    catch (error) {
+        closed = true;
+        openModals.delete(token);
+        throw error;
+    }
 };
 
 let current = {};
@@ -12988,6 +13345,7 @@ async function launchReportContext() {
     return ctx;
 }
 
+const gamepadNavigation$5 = createThemeNavigationAccess();
 const ReportKindCard = ({ label, icon, selected, color, tint, preferredFocus, onSelect }) => {
     const [focused, setFocused] = SP_REACT.useState(false);
     return (SP_JSX.jsxs(DFL.Focusable, { role: "radio", "aria-checked": selected, ...(preferredFocus ? { preferredFocus: true } : {}), onActivate: onSelect, onClick: onSelect, onGamepadFocus: () => setFocused(true), onGamepadBlur: () => setFocused(false), noFocusRing: true, style: {
@@ -13104,26 +13462,17 @@ const ReportBody = ({ closeModal, initialCategories = [] }) => {
         if (!choosingKind || kind === null)
             return;
         const target = rootRef.current?.querySelector('[role="radio"][aria-checked="true"]');
-        if (!target)
-            return;
-        try {
-            const controller = DFL.getFocusNavController();
-            if (typeof controller?.FocusElement === "function") {
-                controller.FocusElement(target);
-                return;
-            }
-        }
-        catch { }
-        target.focus({ preventScroll: true });
+        if (target)
+            gamepadNavigation$5.focus(target);
     }, [choosingKind, kind]);
     if (phase === "sending") {
         return wrap(SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textMuted }, children: t("report.sending") }));
     }
     if (phase === "done") {
-        return wrap(SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md, alignItems: "center", textAlign: "center" }, children: [SP_JSX.jsx("div", { style: { fontSize: 40 }, children: "\u2705" }), SP_JSX.jsx("div", { style: { fontSize: theme.font.value, color: theme.color.textPrimary }, children: t("report.done.title") }), SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textMuted }, children: t(copyKey("report.done.thanks")) }), SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, minWidth: 220 }, children: [SP_JSX.jsx("div", { style: theme.sectionLabel, children: t("report.code.label") }), SP_JSX.jsx("div", { style: { fontSize: 26, fontWeight: 700, letterSpacing: 2, color: theme.color.accent, fontFamily: "monospace" }, children: result?.code })] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, maxWidth: 340 }, children: t(copyKey("report.code.hint")) }), SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.DialogButton, { onClick: copy, children: copied ? t("report.copied") : t("report.copy") }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => closeModal?.(), children: t("report.close") })] })] }));
+        return wrap(SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md, alignItems: "center", textAlign: "center" }, children: [SP_JSX.jsx("div", { style: { fontSize: 40 }, children: "\u2705" }), SP_JSX.jsx("div", { style: { fontSize: theme.font.value, color: theme.color.textPrimary }, children: t("report.done.title") }), SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textMuted }, children: t(copyKey("report.done.thanks")) }), SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, minWidth: 220 }, children: [SP_JSX.jsx("div", { style: theme.sectionLabel, children: t("report.code.label") }), SP_JSX.jsx("div", { style: { fontSize: 26, fontWeight: 700, letterSpacing: 2, color: theme.color.accent, fontFamily: "monospace" }, children: result?.code })] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, maxWidth: 340 }, children: t(copyKey("report.code.hint")) }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.DialogButton, { onClick: copy, children: copied ? t("report.copied") : t("report.copy") }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => closeModal?.(), children: t("report.close") })] })] }));
     }
     if (phase === "error") {
-        return wrap(SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.danger }, children: t("report.error.title") }), result?.saved_path && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("report.error.saved", { path: result.saved_path }) })), SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.DialogButton, { onClick: submit, children: t("report.retry") }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => closeModal?.(), children: t("report.close") })] })] }));
+        return wrap(SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.danger }, children: t("report.error.title") }), result?.saved_path && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("report.error.saved", { path: result.saved_path }) })), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.DialogButton, { onClick: submit, children: t("report.retry") }), SP_JSX.jsx(DFL.DialogButton, { onClick: () => closeModal?.(), children: t("report.close") })] })] }));
     }
     if (choosingKind || kind === null) {
         return wrap(SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs("div", { style: { textAlign: "center" }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.value, fontWeight: 700, color: theme.color.textPrimary }, children: t("report.title") }), SP_JSX.jsx("div", { style: { marginTop: theme.space.xs, fontSize: theme.font.body, color: theme.color.textMuted }, children: t("report.section.kind") })] }), SP_JSX.jsxs(DFL.Focusable, { role: "radiogroup", "aria-label": t("report.section.kind"), "flow-children": "row", noFocusRing: true, style: { display: "flex", gap: theme.space.md, width: "100%" }, children: [SP_JSX.jsx(ReportKindCard, { label: t("report.kind.bug"), icon: SP_JSX.jsx(LuBug, { size: 36 }), selected: kind === "bug", color: theme.color.danger, tint: "rgba(224,90,90,0.12)", preferredFocus: kind === null, onSelect: () => chooseKind("bug") }), SP_JSX.jsx(ReportKindCard, { label: t("report.kind.feature"), icon: SP_JSX.jsx(LuLightbulb, { size: 36 }), selected: kind === "feature", color: theme.color.accent, tint: `rgba(${theme.color.accentRgb},0.12)`, onSelect: () => chooseKind("feature") })] })] }));
@@ -13137,7 +13486,7 @@ const ReportBody = ({ closeModal, initialCategories = [] }) => {
                     gap: theme.space.md,
                 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", flex: "1 1 auto", minWidth: 0, alignItems: "center", gap: theme.space.sm, color: theme.color.textPrimary }, children: [kind === "bug"
                                 ? SP_JSX.jsx(LuBug, { size: 22, color: theme.color.danger, "aria-hidden": "true" })
-                                : SP_JSX.jsx(LuLightbulb, { size: 22, color: theme.color.accent, "aria-hidden": "true" }), SP_JSX.jsx("span", { style: { fontSize: theme.font.body, fontWeight: 700 }, children: t(`report.kind.${kind}`) })] }), SP_JSX.jsx(DFL.DialogButton, { style: { width: 112, minWidth: 112, flex: "0 0 auto" }, onClick: () => setChoosingKind(true), children: t("report.kind.change") })] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textMuted }, children: t(copyKey("report.intro")) }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("div", { style: theme.sectionLabel, children: t(copyKey("report.section.what")) }), SP_JSX.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: REPORT_CATEGORIES.map((id) => (SP_JSX.jsx(SelectionChip, { label: t(`report.cat.${id}`), on: selected.includes(id), onClick: () => setSelected((s) => toggleCategory(s, id)) }, id))) })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("div", { style: theme.sectionLabel, children: t(copyKey("report.section.describe")) }), SP_JSX.jsx(DFL.TextField, { value: text, onChange: (e) => setText(e.target.value) }), text.trim().length === 0 && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t(copyKey("report.describe.hint")) }))] }), SP_JSX.jsxs("div", { style: {
+                                : SP_JSX.jsx(LuLightbulb, { size: 22, color: theme.color.accent, "aria-hidden": "true" }), SP_JSX.jsx("span", { style: { fontSize: theme.font.body, fontWeight: 700 }, children: t(`report.kind.${kind}`) })] }), SP_JSX.jsx(DFL.DialogButton, { style: { width: 112, minWidth: 112, flex: "0 0 auto" }, onClick: () => setChoosingKind(true), children: t("report.kind.change") })] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textMuted }, children: t(copyKey("report.intro")) }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("div", { style: theme.sectionLabel, children: t(copyKey("report.section.what")) }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: REPORT_CATEGORIES.map((id) => (SP_JSX.jsx(SelectionChip, { label: t(`report.cat.${id}`), on: selected.includes(id), onClick: () => setSelected((s) => toggleCategory(s, id)) }, id))) })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("div", { style: theme.sectionLabel, children: t(copyKey("report.section.describe")) }), SP_JSX.jsx(DFL.TextField, { value: text, onChange: (e) => setText(e.target.value) }), text.trim().length === 0 && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t(copyKey("report.describe.hint")) }))] }), SP_JSX.jsxs("div", { style: {
                     ...theme.card,
                     padding: theme.space.md,
                     display: "flex",
@@ -13150,9 +13499,10 @@ const ReportBody = ({ closeModal, initialCategories = [] }) => {
 };
 const ReportModal = ({ closeModal, initialCategories }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(ReportBody, { closeModal: closeModal, initialCategories: initialCategories }) }) }));
 function openReportModal(initialCategories) {
-    DFL.showModal(SP_JSX.jsx(ReportModal, { initialCategories: initialCategories }), window);
+    showModal(SP_JSX.jsx(ReportModal, { initialCategories: initialCategories }), window);
 }
 
+const gamepadNavigation$4 = createThemeNavigationAccess();
 const NAME_PREVIEW = 4;
 // Third-party CSS Loader themes restyle Steam's dialogs too; the helper must stay legible under them.
 const HEALTH_RESET = `
@@ -13235,11 +13585,7 @@ function useInitialFocus(target, key) {
         const element = target.current;
         if (!element)
             return;
-        const controller = DFL.getFocusNavController();
-        if (controller?.FocusElement)
-            controller.FocusElement(element);
-        else
-            element.focus();
+        gamepadNavigation$4.focus(element);
     }, [target, key]);
 }
 function summaryKey(health) {
@@ -13295,7 +13641,7 @@ function ThemeHealthModal({ closeModal }) {
     return (SP_JSX.jsx(DFL.ModalRoot, { onCancel: cancel, onEscKeypress: cancel, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(HealthBody, { controller: controller, health: health, confirming: confirming, setConfirming: setConfirming, closeModal: closeModal }) }) }));
 }
 function openThemeHealthModal(onClosed) {
-    DFL.showModal(SP_JSX.jsx(ThemeHealthModal, {}), window, { fnOnClose: onClosed });
+    showModal(SP_JSX.jsx(ThemeHealthModal, {}), window, { fnOnClose: onClosed });
 }
 function ThemeHealthCard({ controller }) {
     const { t } = useI18n();
@@ -13880,14 +14226,93 @@ function useStickyTray(trayRef) {
             container.style.scrollPaddingBottom = `${tray.getBoundingClientRect().height + STICKY_TRAY_INSET * 2}px`;
         };
         const view = tray.ownerDocument.defaultView;
+        // Steam only scrolls when focus moves, so a tray appearing under the focused control would hide it.
+        const revealFocus = () => {
+            const focused = container.querySelector(".gpfocus");
+            if (!focused || tray.contains(focused) || tray.getClientRects().length === 0)
+                return;
+            const covered = focused.getBoundingClientRect().bottom - tray.getBoundingClientRect().top + STICKY_TRAY_INSET;
+            if (covered > STICKY_TRAY_INSET)
+                container.scrollTop += covered;
+        };
         const resize = view && typeof view.ResizeObserver === "function" ? new view.ResizeObserver(reserve) : null;
         resize?.observe(tray);
         reserve();
+        revealFocus();
         return () => {
             resize?.disconnect();
             container.style.scrollPaddingBottom = previous;
         };
     }, [trayRef]);
+}
+
+const gamepadNavigation$3 = createThemeNavigationAccess({ allowInactiveContext: true });
+const visible = (element) => element.isConnected && element.getClientRects().length > 0;
+const focusFirst = (candidates) => candidates.some((element) => visible(element) && gamepadNavigation$3.focus(element));
+const WATCH_RETRY_MS = 50;
+const WATCH_WINDOW_MS = 2000;
+// Marks the control that should take focus when it replaces a removed one, such as
+// Cancel in a destructive confirmation.
+const PREFERRED_FOCUS = "data-preferred-focus";
+function neighbours(root, block) {
+    const group = block.parentElement?.closest(".Focusable") ?? root;
+    const candidates = Array.from(root.querySelectorAll(".Focusable"))
+        .filter((element) => !block.contains(element) && !element.contains(block));
+    const before = candidates.filter((element) => Boolean(element.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING)).reverse();
+    const after = candidates.filter((element) => !before.includes(element));
+    const inGroup = (element) => group.contains(element);
+    return [...before.filter(inGroup), ...after.filter(inGroup), ...before, ...after];
+}
+// A focused node that unmounts leaves Steam with no focus at all, and Steam keeps
+// focus on the pressed control until its activation ends, so focus cannot be moved
+// beforehand. Call this when the block holding focus is about to go: once it is gone,
+// focus moves to what replaced it, or, if focus was lost, to the nearest control.
+function refocusWhenRemoved(block) {
+    if (!block?.querySelector(".gpfocus") && !block?.classList.contains("gpfocus"))
+        return;
+    const root = block.closest(".pdc-root");
+    const view = block.ownerDocument.defaultView;
+    if (!root || !view)
+        return;
+    const places = [];
+    for (let parent = block.parentElement; parent && root.contains(parent); parent = parent.parentElement)
+        places.push(parent);
+    const known = new Set(root.querySelectorAll(".Focusable"));
+    const fallbacks = neighbours(root, block);
+    const deadline = Date.now() + WATCH_WINDOW_MS;
+    const watch = () => {
+        if (block.isConnected) {
+            if (Date.now() < deadline)
+                view.setTimeout(watch, WATCH_RETRY_MS);
+            return;
+        }
+        if (!root.isConnected)
+            return;
+        const fresh = (scope) => scope
+            ? Array.from(scope.querySelectorAll(".Focusable")).filter((element) => !known.has(element) && visible(element))
+            : [];
+        const preferred = fresh(root).filter((element) => element.hasAttribute(PREFERRED_FOCUS));
+        if (preferred.some((element) => element.classList.contains("gpfocus")))
+            return;
+        if (preferred.length && focusFirst(preferred))
+            return;
+        const place = places.find((element) => element.isConnected);
+        const replacements = fresh(place);
+        if (replacements.length) {
+            if (!place?.querySelector(".gpfocus"))
+                focusFirst(replacements);
+            return;
+        }
+        if (!root.querySelector(".gpfocus"))
+            focusFirst(fallbacks);
+    };
+    view.setTimeout(watch, WATCH_RETRY_MS);
+}
+function useRefocusWhenRemoved(ref) {
+    SP_REACT.useLayoutEffect(() => {
+        const element = ref.current;
+        return () => refocusWhenRemoved(element);
+    }, [ref]);
 }
 
 const STRINGS = {
@@ -14118,6 +14543,7 @@ function releaseNotesForLanguage(notes, lang) {
 }
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
+const gamepadNavigation$2 = createThemeNavigationAccess();
 // Inline markdown: [text](url) -> text, **bold**, `code`.
 function renderInline(text) {
     const noLinks = text.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
@@ -14187,7 +14613,8 @@ function UpdateModal({ lang, latest, notes, closeModal, }) {
         if (!direction)
             return;
         if (direction > 0 && atEdge) {
-            DFL.getFocusNavController()?.FocusElement(actionRef.current);
+            if (actionRef.current)
+                gamepadNavigation$2.focus(actionRef.current);
             return;
         }
         if (atEdge)
@@ -14226,7 +14653,11 @@ const VisibleUpdateTray = ({ lang, info }) => {
             locked.current = false;
         }
     };
-    const update = () => { DFL.showModal(SP_JSX.jsx(UpdateModal, { lang: lang, latest: info.latest, notes: info.notes })); };
+    const update = () => { showModal(SP_JSX.jsx(UpdateModal, { lang: lang, latest: info.latest, notes: info.notes })); };
+    const later = () => {
+        refocusWhenRemoved(cardRef.current);
+        dismiss(info.latest);
+    };
     const actionStyle = {
         display: "flex",
         alignItems: "center",
@@ -14251,7 +14682,7 @@ const VisibleUpdateTray = ({ lang, info }) => {
                             background: "rgba(255,255,255,0.08)",
                             color: theme.color.textPrimary,
                             boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
-                        }, onActivate: () => run(() => dismiss(info.latest)), onClick: () => run(() => dismiss(info.latest)), children: t.later })] })] }));
+                        }, onActivate: () => run(later), onClick: () => run(later), children: t.later })] })] }));
 };
 const UpdateFloatingTray = ({ lang, info, status }) => {
     const dismissed = SP_REACT.useSyncExternalStore(subscribe$1, getDismissedVersion, getDismissedVersion);
@@ -14319,11 +14750,11 @@ function Dashboard({ sections, activeId, settingsBadge, onOpenSection }) {
     SP_REACT.useEffect(() => {
         activeCard.current?.scrollIntoView({ block: "nearest" });
     }, [activeId]);
-    return (SP_JSX.jsx("div", { children: SP_JSX.jsx(DFL.Focusable, { "data-testid": "dashboard-grid", navEntryPreferPosition: DFL.NavEntryPositionPreferences.PREFERRED_CHILD, style: gridStyle, children: sections.map((section) => {
+    return (SP_JSX.jsx("div", { children: SP_JSX.jsx(DFL.Focusable, { "data-testid": "dashboard-grid", navEntryPreferPosition: DFL.NavEntryPositionPreferences.PREFERRED_CHILD, style: gridStyle, children: sections.map((section, index) => {
                 const label = section.label || t(section.labelKey);
                 const description = t(section.descriptionKey);
                 const openSection = idempotentAction(`section:${section.id}`, () => onOpenSection(section.id));
-                return (SP_JSX.jsx(DFL.Focusable, { ref: section.id === activeId ? activeCard : undefined, className: "pdc-dashboard-card", focusClassName: "pdc-dashboard-card-focused", role: "button", "data-testid": "dashboard-card", "data-section-id": section.id, "data-pdc-focus-radius": true, preferredFocus: section.id === activeId, "aria-label": `${label}. ${description}`, onActivate: openSection, onClick: openSection, onFocus: (event) => event.currentTarget.scrollIntoView({ block: "nearest" }), style: {
+                return (SP_JSX.jsx(DFL.Focusable, { ref: section.id === activeId ? activeCard : undefined, className: "pdc-dashboard-card", focusClassName: "pdc-dashboard-card-focused", role: "button", "data-testid": "dashboard-card", "data-section-id": section.id, "data-pdc-focus-radius": true, preferredFocus: activeId ? section.id === activeId : index === 0, "aria-label": `${label}. ${description}`, onActivate: openSection, onClick: openSection, onFocus: (event) => event.currentTarget.scrollIntoView({ block: "nearest" }), style: {
                         minWidth: 0,
                         display: "flex",
                         alignItems: "stretch",
@@ -14879,6 +15310,7 @@ function resetNearestVerticalScroller(element) {
         }
     }
 }
+const gamepadNavigation$1 = createThemeNavigationAccess();
 function focusShellDestination(surface, mode, activeId) {
     const controls = 'button,input,select,textarea,[role="button"],[tabindex="0"]';
     const eligible = (element) => element.getClientRects().length > 0
@@ -14890,26 +15322,16 @@ function focusShellDestination(surface, mode, activeId) {
     const target = mode === "home"
         ? cards.find((card) => card.dataset.sectionId === activeId) ?? cards[0]
         : firstControl(body) ?? firstControl(surface);
-    if (!target)
-        return;
-    try {
-        const controller = DFL.getFocusNavController();
-        if (typeof controller?.FocusElement === "function") {
-            controller.FocusElement(target);
-            return;
-        }
-    }
-    catch {
-        // Steam's focus controller can disappear while the QAM is reconciling.
-    }
-    target.focus({ preventScroll: true });
+    if (target)
+        gamepadNavigation$1.focus(target);
 }
-function ControlCenterShell({ device, gameName, learning, sections, activeId, showHome, showDeviceHeader, hasUpdate, updateInfo = null, updateStatus = "idle", initialMode, onSelectSection, }) {
+function ControlCenterShell({ device, gameName, learning, sections, activeId, showHome, showDeviceHeader, hasUpdate, updateInfo = null, updateStatus = "idle", initialMode, onViewChange, onSelectSection, }) {
     const { t, lang } = useI18n();
     const shellSurface = SP_REACT.useRef(null);
     const pendingFocus = SP_REACT.useRef(null);
     const storedMode = useShellMode();
     const [entryMode, setEntryMode] = SP_REACT.useState(initialMode);
+    const [dashboardOrigin, setDashboardOrigin] = SP_REACT.useState(null);
     const ids = sections.map((section) => section.id);
     const resolved = resolveShellState(entryMode ?? storedMode, activeId, ids, showHome);
     const active = resolved.activeId
@@ -14931,6 +15353,9 @@ function ControlCenterShell({ device, gameName, learning, sections, activeId, sh
             onSelectSection(resolved.activeId);
         }
     }, [activeId, onSelectSection, resolved.activeId, resolved.mode, storedMode]);
+    SP_REACT.useEffect(() => {
+        onViewChange?.(resolved.mode, resolved.activeId);
+    }, [onViewChange, resolved.mode, resolved.activeId]);
     const sectionViewKey = resolved.mode === "home"
         ? null
         : `${resolved.mode}:${resolved.activeId ?? ""}`;
@@ -14959,7 +15384,7 @@ function ControlCenterShell({ device, gameName, learning, sections, activeId, sh
             const currentFocus = doc.querySelector(".gpfocus");
             if (currentFocus && currentFocus !== request.previousFocus && !surface.contains(currentFocus))
                 return;
-            focusShellDestination(surface, resolved.mode, resolved.activeId);
+            focusShellDestination(surface, resolved.mode, dashboardOrigin);
         });
         return () => {
             cancelled = true;
@@ -14971,8 +15396,14 @@ function ControlCenterShell({ device, gameName, learning, sections, activeId, sh
         pendingFocus.current = { mode, previousFocus: shellSurface.current?.ownerDocument.querySelector(".gpfocus") ?? null };
         setShellMode(mode);
     };
-    const goHome = () => navigate("home");
-    const leaveDetail = () => navigate(showHome ? "home" : "tabs");
+    const goHome = () => {
+        setDashboardOrigin(resolved.activeId);
+        navigate("home");
+    };
+    const leaveDetail = () => {
+        setDashboardOrigin(resolved.activeId);
+        navigate(showHome ? "home" : "tabs");
+    };
     const openDetail = (id) => {
         onSelectSection(id);
         navigate("detail");
@@ -14997,7 +15428,7 @@ function ControlCenterShell({ device, gameName, learning, sections, activeId, sh
                                 flexDirection: "column",
                                 gap: theme.space.section,
                                 marginBottom: theme.space.card,
-                            }, children: [showDeviceHeader && resolved.mode === "home" ? SP_JSX.jsx(DeviceHeader, { device: device }) : null, resolved.mode === "tabs" ? (SP_JSX.jsx(TabsModeHeader, { items: tabsModeItems, activeId: resolved.activeId ?? activeId, showBack: showHome, onBack: goHome, onSelect: onSelectSection, trailing: showDeviceHeader ? SP_JSX.jsx(DeviceHeader, { device: device, presentation: showHome ? "compact" : "full", fullWidth: !showHome }) : undefined })) : null, resolved.mode === "detail" ? (SP_JSX.jsx(ShellHeader, { onBack: leaveDetail, backLabel: showHome ? undefined : t("customize.home.tabs"), trailing: showDeviceHeader ? SP_JSX.jsx(DeviceHeader, { device: device, presentation: "compact" }) : undefined })) : null, SP_JSX.jsx(LearningBanner, { gameName: gameName, status: learning, onOpenSettings: openSettings, scope: learningScope }), resolved.mode === "home" ? (SP_JSX.jsx("div", { "data-testid": "dashboard", children: SP_JSX.jsx(Dashboard, { sections: sections, activeId: resolved.activeId, settingsBadge: SP_JSX.jsx(AlertDot, { show: hasUpdate }), onOpenSection: openDetail }) })) : null] }) }), resolved.mode !== "home" && active && Active ? (SP_JSX.jsx(DFL.ErrorBoundary, { children: SP_JSX.jsx(ReportingBoundary, { where: `section:${active.id}`, children: SP_JSX.jsx("div", { "data-testid": "section-body", style: { paddingBottom: theme.space.lg }, children: SP_JSX.jsx(Active, {}) }) }) }, active.id)) : null, SP_JSX.jsx(UpdateFloatingTray, { lang: lang, info: updateInfo, status: updateStatus })] }) }) }));
+                            }, children: [showDeviceHeader && resolved.mode === "home" ? SP_JSX.jsx(DeviceHeader, { device: device }) : null, resolved.mode === "tabs" ? (SP_JSX.jsx(TabsModeHeader, { items: tabsModeItems, activeId: resolved.activeId ?? activeId, showBack: showHome, onBack: goHome, onSelect: onSelectSection, trailing: showDeviceHeader ? SP_JSX.jsx(DeviceHeader, { device: device, presentation: showHome ? "compact" : "full", fullWidth: !showHome }) : undefined })) : null, resolved.mode === "detail" ? (SP_JSX.jsx(ShellHeader, { onBack: leaveDetail, backLabel: showHome ? undefined : t("customize.home.tabs"), trailing: showDeviceHeader ? SP_JSX.jsx(DeviceHeader, { device: device, presentation: "compact" }) : undefined })) : null, SP_JSX.jsx(LearningBanner, { gameName: gameName, status: learning, onOpenSettings: openSettings, scope: learningScope }), resolved.mode === "home" ? (SP_JSX.jsx("div", { "data-testid": "dashboard", children: SP_JSX.jsx(Dashboard, { sections: sections, activeId: dashboardOrigin, settingsBadge: SP_JSX.jsx(AlertDot, { show: hasUpdate }), onOpenSection: openDetail }) })) : null] }) }), resolved.mode !== "home" && active && Active ? (SP_JSX.jsx(DFL.ErrorBoundary, { children: SP_JSX.jsx(ReportingBoundary, { where: `section:${active.id}`, children: SP_JSX.jsx(DFL.Focusable, { "data-testid": "section-body", navEntryPreferPosition: DFL.NavEntryPositionPreferences.FIRST, style: { paddingBottom: theme.space.lg }, children: SP_JSX.jsx(Active, {}) }) }) }, active.id)) : null, SP_JSX.jsx(UpdateFloatingTray, { lang: lang, info: updateInfo, status: updateStatus })] }) }) }));
 }
 
 /**
@@ -16059,7 +16490,7 @@ const AutoTdpNoticeBody = ({ onConfirm, onCancel, levels, closeModal }) => {
 };
 const AutoTdpNoticeModal = ({ onConfirm, onCancel, levels, closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(AutoTdpNoticeBody, { onConfirm: onConfirm, onCancel: onCancel, levels: levels, closeModal: closeModal }) }) }));
 function openAutoTdpNoticeModal(opts) {
-    DFL.showModal(SP_JSX.jsx(AutoTdpNoticeModal, { onConfirm: opts.onConfirm, onCancel: opts.onCancel, levels: opts.levels }), window);
+    showModal(SP_JSX.jsx(AutoTdpNoticeModal, { onConfirm: opts.onConfirm, onCancel: opts.onCancel, levels: opts.levels }), window);
 }
 
 const isLevelUnit = (unit) => unit === "level";
@@ -16144,6 +16575,7 @@ function levelsAtWatts(levels, watts, mode) {
 function useTdp() {
     const game = useRunningGame();
     const [tdp, setTdp] = SP_REACT.useState(null);
+    const [tdpSettled, setTdpSettled] = SP_REACT.useState(false);
     const [power, setPower] = SP_REACT.useState(null);
     const [presets, setPresets] = SP_REACT.useState(null);
     const commitTimerWatts = SP_REACT.useRef(null);
@@ -16178,7 +16610,8 @@ function useTdp() {
             if (epoch !== followEpoch.current)
                 return;
             setTdp(reconcileAutoState(next, confirmed));
-        }).catch(() => { });
+            setTdpSettled(true);
+        }).catch(() => setTdpSettled(true));
     }, [reconcileAutoState]);
     const refreshPresets = SP_REACT.useCallback(() => {
         getPowerPresets().then(setPresets).catch(() => { });
@@ -16440,6 +16873,7 @@ function useTdp() {
     }, [resolveTarget, refresh]);
     return {
         tdp,
+        tdpSettled,
         power,
         scope,
         game,
@@ -16610,6 +17044,40 @@ const TdpConflictCard = ({ rivals, onDisableSdtdp, onTakeHhd, onDisablePdcTdp, }
                     : "tdp.conflict.card.desc") }), rivals.sdtdp && (SP_JSX.jsx(RivalRow, { name: t("tdp.conflict.sdtdp"), desc: t("tdp.conflict.sdtdp.desc"), action: t("tdp.conflict.disable"), onAction: onDisableSdtdp })), rivals.hhd && (SP_JSX.jsx(RivalRow, { name: t("tdp.conflict.hhd"), desc: t("tdp.conflict.hhd.desc"), action: t("tdp.conflict.cede"), onAction: onTakeHhd })), rivals.powerstation && (SP_JSX.jsx(RivalRow, { name: t("tdp.conflict.powerstation"), desc: t("tdp.conflict.powerstation.desc"), action: t("tdp.conflict.powerstation.disablePdc"), onAction: onDisablePdcTdp }))] }));
 };
 
+const ChargerUnstableCard = ({ transitions, onDismiss }) => {
+    const { t } = useI18n();
+    return (SP_JSX.jsxs("div", { style: {
+            ...theme.card,
+            padding: theme.space.md,
+            marginTop: theme.space.section,
+            marginBottom: theme.space.sm,
+            overflow: "hidden",
+            boxShadow: `inset 0 0 0 1px ${theme.color.warn}55`,
+        }, children: [SP_JSX.jsxs("div", { style: {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: theme.space.xs,
+                    fontSize: theme.font.body,
+                    fontWeight: 700,
+                    color: theme.color.warn,
+                }, children: [SP_JSX.jsx(LuPlugZap, { size: 16, color: theme.color.warn }), " ", t("tdp.charger.title")] }), SP_JSX.jsx("div", { style: {
+                    fontSize: theme.font.caption,
+                    color: theme.color.textMuted,
+                    marginTop: theme.space.xs,
+                    lineHeight: 1.4,
+                }, children: t("tdp.charger.desc", { n: transitions }) }), SP_JSX.jsx(DFL.Focusable, { onActivate: onDismiss, onClick: onDismiss, noFocusRing: true, style: {
+                    marginTop: theme.space.sm,
+                    padding: `${theme.space.sm}px ${theme.space.md}px`,
+                    borderRadius: theme.radius.sm,
+                    background: theme.color.surface,
+                    boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
+                    color: theme.color.textPrimary,
+                    fontSize: theme.font.body,
+                    fontWeight: 650,
+                    textAlign: "center",
+                }, children: t("tdp.charger.dismiss") })] }));
+};
+
 // Take-over modal: one gesture disables every rival. "Not now" closes; the
 // persistent card carries on while the conflict lasts.
 const TdpConflictBody = ({ onTakeAll, closeModal }) => {
@@ -16637,9 +17105,18 @@ const TdpConflictBody = ({ onTakeAll, closeModal }) => {
 };
 const TdpConflictModal = ({ onTakeAll, closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(TdpConflictBody, { onTakeAll: onTakeAll, closeModal: closeModal }) }) }));
 function openTdpConflictModal(onTakeAll) {
-    DFL.showModal(SP_JSX.jsx(TdpConflictModal, { onTakeAll: onTakeAll }), window);
+    showModal(SP_JSX.jsx(TdpConflictModal, { onTakeAll: onTakeAll }), window);
 }
 
+const GLYPH_X = "#3d7fff";
+const GLYPH_Y = "#f5c400";
+const ButtonGlyph = ({ letter, color }) => (SP_JSX.jsx("span", { "aria-hidden": true, style: {
+        flexShrink: 0, width: 16, height: 16, borderRadius: "50%", background: color,
+        color: "#101010", fontSize: 10, fontWeight: 800, lineHeight: "16px", textAlign: "center",
+    }, children: letter }));
+// The gamepad acts through the X/Y shortcuts its section announces in Steam's footer.
+// The tray never takes focus: it unmounts on save/discard, and a focused node that
+// unmounts leaves Steam with no focus at all.
 const ColorPreviewConfirm = ({ seconds, saving, onSave, onDiscard }) => {
     const { t } = useI18n();
     const trayRef = SP_REACT.useRef(null);
@@ -16647,16 +17124,20 @@ const ColorPreviewConfirm = ({ seconds, saving, onSave, onDiscard }) => {
     useFloatingTrayClaim(true);
     useStickyTray(trayRef);
     const actionStyle = {
+        flex: "1 1 auto",
+        minWidth: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 6,
         minHeight: 38,
-        padding: "8px",
+        padding: "8px 4px",
+        boxSizing: "border-box",
         borderRadius: theme.radius.sm,
         fontSize: theme.font.caption,
         fontWeight: 700,
-        whiteSpace: "nowrap",
+        textAlign: "center",
+        lineHeight: 1.2,
         cursor: saving ? "default" : "pointer",
         opacity: saving ? 0.55 : 1,
     };
@@ -16677,18 +17158,12 @@ const ColorPreviewConfirm = ({ seconds, saving, onSave, onDiscard }) => {
             borderRadius: theme.radius.md,
             background: theme.color.surfaceRaised,
             boxShadow: `0 10px 32px rgba(0,0,0,0.42), inset 0 0 0 1px ${theme.color.warn}`,
-        }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: t("display.confirm.title") }), SP_JSX.jsx("div", { style: { marginTop: 2, fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("display.confirm.desc", { s: seconds }) }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm, marginTop: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { role: "button", "aria-label": saving ? t("display.confirm.saving") : t("display.confirm.save"), "aria-disabled": saving, style: {
-                            ...actionStyle,
-                            flex: 1,
-                            minWidth: 0,
-                            background: theme.color.accent,
-                            color: "#ffffff",
-                        }, onActivate: () => run(onSave), onClick: () => run(onSave), children: [SP_JSX.jsx(LuCheck, { size: 16 }), saving ? t("display.confirm.saving") : t("display.confirm.save")] }), SP_JSX.jsxs(DFL.Focusable, { role: "button", "aria-label": t("display.confirm.discard"), "aria-disabled": saving, style: {
+        }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: t("display.confirm.title") }), SP_JSX.jsx("div", { style: { marginTop: 2, fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("display.confirm.desc", { s: seconds }) }), SP_JSX.jsxs("div", { style: { display: "flex", gap: theme.space.sm, marginTop: theme.space.sm }, children: [SP_JSX.jsxs("div", { role: "button", "aria-label": saving ? t("display.confirm.saving") : t("display.confirm.save"), "aria-disabled": saving, style: { ...actionStyle, flexGrow: 2, background: theme.color.accent, color: "#ffffff" }, onClick: () => run(onSave), children: [SP_JSX.jsx(ButtonGlyph, { letter: "X", color: GLYPH_X }), saving ? t("display.confirm.saving") : t("display.confirm.save")] }), SP_JSX.jsxs("div", { role: "button", "aria-label": t("display.confirm.discard"), "aria-disabled": saving, style: {
                             ...actionStyle,
                             background: "rgba(255,255,255,0.08)",
                             color: theme.color.textPrimary,
                             boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
-                        }, onActivate: () => run(onDiscard), onClick: () => run(onDiscard), children: [SP_JSX.jsx(LuUndo2, { size: 15 }), t("display.confirm.discard")] })] })] }));
+                        }, onClick: () => run(onDiscard), children: [SP_JSX.jsx(ButtonGlyph, { letter: "Y", color: GLYPH_Y }), t("display.confirm.discard")] })] })] }));
 };
 
 // Shared "segmented pill group" visual language (pattern A): a raised rounded
@@ -16742,11 +17217,12 @@ const PantallaProviderMount = ({ children }) => {
     const hdr = useHdr(color.scope, color.game?.appid ?? null);
     const night = useNight();
     const active = !!state && !isNativeColor(state);
+    const pending = revertIn !== null && !saving;
     return (SP_JSX.jsxs(PantallaProvider, { value: { color, hdr, night }, children: [state?.perf_cost && active && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: {
                         fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4,
                         padding: "8px 10px", margin: "2px 0 8px",
                         borderRadius: theme.radius.sm, background: "rgba(255,255,255,0.04)",
-                    }, children: t("display.perf_note", { device: state.device_name }) }) })), children, revertIn !== null && (SP_JSX.jsx(ColorPreviewConfirm, { seconds: revertIn, saving: saving, onSave: confirmCalibration, onDiscard: discardCalibration }))] }));
+                    }, children: t("display.perf_note", { device: state.device_name }) }) })), SP_JSX.jsx(DFL.Focusable, { onSecondaryButton: pending ? () => void confirmCalibration() : undefined, onSecondaryActionDescription: pending ? t("display.confirm.save") : undefined, onOptionsButton: pending ? () => void discardCalibration() : undefined, onOptionsActionDescription: pending ? t("display.confirm.discard") : undefined, children: children }), revertIn !== null && (SP_JSX.jsx(ColorPreviewConfirm, { seconds: revertIn, saving: saving, onSave: confirmCalibration, onDiscard: discardCalibration }))] }));
 };
 const MandosProviderMount = ({ children }) => {
     const controller = useController();
@@ -16767,6 +17243,7 @@ const PotenciaProviderMount = ({ children, showProfileSelector = false }) => {
     // the TDP state so the monitor view clears. Returns the promise for the button guard.
     const onReactivate = SP_REACT.useCallback(() => setModuleDisabled("power", false).then(() => refresh()), [refresh]);
     const onDisablePdcTdp = SP_REACT.useCallback(() => setModuleDisabled("power", true).then(() => refresh()), [refresh]);
+    const onDismissCharger = SP_REACT.useCallback(() => dismissChargerNotice().then(() => refresh()).catch(() => { }), [refresh]);
     const shownTakeover = SP_REACT.useRef(false);
     const conflictRef = SP_REACT.useRef(conflict);
     conflictRef.current = conflict;
@@ -16781,7 +17258,7 @@ const PotenciaProviderMount = ({ children, showProfileSelector = false }) => {
             setSeenTdpConflictTakeover(true).then(() => refresh()).catch(() => { });
         }
     }, [conflict.conflict, conflict.takeoverAvailable, tdp, refresh]);
-    return (SP_JSX.jsxs(PotenciaProvider, { value: { ...tdpCtl, monitorOnly: conflict.monitorOnly, autoTdpEnabled, onReactivate }, children: [conflict.conflict && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(TdpConflictCard, { rivals: conflict.rivals, onDisableSdtdp: () => void conflict.disableSdtdp(), onTakeHhd: () => void conflict.takeHhd(), onDisablePdcTdp: () => void onDisablePdcTdp() }) })), tdp && showProfileSelector && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(ProfileSelector, { scope: tdpCtl.scope, gameName: tdpCtl.game?.name ?? null, hasGameProfile: tdp.has_game_profile, globalLabel: t("tdp.scope.global"), inheritHint: t("tdp.inherit"), onScope: tdpCtl.onScope }) })), children] }));
+    return (SP_JSX.jsxs(PotenciaProvider, { value: { ...tdpCtl, monitorOnly: conflict.monitorOnly, autoTdpEnabled, onReactivate }, children: [conflict.conflict && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(TdpConflictCard, { rivals: conflict.rivals, onDisableSdtdp: () => void conflict.disableSdtdp(), onTakeHhd: () => void conflict.takeHhd(), onDisablePdcTdp: () => void onDisablePdcTdp() }) })), tdp?.charger_unstable?.visible && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(ChargerUnstableCard, { transitions: tdp.charger_unstable.transitions, onDismiss: () => void onDismissCharger() }) })), tdp && showProfileSelector && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(ProfileSelector, { scope: tdpCtl.scope, gameName: tdpCtl.game?.name ?? null, hasGameProfile: tdp.has_game_profile, globalLabel: t("tdp.scope.global"), inheritHint: t("tdp.inherit"), onScope: tdpCtl.onScope }) })), children] }));
 };
 const SECTION_PROVIDERS = {
     display: PantallaProviderMount,
@@ -16894,7 +17371,8 @@ class FanStateStore {
                 const fanHistory = {};
                 for (const f of s.fans) {
                     const prevBuf = prev.fanHistory[f.label] ?? [];
-                    fanHistory[f.label] = f.rpm == null ? prevBuf : pushSample(prevBuf, f.rpm, MAX_SAMPLES);
+                    const sample = f.duty_only ? f.percent : f.rpm;
+                    fanHistory[f.label] = sample == null ? prevBuf : pushSample(prevBuf, sample, MAX_SAMPLES);
                 }
                 this.monitor = { state: s, fanHistory };
                 this.listeners.forEach((l) => l());
@@ -17249,7 +17727,7 @@ const Collapsible = ({ id, icon, title, summary, action, defaultOpen = true, chi
         setCollapsed(id, !next); // persist outside the updater (no side-effect in setState)
     };
     const Chevron = open ? LuChevronDown : LuChevronRight;
-    return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { flex: 1, display: "flex", alignItems: "center", gap: theme.space.sm, cursor: "pointer" }, onActivate: toggle, onClick: toggle, children: [SP_JSX.jsx("span", { style: { display: "inline-flex", color: theme.color.accent }, children: icon }), SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: SP_JSX.jsx(MarqueeText, { text: title }, open ? "open" : "closed") }), !open && (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, whiteSpace: "nowrap" }, children: summary })), SP_JSX.jsx(Chevron, { size: 16, color: theme.color.textMuted })] }), action] }), open && SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: children })] }) }));
+    return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { flex: 1, display: "flex", alignItems: "center", gap: theme.space.sm, cursor: "pointer" }, onActivate: toggle, onClick: toggle, children: [SP_JSX.jsx("span", { style: { display: "inline-flex", color: theme.color.accent }, children: icon }), SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: SP_JSX.jsx(MarqueeText, { text: title }, open ? "open" : "closed") }), !open && (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, whiteSpace: "nowrap" }, children: summary })), SP_JSX.jsx(Chevron, { size: 16, color: theme.color.textMuted })] }), action] }), open && SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: children })] }) }));
 };
 
 // Inner plot size; margins leave room for the dB labels (left, + Y caption) and the freq
@@ -17335,7 +17813,7 @@ const EqCurveModalBody = () => {
 const EqCurveModal = ({ closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(EqCurveModalBody, {}) }));
 /** Open the big-screen EQ editor; `onClosed` re-syncs the inline section. */
 function openEqCurveModal(onClosed) {
-    DFL.showModal(SP_JSX.jsx(EqCurveModal, {}), window, { fnOnClose: onClosed });
+    showModal(SP_JSX.jsx(EqCurveModal, {}), window, { fnOnClose: onClosed });
 }
 
 const SaveProfileBody = ({ initial, onSave, closeModal, }) => {
@@ -17352,7 +17830,7 @@ const SaveProfileBody = ({ initial, onSave, closeModal, }) => {
 const SaveProfileModal = ({ initial, onSave, closeModal, }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, children: SP_JSX.jsx(SaveProfileBody, { initial: initial, onSave: onSave, closeModal: closeModal }) }));
 /** Prompt for a profile name (on-screen keyboard) then save. `initial` pre-fills it. */
 function openSaveProfileModal(initial, onSave) {
-    DFL.showModal(SP_JSX.jsx(SaveProfileModal, { initial: initial, onSave: onSave }), window);
+    showModal(SP_JSX.jsx(SaveProfileModal, { initial: initial, onSave: onSave }), window);
 }
 
 const TONE_ICON = {
@@ -17373,6 +17851,11 @@ const TEST_ICON = {
 const SonidoSection = () => {
     const { t } = useI18n();
     const { state, scope, game, onScope, onEnable, onPreset, onBands, onTone, onLoudness, onBalance, onGuard, onReset, onTest, onSaveProfile, onApplyProfile, onDeleteProfile, refresh, } = useEq();
+    const profileChips = SP_REACT.useRef(new Map());
+    const deleteProfile = (name) => {
+        refocusWhenRemoved(profileChips.current.get(name) ?? null);
+        onDeleteProfile(name);
+    };
     if (!state)
         return null;
     if (!state.supported) {
@@ -17415,24 +17898,27 @@ const SonidoSection = () => {
                                     padding: "0 5px",
                                 }, children: t("audio.route.auto") })] }), SP_JSX.jsx(Collapsible, { id: "audioTest", icon: SP_JSX.jsx(LuPlay, { size: 15 }), title: t("audio.test.title"), summary: state.test_playing && state.test_sample
                             ? t(`audio.test.${state.test_sample}`)
-                            : undefined, children: SP_JSX.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 }, children: state.test_samples.map((s) => {
+                            : undefined, children: SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { display: "flex", flexWrap: "wrap", gap: 6 }, children: state.test_samples.map((s) => {
                                 const on = state.test_playing && state.test_sample === s;
                                 return (SP_JSX.jsxs(DFL.Focusable, { style: { ...chip(on), display: "flex", alignItems: "center", gap: 5, padding: "6px 12px" }, onActivate: () => onTest(s), onClick: () => onTest(s), children: [on ? SP_JSX.jsx(LuPause, { size: 12 }) : TEST_ICON[s], t(`audio.test.${s}`)] }, s));
-                            }) }) }), SP_JSX.jsx(DFL.Focusable, { style: { ...segmentGroupStyle, flexWrap: "wrap", gap: 6, background: "none", padding: 0 }, children: state.presets.map((p) => {
+                            }) }) }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { ...segmentGroupStyle, flexWrap: "wrap", gap: 6, background: "none", padding: 0 }, children: state.presets.map((p) => {
                             const on = state.preset === p.id;
                             return (SP_JSX.jsx(DFL.Focusable, { style: chip(on), onActivate: () => onPreset(p.id), onClick: () => onPreset(p.id), children: SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: 4 }, children: [p.id === "device_tuned" && (SP_JSX.jsx(LuSparkles, { size: 12, color: on ? theme.color.textPrimary : theme.color.accent })), presetLabel(p.id)] }) }, p.id));
                         }) }), state.preset === "device_tuned" &&
-                        state.presets.find((p) => p.id === "device_tuned")?.tuned === false && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: -4 }, children: t("audio.preset.device_tuned.base") })), SP_JSX.jsxs("div", { children: [SP_JSX.jsx("div", { style: { fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", color: theme.color.textMuted, margin: "2px 2px 6px" }, children: t("audio.profile.mine") }), SP_JSX.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 }, children: [state.profiles.map((pr) => {
+                        state.presets.find((p) => p.id === "device_tuned")?.tuned === false && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: -4 }, children: t("audio.preset.device_tuned.base") })), SP_JSX.jsxs("div", { children: [SP_JSX.jsx("div", { style: { fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", color: theme.color.textMuted, margin: "2px 2px 6px" }, children: t("audio.profile.mine") }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "grid", style: { display: "flex", flexWrap: "wrap", gap: 6 }, children: [state.profiles.map((pr) => {
                                         const active = pr.bass === state.bass &&
                                             pr.gains.length === state.gains.length &&
                                             pr.gains.every((g, i) => g === state.gains[i]);
-                                        return (SP_JSX.jsxs("span", { style: { ...chip(active), display: "inline-flex", alignItems: "center", gap: 6, paddingRight: 6 }, children: [SP_JSX.jsx(DFL.Focusable, { style: { cursor: "pointer" }, onActivate: () => onApplyProfile(pr.name), onClick: () => onApplyProfile(pr.name), children: pr.name }), SP_JSX.jsx(DFL.Focusable, { style: { display: "flex", cursor: "pointer", color: theme.color.textMuted }, onActivate: () => onDeleteProfile(pr.name), onClick: () => onDeleteProfile(pr.name), title: t("audio.profile.delete"), children: SP_JSX.jsx(LuX, { size: 12 }) })] }, pr.name));
+                                        return (SP_JSX.jsxs("span", { ref: (node) => { if (node)
+                                                profileChips.current.set(pr.name, node);
+                                            else
+                                                profileChips.current.delete(pr.name); }, style: { ...chip(active), display: "inline-flex", alignItems: "center", gap: 6, paddingRight: 6 }, children: [SP_JSX.jsx(DFL.Focusable, { style: { cursor: "pointer" }, onActivate: () => onApplyProfile(pr.name), onClick: () => onApplyProfile(pr.name), children: pr.name }), SP_JSX.jsx(DFL.Focusable, { style: { display: "flex", cursor: "pointer", color: theme.color.textMuted }, onActivate: () => deleteProfile(pr.name), onClick: () => deleteProfile(pr.name), title: t("audio.profile.delete"), children: SP_JSX.jsx(LuX, { size: 12 }) })] }, pr.name));
                                     }), SP_JSX.jsxs(DFL.Focusable, { style: { ...chip(false), display: "inline-flex", alignItems: "center", gap: 4 }, onActivate: () => openSaveProfileModal(game?.name ?? "", onSaveProfile), onClick: () => openSaveProfileModal(game?.name ?? "", onSaveProfile), children: [SP_JSX.jsx(LuPlus, { size: 12 }), t("audio.profile.saveCurrent")] })] })] }), SP_JSX.jsxs("div", { children: [SP_JSX.jsx("div", { style: { fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", color: theme.color.textMuted, margin: "2px 2px 6px" }, children: t("audio.tone") }), ["graves", "voces", "agudos"].map((region) => {
                                 const level = toneLevel(state.gains, region);
                                 const cap = ceilings ? toneCeiling(region, ceilings) : GAIN_MAX;
                                 const over = !isHeadphone && !state.guard && level > cap;
                                 return (SP_JSX.jsx(ContainedSlider, { label: SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [TONE_ICON[region], t(`audio.tone.${region}`), over && (SP_JSX.jsx(LuTriangleAlert, { size: 12, color: theme.color.danger, title: t("audio.guard.risk") }))] }), value: guarded ? Math.min(level, cap) : level, min: GAIN_MIN, max: guarded ? cap : GAIN_MAX, step: 1, showValue: true, onChange: (v) => onTone(region, v) }, region));
-                            })] }), !isHeadphone && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [SP_JSX.jsx(LuShieldCheck, { size: 14 }), t("audio.guard")] }), description: state.guard ? t("audio.guard.desc") : t("audio.guard.off"), checked: state.guard, onChange: onGuard }) })), SP_JSX.jsxs(Collapsible, { id: "audioAdvanced", icon: SP_JSX.jsx(LuAudioLines, { size: 15 }), title: t("audio.advanced"), summary: presetLabel(state.preset), action: SP_JSX.jsx(DFL.Focusable, { style: { display: "flex", alignItems: "center", padding: 4, borderRadius: theme.radius.sm, color: theme.color.textMuted, cursor: "pointer" }, onActivate: () => openEqCurveModal(refresh), onClick: () => openEqCurveModal(refresh), title: t("audio.fullscreen"), children: SP_JSX.jsx(LuMaximize2, { size: 16 }) }), children: [SP_JSX.jsx(EqCurveGraph, { gains: state.gains, editable: true, onChange: onBands, ceilings: ceilings, guard: guarded, zones: ["graves", "voces", "agudos"].map((r) => ({
+                            })] }), !isHeadphone && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: 6 }, children: [SP_JSX.jsx(LuShieldCheck, { size: 14 }), t("audio.guard")] }), description: state.guard ? t("audio.guard.desc") : t("audio.guard.off"), checked: state.guard, onChange: onGuard }) })), SP_JSX.jsxs(Collapsible, { id: "audioAdvanced", icon: SP_JSX.jsx(LuAudioLines, { size: 15 }), title: t("audio.advanced"), summary: presetLabel(state.preset), action: SP_JSX.jsx(DFL.Focusable, { style: { display: "flex", alignItems: "center", padding: 4, borderRadius: theme.radius.sm, color: theme.color.textMuted, cursor: "pointer" }, onActivate: () => openEqCurveModal(refresh), onClick: () => openEqCurveModal(refresh), title: t("audio.fullscreen"), "aria-label": t("audio.fullscreen"), children: SP_JSX.jsx(LuMaximize2, { size: 16 }) }), children: [SP_JSX.jsx(EqCurveGraph, { gains: state.gains, editable: true, onChange: onBands, ceilings: ceilings, guard: guarded, zones: ["graves", "voces", "agudos"].map((r) => ({
                                     label: t(`audio.tone.${r}`),
                                     band: ZONE_BAND[r],
                                 })), yTitle: t("audio.axis.y") }), SP_JSX.jsx(DFL.Focusable, { style: { ...chip(false), textAlign: "center", marginTop: 10 }, onActivate: onReset, onClick: onReset, children: t("audio.reset") })] }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: t("audio.loudness"), description: t("audio.loudness.desc"), checked: state.loudness, onChange: onLoudness }) }), SP_JSX.jsxs("div", { children: [SP_JSX.jsxs("div", { style: {
@@ -17444,6 +17930,12 @@ const SonidoSection = () => {
 };
 
 const MandosSection = () => (SP_JSX.jsx(MandosProviderMount, { children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.section, marginTop: theme.space.section }, children: SP_JSX.jsx(SectionView, { sectionId: "mandos" }) }) }) }));
+
+const RemovableRow = (props) => {
+    const ref = SP_REACT.useRef(null);
+    useRefocusWhenRemoved(ref);
+    return SP_JSX.jsx(DFL.Focusable, { ref: ref, "flow-children": "row", ...props });
+};
 
 /**
  * A ref that stays true while the component is mounted, re-armed on a StrictMode
@@ -18458,14 +18950,14 @@ const ColorModal = ({ label, initial, onChange, closeModal }) => (SP_JSX.jsx(DFL
 /** A colour swatch button; tapping it opens the RGB/hex modal. `value`/`onChange`
  *  are 6-digit hex without '#'. Changes stream live while the modal is open. */
 const ColorPicker = ({ label, value, onChange, size = 28 }) => (SP_JSX.jsx(QamAction, { onPress: () => {
-        DFL.showModal(SP_JSX.jsx(ColorModal, { label: label, initial: value, onChange: onChange }));
+        showModal(SP_JSX.jsx(ColorModal, { label: label, initial: value, onChange: onChange }));
     }, label: label, style: {
         width: size, height: size, flexShrink: 0, borderRadius: 6, cursor: "pointer",
         background: `#${value}`, boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
     }, children: SP_JSX.jsx("span", {}) }));
 
 /** Compact confirm/cancel alert. Shown via showModal; confirm runs onConfirm then closes. */
-const ConfirmDialog = ({ title, desc, confirmLabel, cancelLabel, onConfirm, icon, closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { onCancel: closeModal, onEscKeypress: closeModal, children: SP_JSX.jsxs(FocusRoot, { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: 20, fontWeight: 700 }, children: [icon, title] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textPrimary, lineHeight: 1.4 }, children: desc }), SP_JSX.jsxs("div", { style: { display: "flex", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.DialogButton, { style: { flex: 1, minWidth: 0 }, onClick: () => { closeModal?.(); onConfirm(); }, children: confirmLabel }), SP_JSX.jsx(DFL.DialogButton, { style: { flex: 1, minWidth: 0 }, onClick: () => closeModal?.(), children: cancelLabel })] })] }) }));
+const ConfirmDialog = ({ title, desc, confirmLabel, cancelLabel, onConfirm, icon, closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { onCancel: closeModal, onEscKeypress: closeModal, children: SP_JSX.jsxs(FocusRoot, { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: 20, fontWeight: 700 }, children: [icon, title] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textPrimary, lineHeight: 1.4 }, children: desc }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.DialogButton, { style: { flex: 1, minWidth: 0 }, onClick: () => { closeModal?.(); onConfirm(); }, children: confirmLabel }), SP_JSX.jsx(DFL.DialogButton, { style: { flex: 1, minWidth: 0 }, onClick: () => closeModal?.(), children: cancelLabel })] })] }) }));
 
 const ExperimentalBadge = ({ children }) => (SP_JSX.jsx("span", { "data-pdc-experimental-badge": "true", style: {
         alignSelf: "flex-start",
@@ -18672,7 +19164,7 @@ const HudSection = () => {
         if (r.kind === "separator")
             return null;
         if (r.kind === "spacer") {
-            return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("div", { style: { ...segmentGroupStyle }, children: SPACER_SIZES.map((s) => (SP_JSX.jsx(QamAction, { onPress: () => patchItems(setSpacerSizeAt(m.items, r.index, s)), pressed: r.size === s, style: { ...segmentItemStyle(r.size === s), flex: 1, padding: "5px 0" }, children: t(`hud.spacer.${s}`) }, s))) }), SP_JSX.jsx(Note, { children: t("hud.elem.spacer.hint") })] }));
+            return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { ...segmentGroupStyle }, children: SPACER_SIZES.map((s) => (SP_JSX.jsx(QamAction, { onPress: () => patchItems(setSpacerSizeAt(m.items, r.index, s)), pressed: r.size === s, style: { ...segmentItemStyle(r.size === s), flex: 1, padding: "5px 0" }, children: t(`hud.spacer.${s}`) }, s))) }), SP_JSX.jsx(Note, { children: t("hud.elem.spacer.hint") })] }));
         }
         if (r.kind === "text") {
             return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.TextField, { value: r.text, label: t("hud.elem.text.label"), onChange: (e) => patchItems(setTextAt(m.items, r.index, e.target.value)) }), SP_JSX.jsx(Note, { children: t("hud.elem.value.textColor") })] }));
@@ -18710,7 +19202,7 @@ const HudSection = () => {
         return (canLabel(r.id) && labelOf(r.id)) || t(`hud.metric.${r.id}`);
     };
     const openReset = () => {
-        DFL.showModal(SP_JSX.jsx(ConfirmDialog, { title: t("hud.reset.confirm.title"), desc: t("hud.reset.confirm.desc"), confirmLabel: t("hud.reset"), cancelLabel: t("hud.reset.cancel"), onConfirm: reset, icon: SP_JSX.jsx(LuRotateCcw, { size: 18 }) }));
+        showModal(SP_JSX.jsx(ConfirmDialog, { title: t("hud.reset.confirm.title"), desc: t("hud.reset.confirm.desc"), confirmLabel: t("hud.reset"), cancelLabel: t("hud.reset.cancel"), onConfirm: reset, icon: SP_JSX.jsx(LuRotateCcw, { size: 18 }) }));
     };
     return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { "data-testid": "hud-stack", style: {
                 display: "flex",
@@ -18750,7 +19242,7 @@ const HudSection = () => {
                                 borderRadius: theme.radius.sm,
                                 background: "rgba(255,92,92,0.08)",
                                 boxShadow: `inset 0 0 0 1px ${theme.color.danger}55`,
-                            }, children: [SP_JSX.jsx(SectionLabel, { children: t("hud.conflict.title") }), SP_JSX.jsx(Note, { children: t("hud.conflict.body", { path: state.conflict.path }) }), SP_JSX.jsxs("div", { style: { display: "flex", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx(OutlineBtn, { onClick: () => resolveConflict("keep_external"), children: t("hud.conflict.keepExternal") }), SP_JSX.jsx(OutlineBtn, { onClick: () => resolveConflict("use_pdc"), children: t("hud.conflict.usePdc") })] })] })), saveStatus === "error" && SP_JSX.jsx(Note, { children: t("hud.save.error") }), SP_JSX.jsx("div", { style: { display: "flex", gap: theme.space.sm, minWidth: 0 }, children: Object.keys(presets).map((key) => {
+                            }, children: [SP_JSX.jsx(SectionLabel, { children: t("hud.conflict.title") }), SP_JSX.jsx(Note, { children: t("hud.conflict.body", { path: state.conflict.path }) }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx(OutlineBtn, { onClick: () => resolveConflict("keep_external"), children: t("hud.conflict.keepExternal") }), SP_JSX.jsx(OutlineBtn, { onClick: () => resolveConflict("use_pdc"), children: t("hud.conflict.usePdc") })] })] })), saveStatus === "error" && SP_JSX.jsx(Note, { children: t("hud.save.error") }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm, minWidth: 0 }, children: Object.keys(presets).map((key) => {
                                 const active = activePreset === key;
                                 return (SP_JSX.jsx(QamAction, { onPress: () => applyPreset(key), pressed: active, style: {
                                         flex: 1,
@@ -18782,7 +19274,7 @@ const HudSection = () => {
                                     ...(isBlock
                                         ? { padding: theme.space.xs, borderRadius: theme.radius.sm, background: "rgba(255,255,255,0.03)", boxShadow: `inset 0 0 0 1px ${theme.color.hairline}` }
                                         : {}),
-                                }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs }, children: [editable ? (SP_JSX.jsx(QamAction, { onPress: () => setSelected(isSel ? null : key), expanded: isSel, style: {
+                                }, children: [SP_JSX.jsxs(RemovableRow, { style: { display: "flex", alignItems: "center", gap: theme.space.xs }, children: [editable ? (SP_JSX.jsx(QamAction, { onPress: () => setSelected(isSel ? null : key), expanded: isSel, style: {
                                                     flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
                                                     padding: "4px 6px", borderRadius: theme.radius.sm,
                                                     background: isSel ? "rgba(255,255,255,0.05)" : "transparent",
@@ -18799,8 +19291,8 @@ const HudSection = () => {
                                     const entries = addEntries(g.key, g.ids);
                                     if (entries.length === 0)
                                         return null;
-                                    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.xs }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t(`hud.group.${g.key}`) }), SP_JSX.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: theme.space.xs }, children: entries.map((e) => (SP_JSX.jsx(Pill, { label: e.kind === "block" ? t(`hud.group.${e.group}`) : t(`hud.metric.${e.id}`), onClick: () => add(e) }, e.kind === "block" ? `b:${e.group}` : e.id))) })] }, g.key));
-                                }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsxs(OutlineBtn, { onClick: addText, children: [SP_JSX.jsx(LuType, { size: 13 }), " ", t("hud.elem.addText")] }), SP_JSX.jsxs(OutlineBtn, { onClick: addSep, children: [SP_JSX.jsx(LuMinus, { size: 13 }), " ", t("hud.elem.addSeparator")] }), SP_JSX.jsxs(OutlineBtn, { onClick: addSpace, children: [SP_JSX.jsx(LuMoveVertical, { size: 13 }), " ", t("hud.elem.addSpacer")] })] })] }))] }), SP_JSX.jsx(HudDisclosure, { id: "hud-appearance", icon: SP_JSX.jsx(LuSlidersHorizontal, { size: 16 }), title: t("hud.style"), summary: `${t(`hud.layout.${m.layout}`)} · ${t(`hud.position.${m.position}`)}`, defaultOpen: false, children: SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsx(Note, { children: t("hud.style.scope") }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: controlLabel, children: t("hud.layout") }), SP_JSX.jsx("div", { style: { ...segmentGroupStyle, width: "100%", minWidth: 0 }, children: LAYOUTS.map((l) => (SP_JSX.jsx(QamAction, { onPress: () => patch({ layout: l }), pressed: m.layout === l, style: { ...segmentItemStyle(m.layout === l), flex: 1, padding: "5px 0" }, children: t(`hud.layout.${l}`) }, l))) })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: controlLabel, children: t("hud.position") }), SP_JSX.jsx("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.space.xs, width: "100%" }, children: POSITIONS.map(({ id, Icon }) => {
+                                    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.xs }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t(`hud.group.${g.key}`) }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { display: "flex", flexWrap: "wrap", gap: theme.space.xs }, children: entries.map((e) => (SP_JSX.jsx(Pill, { label: e.kind === "block" ? t(`hud.group.${e.group}`) : t(`hud.metric.${e.id}`), onClick: () => add(e) }, e.kind === "block" ? `b:${e.group}` : e.id))) })] }, g.key));
+                                }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsxs(OutlineBtn, { onClick: addText, children: [SP_JSX.jsx(LuType, { size: 13 }), " ", t("hud.elem.addText")] }), SP_JSX.jsxs(OutlineBtn, { onClick: addSep, children: [SP_JSX.jsx(LuMinus, { size: 13 }), " ", t("hud.elem.addSeparator")] }), SP_JSX.jsxs(OutlineBtn, { onClick: addSpace, children: [SP_JSX.jsx(LuMoveVertical, { size: 13 }), " ", t("hud.elem.addSpacer")] })] })] }))] }), SP_JSX.jsx(HudDisclosure, { id: "hud-appearance", icon: SP_JSX.jsx(LuSlidersHorizontal, { size: 16 }), title: t("hud.style"), summary: `${t(`hud.layout.${m.layout}`)} · ${t(`hud.position.${m.position}`)}`, defaultOpen: false, children: SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsx(Note, { children: t("hud.style.scope") }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: controlLabel, children: t("hud.layout") }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { ...segmentGroupStyle, width: "100%", minWidth: 0 }, children: LAYOUTS.map((l) => (SP_JSX.jsx(QamAction, { onPress: () => patch({ layout: l }), pressed: m.layout === l, style: { ...segmentItemStyle(m.layout === l), flex: 1, padding: "5px 0" }, children: t(`hud.layout.${l}`) }, l))) })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: controlLabel, children: t("hud.position") }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.space.xs, width: "100%" }, children: POSITIONS.map(({ id, Icon }) => {
                                             const active = m.position === id;
                                             return (SP_JSX.jsx(QamAction, { label: t(`hud.position.${id}`), onPress: () => patch({ position: id }), pressed: active, style: {
                                                     display: "flex", alignItems: "center", justifyContent: "center", height: 32,
@@ -18809,7 +19301,7 @@ const HudSection = () => {
                                                     background: active ? theme.color.accent : "transparent",
                                                     boxShadow: active ? "none" : `inset 0 0 0 1px ${theme.color.hairline}`,
                                                 }, children: SP_JSX.jsx(Icon, { size: 14 }) }, id));
-                                        }) })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: controlLabel, children: t("hud.tempUnit") }), SP_JSX.jsx("div", { style: { ...segmentGroupStyle, width: "100%", minWidth: 0 }, children: TEMP_UNITS.map((u) => (SP_JSX.jsx(QamAction, { onPress: () => patch({ tempUnit: u }), pressed: m.tempUnit === u, style: { ...segmentItemStyle(m.tempUnit === u), flex: 1, padding: "5px 0" }, children: t(`hud.tempUnit.${u}`) }, u))) })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: controlLabel, children: t("hud.locale") }), SP_JSX.jsx("div", { style: { ...segmentGroupStyle, width: "100%", minWidth: 0 }, children: HUD_LOCALES.map((locale) => (SP_JSX.jsx(QamAction, { onPress: () => patch({ locale }), pressed: m.locale === locale, style: { ...segmentItemStyle(m.locale === locale), flex: 1, padding: "5px 0" }, children: t(`hud.locale.${locale}`) }, locale))) }), SP_JSX.jsx(Note, { children: t("hud.locale.hint") })] }), SP_JSX.jsx(HudSliderRow, { label: t("hud.opacity"), value: Math.round(m.background.alpha * 100), min: 0, max: 100, step: 5, unit: "percent", onChange: (v) => patch({ background: { ...m.background, alpha: v / 100 } }) }), SP_JSX.jsx(DFL.ToggleField, { label: t("hud.textOutline"), checked: m.textOutline, onChange: (v) => patch({ textOutline: v }), bottomSeparator: "none" }), SP_JSX.jsx(DFL.ToggleField, { label: t("hud.roundCorners"), checked: m.background.roundCorners, onChange: (v) => patch({ background: { ...m.background, roundCorners: v } }), bottomSeparator: "none" }), SP_JSX.jsx(Note, { children: t("hud.style.hint") })] }) }), SP_JSX.jsx(HudDisclosure, { id: "hud-colors", icon: SP_JSX.jsx(LuPalette, { size: 16 }), title: t("hud.colors"), summary: t("hud.colors.summary"), defaultOpen: false, children: SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsx(Note, { children: t("hud.colors.hint") }), SP_JSX.jsx("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: COLOR_KEYS.map((key) => (SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx(ColorPicker, { label: t(`hud.color.${key}`), value: m.colors[key], onChange: (hex) => setColor(key, hex) }), SP_JSX.jsx(Note, { children: t(`hud.color.${key}`) })] }, key))) })] }) }), SP_JSX.jsx(HudDisclosure, { id: "hud-advanced", icon: SP_JSX.jsx(LuSettings2, { size: 16 }), title: t("hud.advanced"), summary: t("hud.advanced.summary"), defaultOpen: false, children: SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsx(HudSliderRow, { label: t("hud.cellpaddingY"), value: Math.round(m.cellpaddingY * 100), min: -30, max: 50, step: 1, unit: "signed-decimal", onChange: (v) => patch({ cellpaddingY: v / 100 }) }), SP_JSX.jsx(HudSliderRow, { label: t("hud.textAlpha"), value: Math.round(m.alpha * 100), min: 0, max: 100, step: 5, unit: "percent", onChange: (v) => patch({ alpha: v / 100 }) }), SP_JSX.jsx(HudSliderRow, { label: t("hud.outlineThickness"), value: Math.round(m.textOutlineThickness * 10), min: 0, max: 40, step: 1, unit: "decimal", onChange: (v) => patch({ textOutlineThickness: v / 10 }) }), SP_JSX.jsx(HudSliderRow, { label: t("hud.offsetX"), value: m.offsetX, min: -200, max: 200, step: 2, unit: "px", onChange: (v) => patch({ offsetX: v }) }), SP_JSX.jsx(HudSliderRow, { label: t("hud.offsetY"), value: m.offsetY, min: -200, max: 200, step: 2, unit: "px", onChange: (v) => patch({ offsetY: v }) }), SP_JSX.jsx(DFL.ToggleField, { label: t("hud.compact"), checked: m.compact, onChange: (v) => patch({ compact: v }), bottomSeparator: "none" }), SP_JSX.jsx(DFL.ToggleField, { label: t("hud.noMargin"), checked: m.noMargin, onChange: (v) => patch({ noMargin: v }), bottomSeparator: "none" }), SP_JSX.jsx(Note, { children: t("hud.advanced.hint") })] }) }), SP_JSX.jsxs(QamAction, { onPress: openReset, style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0", borderRadius: theme.radius.sm, cursor: "pointer", color: theme.color.textMuted, fontSize: theme.font.caption }, children: [SP_JSX.jsx(LuRotateCcw, { size: 13 }), " ", t("hud.reset")] })] }) }));
+                                        }) })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: controlLabel, children: t("hud.tempUnit") }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { ...segmentGroupStyle, width: "100%", minWidth: 0 }, children: TEMP_UNITS.map((u) => (SP_JSX.jsx(QamAction, { onPress: () => patch({ tempUnit: u }), pressed: m.tempUnit === u, style: { ...segmentItemStyle(m.tempUnit === u), flex: 1, padding: "5px 0" }, children: t(`hud.tempUnit.${u}`) }, u))) })] }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: controlLabel, children: t("hud.locale") }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { ...segmentGroupStyle, width: "100%", minWidth: 0 }, children: HUD_LOCALES.map((locale) => (SP_JSX.jsx(QamAction, { onPress: () => patch({ locale }), pressed: m.locale === locale, style: { ...segmentItemStyle(m.locale === locale), flex: 1, padding: "5px 0" }, children: t(`hud.locale.${locale}`) }, locale))) }), SP_JSX.jsx(Note, { children: t("hud.locale.hint") })] }), SP_JSX.jsx(HudSliderRow, { label: t("hud.opacity"), value: Math.round(m.background.alpha * 100), min: 0, max: 100, step: 5, unit: "percent", onChange: (v) => patch({ background: { ...m.background, alpha: v / 100 } }) }), SP_JSX.jsx(DFL.ToggleField, { label: t("hud.textOutline"), checked: m.textOutline, onChange: (v) => patch({ textOutline: v }), bottomSeparator: "none" }), SP_JSX.jsx(DFL.ToggleField, { label: t("hud.roundCorners"), checked: m.background.roundCorners, onChange: (v) => patch({ background: { ...m.background, roundCorners: v } }), bottomSeparator: "none" }), SP_JSX.jsx(Note, { children: t("hud.style.hint") })] }) }), SP_JSX.jsx(HudDisclosure, { id: "hud-colors", icon: SP_JSX.jsx(LuPalette, { size: 16 }), title: t("hud.colors"), summary: t("hud.colors.summary"), defaultOpen: false, children: SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsx(Note, { children: t("hud.colors.hint") }), SP_JSX.jsx("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 }, children: COLOR_KEYS.map((key) => (SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx(ColorPicker, { label: t(`hud.color.${key}`), value: m.colors[key], onChange: (hex) => setColor(key, hex) }), SP_JSX.jsx(Note, { children: t(`hud.color.${key}`) })] }, key))) })] }) }), SP_JSX.jsx(HudDisclosure, { id: "hud-advanced", icon: SP_JSX.jsx(LuSettings2, { size: 16 }), title: t("hud.advanced"), summary: t("hud.advanced.summary"), defaultOpen: false, children: SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md }, children: [SP_JSX.jsx(HudSliderRow, { label: t("hud.cellpaddingY"), value: Math.round(m.cellpaddingY * 100), min: -30, max: 50, step: 1, unit: "signed-decimal", onChange: (v) => patch({ cellpaddingY: v / 100 }) }), SP_JSX.jsx(HudSliderRow, { label: t("hud.textAlpha"), value: Math.round(m.alpha * 100), min: 0, max: 100, step: 5, unit: "percent", onChange: (v) => patch({ alpha: v / 100 }) }), SP_JSX.jsx(HudSliderRow, { label: t("hud.outlineThickness"), value: Math.round(m.textOutlineThickness * 10), min: 0, max: 40, step: 1, unit: "decimal", onChange: (v) => patch({ textOutlineThickness: v / 10 }) }), SP_JSX.jsx(HudSliderRow, { label: t("hud.offsetX"), value: m.offsetX, min: -200, max: 200, step: 2, unit: "px", onChange: (v) => patch({ offsetX: v }) }), SP_JSX.jsx(HudSliderRow, { label: t("hud.offsetY"), value: m.offsetY, min: -200, max: 200, step: 2, unit: "px", onChange: (v) => patch({ offsetY: v }) }), SP_JSX.jsx(DFL.ToggleField, { label: t("hud.compact"), checked: m.compact, onChange: (v) => patch({ compact: v }), bottomSeparator: "none" }), SP_JSX.jsx(DFL.ToggleField, { label: t("hud.noMargin"), checked: m.noMargin, onChange: (v) => patch({ noMargin: v }), bottomSeparator: "none" }), SP_JSX.jsx(Note, { children: t("hud.advanced.hint") })] }) }), SP_JSX.jsxs(QamAction, { onPress: openReset, style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 0", borderRadius: theme.radius.sm, cursor: "pointer", color: theme.color.textMuted, fontSize: theme.font.caption }, children: [SP_JSX.jsx(LuRotateCcw, { size: 13 }), " ", t("hud.reset")] })] }) }));
 };
 
 // Accent-tinted gradient behind the portrait; also the fallback tile when no art.
@@ -19044,20 +19536,20 @@ function chipStyle(active) {
  *  outside the option set (e.g. DXVK_FRAME_RATE=45) shows as its own active chip. */
 const ValuePills = ({ offLabel, options, current, onSelect }) => {
     const custom = current !== null && !options.some((o) => o.value === current) ? current : null;
-    return (SP_JSX.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.Focusable, { style: chipStyle(current === null), onActivate: () => onSelect(null), onClick: () => onSelect(null), children: offLabel }), options.map((o) => {
+    return (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "grid", style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.Focusable, { style: chipStyle(current === null), onActivate: () => onSelect(null), onClick: () => onSelect(null), children: offLabel }), options.map((o) => {
                 const active = current === o.value;
                 return (SP_JSX.jsx(DFL.Focusable, { style: chipStyle(active), onActivate: () => onSelect(active ? null : o.value), onClick: () => onSelect(active ? null : o.value), children: o.label }, o.value));
             }), custom !== null && (SP_JSX.jsx(DFL.Focusable, { style: chipStyle(true), onActivate: () => onSelect(null), onClick: () => onSelect(null), children: custom }))] }));
 };
 
 /** A round on/off switch matching the section's visual language. */
-const RowSwitch = ({ active, disabled, onToggle }) => {
+const RowSwitch = ({ label, active, disabled, onToggle }) => {
     const track = disabled ? "rgba(255,255,255,0.12)" : active ? theme.color.accent : "rgba(255,255,255,0.14)";
     const knob = active && !disabled ? theme.color.onAccent : "rgba(255,255,255,0.55)";
     const body = (SP_JSX.jsx("div", { style: { width: 38, height: 22, borderRadius: 20, background: track, position: "relative", flexShrink: 0 }, children: SP_JSX.jsx("div", { style: { position: "absolute", top: 2, [active ? "right" : "left"]: 2, width: 18, height: 18, borderRadius: "50%", background: knob } }) }));
     if (disabled)
         return body;
-    return (SP_JSX.jsx(DFL.Focusable, { style: { cursor: "pointer" }, onActivate: onToggle, onClick: onToggle, children: body }));
+    return (SP_JSX.jsx(DFL.Focusable, { role: "switch", "aria-checked": active, "aria-label": label, style: { cursor: "pointer" }, onActivate: onToggle, onClick: onToggle, children: body }));
 };
 const Badge = ({ text, accent }) => (SP_JSX.jsx("span", { style: {
         fontSize: 9,
@@ -19082,7 +19574,7 @@ const LaunchRow = ({ pill, ed, tools, gpu, supportedEnvs, catalog, caveat }) => 
     const isText = !!pill.freeText;
     const isToggle = !isValue && !isText;
     const Chevron = expanded ? LuChevronDown : LuChevronRight;
-    return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: "10px 11px", marginBottom: theme.space.sm, opacity: available ? 1 : 0.55 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { flex: 1, minWidth: 0, cursor: "pointer" }, onActivate: () => setExpanded((e) => !e), onClick: () => setExpanded((e) => !e), children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.body, fontWeight: 500, color: theme.color.textPrimary, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }, children: [SP_JSX.jsx(Chevron, { size: 14, color: theme.color.textMuted, style: { flexShrink: 0 } }), pillLabel(pill, t), pill.recommended && SP_JSX.jsx(Badge, { text: t("params.recommended"), accent: true }), pill.raw && SP_JSX.jsx("span", { style: { fontFamily: "monospace", fontSize: 10, color: theme.color.textMuted }, children: pill.raw }), !available && SP_JSX.jsx(Badge, { text: t("params.notInstalled") })] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4, marginLeft: 20 }, children: pillDesc(pill, t) })] }), isToggle && SP_JSX.jsx(RowSwitch, { active: !!sel, disabled: !available, onToggle: () => ed.set(pill.id, !sel) })] }), expanded && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textPrimary, lineHeight: 1.5, marginLeft: 20, marginTop: theme.space.xs, opacity: 0.85 }, children: pillHelp(pill, t) })), isValue && pill.options && (SP_JSX.jsx("div", { style: { marginTop: theme.space.sm, marginLeft: 20 }, children: SP_JSX.jsx(ValuePills, { offLabel: t("params.off"), options: pill.options.map((o) => ({ value: o.value, label: t(o.labelKey) })), current: sel ?? null, onSelect: (v) => ed.set(pill.id, v) }) })), isText && (SP_JSX.jsx("div", { style: { marginTop: theme.space.sm, marginLeft: 20 }, children: SP_JSX.jsx(DFL.TextField, { value: typeof sel === "string" ? sel : "", onChange: (e) => ed.set(pill.id, e.target.value || null), 
+    return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: "10px 11px", marginBottom: theme.space.sm, opacity: available ? 1 : 0.55 }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { flex: 1, minWidth: 0, cursor: "pointer" }, onActivate: () => setExpanded((e) => !e), onClick: () => setExpanded((e) => !e), children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.body, fontWeight: 500, color: theme.color.textPrimary, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }, children: [SP_JSX.jsx(Chevron, { size: 14, color: theme.color.textMuted, style: { flexShrink: 0 } }), pillLabel(pill, t), pill.recommended && SP_JSX.jsx(Badge, { text: t("params.recommended"), accent: true }), pill.raw && SP_JSX.jsx("span", { style: { fontFamily: "monospace", fontSize: 10, color: theme.color.textMuted }, children: pill.raw }), !available && SP_JSX.jsx(Badge, { text: t("params.notInstalled") })] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4, marginLeft: 20 }, children: pillDesc(pill, t) })] }), isToggle && SP_JSX.jsx(RowSwitch, { label: pillLabel(pill, t), active: !!sel, disabled: !available, onToggle: () => ed.set(pill.id, !sel) })] }), expanded && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textPrimary, lineHeight: 1.5, marginLeft: 20, marginTop: theme.space.xs, opacity: 0.85 }, children: pillHelp(pill, t) })), isValue && pill.options && (SP_JSX.jsx("div", { style: { marginTop: theme.space.sm, marginLeft: 20 }, children: SP_JSX.jsx(ValuePills, { offLabel: t("params.off"), options: pill.options.map((o) => ({ value: o.value, label: t(o.labelKey) })), current: sel ?? null, onSelect: (v) => ed.set(pill.id, v) }) })), isText && (SP_JSX.jsx("div", { style: { marginTop: theme.space.sm, marginLeft: 20 }, children: SP_JSX.jsx(DFL.TextField, { value: typeof sel === "string" ? sel : "", onChange: (e) => ed.set(pill.id, e.target.value || null), 
                     // @ts-expect-error Decky TextField forwards input attrs; placeholder is valid.
                     placeholder: pill.placeholderKey ? t(pill.placeholderKey) : "" }) })), caveat && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, display: "flex", gap: 6, alignItems: "flex-start", marginTop: theme.space.xs, marginLeft: 20 }, children: SP_JSX.jsx("span", { children: caveat }) }))] }));
 };
@@ -19366,7 +19858,7 @@ const LaunchEditorBody = ({ game }) => {
 const LaunchEditorModal = ({ game, closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(LaunchEditorBody, { game: game }) }));
 /** Open the full-screen launch-options editor for a game. `onClosed` re-syncs the list. */
 function openLaunchEditorModal(game, onClosed) {
-    DFL.showModal(SP_JSX.jsx(LaunchEditorModal, { game: game }), window, { fnOnClose: onClosed });
+    showModal(SP_JSX.jsx(LaunchEditorModal, { game: game }), window, { fnOnClose: onClosed });
 }
 
 const emptyDraft = (id) => ({ id, name: "", kind: "env", envName: "", envValue: "", arg: "" });
@@ -19409,7 +19901,7 @@ const ManagerBody = () => {
         if (draft.id === id)
             setDraft(emptyDraft(newId()));
     };
-    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md, padding: theme.space.sm, maxWidth: 640, width: "100%", margin: "0 auto" }, children: [SP_JSX.jsxs("div", { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.value, color: theme.color.textPrimary }, children: t("customVars.title") }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4, marginTop: 2 }, children: t("customVars.intro") }), activeVars.length > 0 && (SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4, marginTop: 4, display: "flex", gap: 6, alignItems: "flex-start" }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 12, style: { marginTop: 2, flexShrink: 0 } }), SP_JSX.jsx("span", { children: t("customVars.orphanNote") })] }))] }), activeVars.length === 0 ? (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("customVars.empty") })) : (SP_JSX.jsx("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: activeVars.map((v) => (SP_JSX.jsxs("div", { style: { ...theme.card, display: "flex", alignItems: "center", gap: theme.space.md, padding: `${theme.space.sm}px ${theme.space.md}px` }, children: [SP_JSX.jsxs("div", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, fontWeight: 600, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: v.name }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: summaryOf(v) })] }), SP_JSX.jsx(DFL.Focusable, { onActivate: () => setDraft({ ...emptyDraft(v.id), ...v }), onClick: () => setDraft({ ...emptyDraft(v.id), ...v }), style: { padding: 6, cursor: "pointer", flexShrink: 0 }, children: SP_JSX.jsx(LuPencil, { size: 16, color: theme.color.textMuted }) }), SP_JSX.jsx(DFL.Focusable, { onActivate: () => onDelete(v.id), onClick: () => onDelete(v.id), style: { padding: 6, cursor: "pointer", flexShrink: 0 }, children: SP_JSX.jsx(LuTrash2, { size: 16, color: theme.color.danger }) })] }, v.id))) })), SP_JSX.jsxs("div", { style: { ...theme.card, display: "flex", flexDirection: "column", gap: theme.space.sm, padding: theme.space.md }, children: [SP_JSX.jsx("div", { style: { ...theme.sectionLabel }, children: isEdit ? t("customVars.editing") : t("customVars.new") }), SP_JSX.jsx(Field, { label: t("customVars.name"), value: draft.name, placeholder: t("customVars.name.ph"), onChange: (name) => patch({ name }) }), SP_JSX.jsxs("div", { style: segmentGroupStyle, children: [SP_JSX.jsx(KindChip, { active: draft.kind === "env", label: t("customVars.kind.env"), onSelect: () => patch({ kind: "env" }) }), SP_JSX.jsx(KindChip, { active: draft.kind === "arg", label: t("customVars.kind.arg"), onSelect: () => patch({ kind: "arg" }) })] }), draft.kind === "env" ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(Field, { label: t("customVars.env.name"), value: draft.envName ?? "", placeholder: "DXVK_FRAME_RATE", onChange: (envName) => patch({ envName }) }), SP_JSX.jsx(Field, { label: t("customVars.env.value"), value: draft.envValue ?? "", placeholder: "60", onChange: (envValue) => patch({ envValue }) })] })) : (SP_JSX.jsx(Field, { label: t("customVars.arg.flag"), value: draft.arg ?? "", placeholder: "-nombre", onChange: (arg) => patch({ arg }) })), SP_JSX.jsxs(DFL.Focusable, { onActivate: onSave, onClick: onSave, style: {
+    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md, padding: theme.space.sm, maxWidth: 640, width: "100%", margin: "0 auto" }, children: [SP_JSX.jsxs("div", { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.value, color: theme.color.textPrimary }, children: t("customVars.title") }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4, marginTop: 2 }, children: t("customVars.intro") }), activeVars.length > 0 && (SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4, marginTop: 4, display: "flex", gap: 6, alignItems: "flex-start" }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 12, style: { marginTop: 2, flexShrink: 0 } }), SP_JSX.jsx("span", { children: t("customVars.orphanNote") })] }))] }), activeVars.length === 0 ? (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("customVars.empty") })) : (SP_JSX.jsx("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: activeVars.map((v) => (SP_JSX.jsxs(RemovableRow, { style: { ...theme.card, display: "flex", alignItems: "center", gap: theme.space.md, padding: `${theme.space.sm}px ${theme.space.md}px` }, children: [SP_JSX.jsxs("div", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, fontWeight: 600, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: v.name }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: summaryOf(v) })] }), SP_JSX.jsx(DFL.Focusable, { onActivate: () => setDraft({ ...emptyDraft(v.id), ...v }), onClick: () => setDraft({ ...emptyDraft(v.id), ...v }), style: { padding: 6, cursor: "pointer", flexShrink: 0 }, children: SP_JSX.jsx(LuPencil, { size: 16, color: theme.color.textMuted }) }), SP_JSX.jsx(DFL.Focusable, { onActivate: () => onDelete(v.id), onClick: () => onDelete(v.id), style: { padding: 6, cursor: "pointer", flexShrink: 0 }, children: SP_JSX.jsx(LuTrash2, { size: 16, color: theme.color.danger }) })] }, v.id))) })), SP_JSX.jsxs("div", { style: { ...theme.card, display: "flex", flexDirection: "column", gap: theme.space.sm, padding: theme.space.md }, children: [SP_JSX.jsx("div", { style: { ...theme.sectionLabel }, children: isEdit ? t("customVars.editing") : t("customVars.new") }), SP_JSX.jsx(Field, { label: t("customVars.name"), value: draft.name, placeholder: t("customVars.name.ph"), onChange: (name) => patch({ name }) }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: segmentGroupStyle, children: [SP_JSX.jsx(KindChip, { active: draft.kind === "env", label: t("customVars.kind.env"), onSelect: () => patch({ kind: "env" }) }), SP_JSX.jsx(KindChip, { active: draft.kind === "arg", label: t("customVars.kind.arg"), onSelect: () => patch({ kind: "arg" }) })] }), draft.kind === "env" ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(Field, { label: t("customVars.env.name"), value: draft.envName ?? "", placeholder: "DXVK_FRAME_RATE", onChange: (envName) => patch({ envName }) }), SP_JSX.jsx(Field, { label: t("customVars.env.value"), value: draft.envValue ?? "", placeholder: "60", onChange: (envValue) => patch({ envValue }) })] })) : (SP_JSX.jsx(Field, { label: t("customVars.arg.flag"), value: draft.arg ?? "", placeholder: "-nombre", onChange: (arg) => patch({ arg }) })), SP_JSX.jsxs(DFL.Focusable, { onActivate: onSave, onClick: onSave, style: {
                             marginTop: 2,
                             textAlign: "center",
                             padding: "9px 12px",
@@ -19426,7 +19918,7 @@ const ManagerBody = () => {
 const CustomVarsModal = ({ closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(ManagerBody, {}) }));
 /** Open the "Mis variables" manager. `onClosed` re-syncs the caller. */
 function openCustomVarsManager(onClosed) {
-    DFL.showModal(SP_JSX.jsx(CustomVarsModal, {}), window, { fnOnClose: onClosed });
+    showModal(SP_JSX.jsx(CustomVarsModal, {}), window, { fnOnClose: onClosed });
 }
 
 const SORT_MODES = ["recent", "alpha", "played"];
@@ -19483,9 +19975,11 @@ const ParametrosSection = () => {
 const cleanerColumn = { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 };
 const cleanerCaption = { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.5 };
 const CleanerButton = ({ label, children, onActivate, disabled, checked, selected, primary, danger, style, role }) => {
+    const ref = SP_REACT.useRef(null);
+    useRefocusWhenRemoved(ref);
     const activate = () => { if (!disabled)
         onActivate(); };
-    return SP_JSX.jsx(DFL.Focusable, { role: role ?? (checked === undefined ? "button" : "checkbox"), "aria-label": label, "aria-checked": checked, "aria-selected": selected, "aria-disabled": !!disabled, tabIndex: disabled ? -1 : 0, onActivate: activate, onClick: activate, onOKActionDescription: label, style: { width: "100%", minWidth: 0, padding: 0, borderRadius: theme.radius.sm }, children: SP_JSX.jsx("div", { style: {
+    return SP_JSX.jsx(DFL.Focusable, { ref: ref, role: role ?? (checked === undefined ? "button" : "checkbox"), "aria-label": label, "aria-checked": checked, "aria-selected": selected, "aria-disabled": !!disabled, onActivate: activate, onClick: activate, onOKActionDescription: label, style: { width: "100%", minWidth: 0, padding: 0, borderRadius: theme.radius.sm }, children: SP_JSX.jsx("div", { style: {
                 ...theme.card,
                 width: "100%",
                 boxSizing: "border-box",
@@ -19694,7 +20188,7 @@ const MediaCleanerView = ({ controller }) => {
     });
     const recommended = shown.filter((item) => item.recommendation && !item.active);
     const allRecommendedSelected = recommended.length > 0 && recommended.every((item) => selected.has(item.id));
-    return SP_JSX.jsxs("div", { style: cleanerColumn, children: [controller.error === "media_delete_failed" && SP_JSX.jsx(CleanerNotice, { warning: true, children: t("cleaner.reason.media_delete_failed") }), controller.result && SP_JSX.jsx(CleanerResult, { bytes: formatBytes(controller.result.bytesRemoved, lang), failed: controller.result.items.some((item) => item.status === "error"), counts: t("cleaner.media.result", { deleted: controller.result.items.filter((item) => item.status === "deleted").length, errors: controller.result.items.filter((item) => item.status === "error").length }), onClose: controller.dismissResult }), SP_JSX.jsxs("div", { style: { display: "flex", gap: 8 }, children: [SP_JSX.jsx("div", { style: { flex: 1 }, children: SP_JSX.jsxs(CleanerButton, { label: t("cleaner.filterLabel"), onActivate: () => setFilter((value) => FILTERS$2[(FILTERS$2.indexOf(value) + 1) % FILTERS$2.length]), style: { justifyContent: "flex-start" }, children: [SP_JSX.jsx(LuFilter, { size: 14 }), SP_JSX.jsx("span", { children: t(`cleaner.media.filter.${filter}`) }), SP_JSX.jsx("span", { style: { ...cleanerCaption, marginLeft: "auto" }, children: shown.length })] }) }), SP_JSX.jsx("div", { style: { width: 42 }, children: SP_JSX.jsx(CleanerButton, { label: t("cleaner.searchMedia"), onActivate: () => { setSearchOpen((value) => !value); setQuery(""); }, children: SP_JSX.jsx(LuSearch, { size: 15 }) }) })] }), searchOpen && SP_JSX.jsx(DFL.TextField, { label: t("cleaner.searchMedia"), value: query, onChange: (event) => setQuery(event.target.value) }), recommended.length > 0 && SP_JSX.jsxs(CleanerButton, { label: t(allRecommendedSelected ? "cleaner.deselectRecommended" : "cleaner.selectRecommended"), disabled: controller.busy, onActivate: () => setSelected((previous) => {
+    return SP_JSX.jsxs("div", { style: cleanerColumn, children: [controller.error === "media_delete_failed" && SP_JSX.jsx(CleanerNotice, { warning: true, children: t("cleaner.reason.media_delete_failed") }), controller.result && SP_JSX.jsx(CleanerResult, { bytes: formatBytes(controller.result.bytesRemoved, lang), failed: controller.result.items.some((item) => item.status === "error"), counts: t("cleaner.media.result", { deleted: controller.result.items.filter((item) => item.status === "deleted").length, errors: controller.result.items.filter((item) => item.status === "error").length }), onClose: controller.dismissResult }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: 8 }, children: [SP_JSX.jsx("div", { style: { flex: 1 }, children: SP_JSX.jsxs(CleanerButton, { label: t("cleaner.filterLabel"), onActivate: () => setFilter((value) => FILTERS$2[(FILTERS$2.indexOf(value) + 1) % FILTERS$2.length]), style: { justifyContent: "flex-start" }, children: [SP_JSX.jsx(LuFilter, { size: 14 }), SP_JSX.jsx("span", { children: t(`cleaner.media.filter.${filter}`) }), SP_JSX.jsx("span", { style: { ...cleanerCaption, marginLeft: "auto" }, children: shown.length })] }) }), SP_JSX.jsx("div", { style: { width: 42 }, children: SP_JSX.jsx(CleanerButton, { label: t("cleaner.searchMedia"), onActivate: () => { setSearchOpen((value) => !value); setQuery(""); }, children: SP_JSX.jsx(LuSearch, { size: 15 }) }) })] }), searchOpen && SP_JSX.jsx(DFL.TextField, { label: t("cleaner.searchMedia"), value: query, onChange: (event) => setQuery(event.target.value) }), recommended.length > 0 && SP_JSX.jsxs(CleanerButton, { label: t(allRecommendedSelected ? "cleaner.deselectRecommended" : "cleaner.selectRecommended"), disabled: controller.busy, onActivate: () => setSelected((previous) => {
                     const next = new Set(previous);
                     for (const item of recommended)
                         allRecommendedSelected ? next.delete(item.id) : next.add(item.id);
@@ -19783,10 +20277,12 @@ const HELP_DISMISSED_KEY = "pdc:cleanerHelpDismissed";
 function libraryLabel(entry, internalStorage) {
     return entry.library_internal === true ? internalStorage : entry.library_label;
 }
-const CleanerAction = ({ label, children, onActivate, disabled, checked, primary, danger, style }) => {
+const CleanerAction = ({ label, children, onActivate, disabled, checked, primary, danger, style, preferredFocus }) => {
+    const ref = SP_REACT.useRef(null);
+    useRefocusWhenRemoved(ref);
     const activate = () => { if (!disabled)
         onActivate(); };
-    return (SP_JSX.jsx(DFL.Focusable, { role: checked === undefined ? "button" : "checkbox", "aria-label": label, title: label, "aria-checked": checked, "aria-disabled": !!disabled, tabIndex: disabled ? -1 : 0, onActivate: activate, onClick: activate, onOKActionDescription: label, style: { width: "100%", minWidth: 0, padding: 0, borderRadius: theme.radius.sm }, children: SP_JSX.jsx("div", { style: {
+    return (SP_JSX.jsx(DFL.Focusable, { ref: ref, "data-preferred-focus": preferredFocus || undefined, role: checked === undefined ? "button" : "checkbox", "aria-label": label, title: label, "aria-checked": checked, "aria-disabled": !!disabled, onActivate: activate, onClick: activate, onOKActionDescription: label, style: { width: "100%", minWidth: 0, padding: 0, borderRadius: theme.radius.sm }, children: SP_JSX.jsx("div", { style: {
                 ...theme.card, width: "100%", boxSizing: "border-box", minHeight: 40,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 padding: "10px 12px", borderRadius: theme.radius.sm, fontSize: theme.font.body,
@@ -19818,7 +20314,7 @@ const GameRow$1 = ({ game, selected, disabled, onCaches, onEntry }) => {
     const canSelectCaches = caches.length > 0;
     const Chevron = open ? LuChevronDown : LuChevronRight;
     const installation = game.entries[0].installation;
-    return (SP_JSX.jsxs("div", { style: { ...theme.card, ...column, gap: 0, padding: 6 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 6, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0 }, children: SP_JSX.jsxs(CleanerAction, { label: t(canSelectCaches ? "cleaner.selectGameCaches" : "cleaner.chooseGameData", { name }), checked: canSelectCaches ? allSelected ? true : partiallySelected ? "mixed" : false : undefined, disabled: disabled || selectable.length === 0, onActivate: canSelectCaches ? onCaches : () => setOpen(true), style: { background: "transparent", boxShadow: "none", padding: "6px", textAlign: "left", justifyContent: "flex-start" }, children: [SP_JSX.jsx(GameCover, { urls: game.coverUrls, name: name, width: 38 }), SP_JSX.jsxs("span", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: { display: "block", fontSize: theme.font.body, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: name }), (game.name || installation !== "unknown") && SP_JSX.jsx("span", { style: { ...caption, display: "block" }, children: t(`cleaner.installation.${installation}`) }), installation === "not_installed" && SP_JSX.jsxs("span", { style: { ...caption, display: "block", color: theme.color.accent }, children: [t("cleaner.recommended"), " \u00B7 ", t("cleaner.recommendation.game_not_installed")] }), SP_JSX.jsx("span", { style: { display: "block", marginTop: 3, fontSize: theme.font.caption, fontVariantNumeric: "tabular-nums", color: theme.color.accent }, children: game.entries.every((entry) => entry.bytes === null) ? t("cleaner.sizeUnknown") : `${formatBytes(game.bytes, lang)}${game.sizeUnknown ? ` · ${t("cleaner.partialSize")}` : ""}` })] }), SP_JSX.jsx(Check, { size: 18, color: selectedCount > 0 ? theme.color.accent : theme.color.textMuted, style: { flexShrink: 0 } })] }) }), SP_JSX.jsx("div", { style: { width: 36, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: t("cleaner.gameDetails", { name }), onActivate: () => setOpen((value) => !value), style: { padding: 8, background: "transparent", boxShadow: "none" }, children: SP_JSX.jsx(Chevron, { size: 18 }) }) })] }), selectedCount > 0 && SP_JSX.jsx("div", { style: { ...caption, color: theme.color.accent, padding: "2px 8px 6px" }, children: selectedKinds.map((kind) => t(`cleaner.kind.${kind}`)).join(" · ") }), open && SP_JSX.jsxs("div", { style: { ...column, padding: "6px" }, children: [(!game.name || game.entries.some((entry) => entry.requires_manual_selection)) && SP_JSX.jsx("div", { style: caption, children: t("cleaner.steamIdentifier", { id: game.entries[0].appid }) }), game.entries.map((entry) => SP_JSX.jsx(EntryChoice, { entry: entry, selected: selected.has(entry.id), disabled: disabled, onToggle: () => onEntry(entry) }, entry.id))] })] }));
+    return (SP_JSX.jsxs("div", { style: { ...theme.card, ...column, gap: 0, padding: 6 }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: 6, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0 }, children: SP_JSX.jsxs(CleanerAction, { label: t(canSelectCaches ? "cleaner.selectGameCaches" : "cleaner.chooseGameData", { name }), checked: canSelectCaches ? allSelected ? true : partiallySelected ? "mixed" : false : undefined, disabled: disabled || selectable.length === 0, onActivate: canSelectCaches ? onCaches : () => setOpen(true), style: { background: "transparent", boxShadow: "none", padding: "6px", textAlign: "left", justifyContent: "flex-start" }, children: [SP_JSX.jsx(GameCover, { urls: game.coverUrls, name: name, width: 38 }), SP_JSX.jsxs("span", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("span", { style: { display: "block", fontSize: theme.font.body, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: name }), (game.name || installation !== "unknown") && SP_JSX.jsx("span", { style: { ...caption, display: "block" }, children: t(`cleaner.installation.${installation}`) }), installation === "not_installed" && SP_JSX.jsxs("span", { style: { ...caption, display: "block", color: theme.color.accent }, children: [t("cleaner.recommended"), " \u00B7 ", t("cleaner.recommendation.game_not_installed")] }), SP_JSX.jsx("span", { style: { display: "block", marginTop: 3, fontSize: theme.font.caption, fontVariantNumeric: "tabular-nums", color: theme.color.accent }, children: game.entries.every((entry) => entry.bytes === null) ? t("cleaner.sizeUnknown") : `${formatBytes(game.bytes, lang)}${game.sizeUnknown ? ` · ${t("cleaner.partialSize")}` : ""}` })] }), SP_JSX.jsx(Check, { size: 18, color: selectedCount > 0 ? theme.color.accent : theme.color.textMuted, style: { flexShrink: 0 } })] }) }), SP_JSX.jsx("div", { style: { width: 36, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: t("cleaner.gameDetails", { name }), onActivate: () => setOpen((value) => !value), style: { padding: 8, background: "transparent", boxShadow: "none" }, children: SP_JSX.jsx(Chevron, { size: 18 }) }) })] }), selectedCount > 0 && SP_JSX.jsx("div", { style: { ...caption, color: theme.color.accent, padding: "2px 8px 6px" }, children: selectedKinds.map((kind) => t(`cleaner.kind.${kind}`)).join(" · ") }), open && SP_JSX.jsxs("div", { style: { ...column, padding: "6px" }, children: [(!game.name || game.entries.some((entry) => entry.requires_manual_selection)) && SP_JSX.jsx("div", { style: caption, children: t("cleaner.steamIdentifier", { id: game.entries[0].appid }) }), game.entries.map((entry) => SP_JSX.jsx(EntryChoice, { entry: entry, selected: selected.has(entry.id), disabled: disabled, onToggle: () => onEntry(entry) }, entry.id))] })] }));
 };
 const LoadingGameRow = ({ game }) => {
     const { t } = useI18n();
@@ -19874,9 +20370,13 @@ const SteamCleanerView = ({ controller, embedded = false }) => {
                             }) }), SP_JSX.jsx("div", { style: { ...caption, marginTop: 9 }, children: t("cleaner.summaryHint") })] }), failedNotice, loading ? SP_JSX.jsx("div", { role: "status", style: { ...caption, padding: 12 }, children: t("cleaner.loading") }) : busy ? SP_JSX.jsxs("div", { style: { ...theme.card, ...column, padding: 12 }, children: [SP_JSX.jsx("div", { role: "status", "aria-live": "polite", style: { fontSize: theme.font.body }, children: t(pending === "prepare" ? "cleaner.preparing" : state?.status === "cleaning" || pending === "execute" ? "cleaner.cleaning" : "cleaner.scanning") }), (state?.status === "scanning" || state?.status === "cleaning") && state.progress.total != null && SP_JSX.jsx("div", { style: { ...caption, fontVariantNumeric: "tabular-nums" }, children: t("cleaner.progress", { done: state.progress.processed, total: state.progress.total }) }), pending !== "prepare" && SP_JSX.jsxs(CleanerAction, { label: t("cleaner.cancel"), disabled: controller.cancelling, onActivate: () => void controller.cancel(), children: [SP_JSX.jsx(LuX, { size: 15 }), t(controller.cancelling ? "cleaner.cancelling" : "cleaner.cancel")] }), SP_JSX.jsx("div", { style: caption, children: t("cleaner.cancelHint") })] }) : !hasScanData ? SP_JSX.jsxs(CleanerAction, { label: t("cleaner.scan"), primary: true, onActivate: () => { setSelected(new Set()); void controller.scan(); }, children: [SP_JSX.jsx(LuRefreshCw, { size: 16 }), t("cleaner.scan")] }) : null, calculatingGames && installedMetadata.map((game) => SP_JSX.jsx(LoadingGameRow, { game: game }, game.appid)), result && !busy && SP_JSX.jsxs("div", { style: { ...theme.card, ...column, padding: 12 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8, fontSize: theme.font.body, fontWeight: 600 }, children: [result.items.some((item) => item.status !== "deleted") || result.cancelled ? SP_JSX.jsx(LuCircleAlert, { size: 17, color: theme.color.warn }) : SP_JSX.jsx(LuCircleCheck, { size: 17, color: theme.color.ok }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0 }, children: t(result.cancelled ? "cleaner.result.cancelled" : "cleaner.result.title") }), SP_JSX.jsx("div", { style: { width: 30, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: t("cleaner.result.close"), onActivate: controller.dismissResult, style: { minHeight: 30, padding: 6, background: "transparent", boxShadow: "none" }, children: SP_JSX.jsx(LuX, { size: 15 }) }) })] }), SP_JSX.jsx("div", { style: { fontSize: 22, fontWeight: 650, fontVariantNumeric: "tabular-nums" }, children: formatBytes(result.estimated_bytes_removed, lang) }), SP_JSX.jsx("div", { style: caption, children: t("cleaner.result.estimate") }), SP_JSX.jsx("div", { style: caption, children: t("cleaner.result.counts", { deleted: result.items.filter((item) => item.status === "deleted").length, skipped: result.items.filter((item) => item.status === "skipped").length, errors: result.items.filter((item) => item.status === "error").length }) }), SP_JSX.jsxs(CleanerAction, { label: t("cleaner.result.details"), onActivate: () => setResultsOpen((value) => !value), children: [t("cleaner.result.details"), resultsOpen ? SP_JSX.jsx(LuChevronDown, { size: 15 }) : SP_JSX.jsx(LuChevronRight, { size: 15 })] }), resultsOpen && result.items.map((item, index) => {
                             const entry = item.entry ?? labels.current.get(item.id);
                             return SP_JSX.jsxs("div", { style: { borderTop: `1px solid ${theme.color.hairline}`, paddingBlock: 8 }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body }, children: entry ? entry.name || metadata.get(entry.appid)?.name || t("cleaner.unknownGame") : t("cleaner.result.item", { n: index + 1 }) }), entry && !entry.name && !metadata.get(entry.appid)?.name && SP_JSX.jsx("div", { style: caption, children: t("cleaner.steamIdentifier", { id: entry.appid }) }), entry && SP_JSX.jsxs("div", { style: caption, children: [t(`cleaner.kind.${entry.kind}`), " \u00B7 ", libraryLabel(entry, t("cleaner.internalStorage"))] }), SP_JSX.jsxs("div", { style: { ...caption, color: item.status === "deleted" ? theme.color.ok : theme.color.warn }, children: [t(`cleaner.result.${item.status}`), item.reason ? ` · ${t(cleanerReasonKey(item.reason))}` : ""] })] }, item.id);
-                        })] }), hasScanData && !scanId && !busy && SP_JSX.jsxs(CleanerAction, { label: t("cleaner.scanAfterCleanup"), primary: true, onActivate: () => void controller.scan(), children: [SP_JSX.jsx(LuRefreshCw, { size: 16 }), t("cleaner.scanAfterCleanup")] }), hasScanData && !calculatingGames && SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs("div", { style: { display: "flex", gap: 8 }, children: [SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0 }, children: SP_JSX.jsxs(CleanerAction, { label: t("cleaner.filterLabel"), onActivate: () => setFilter((value) => FILTERS[(FILTERS.indexOf(value) + 1) % FILTERS.length]), style: { justifyContent: "flex-start", paddingInline: 9 }, children: [SP_JSX.jsx(LuFilter, { size: 14, style: { flexShrink: 0 } }), SP_JSX.jsx("span", { children: t(`cleaner.filter.${filter}`) }), SP_JSX.jsx("span", { style: { ...caption, marginLeft: "auto" }, children: shown.length })] }) }), SP_JSX.jsx("div", { style: { width: 36, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: `${t("cleaner.sortLabel")}: ${t(`cleaner.sort.${sort}`)}`, onActivate: () => setSort((value) => value === "size" ? "name" : "size"), style: { padding: 8 }, children: SP_JSX.jsx(LuArrowDownUp, { size: 15 }) }) }), SP_JSX.jsx("div", { style: { width: 42, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: t("cleaner.search"), onActivate: () => { setSearchOpen((value) => !value); setQuery(""); }, style: { padding: 10 }, children: SP_JSX.jsx(LuSearch, { size: 16, color: searchOpen ? theme.color.accent : undefined }) }) })] }), searchOpen && SP_JSX.jsx(DFL.TextField, { label: t("cleaner.search"), value: query, onChange: (event) => setQuery(event.target.value) }), helpVisible && SP_JSX.jsxs("div", { style: { ...theme.card, ...column, gap: 6, padding: "9px 10px" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "flex-start", gap: 8 }, children: [SP_JSX.jsx(LuInfo, { size: 15, color: theme.color.accent, style: { flexShrink: 0, marginTop: 1 } }), SP_JSX.jsxs("div", { style: { ...caption, display: "flex", flexDirection: "column", gap: 3 }, children: [SP_JSX.jsx("span", { children: t("cleaner.cacheHint") }), SP_JSX.jsx("span", { children: t("cleaner.prefixHint") })] })] }), SP_JSX.jsx(CleanerAction, { label: t("cleaner.help.dismiss"), onActivate: () => { writeFlag(HELP_DISMISSED_KEY, true); setHelpVisible(false); }, style: { minHeight: 28, padding: "5px 8px", background: "transparent", boxShadow: "none", color: theme.color.accent }, children: t("cleaner.help.dismiss") })] }), SP_JSX.jsxs("div", { style: { display: "flex", gap: 8 }, children: [SP_JSX.jsxs(CleanerAction, { label: t(allShownCachesSelected ? "cleaner.deselectCaches" : "cleaner.selectCaches"), disabled: selectionDisabled || shownCaches.length === 0, onActivate: () => setSelected((value) => toggleCaches(shownEntries, value)), style: { padding: "5px 3px", minHeight: 30, background: "transparent", boxShadow: "none", justifyContent: "flex-start", color: theme.color.textMuted }, children: [SP_JSX.jsx(LuCheck, { size: 15, style: { flexShrink: 0 } }), SP_JSX.jsx("span", { children: t(allShownCachesSelected ? "cleaner.deselectCaches" : "cleaner.selectCaches") })] }), selected.size > 0 && SP_JSX.jsx("div", { style: { width: 32, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: t("cleaner.clearSelection"), disabled: selectionDisabled, onActivate: () => setSelected(new Set()), style: { padding: 6, minHeight: 30, background: "transparent", boxShadow: "none" }, children: SP_JSX.jsx(LuX, { size: 15 }) }) })] }), shown.map((game) => SP_JSX.jsx(GameRow$1, { game: game, selected: selected, disabled: selectionDisabled, onCaches: () => setSelected((value) => toggleCaches(game.entries, value)), onEntry: (entry) => setSelected((value) => toggleEntry(entry, value)) }, game.id)), shown.length === 0 && SP_JSX.jsx("div", { style: { ...caption, padding: 12 }, children: t(games.length === 0 ? (state?.entries.length ? "cleaner.noCleanable" : "cleaner.empty") : filter === "cleanable" && !query ? "cleaner.noCleanable" : filter === "not_installed" && !query ? "cleaner.noRecommendations" : "cleaner.noMatch") }), (plan || chosen.length > 0) && SP_JSX.jsx(CleanerActionTray, { children: plan ? SP_JSX.jsxs(DFL.Focusable, { "flow-children": "column", onCancel: (event) => { event.stopPropagation(); controller.dismissPlan(); }, style: column, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, fontWeight: 600 }, children: t("cleaner.confirm.title") }), SP_JSX.jsx(Notice, { warning: true, children: t("cleaner.confirm.prefixWarning") }), SP_JSX.jsxs(CleanerAction, { label: t("cleaner.confirm.delete"), danger: true, disabled: busy, onActivate: () => void controller.execute(true), children: [SP_JSX.jsx(LuTrash2, { size: 16 }), SP_JSX.jsx("span", { style: { flex: 1, textAlign: "left" }, children: t("cleaner.confirm.delete") }), SP_JSX.jsx("span", { style: { whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }, children: formatBytes(plan.estimated_bytes, lang) })] }), SP_JSX.jsx(CleanerAction, { label: t("cleaner.cancel"), disabled: busy, onActivate: controller.dismissPlan, children: t("cleaner.cancel") })] }) : SP_JSX.jsxs(CleanerAction, { label: t("cleaner.cleanSelection"), primary: true, disabled: busy, onActivate: () => void controller.prepare(chosen.map((entry) => entry.id)), children: [SP_JSX.jsx("span", { style: { flex: 1, textAlign: "left" }, children: t("cleaner.cleanSelection") }), SP_JSX.jsx("span", { style: { fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }, children: formatBytes(chosenBytes, lang) })] }) })] })] }) }));
+                        })] }), hasScanData && !scanId && !busy && SP_JSX.jsxs(CleanerAction, { label: t("cleaner.scanAfterCleanup"), primary: true, onActivate: () => void controller.scan(), children: [SP_JSX.jsx(LuRefreshCw, { size: 16 }), t("cleaner.scanAfterCleanup")] }), hasScanData && !calculatingGames && SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: 8 }, children: [SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0 }, children: SP_JSX.jsxs(CleanerAction, { label: t("cleaner.filterLabel"), onActivate: () => setFilter((value) => FILTERS[(FILTERS.indexOf(value) + 1) % FILTERS.length]), style: { justifyContent: "flex-start", paddingInline: 9 }, children: [SP_JSX.jsx(LuFilter, { size: 14, style: { flexShrink: 0 } }), SP_JSX.jsx("span", { children: t(`cleaner.filter.${filter}`) }), SP_JSX.jsx("span", { style: { ...caption, marginLeft: "auto" }, children: shown.length })] }) }), SP_JSX.jsx("div", { style: { width: 36, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: `${t("cleaner.sortLabel")}: ${t(`cleaner.sort.${sort}`)}`, onActivate: () => setSort((value) => value === "size" ? "name" : "size"), style: { padding: 8 }, children: SP_JSX.jsx(LuArrowDownUp, { size: 15 }) }) }), SP_JSX.jsx("div", { style: { width: 42, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: t("cleaner.search"), onActivate: () => { setSearchOpen((value) => !value); setQuery(""); }, style: { padding: 10 }, children: SP_JSX.jsx(LuSearch, { size: 16, color: searchOpen ? theme.color.accent : undefined }) }) })] }), searchOpen && SP_JSX.jsx(DFL.TextField, { label: t("cleaner.search"), value: query, onChange: (event) => setQuery(event.target.value) }), helpVisible && SP_JSX.jsxs("div", { style: { ...theme.card, ...column, gap: 6, padding: "9px 10px" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "flex-start", gap: 8 }, children: [SP_JSX.jsx(LuInfo, { size: 15, color: theme.color.accent, style: { flexShrink: 0, marginTop: 1 } }), SP_JSX.jsxs("div", { style: { ...caption, display: "flex", flexDirection: "column", gap: 3 }, children: [SP_JSX.jsx("span", { children: t("cleaner.cacheHint") }), SP_JSX.jsx("span", { children: t("cleaner.prefixHint") })] })] }), SP_JSX.jsx(CleanerAction, { label: t("cleaner.help.dismiss"), onActivate: () => { writeFlag(HELP_DISMISSED_KEY, true); setHelpVisible(false); }, style: { minHeight: 28, padding: "5px 8px", background: "transparent", boxShadow: "none", color: theme.color.accent }, children: t("cleaner.help.dismiss") })] }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: 8 }, children: [SP_JSX.jsxs(CleanerAction, { label: t(allShownCachesSelected ? "cleaner.deselectCaches" : "cleaner.selectCaches"), disabled: selectionDisabled || shownCaches.length === 0, onActivate: () => setSelected((value) => toggleCaches(shownEntries, value)), style: { padding: "5px 3px", minHeight: 30, background: "transparent", boxShadow: "none", justifyContent: "flex-start", color: theme.color.textMuted }, children: [SP_JSX.jsx(LuCheck, { size: 15, style: { flexShrink: 0 } }), SP_JSX.jsx("span", { children: t(allShownCachesSelected ? "cleaner.deselectCaches" : "cleaner.selectCaches") })] }), selected.size > 0 && SP_JSX.jsx("div", { style: { width: 32, flexShrink: 0 }, children: SP_JSX.jsx(CleanerAction, { label: t("cleaner.clearSelection"), disabled: selectionDisabled, onActivate: () => setSelected(new Set()), style: { padding: 6, minHeight: 30, background: "transparent", boxShadow: "none" }, children: SP_JSX.jsx(LuX, { size: 15 }) }) })] }), shown.map((game) => SP_JSX.jsx(GameRow$1, { game: game, selected: selected, disabled: selectionDisabled, onCaches: () => setSelected((value) => toggleCaches(game.entries, value)), onEntry: (entry) => setSelected((value) => toggleEntry(entry, value)) }, game.id)), shown.length === 0 && SP_JSX.jsx("div", { style: { ...caption, padding: 12 }, children: t(games.length === 0 ? (state?.entries.length ? "cleaner.noCleanable" : "cleaner.empty") : filter === "cleanable" && !query ? "cleaner.noCleanable" : filter === "not_installed" && !query ? "cleaner.noRecommendations" : "cleaner.noMatch") }), (plan || chosen.length > 0) && SP_JSX.jsx(CleanerActionTray, { children: plan ? SP_JSX.jsxs(DFL.Focusable, { "flow-children": "column", onCancel: (event) => { event.stopPropagation(); controller.dismissPlan(); }, style: column, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, fontWeight: 600 }, children: t("cleaner.confirm.title") }), SP_JSX.jsx(Notice, { warning: true, children: t("cleaner.confirm.prefixWarning") }), SP_JSX.jsxs(CleanerAction, { label: t("cleaner.confirm.delete"), danger: true, disabled: busy, onActivate: () => void controller.execute(true), children: [SP_JSX.jsx(LuTrash2, { size: 16 }), SP_JSX.jsx("span", { style: { flex: 1, textAlign: "left" }, children: t("cleaner.confirm.delete") }), SP_JSX.jsx("span", { style: { whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }, children: formatBytes(plan.estimated_bytes, lang) })] }), SP_JSX.jsx(CleanerAction, { label: t("cleaner.cancel"), disabled: busy, preferredFocus: true, onActivate: controller.dismissPlan, children: t("cleaner.cancel") })] }) : SP_JSX.jsxs(CleanerAction, { label: t("cleaner.cleanSelection"), primary: true, disabled: busy, onActivate: () => void controller.prepare(chosen.map((entry) => entry.id)), children: [SP_JSX.jsx("span", { style: { flex: 1, textAlign: "left" }, children: t("cleaner.cleanSelection") }), SP_JSX.jsx("span", { style: { fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }, children: formatBytes(chosenBytes, lang) })] }) })] })] }) }));
 };
 
+// Steam's navigation tree reads childFocusDisabled (GetFocusable); Decky's typings omit it.
+const NavigationGroup = DFL.Focusable;
+// Inactive tabs stay mounted to keep their state; Steam would still walk into them.
+const CleanupPanel = ({ hidden, children }) => (SP_JSX.jsx(NavigationGroup, { role: "tabpanel", "aria-hidden": hidden, childFocusDisabled: hidden, style: { display: hidden ? "none" : "block" }, children: children }));
 const CleanupHubView = ({ games, media, proton, onRefresh, refreshing }) => {
     const { t, lang } = useI18n();
     const [tab, setTab] = SP_REACT.useState("games");
@@ -19885,7 +20385,7 @@ const CleanupHubView = ({ games, media, proton, onRefresh, refreshing }) => {
         { tab: "media", bytes: media.items.reduce((sum, item) => sum + (item.bytes ?? 0), 0), loading: media.loading, icon: LuImages },
         { tab: "proton", bytes: proton.state?.totals.bytes ?? 0, loading: proton.loading || proton.pending === "scan", icon: LuAtom },
     ];
-    return SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: cleanerColumn, children: [SP_JSX.jsxs("div", { style: { ...theme.card, padding: 14 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [SP_JSX.jsxs("div", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: 15, fontWeight: 650 }, children: t("cleaner.title") }), SP_JSX.jsx("div", { style: cleanerCaption, children: t("cleaner.subtitle") })] }), SP_JSX.jsx("div", { style: { width: 34 }, children: SP_JSX.jsx(CleanerButton, { label: t("cleaner.scanAgain"), disabled: refreshing, onActivate: onRefresh, style: { minHeight: 32, padding: 7, background: "transparent", boxShadow: "none" }, children: SP_JSX.jsx(LuRefreshCw, { size: 15 }) }) })] }), SP_JSX.jsx("div", { role: "tablist", "aria-label": t("cleaner.categories"), style: { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7, marginTop: 12 }, children: summaries.map(({ tab: category, bytes, loading, icon: Icon }) => SP_JSX.jsxs(CleanerButton, { role: "tab", label: t(`cleaner.tab.${category}`), selected: tab === category, onActivate: () => setTab(category), style: { ...theme.tile, minHeight: 58, padding: "9px 8px", alignItems: "stretch", justifyContent: "center", flexDirection: "column", gap: 4 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 5, ...cleanerCaption }, children: [SP_JSX.jsx(Icon, { size: 13, color: theme.color.accent }), SP_JSX.jsx("span", { children: t(`cleaner.tab.${category}`) })] }), SP_JSX.jsx("div", { style: { fontSize: loading ? 12 : 14, fontWeight: 650, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "left" }, children: loading ? t("cleaner.calculating") : formatBytes(bytes, lang) })] }, category)) })] }), SP_JSX.jsx("div", { role: "tabpanel", "aria-hidden": tab !== "games", style: { display: tab === "games" ? "block" : "none" }, children: SP_JSX.jsx(SteamCleanerView, { controller: games, embedded: true }) }), SP_JSX.jsx("div", { role: "tabpanel", "aria-hidden": tab !== "media", style: { display: tab === "media" ? "block" : "none" }, children: SP_JSX.jsx(MediaCleanerView, { controller: media }) }), SP_JSX.jsx("div", { role: "tabpanel", "aria-hidden": tab !== "proton", style: { display: tab === "proton" ? "block" : "none" }, children: SP_JSX.jsx(ProtonCleanerView, { controller: proton }) })] }) });
+    return SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: cleanerColumn, children: [SP_JSX.jsxs("div", { style: { ...theme.card, padding: 14 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 8 }, children: [SP_JSX.jsxs("div", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: 15, fontWeight: 650 }, children: t("cleaner.title") }), SP_JSX.jsx("div", { style: cleanerCaption, children: t("cleaner.subtitle") })] }), SP_JSX.jsx("div", { style: { width: 34 }, children: SP_JSX.jsx(CleanerButton, { label: t("cleaner.scanAgain"), disabled: refreshing, onActivate: onRefresh, style: { minHeight: 32, padding: 7, background: "transparent", boxShadow: "none" }, children: SP_JSX.jsx(LuRefreshCw, { size: 15 }) }) })] }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", role: "tablist", "aria-label": t("cleaner.categories"), style: { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7, marginTop: 12 }, children: summaries.map(({ tab: category, bytes, loading, icon: Icon }) => SP_JSX.jsxs(CleanerButton, { role: "tab", label: t(`cleaner.tab.${category}`), selected: tab === category, onActivate: () => setTab(category), style: { ...theme.tile, minHeight: 58, padding: "9px 8px", alignItems: "stretch", justifyContent: "center", flexDirection: "column", gap: 4 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 5, ...cleanerCaption }, children: [SP_JSX.jsx(Icon, { size: 13, color: theme.color.accent }), SP_JSX.jsx("span", { children: t(`cleaner.tab.${category}`) })] }), SP_JSX.jsx("div", { style: { fontSize: loading ? 12 : 14, fontWeight: 650, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "left" }, children: loading ? t("cleaner.calculating") : formatBytes(bytes, lang) })] }, category)) })] }), SP_JSX.jsx(CleanupPanel, { hidden: tab !== "games", children: SP_JSX.jsx(SteamCleanerView, { controller: games, embedded: true }) }), SP_JSX.jsx(CleanupPanel, { hidden: tab !== "media", children: SP_JSX.jsx(MediaCleanerView, { controller: media }) }), SP_JSX.jsx(CleanupPanel, { hidden: tab !== "proton", children: SP_JSX.jsx(ProtonCleanerView, { controller: proton }) })] }) });
 };
 
 class MediaGatewayError extends Error {
@@ -20746,7 +21246,7 @@ function AmbienteSection() {
 var keyboardsPreview = 'http://127.0.0.1:1337/plugins/Panel de Control/assets/keyboards-preview-bc88ff7b.jpg';
 
 function SegmentedTabs({ label, tabs, value, onChange }) {
-    return (SP_JSX.jsx(DFL.Focusable, { role: "tablist", "aria-label": label, "flow-children": "horizontal", style: {
+    return (SP_JSX.jsx(DFL.Focusable, { role: "tablist", "aria-label": label, "flow-children": "row", style: {
             display: "grid",
             gridTemplateColumns: `repeat(${tabs.length}, 1fr)`,
             gap: 3,
@@ -21053,6 +21553,7 @@ function ThemePatchControl({ patch, labels, disabled = false, onChange }) {
     return SP_JSX.jsx(ReadOnlyPatch, { label: label, value: patch.rawType });
 }
 
+const gamepadNavigation = createThemeNavigationAccess();
 const THEME_CONTROL_RESET = `
 [data-pdc-theme-settings] { color: ${theme.color.textPrimary} !important; }
 [data-pdc-theme-settings] [data-pdc-theme-muted] { color: ${theme.color.textMuted} !important; }
@@ -21190,7 +21691,7 @@ function ThemeConfirmation({ confirmation, displayName, actionsBlocked, onCancel
         : updating
             ? "themes.update.confirm.ok"
             : "themes.install.confirm.ok";
-    return (SP_JSX.jsxs("div", { role: "group", "aria-labelledby": "theme-confirmation-title", "aria-describedby": "theme-confirmation-description", style: destructive ? DESTRUCTIVE_CONFIRMATION_SURFACE_STYLE : CONFIRMATION_SURFACE_STYLE, children: [SP_JSX.jsxs("div", { style: { display: "grid", gridTemplateColumns: destructive ? "minmax(0, 1fr)" : "42px minmax(0, 1fr) auto", alignItems: "center", gap: theme.space.md }, children: [!destructive ? (SP_JSX.jsx("span", { "aria-hidden": true, style: CONFIRMATION_ICON_STYLE, children: updating ? SP_JSX.jsx(LuRefreshCw, { size: 19 }) : SP_JSX.jsx(LuDownload, { size: 19 }) })) : null, SP_JSX.jsxs("div", { style: { minWidth: 0 }, children: [SP_JSX.jsx("div", { id: "theme-confirmation-title", style: { fontSize: 18, lineHeight: 1.15, fontWeight: 780 }, children: t(titleKey, { name: displayName }) }), SP_JSX.jsx("div", { id: "theme-confirmation-description", "data-pdc-theme-muted": true, style: { marginTop: 5, lineHeight: 1.4 }, children: t(descriptionKey) })] }), confirmation.kind !== "uninstall" ? (SP_JSX.jsx("span", { style: VERSION_PILL_STYLE, children: t("themes.remote.card.version", { version: confirmation.version }) })) : null] }), SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "flex-end", gap: theme.space.sm, marginTop: theme.space.md, marginLeft: destructive ? 0 : 54 }, children: [SP_JSX.jsx(DFL.DialogButton, { style: SECONDARY_CONFIRM_STYLE, onClick: onCancel, children: t("themes.install.confirm.cancel") }), SP_JSX.jsx(DFL.DialogButton, { style: destructive ? DESTRUCTIVE_CONFIRM_STYLE : PRIMARY_CONFIRM_STYLE, disabled: actionsBlocked, onClick: onConfirm, children: SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }, children: [destructive ? SP_JSX.jsx(LuTrash2, { size: 15, "aria-hidden": true }) : updating ? SP_JSX.jsx(LuRefreshCw, { size: 15, "aria-hidden": true }) : SP_JSX.jsx(LuDownload, { size: 15, "aria-hidden": true }), SP_JSX.jsx("span", { children: t(confirmKey) })] }) })] })] }));
+    return (SP_JSX.jsxs("div", { role: "group", "aria-labelledby": "theme-confirmation-title", "aria-describedby": "theme-confirmation-description", style: destructive ? DESTRUCTIVE_CONFIRMATION_SURFACE_STYLE : CONFIRMATION_SURFACE_STYLE, children: [SP_JSX.jsxs("div", { style: { display: "grid", gridTemplateColumns: destructive ? "minmax(0, 1fr)" : "42px minmax(0, 1fr) auto", alignItems: "center", gap: theme.space.md }, children: [!destructive ? (SP_JSX.jsx("span", { "aria-hidden": true, style: CONFIRMATION_ICON_STYLE, children: updating ? SP_JSX.jsx(LuRefreshCw, { size: 19 }) : SP_JSX.jsx(LuDownload, { size: 19 }) })) : null, SP_JSX.jsxs("div", { style: { minWidth: 0 }, children: [SP_JSX.jsx("div", { id: "theme-confirmation-title", style: { fontSize: 18, lineHeight: 1.15, fontWeight: 780 }, children: t(titleKey, { name: displayName }) }), SP_JSX.jsx("div", { id: "theme-confirmation-description", "data-pdc-theme-muted": true, style: { marginTop: 5, lineHeight: 1.4 }, children: t(descriptionKey) })] }), confirmation.kind !== "uninstall" ? (SP_JSX.jsx("span", { style: VERSION_PILL_STYLE, children: t("themes.remote.card.version", { version: confirmation.version }) })) : null] }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", justifyContent: "flex-end", gap: theme.space.sm, marginTop: theme.space.md, marginLeft: destructive ? 0 : 54 }, children: [SP_JSX.jsx(DFL.DialogButton, { "data-preferred-focus": true, style: SECONDARY_CONFIRM_STYLE, onClick: onCancel, children: t("themes.install.confirm.cancel") }), SP_JSX.jsx(DFL.DialogButton, { style: destructive ? DESTRUCTIVE_CONFIRM_STYLE : PRIMARY_CONFIRM_STYLE, disabled: actionsBlocked, onClick: onConfirm, children: SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }, children: [destructive ? SP_JSX.jsx(LuTrash2, { size: 15, "aria-hidden": true }) : updating ? SP_JSX.jsx(LuRefreshCw, { size: 15, "aria-hidden": true }) : SP_JSX.jsx(LuDownload, { size: 15, "aria-hidden": true }), SP_JSX.jsx("span", { children: t(confirmKey) })] }) })] })] }));
 }
 function ThemeDetailsModal({ themeId, closeModal }) {
     const { lang, t } = useI18n();
@@ -21201,19 +21702,19 @@ function ThemeDetailsModal({ themeId, closeModal }) {
     const patchLabels = useThemePatchLabels(themeId, card?.cssLoaderTheme?.name, card?.installedVersion);
     const installOfferRef = SP_REACT.useRef(null);
     const headingRef = SP_REACT.useRef(null);
+    const bodyRef = SP_REACT.useRef(null);
     const previousInstalledRef = SP_REACT.useRef(undefined);
+    const switchConfirmation = (next) => {
+        refocusWhenRemoved(bodyRef.current?.querySelector(".gpfocus") ?? null);
+        setPendingConfirmation(next);
+    };
     SP_REACT.useEffect(() => {
         const installed = card?.installed;
         if (previousInstalledRef.current === true && installed === false) {
             const installAction = installOfferRef.current?.querySelector("button,[role='button'],[tabindex]");
             const target = installAction ?? headingRef.current;
-            if (target) {
-                const focusController = DFL.getFocusNavController();
-                if (focusController?.FocusElement)
-                    focusController.FocusElement(target);
-                else
-                    target.focus();
-            }
+            if (target)
+                gamepadNavigation.focus(target);
         }
         previousInstalledRef.current = installed;
     }, [card?.installed]);
@@ -21256,8 +21757,8 @@ function ThemeDetailsModal({ themeId, closeModal }) {
         ? pendingConfirmation
         : null;
     const activeConfirmation = activeOfferConfirmation ?? activeUninstallConfirmation;
-    const cancelOrClose = activeConfirmation ? () => setPendingConfirmation(null) : closeModal;
-    return (SP_JSX.jsx(DFL.ModalRoot, { bAllowFullSize: fullSizeLayout, onCancel: cancelOrClose, onEscKeypress: cancelOrClose, children: SP_JSX.jsx(FocusRoot, { style: fullSizeLayout ? { minHeight: "100%" } : undefined, children: SP_JSX.jsx(DFL.Focusable, { style: fullSizeLayout ? { minHeight: "100%" } : undefined, children: SP_JSX.jsxs("div", { "data-testid": "theme-settings-content", "data-pdc-theme-settings": "true", style: { maxWidth: fullSizeLayout ? 760 : 620, margin: "0 auto", padding: fullSizeLayout ? "8px 8px 54px" : "4px 8px 18px", color: theme.color.textPrimary }, children: [SP_JSX.jsx("style", { children: THEME_CONTROL_RESET }), SP_JSX.jsxs("header", { "data-pdc-theme-cover-header": cover ? "true" : undefined, style: {
+    const cancelOrClose = activeConfirmation ? () => switchConfirmation(null) : closeModal;
+    return (SP_JSX.jsx(DFL.ModalRoot, { bAllowFullSize: fullSizeLayout, onCancel: cancelOrClose, onEscKeypress: cancelOrClose, children: SP_JSX.jsx(FocusRoot, { style: fullSizeLayout ? { minHeight: "100%" } : undefined, children: SP_JSX.jsx(DFL.Focusable, { ref: bodyRef, style: fullSizeLayout ? { minHeight: "100%" } : undefined, children: SP_JSX.jsxs("div", { "data-testid": "theme-settings-content", "data-pdc-theme-settings": "true", style: { maxWidth: fullSizeLayout ? 760 : 620, margin: "0 auto", padding: fullSizeLayout ? "8px 8px 54px" : "4px 8px 18px", color: theme.color.textPrimary }, children: [SP_JSX.jsx("style", { children: THEME_CONTROL_RESET }), SP_JSX.jsxs("header", { "data-pdc-theme-cover-header": cover ? "true" : undefined, style: {
                                 ...theme.card,
                                 position: "relative",
                                 isolation: "isolate",
@@ -21283,27 +21784,27 @@ function ThemeDetailsModal({ themeId, closeModal }) {
                                                 boxShadow: cover ? "inset 0 0 0 1px rgba(255,255,255,0.18)" : `inset 0 0 0 1px rgba(${theme.color.accentRgb},0.24)`,
                                             }, children: SP_JSX.jsx(LuPaintbrush, { size: 20 }) }), SP_JSX.jsx("h2", { ref: headingRef, tabIndex: -1, style: { flex: 1, minWidth: 0, fontSize: fullSizeLayout ? 32 : 28, lineHeight: 1.05, margin: 0, letterSpacing: -0.8 }, children: displayName }), card.installed ? (SP_JSX.jsx("div", { "data-pdc-theme-action": "true", style: HEADER_ACTION_STYLE, children: SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: activationBlocked, onClick: () => void (card.active ? controller.deactivate(card.id) : controller.activate(card.id)), children: [card.active ? SP_JSX.jsx(LuPower, { size: 14, "aria-hidden": true }) : SP_JSX.jsx(LuSparkles, { size: 14, "aria-hidden": true }), " ", t(card.active
                                                         ? deactivating ? "themes.action.deactivating" : "themes.action.deactivate"
-                                                        : activating ? "themes.action.activating" : "themes.action.activate")] }) })) : offer && !activeOfferConfirmation ? (SP_JSX.jsx("div", { ref: installOfferRef, "data-pdc-theme-action": "true", style: HEADER_ACTION_STYLE, children: SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: actionsBlocked, onClick: () => setPendingConfirmation(offer), children: [SP_JSX.jsx(LuDownload, { size: 14, "aria-hidden": true }), " ", t(installing ? "themes.action.installing" : "themes.action.install")] }) })) : null] }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { position: "relative", fontSize: 14, lineHeight: 1.45 }, children: description }), SP_JSX.jsxs("div", { "data-pdc-theme-muted": true, style: { position: "relative", display: "flex", flexWrap: "wrap", gap: 7, fontSize: theme.font.caption }, children: [card.installed && card.installedVersion ? SP_JSX.jsx("span", { children: t("themes.version.installed", { version: formatVersion(card.installedVersion) }) }) : null, SP_JSX.jsx("span", { children: t("themes.version.published", { version: formatVersion(card.release.publishedVersion) }) })] })] }), !fullSizeLayout ? SP_JSX.jsx("div", { "aria-hidden": true, style: { height: 1, margin: `0 ${theme.space.xs}px ${theme.space.md}px`, background: theme.color.hairline } }) : null, !cssReady ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { role: "status", "aria-live": "polite", children: t(`themes.cssLoader.${controller.snapshot.status}`) }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, marginTop: theme.space.md }, children: [controller.snapshot.status === "missing" ? (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => DFL.Navigation.Navigate("/decky/store"), children: t("themes.cssLoader.openStore") })) : null, SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: controller.refreshing, onClick: () => void controller.refresh(), children: [SP_JSX.jsx(LuRefreshCw, { size: 14, "aria-hidden": true }), " ", t(controller.refreshing ? "themes.loading" : "themes.retry")] })] })] })) : null, controller.publication.status === "cached" ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { role: "status", "data-pdc-theme-warning": true, children: t("themes.remote.cached") }), SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: operationBusy, onClick: () => void controller.refreshPublication(), children: t("themes.remote.retry") }) })] })) : null, controller.sectionHandoff && !controller.error ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", role: "status", style: STATUS_SURFACE, children: SP_JSX.jsx("div", { "data-pdc-theme-muted": true, children: t("themes.operation.sectionHandoff", {
+                                                        : activating ? "themes.action.activating" : "themes.action.activate")] }) })) : offer && !activeOfferConfirmation ? (SP_JSX.jsx("div", { ref: installOfferRef, "data-pdc-theme-action": "true", style: HEADER_ACTION_STYLE, children: SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: actionsBlocked, onClick: () => switchConfirmation(offer), children: [SP_JSX.jsx(LuDownload, { size: 14, "aria-hidden": true }), " ", t(installing ? "themes.action.installing" : "themes.action.install")] }) })) : null] }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { position: "relative", fontSize: 14, lineHeight: 1.45 }, children: description }), SP_JSX.jsxs("div", { "data-pdc-theme-muted": true, style: { position: "relative", display: "flex", flexWrap: "wrap", gap: 7, fontSize: theme.font.caption }, children: [card.installed && card.installedVersion ? SP_JSX.jsx("span", { children: t("themes.version.installed", { version: formatVersion(card.installedVersion) }) }) : null, SP_JSX.jsx("span", { children: t("themes.version.published", { version: formatVersion(card.release.publishedVersion) }) })] })] }), !fullSizeLayout ? SP_JSX.jsx("div", { "aria-hidden": true, style: { height: 1, margin: `0 ${theme.space.xs}px ${theme.space.md}px`, background: theme.color.hairline } }) : null, !cssReady ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { role: "status", "aria-live": "polite", children: t(`themes.cssLoader.${controller.snapshot.status}`) }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, marginTop: theme.space.md }, children: [controller.snapshot.status === "missing" ? (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => DFL.Navigation.Navigate("/decky/store"), children: t("themes.cssLoader.openStore") })) : null, SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: controller.refreshing, onClick: () => void controller.refresh(), children: [SP_JSX.jsx(LuRefreshCw, { size: 14, "aria-hidden": true }), " ", t(controller.refreshing ? "themes.loading" : "themes.retry")] })] })] })) : null, controller.publication.status === "cached" ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { role: "status", "data-pdc-theme-warning": true, children: t("themes.remote.cached") }), SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: operationBusy, onClick: () => void controller.refreshPublication(), children: t("themes.remote.retry") }) })] })) : null, controller.sectionHandoff && !controller.error ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", role: "status", style: STATUS_SURFACE, children: SP_JSX.jsx("div", { "data-pdc-theme-muted": true, children: t("themes.operation.sectionHandoff", {
                                     owner: controller.sectionHandoff.owner,
                                     others: controller.sectionHandoff.others.join(", "),
-                                }) }) })) : null, controller.error ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", role: "alert", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { "data-pdc-theme-warning": true, children: t(controller.recoveryBlocked ? "themes.recovery.blocked" : "themes.operation.failed") }), controller.errorCode ? (SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, fontSize: theme.font.caption }, children: t("themes.operation.code", { code: controller.errorCode }) })) : null] })) : null, card.release.compatibility !== "compatible" ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: SP_JSX.jsx("div", { "data-pdc-theme-warning": true, children: t(`themes.remote.${card.release.compatibility}`) }) })) : null, releaseNote ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { style: { fontWeight: 750 }, children: t("themes.remote.notes") }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, lineHeight: 1.45 }, children: releaseNote })] })) : null, offer && activeOfferConfirmation ? (SP_JSX.jsx(ThemeConfirmation, { confirmation: activeOfferConfirmation, displayName: displayName, actionsBlocked: actionsBlocked, onCancel: () => setPendingConfirmation(null), onConfirm: () => {
-                                setPendingConfirmation(null);
+                                }) }) })) : null, controller.error ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", role: "alert", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { "data-pdc-theme-warning": true, children: t(controller.recoveryBlocked ? "themes.recovery.blocked" : "themes.operation.failed") }), controller.errorCode ? (SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, fontSize: theme.font.caption }, children: t("themes.operation.code", { code: controller.errorCode }) })) : null] })) : null, card.release.compatibility !== "compatible" ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: SP_JSX.jsx("div", { "data-pdc-theme-warning": true, children: t(`themes.remote.${card.release.compatibility}`) }) })) : null, releaseNote ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { style: { fontWeight: 750 }, children: t("themes.remote.notes") }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, lineHeight: 1.45 }, children: releaseNote })] })) : null, offer && activeOfferConfirmation ? (SP_JSX.jsx(ThemeConfirmation, { confirmation: activeOfferConfirmation, displayName: displayName, actionsBlocked: actionsBlocked, onCancel: () => switchConfirmation(null), onConfirm: () => {
+                                switchConfirmation(null);
                                 void controller.install(card.id, { version: activeOfferConfirmation.version });
                             } })) : null, offer && card.installed && !activeOfferConfirmation ? (SP_JSX.jsxs("div", { role: "group", "aria-labelledby": "theme-update-ready-label", style: {
                                 ...STATUS_SURFACE,
                                 ...theme.card,
                                 background: theme.color.surfaceRaised,
                                 boxShadow: `inset 0 0 0 1px rgba(${theme.color.accentRgb},0.16)`,
-                            }, children: [SP_JSX.jsx("div", { id: "theme-update-ready-label", style: { fontWeight: 750 }, children: t("themes.update.ready") }), SP_JSX.jsx("div", { style: { marginTop: theme.space.md }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: actionsBlocked, onClick: () => setPendingConfirmation(offer), children: t(installing ? "themes.action.updating" : "themes.action.update") }) })] })) : null, card.installed && groups.length === 0 ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: SP_JSX.jsx("span", { "data-pdc-theme-muted": true, children: t("themes.patches.empty") }) })) : null, card.installed && groups.length > 0 ? (SP_JSX.jsx("div", { style: { display: "flex", flexDirection: "column", gap: 22 }, children: groups.map((group) => {
+                            }, children: [SP_JSX.jsx("div", { id: "theme-update-ready-label", style: { fontWeight: 750 }, children: t("themes.update.ready") }), SP_JSX.jsx("div", { style: { marginTop: theme.space.md }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: actionsBlocked, onClick: () => switchConfirmation(offer), children: t(installing ? "themes.action.updating" : "themes.action.update") }) })] })) : null, card.installed && groups.length === 0 ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: SP_JSX.jsx("span", { "data-pdc-theme-muted": true, children: t("themes.patches.empty") }) })) : null, card.installed && groups.length > 0 ? (SP_JSX.jsx("div", { style: { display: "flex", flexDirection: "column", gap: 22 }, children: groups.map((group) => {
                                 const headingId = `theme-patch-group-${group.id}`;
                                 return (SP_JSX.jsxs("section", { "aria-labelledby": headingId, style: { minWidth: 0 }, children: [SP_JSX.jsx("h3", { id: headingId, "data-pdc-theme-muted": true, style: { ...theme.sectionLabel, margin: `0 0 ${theme.space.sm}px` }, children: t(`themes.group.${group.id}`) }), group.id === "sections" || group.id === "extra" ? (SP_JSX.jsx("p", { "data-pdc-theme-muted": true, style: { margin: `0 0 ${theme.space.sm}px`, lineHeight: 1.4 }, children: t(`themes.group.${group.id}Description`) })) : null, SP_JSX.jsx("div", { role: "list", style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: group.patches.map((patch) => (SP_JSX.jsx("div", { role: "listitem", children: SP_JSX.jsx(ThemePatchControl, { patch: patch, labels: labelsForPatch(patchLabels, patch.name, lang), disabled: actionsBlocked, onChange: (value) => void controller.setPatch(card.id, patch.name, value) }) }, patch.name))) })] }, group.id));
-                            }) })) : null, card.installed && cssReady ? (SP_JSX.jsx("div", { style: { marginTop: theme.space.section, marginBottom: theme.space.sm }, children: activeUninstallConfirmation ? (SP_JSX.jsx(ThemeConfirmation, { confirmation: activeUninstallConfirmation, displayName: displayName, actionsBlocked: actionsBlocked, onCancel: () => setPendingConfirmation(null), onConfirm: () => {
-                                    setPendingConfirmation(null);
+                            }) })) : null, card.installed && cssReady ? (SP_JSX.jsx("div", { style: { marginTop: theme.space.section, marginBottom: theme.space.sm }, children: activeUninstallConfirmation ? (SP_JSX.jsx(ThemeConfirmation, { confirmation: activeUninstallConfirmation, displayName: displayName, actionsBlocked: actionsBlocked, onCancel: () => switchConfirmation(null), onConfirm: () => {
+                                    switchConfirmation(null);
                                     void controller.uninstall(card.id);
-                                } })) : (SP_JSX.jsx(DFL.DialogButton, { style: DELETE_ACTION_STYLE, disabled: actionsBlocked, onClick: () => setPendingConfirmation({ kind: "uninstall" }), children: SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }, children: [SP_JSX.jsx(LuTrash2, { size: 15, "aria-hidden": true }), SP_JSX.jsx("span", { children: t(uninstalling ? "themes.action.deleting" : "themes.action.delete") })] }) })) })) : null] }) }) }) }));
+                                } })) : (SP_JSX.jsx(DFL.DialogButton, { style: DELETE_ACTION_STYLE, disabled: actionsBlocked, onClick: () => switchConfirmation({ kind: "uninstall" }), children: SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }, children: [SP_JSX.jsx(LuTrash2, { size: 15, "aria-hidden": true }), SP_JSX.jsx("span", { children: t(uninstalling ? "themes.action.deleting" : "themes.action.delete") })] }) })) })) : null] }) }) }) }));
 }
 function openThemeDetailsModal(themeId, onClosed) {
-    DFL.showModal(SP_JSX.jsx(ThemeDetailsModal, { themeId: themeId }), window, { fnOnClose: onClosed });
+    showModal(SP_JSX.jsx(ThemeDetailsModal, { themeId: themeId }), window, { fnOnClose: onClosed });
 }
 
 function TemasSection() {
@@ -21541,7 +22042,7 @@ const ICONS$3 = {
 };
 
 /** Selectable icon grid shared by the view editor and the power-preset manager. */
-const IconPickerGrid = ({ keys, value, renderIcon, onPick }) => (SP_JSX.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: keys.map((key) => {
+const IconPickerGrid = ({ keys, value, renderIcon, onPick }) => (SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: keys.map((key) => {
         const on = value === key;
         return (SP_JSX.jsx(DFL.Focusable, { "aria-label": key, onActivate: () => onPick(key), onClick: () => onPick(key), style: {
                 width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center",
@@ -21573,7 +22074,7 @@ const ViewEditorBody = ({ viewId, closeModal }) => {
                             padding: `${theme.space.xs}px ${theme.space.md}px`, borderRadius: theme.radius.sm,
                             background: theme.color.accent, color: theme.color.onAccent, fontWeight: 700,
                             fontSize: theme.font.body, cursor: "pointer", whiteSpace: "nowrap",
-                        }, "aria-label": t("customize.views.done"), onActivate: () => closeModal?.(), onClick: () => closeModal?.(), children: [SP_JSX.jsx(LuCheck, { size: 16 }), " ", t("customize.views.done")] })] }), SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("customize.views.name") }), SP_JSX.jsx(DFL.TextField, { value: view.name, onChange: (e) => renameView(viewId, e.target.value), bShowClearAction: true }), SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: theme.space.xs }, children: t("customize.views.icon") }), SP_JSX.jsx(IconPickerGrid, { keys: VIEW_ICON_KEYS, value: view.icon, renderIcon: (key, size) => viewIconNode(key, size), onPick: (key) => setViewIcon(viewId, key) })] }), SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary }, children: t("customize.views.blocks") }), blocks.length === 0 ? (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("customize.views.empty") })) : (blocks.map((id, i) => (SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { display: "flex", color: theme.color.textMuted }, children: META.get(id)?.icon }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: label(id) }), SP_JSX.jsx(IconAction, { label: t("customize.moveUp"), color: i === 0 ? theme.color.textMuted : theme.color.accent, disabled: i === 0, onTap: () => moveBlock(id, -1), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.moveDown"), color: i === blocks.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: i === blocks.length - 1, onTap: () => moveBlock(id, 1), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.hide"), color: theme.color.danger, onTap: () => removeBlock(id), children: SP_JSX.jsx(LuX, { size: 18 }) })] }, id))))] }), SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary }, children: t("customize.views.add") }), CATEGORY_IDS.map((cat) => {
+                        }, "aria-label": t("customize.views.done"), onActivate: () => closeModal?.(), onClick: () => closeModal?.(), children: [SP_JSX.jsx(LuCheck, { size: 16 }), " ", t("customize.views.done")] })] }), SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("customize.views.name") }), SP_JSX.jsx(DFL.TextField, { value: view.name, onChange: (e) => renameView(viewId, e.target.value), bShowClearAction: true }), SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: theme.space.xs }, children: t("customize.views.icon") }), SP_JSX.jsx(IconPickerGrid, { keys: VIEW_ICON_KEYS, value: view.icon, renderIcon: (key, size) => viewIconNode(key, size), onPick: (key) => setViewIcon(viewId, key) })] }), SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary }, children: t("customize.views.blocks") }), blocks.length === 0 ? (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("customize.views.empty") })) : (blocks.map((id, i) => (SP_JSX.jsxs(RemovableRow, { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { display: "flex", color: theme.color.textMuted }, children: META.get(id)?.icon }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: label(id) }), SP_JSX.jsx(IconAction, { label: t("customize.moveUp"), color: i === 0 ? theme.color.textMuted : theme.color.accent, disabled: i === 0, onTap: () => moveBlock(id, -1), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.moveDown"), color: i === blocks.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: i === blocks.length - 1, onTap: () => moveBlock(id, 1), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.hide"), color: theme.color.danger, onTap: () => removeBlock(id), children: SP_JSX.jsx(LuX, { size: 18 }) })] }, id))))] }), SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary }, children: t("customize.views.add") }), CATEGORY_IDS.map((cat) => {
                         const meta = TABS.find((x) => x.id === cat);
                         const avail = pickableBlocksForSection(cat, desktopMode, getPresent(cat))
                             .map((block) => block.id)
@@ -21592,7 +22093,7 @@ const ViewEditorBody = ({ viewId, closeModal }) => {
 };
 const ViewEditorModal = ({ viewId, closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(ViewEditorBody, { viewId: viewId, closeModal: closeModal }) }) }));
 function openViewEditorModal(viewId) {
-    DFL.showModal(SP_JSX.jsx(ViewEditorModal, { viewId: viewId }), window);
+    showModal(SP_JSX.jsx(ViewEditorModal, { viewId: viewId }), window);
 }
 
 const Body$1 = ({ moduleName, body, onDisable, onHideInstead, closeModal }) => {
@@ -21602,7 +22103,7 @@ const Body$1 = ({ moduleName, body, onDisable, onHideInstead, closeModal }) => {
 };
 const DisableModuleModalRoot = (p) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: p.closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(Body$1, { ...p }) }) }));
 function openDisableModuleModal(opts) {
-    DFL.showModal(SP_JSX.jsx(DisableModuleModalRoot, { ...opts }), window);
+    showModal(SP_JSX.jsx(DisableModuleModalRoot, { ...opts }), window);
 }
 
 const HomeVisibilitySetting = ({ value, onChange, deviceHeaderValue, onDeviceHeaderChange }) => {
@@ -21760,7 +22261,7 @@ const viewTag = {
  *  The power column stays reserved (empty) on eye-only rows so they align. */
 const ExpansionRow = ({ label, icon, indent = 0, hidden, onToggleHide, off, onToggleOff }) => {
     const { t } = useI18n();
-    return (SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm, paddingLeft: theme.space.sm + indent, opacity: off || hidden ? 0.55 : 1 }, children: [SP_JSX.jsx("span", { style: { display: "flex", color: theme.color.textMuted }, children: icon }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: label }), SP_JSX.jsx(IconAction, { label: hidden ? t("customize.show") : t("customize.hide"), color: theme.color.textMuted, onTap: onToggleHide, children: hidden ? SP_JSX.jsx(LuEyeOff, { size: 17 }) : SP_JSX.jsx(LuEye, { size: 17 }) }), onToggleOff ? (SP_JSX.jsx(IconAction, { label: off ? t("customize.enable") : t("customize.disable"), color: off ? theme.color.textMuted : theme.color.accent, onTap: onToggleOff, children: SP_JSX.jsx(LuPower, { size: 17 }) })) : (SP_JSX.jsx("span", { style: { width: 30 } }))] }));
+    return (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: theme.space.sm, paddingLeft: theme.space.sm + indent, opacity: off || hidden ? 0.55 : 1 }, children: [SP_JSX.jsx("span", { style: { display: "flex", color: theme.color.textMuted }, children: icon }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: label }), SP_JSX.jsx(IconAction, { label: hidden ? t("customize.show") : t("customize.hide"), color: theme.color.textMuted, onTap: onToggleHide, children: hidden ? SP_JSX.jsx(LuEyeOff, { size: 17 }) : SP_JSX.jsx(LuEye, { size: 17 }) }), onToggleOff ? (SP_JSX.jsx(IconAction, { label: off ? t("customize.enable") : t("customize.disable"), color: off ? theme.color.textMuted : theme.color.accent, onTap: onToggleOff, children: SP_JSX.jsx(LuPower, { size: 17 }) })) : (SP_JSX.jsx("span", { style: { width: 30 } }))] }));
 };
 const AccentSwatch = ({ id, hex, on, label, children }) => (SP_JSX.jsx(DFL.Focusable, { "aria-label": label, onActivate: () => setAccent(id), onClick: () => setAccent(id), style: {
         width: 26, height: 26, borderRadius: 999, background: hex,
@@ -21771,7 +22272,7 @@ const AccentPicker = () => {
     const { t } = useI18n();
     const active = useAccent();
     const followed = themeAccentHex() ?? DEFAULT_ACCENT.hex;
-    return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary }, children: t("customize.accent") }), SP_JSX.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: [SP_JSX.jsx(AccentSwatch, { id: THEME_ACCENT_ID, hex: followed, on: active.id === THEME_ACCENT_ID, label: t("accent.default"), children: SP_JSX.jsx(LuSparkles, { size: 13, color: "#fff" }) }), ACCENTS.map((a) => (SP_JSX.jsx(AccentSwatch, { id: a.id, hex: a.hex, on: a.id === active.id, label: t(`accent.${a.id}`) }, a.id)))] }), SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("customize.accentHint") })] }));
+    return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary }, children: t("customize.accent") }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "grid", style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: [SP_JSX.jsx(AccentSwatch, { id: THEME_ACCENT_ID, hex: followed, on: active.id === THEME_ACCENT_ID, label: t("accent.default"), children: SP_JSX.jsx(LuSparkles, { size: 13, color: "#fff" }) }), ACCENTS.map((a) => (SP_JSX.jsx(AccentSwatch, { id: a.id, hex: a.hex, on: a.id === active.id, label: t(`accent.${a.id}`) }, a.id)))] }), SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("customize.accentHint") })] }));
 };
 const CustomizeBody = () => {
     const focusVisibilityRef = useCustomizeFocusVisibility();
@@ -21870,7 +22371,7 @@ const CustomizeBody = () => {
                                 return null;
                             const hidden = tabHidden(id);
                             const name = v.name || t("customize.views.namePlaceholder");
-                            return (SP_JSX.jsx("div", { style: { ...theme.card, padding: `${theme.space.sm + 2}px ${theme.space.md}px`, opacity: hidden ? 0.55 : 1 }, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", alignItems: "center", gap: theme.space.sm, flex: 1, minWidth: 0, cursor: editing ? "default" : "pointer" }, "aria-label": name, onActivate: () => !editing && openViewEditorModal(v.id), onClick: () => !editing && openViewEditorModal(v.id), children: [SP_JSX.jsx("span", { style: iconSquare(!hidden), children: viewIconNode(v.icon, 16) }), SP_JSX.jsxs("span", { style: { flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: theme.space.xs }, children: [SP_JSX.jsx("span", { style: { minWidth: 0, fontSize: theme.font.body, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: name }), SP_JSX.jsx("span", { style: viewTag, children: t("customize.views.tag") }), hidden && SP_JSX.jsxs("span", { style: { color: theme.color.textMuted, fontSize: theme.font.caption, whiteSpace: "nowrap" }, children: [" \u00B7 ", t("customize.state.background")] })] })] }), editing ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(IconAction, { label: t("customize.moveUp"), color: i === 0 ? theme.color.textMuted : theme.color.accent, disabled: i === 0, onTap: () => moveTab(id, -1), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.moveDown"), color: i === tabOrder.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: i === tabOrder.length - 1, onTap: () => moveTab(id, 1), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) })] })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 }, children: SP_JSX.jsx(IconAction, { label: hidden ? t("customize.show") : t("customize.hide"), color: theme.color.textMuted, onTap: () => setTabHidden(id), children: hidden ? SP_JSX.jsx(LuEyeOff, { size: 18 }) : SP_JSX.jsx(LuEye, { size: 18 }) }) }), SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 } }), SP_JSX.jsx(IconAction, { label: name, color: theme.color.textMuted, onTap: () => openViewEditorModal(v.id), children: SP_JSX.jsx(LuPencil, { size: 17 }) })] }))] }) }, id));
+                            return (SP_JSX.jsx("div", { style: { ...theme.card, padding: `${theme.space.sm + 2}px ${theme.space.md}px`, opacity: hidden ? 0.55 : 1 }, children: SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", alignItems: "center", gap: theme.space.sm, flex: 1, minWidth: 0, cursor: editing ? "default" : "pointer" }, "aria-label": name, onActivate: () => !editing && openViewEditorModal(v.id), onClick: () => !editing && openViewEditorModal(v.id), children: [SP_JSX.jsx("span", { style: iconSquare(!hidden), children: viewIconNode(v.icon, 16) }), SP_JSX.jsxs("span", { style: { flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: theme.space.xs }, children: [SP_JSX.jsx("span", { style: { minWidth: 0, fontSize: theme.font.body, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: name }), SP_JSX.jsx("span", { style: viewTag, children: t("customize.views.tag") }), hidden && SP_JSX.jsxs("span", { style: { color: theme.color.textMuted, fontSize: theme.font.caption, whiteSpace: "nowrap" }, children: [" \u00B7 ", t("customize.state.background")] })] })] }), editing ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(IconAction, { label: t("customize.moveUp"), color: i === 0 ? theme.color.textMuted : theme.color.accent, disabled: i === 0, onTap: () => moveTab(id, -1), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.moveDown"), color: i === tabOrder.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: i === tabOrder.length - 1, onTap: () => moveTab(id, 1), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) })] })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 }, children: SP_JSX.jsx(IconAction, { label: hidden ? t("customize.show") : t("customize.hide"), color: theme.color.textMuted, onTap: () => setTabHidden(id), children: hidden ? SP_JSX.jsx(LuEyeOff, { size: 18 }) : SP_JSX.jsx(LuEye, { size: 18 }) }) }), SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 } }), SP_JSX.jsx(IconAction, { label: name, color: theme.color.textMuted, onTap: () => openViewEditorModal(v.id), children: SP_JSX.jsx(LuPencil, { size: 17 }) })] }))] }) }, id));
                         }
                         const meta = catMeta(id);
                         const present = getPresent(id);
@@ -21884,7 +22385,7 @@ const CustomizeBody = () => {
                         const expandable = blocks.length > 0 && !off && !editing;
                         const open = openId === id && expandable;
                         const stateNote = off ? t("customize.state.disabled") : hidden ? t("customize.state.background") : "";
-                        return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: `${theme.space.sm + 2}px ${theme.space.md}px`, opacity: off ? 0.5 : 1 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", alignItems: "center", gap: theme.space.sm, flex: 1, minWidth: 0, cursor: expandable ? "pointer" : "default" }, "aria-label": meta ? t(meta.labelKey) : id, onActivate: () => expandable && setOpenId(open ? null : id), onClick: () => expandable && setOpenId(open ? null : id), children: [SP_JSX.jsx("span", { style: iconSquare(!off), children: meta?.icon(16) }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }, children: SP_JSX.jsxs("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: [t(meta.labelKey), stateNote && SP_JSX.jsxs("span", { style: { color: theme.color.textMuted, fontSize: theme.font.caption }, children: [" \u00B7 ", stateNote] })] }) })] }), editing ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(IconAction, { label: t("customize.moveUp"), color: i === 0 ? theme.color.textMuted : theme.color.accent, disabled: i === 0, onTap: () => moveTab(id, -1), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.moveDown"), color: i === tabOrder.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: i === tabOrder.length - 1, onTap: () => moveTab(id, 1), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) })] })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 }, children: !off && (SP_JSX.jsx(IconAction, { label: hidden ? t("customize.show") : t("customize.hide"), color: theme.color.textMuted, onTap: () => (hidden ? showCategory(id) : setTabHidden(id)), children: hidden ? SP_JSX.jsx(LuEyeOff, { size: 18 }) : SP_JSX.jsx(LuEye, { size: 18 }) })) }), isDisableableSection(id, desktopMode) ? (SP_JSX.jsx(IconAction, { label: off ? t("customize.enable") : t("customize.disable"), color: off ? theme.color.textMuted : theme.color.accent, onTap: () => toggleModule(id, t(meta.labelKey), off, () => hideTab(id)), children: SP_JSX.jsx(LuPower, { size: 18 }) })) : (SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 } })), expandable ? (SP_JSX.jsx(IconAction, { label: t(meta.labelKey), color: theme.color.textMuted, onTap: () => setOpenId(open ? null : id), children: open ? SP_JSX.jsx(LuChevronUp, { size: 17 }) : SP_JSX.jsx(LuChevronDown, { size: 17 }) })) : (SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 } }))] }))] }), open && (SP_JSX.jsx("div", { style: { marginTop: theme.space.sm, paddingTop: theme.space.sm, borderTop: `1px solid ${theme.color.hairline}`, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: orderIds(blockOrder(id, desktopMode), layout.blocks[id]?.order).map((bid) => {
+                        return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: `${theme.space.sm + 2}px ${theme.space.md}px`, opacity: off ? 0.5 : 1 }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", alignItems: "center", gap: theme.space.sm, flex: 1, minWidth: 0, cursor: expandable ? "pointer" : "default" }, "aria-label": meta ? t(meta.labelKey) : id, onActivate: () => expandable && setOpenId(open ? null : id), onClick: () => expandable && setOpenId(open ? null : id), children: [SP_JSX.jsx("span", { style: iconSquare(!off), children: meta?.icon(16) }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }, children: SP_JSX.jsxs("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: [t(meta.labelKey), stateNote && SP_JSX.jsxs("span", { style: { color: theme.color.textMuted, fontSize: theme.font.caption }, children: [" \u00B7 ", stateNote] })] }) })] }), editing ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(IconAction, { label: t("customize.moveUp"), color: i === 0 ? theme.color.textMuted : theme.color.accent, disabled: i === 0, onTap: () => moveTab(id, -1), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.moveDown"), color: i === tabOrder.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: i === tabOrder.length - 1, onTap: () => moveTab(id, 1), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) })] })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 }, children: !off && (SP_JSX.jsx(IconAction, { label: hidden ? t("customize.show") : t("customize.hide"), color: theme.color.textMuted, onTap: () => (hidden ? showCategory(id) : setTabHidden(id)), children: hidden ? SP_JSX.jsx(LuEyeOff, { size: 18 }) : SP_JSX.jsx(LuEye, { size: 18 }) })) }), isDisableableSection(id, desktopMode) ? (SP_JSX.jsx(IconAction, { label: off ? t("customize.enable") : t("customize.disable"), color: off ? theme.color.textMuted : theme.color.accent, onTap: () => toggleModule(id, t(meta.labelKey), off, () => hideTab(id)), children: SP_JSX.jsx(LuPower, { size: 18 }) })) : (SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 } })), expandable ? (SP_JSX.jsx(IconAction, { label: t(meta.labelKey), color: theme.color.textMuted, onTap: () => setOpenId(open ? null : id), children: open ? SP_JSX.jsx(LuChevronUp, { size: 17 }) : SP_JSX.jsx(LuChevronDown, { size: 17 }) })) : (SP_JSX.jsx("span", { style: { display: "flex", justifyContent: "center", width: 30 } }))] }))] }), open && (SP_JSX.jsx("div", { style: { marginTop: theme.space.sm, paddingTop: theme.space.sm, borderTop: `1px solid ${theme.color.hairline}`, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: orderIds(blockOrder(id, desktopMode), layout.blocks[id]?.order).map((bid) => {
                                         const b = blocks.find((x) => x.id === bid);
                                         if (!b)
                                             return null;
@@ -21907,7 +22408,7 @@ const CustomizeModal = ({ closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeMod
 /** Open the full-screen customization editor. Saves are live (module store),
  *  so the shell/sections update behind the modal with no onClose plumbing. */
 function openCustomizeModal() {
-    DFL.showModal(SP_JSX.jsx(CustomizeModal, {}), window);
+    showModal(SP_JSX.jsx(CustomizeModal, {}), window);
 }
 
 const SECTIONS$1 = ["tdp", "fan", "color", "cpu", "gpu", "mandos", "audio"];
@@ -21995,6 +22496,15 @@ function resolveName(appid) {
 const GameRow = ({ row, onReset }) => {
     const { t } = useI18n();
     const [confirm, setConfirm] = SP_REACT.useState(false);
+    const card = SP_REACT.useRef(null);
+    const press = () => {
+        if (!confirm) {
+            setConfirm(true);
+            return;
+        }
+        refocusWhenRemoved(card.current);
+        onReset(row.appid);
+    };
     // Auto-revert the armed "tap again" state so it doesn't stay stuck (e.g. if the user
     // changes their mind, or a reset RPC failed).
     SP_REACT.useEffect(() => {
@@ -22005,13 +22515,13 @@ const GameRow = ({ row, onReset }) => {
     }, [confirm]);
     const { name, installed } = SP_REACT.useMemo(() => resolveName(row.appid), [row.appid]);
     const lines = SP_REACT.useMemo(() => configuredSections(row).map((s) => sectionLine(s, row, t)).filter((l) => l !== null), [row, t]);
-    return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, marginBottom: theme.space.sm, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm, marginBottom: theme.space.xs }, children: [SP_JSX.jsx(LuGamepad2, { size: 16, color: theme.color.accent, style: { flexShrink: 0 } }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: name }), !installed && (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, fontStyle: "italic", flexShrink: 0 }, children: t("gameProfiles.uninstalled") }))] }), lines.map((l) => (SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.5, opacity: l.dim ? 0.5 : 1 }, children: [SP_JSX.jsx("span", { style: { color: theme.color.textPrimary, fontWeight: 600 }, children: l.label }), " ", l.text, l.dim && SP_JSX.jsxs("span", { children: [" \u00B7 ", t("gameProfiles.followsGlobal")] })] }, l.label))), SP_JSX.jsxs(DFL.Focusable, { style: {
+    return (SP_JSX.jsxs("div", { ref: card, style: { ...theme.card, padding: theme.space.md, marginBottom: theme.space.sm, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm, marginBottom: theme.space.xs }, children: [SP_JSX.jsx(LuGamepad2, { size: 16, color: theme.color.accent, style: { flexShrink: 0 } }), SP_JSX.jsx("span", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: name }), !installed && (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, fontStyle: "italic", flexShrink: 0 }, children: t("gameProfiles.uninstalled") }))] }), lines.map((l) => (SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.5, opacity: l.dim ? 0.5 : 1 }, children: [SP_JSX.jsx("span", { style: { color: theme.color.textPrimary, fontWeight: 600 }, children: l.label }), " ", l.text, l.dim && SP_JSX.jsxs("span", { children: [" \u00B7 ", t("gameProfiles.followsGlobal")] })] }, l.label))), SP_JSX.jsxs(DFL.Focusable, { style: {
                     display: "flex", alignItems: "center", justifyContent: "center", gap: theme.space.xs,
                     marginTop: theme.space.sm, padding: "6px 12px", borderRadius: theme.radius.sm,
                     background: confirm ? theme.color.danger : theme.color.surfaceRaised,
                     boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
                     color: confirm ? "#ffffff" : theme.color.textPrimary, fontSize: theme.font.body, cursor: "pointer",
-                }, onActivate: () => (confirm ? onReset(row.appid) : setConfirm(true)), onClick: () => (confirm ? onReset(row.appid) : setConfirm(true)), children: [SP_JSX.jsx(LuTrash2, { size: 14 }), " ", confirm ? t("gameProfiles.resetConfirm") : t("gameProfiles.reset")] })] }));
+                }, onActivate: press, onClick: press, children: [SP_JSX.jsx(LuTrash2, { size: 14 }), " ", confirm ? t("gameProfiles.resetConfirm") : t("gameProfiles.reset")] })] }));
 };
 const GameProfilesBody = () => {
     const { t } = useI18n();
@@ -22027,7 +22537,7 @@ const GameProfilesBody = () => {
 const GameProfilesModal = ({ closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(GameProfilesBody, {}) }) }));
 /** Open the full-screen per-game profile overview (Ajustes). */
 function openGameProfilesModal() {
-    DFL.showModal(SP_JSX.jsx(GameProfilesModal, {}), window);
+    showModal(SP_JSX.jsx(GameProfilesModal, {}), window);
 }
 
 // Glossary content lives here (not in the i18n dictionary) because it's bulky,
@@ -22433,7 +22943,7 @@ const GlossaryBody = () => {
 const GlossaryModal = ({ closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(GlossaryBody, {}) }) }));
 /** Open the full-screen glossary. Read-only content, so no onClose plumbing. */
 function openGlossaryModal() {
-    DFL.showModal(SP_JSX.jsx(GlossaryModal, {}), window);
+    showModal(SP_JSX.jsx(GlossaryModal, {}), window);
 }
 
 const lastWrite = { brightness: null, volume: null };
@@ -22641,7 +23151,7 @@ function clearTimers() {
         delete timers[k];
     }
 }
-function teardown$1() {
+function teardown() {
     for (const u of unsubs.splice(0)) {
         try {
             u();
@@ -22679,7 +23189,7 @@ function startValueToast() {
     return () => {
         alive$1 = false;
         enabled$1 = false;
-        teardown$1();
+        teardown();
         subscribed = false;
     };
 }
@@ -22687,7 +23197,7 @@ function startValueToast() {
 const MUTED = "rgba(255,255,255,0.55)";
 // Inline: a single unified version line + one button. The changelog and the
 // install action live in a modal (opened when an update is available).
-function UpdatePanel({ lang, version }) {
+function UpdatePanel({ lang, version, onVersionActivate }) {
     const t = getUpdaterStrings(lang).panel;
     const { info, status, check } = useUpdate(lang);
     const current = info?.current ?? version ?? "";
@@ -22702,13 +23212,13 @@ function UpdatePanel({ lang, version }) {
         suffix = ` ${t.latest}`;
     const onClick = () => {
         if (info?.has_update) {
-            DFL.showModal(SP_JSX.jsx(UpdateModal, { lang: lang, latest: info.latest, notes: info.notes }));
+            showModal(SP_JSX.jsx(UpdateModal, { lang: lang, latest: info.latest, notes: info.notes }));
         }
         else {
             void check();
         }
     };
-    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 6 }, children: [SP_JSX.jsxs("div", { style: { fontSize: 12, color: "rgba(255,255,255,0.7)" }, children: [t.version, " ", current || "…", suffix] }), status === "error" && !hasUpdate && SP_JSX.jsx("div", { style: { fontSize: 11, color: MUTED }, children: t.error }), SP_JSX.jsx(DFL.DialogButton, { disabled: busy, onClick: onClick, style: { width: "100%", padding: "6px 12px", fontSize: 13, minWidth: 0 }, children: hasUpdate ? t.update : status === "checking" ? t.checking : t.check })] }));
+    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 6 }, children: [SP_JSX.jsxs(DFL.Focusable, { onActivate: onVersionActivate, onClick: onVersionActivate, noFocusRing: !onVersionActivate, style: { fontSize: 12, color: "rgba(255,255,255,0.7)" }, children: [t.version, " ", current || "…", suffix] }), status === "error" && !hasUpdate && SP_JSX.jsx("div", { style: { fontSize: 11, color: MUTED }, children: t.error }), SP_JSX.jsx(DFL.DialogButton, { disabled: busy, onClick: onClick, style: { width: "100%", padding: "6px 12px", fontSize: 13, minWidth: 0 }, children: hasUpdate ? t.update : status === "checking" ? t.checking : t.check })] }));
 }
 
 function assignOwnedIds(tokens, existing, occupied) {
@@ -23226,7 +23736,7 @@ const QamLayoutEditor = ({ catalog }) => {
             pinnedViews: toggleToken(layout.pinnedViews, token),
         });
     };
-    const renderRow = (token, label, icon, active, index) => (SP_JSX.jsxs("div", { style: { ...rowStyle, opacity: active ? 1 : 0.55 }, children: [SP_JSX.jsx("span", { style: rowIconStyle, children: icon }), SP_JSX.jsx("span", { style: rowLabelStyle, children: label }), SP_JSX.jsx(IconAction, { label: `${t("customize.moveUp")} ${label}`, color: index === 0 ? theme.color.textMuted : theme.color.accent, disabled: index === 0, onTap: () => move(token, -1), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: `${t("customize.moveDown")} ${label}`, color: index === tokens.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: index === tokens.length - 1, onTap: () => move(token, 1), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) }), isNativeQamToken(token) ? (SP_JSX.jsx(IconAction, { label: `${t(active ? "customize.hide" : "customize.show")} ${label}`, color: theme.color.textMuted, onTap: () => toggleNative(token), children: active ? SP_JSX.jsx(LuEye, { size: 18 }) : SP_JSX.jsx(LuEyeOff, { size: 18 }) })) : (SP_JSX.jsx(IconAction, { label: `${t(active ? "customize.qam.unpin" : "customize.qam.pin")} ${label}`, color: active ? theme.color.accent : theme.color.textMuted, onTap: () => togglePanel(token), children: active ? SP_JSX.jsx(LuPinOff, { size: 18 }) : SP_JSX.jsx(LuPin, { size: 18 }) }))] }, token));
+    const renderRow = (token, label, icon, active, index) => (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { ...rowStyle, opacity: active ? 1 : 0.55 }, children: [SP_JSX.jsx("span", { style: rowIconStyle, children: icon }), SP_JSX.jsx("span", { style: rowLabelStyle, children: label }), SP_JSX.jsx(IconAction, { label: `${t("customize.moveUp")} ${label}`, color: index === 0 ? theme.color.textMuted : theme.color.accent, disabled: index === 0, onTap: () => move(token, -1), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: `${t("customize.moveDown")} ${label}`, color: index === tokens.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: index === tokens.length - 1, onTap: () => move(token, 1), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) }), isNativeQamToken(token) ? (SP_JSX.jsx(IconAction, { label: `${t(active ? "customize.hide" : "customize.show")} ${label}`, color: theme.color.textMuted, onTap: () => toggleNative(token), children: active ? SP_JSX.jsx(LuEye, { size: 18 }) : SP_JSX.jsx(LuEyeOff, { size: 18 }) })) : (SP_JSX.jsx(IconAction, { label: `${t(active ? "customize.qam.unpin" : "customize.qam.pin")} ${label}`, color: active ? theme.color.accent : theme.color.textMuted, onTap: () => togglePanel(token), children: active ? SP_JSX.jsx(LuPinOff, { size: 18 }) : SP_JSX.jsx(LuPin, { size: 18 }) }))] }, token));
     let runtimeStatus;
     if (runtime.restartRequired) {
         runtimeStatus = (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.warn }, children: t("customize.qam.restart") }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: reloadDeckyAfterClosingMenus, children: t("customize.qam.restartButton") })] }));
@@ -23273,7 +23783,7 @@ const QamCustomizeBody = () => {
 };
 const QamCustomizeModal = ({ closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(QamCustomizeBody, {}) }) }));
 function openQamCustomizeModal() {
-    DFL.showModal(SP_JSX.jsx(QamCustomizeModal, {}), window);
+    showModal(SP_JSX.jsx(QamCustomizeModal, {}), window);
 }
 
 const QamShortcutSetting = () => {
@@ -23340,10 +23850,65 @@ const ExperimentalTdpUnlock = ({ enabled, maxWatts, safeMaxWatts, failed = false
                 onToggle(false);
                 return;
             }
-            DFL.showModal(SP_JSX.jsx(ConfirmDialog, { title: t("settings.experimentalTdp.confirm.title"), desc: t("settings.experimentalTdp.confirm.desc", params), confirmLabel: t("settings.experimentalTdp.confirm.ok"), cancelLabel: t("settings.experimentalTdp.confirm.cancel"), icon: SP_JSX.jsx(LuTriangleAlert, { size: 20, color: theme.color.warn }), onConfirm: () => onToggle(true) }));
+            showModal(SP_JSX.jsx(ConfirmDialog, { title: t("settings.experimentalTdp.confirm.title"), desc: t("settings.experimentalTdp.confirm.desc", params), confirmLabel: t("settings.experimentalTdp.confirm.ok"), cancelLabel: t("settings.experimentalTdp.confirm.cancel"), icon: SP_JSX.jsx(LuTriangleAlert, { size: 20, color: theme.color.warn }), onConfirm: () => onToggle(true) }));
         } }));
 };
 
+const IDLE_POLL_MS = 4000;
+const PAIRING_POLL_MS = 1000;
+const mono = { fontFamily: "monospace", fontSize: theme.font.caption, wordBreak: "break-all" };
+function remoteAccessStatusKey(state) {
+    if (!state.supported)
+        return "dev.ssh.unsupported";
+    if (!state.enabled)
+        return null;
+    if (!state.user)
+        return "dev.ssh.noUser";
+    if (state.running)
+        return "dev.ssh.running";
+    return state.error ? "dev.ssh.error" : "dev.ssh.starting";
+}
+const DeveloperOptions = ({ onHide }) => {
+    const { t } = useI18n();
+    const [state, setState] = SP_REACT.useState(null);
+    const [confirmForget, setConfirmForget] = SP_REACT.useState(false);
+    const pairing = state?.pairing ?? null;
+    SP_REACT.useEffect(() => {
+        let alive = true;
+        const read = () => getRemoteAccessState().then((next) => { if (alive)
+            setState(next); }).catch(() => { });
+        read();
+        const id = window.setInterval(read, pairing ? PAIRING_POLL_MS : IDLE_POLL_MS);
+        return () => {
+            alive = false;
+            window.clearInterval(id);
+        };
+    }, [pairing !== null]);
+    const apply = (call) => {
+        call.then(setState).catch(() => getRemoteAccessState().then(setState).catch(() => { }));
+    };
+    const hide = (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: onHide, children: t("dev.hide") }));
+    const title = (SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textPrimary, fontWeight: 600 }, children: t("dev.title") }));
+    if (!state) {
+        return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [title, hide] }));
+    }
+    const address = state.addresses[0] ?? "<ip>";
+    const statusKey = remoteAccessStatusKey(state);
+    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [title, SP_JSX.jsx(DFL.ToggleField, { label: t("dev.ssh"), description: t("dev.ssh.desc", { port: state.port }), checked: state.enabled, disabled: !state.supported, onChange: (enabled) => {
+                    setState({ ...state, enabled });
+                    apply(setRemoteAccessEnabled(enabled));
+                }, bottomSeparator: "none" }), statusKey && (SP_JSX.jsx("div", { style: statusKey === "dev.ssh.running" ? mono : { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t(statusKey, { port: state.port, user: state.user ?? "", address, error: state.error ?? "" }) })), state.enabled && state.running && !pairing && (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("dev.ssh.pair.desc"), onClick: () => apply(openRemoteAccessPairing()), children: t("dev.ssh.pair") })), pairing && !pairing.pending && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: mono, children: t("dev.ssh.pair.waiting", { seconds: pairing.expires_in, address, port: pairing.port }) }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => apply(closeRemoteAccessPairing()), children: t("dev.ssh.pair.cancel") })] })), pairing?.pending && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textPrimary }, children: t("dev.ssh.pair.request", { peer: pairing.pending.peer }) }), SP_JSX.jsx("div", { style: mono, children: pairing.pending.fingerprint }), pairing.pending.comment && SP_JSX.jsx("div", { style: mono, children: pairing.pending.comment }), SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", gap: theme.space.sm }, "flow-children": "horizontal", children: [SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => apply(answerRemoteAccessPairing(true)), children: t("dev.ssh.pair.accept") }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => apply(answerRemoteAccessPairing(false)), children: t("dev.ssh.pair.reject") })] })] })), state.keys.length > 0 && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("dev.ssh.keys", { count: state.keys.length }) }), state.keys.map((key) => (SP_JSX.jsx("div", { style: mono, children: key.comment || key.fingerprint }, key.fingerprint))), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => {
+                            if (!confirmForget) {
+                                setConfirmForget(true);
+                                return;
+                            }
+                            setConfirmForget(false);
+                            apply(forgetRemoteAccessKeys());
+                        }, children: t(confirmForget ? "dev.ssh.forget.confirm" : "dev.ssh.forget") })] })), hide] }));
+};
+
+const DEV_UNLOCK_TAPS = 7;
+const DEV_UNLOCK_WINDOW_MS = 3000;
 const AUTHOR = "Hooandee";
 const CHANNEL_URL = "https://www.youtube.com/@Hooandee";
 /** A persisted boolean setting: fetch on mount and reconcile every write result.
@@ -23403,6 +23968,28 @@ const AjustesSection = () => {
         setValueToast(next);
         setValueToastEnabled(next);
     };
+    const [developer, setDeveloper] = SP_REACT.useState(false);
+    const devTaps = SP_REACT.useRef({ count: 0, at: 0 });
+    SP_REACT.useEffect(() => {
+        getDeveloperOptions().then(setDeveloper).catch(() => { });
+    }, []);
+    const onVersionTap = () => {
+        if (developer)
+            return;
+        const now = Date.now();
+        const count = now - devTaps.current.at < DEV_UNLOCK_WINDOW_MS ? devTaps.current.count + 1 : 1;
+        devTaps.current = { count, at: now };
+        if (count >= DEV_UNLOCK_TAPS) {
+            setDeveloper(true);
+            toaster.toast({ title: "Panel de Control", body: t("settings.devUnlocked") });
+            setDeveloperOptions(true).then(setDeveloper).catch(() => setDeveloper(false));
+        }
+    };
+    const hideDeveloper = () => {
+        setDeveloper(false);
+        devTaps.current = { count: 0, at: 0 };
+        setDeveloperOptions(false).then(setDeveloper).catch(() => { });
+    };
     const [version, setVersion] = SP_REACT.useState("");
     SP_REACT.useEffect(() => {
         getVersion().then(setVersion).catch(() => { });
@@ -23438,7 +24025,7 @@ const AjustesSection = () => {
     // One row holding a spaced column so the settings don't glue together. Null
     // children (not-yet-loaded toggles) collapse their slot — no double gaps.
     SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.section, marginTop: theme.space.section }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.body, color: theme.color.textPrimary }, children: t("settings.language") }), SP_JSX.jsx(LanguageSelector, {})] }), (device?.is_generic || desktop.state?.automatic) && desktop.state && (SP_JSX.jsx(DFL.ToggleField, { label: t("settings.desktop"), description: t(desktop.state.automatic ? "settings.desktop.auto.desc" : "settings.desktop.desc"), checked: desktop.state.enabled, disabled: desktop.state.automatic, onChange: desktop.setEnabled, bottomSeparator: "none" })), tdpSupported && !desktopActive && (SP_JSX.jsx(DFL.ToggleField, { label: t("settings.tdpcontrol"), description: t("settings.tdpcontrol.desc"), checked: tdpControlOn, onChange: (next) => { void setModuleDisabled("power", !next); }, bottomSeparator: "none" })), !desktopActive && battMax !== null && device &&
-                    device.tdp_max_charger > device.tdp_max && !device.charger_only_extra && (SP_JSX.jsx(DFL.ToggleField, { label: t("settings.battmax"), description: t("settings.battmax.desc"), checked: battMax, onChange: onToggleBattMax, bottomSeparator: "none" })), !desktopActive && coolerBoost !== null && device?.cooler_max != null && (SP_JSX.jsx(DFL.ToggleField, { label: t("settings.cooler"), description: t(device.cooler_charger_only ? "settings.cooler.charger.desc" : "settings.cooler.desc", { max: device.cooler_max, safe: device.tdp_max_charger }), checked: coolerBoost, onChange: onToggleCoolerBoost, bottomSeparator: "none" })), !desktopActive && experimentalTdp !== null && device?.experimental_tdp_max_ac != null && (SP_JSX.jsx(ExperimentalTdpUnlock, { enabled: experimentalTdp, failed: experimentalTdpFailed, maxWatts: device.experimental_tdp_max_ac, safeMaxWatts: device.tdp_max_charger, onToggle: onToggleExperimentalTdp })), SP_JSX.jsx(QamShortcutSetting, {}), SP_JSX.jsx(KioskSetting, {}), SP_JSX.jsx(DFL.ToggleField, { label: t("settings.valueToast"), description: t("settings.valueToast.desc"), checked: valueToast, onChange: onToggleValueToast, bottomSeparator: "none" }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("glossary.button.desc"), onClick: () => openGlossaryModal(), children: t("glossary.button") }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("customize.button.desc"), onClick: () => openCustomizeModal(), children: t("customize.button") }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("gameProfiles.button.desc"), onClick: () => openGameProfilesModal(), children: t("gameProfiles.button") }), unvalidated && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("report.unvalidated.note") })), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("report.button.desc"), onClick: () => openReportModal(), children: t("report.button") }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("settings.reset.desc"), onClick: onReset, children: resetLabel }), SP_JSX.jsx(UpdatePanel, { lang: lang, version: version }), SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: [madeByBefore, SP_JSX.jsx(DFL.Focusable, { onActivate: openChannel, onClick: openChannel, "aria-label": AUTHOR, style: { display: "inline", color: theme.color.accent, cursor: "pointer", textDecoration: "underline" }, children: AUTHOR }), madeByAfter] })] }) }));
+                    device.tdp_max_charger > device.tdp_max && !device.charger_only_extra && (SP_JSX.jsx(DFL.ToggleField, { label: t("settings.battmax"), description: t("settings.battmax.desc"), checked: battMax, onChange: onToggleBattMax, bottomSeparator: "none" })), !desktopActive && coolerBoost !== null && device?.cooler_max != null && (SP_JSX.jsx(DFL.ToggleField, { label: t("settings.cooler"), description: t(device.cooler_charger_only ? "settings.cooler.charger.desc" : "settings.cooler.desc", { max: device.cooler_max, safe: device.tdp_max_charger }), checked: coolerBoost, onChange: onToggleCoolerBoost, bottomSeparator: "none" })), !desktopActive && experimentalTdp !== null && device?.experimental_tdp_max_ac != null && (SP_JSX.jsx(ExperimentalTdpUnlock, { enabled: experimentalTdp, failed: experimentalTdpFailed, maxWatts: device.experimental_tdp_max_ac, safeMaxWatts: device.tdp_max_charger, onToggle: onToggleExperimentalTdp })), SP_JSX.jsx(QamShortcutSetting, {}), SP_JSX.jsx(KioskSetting, {}), SP_JSX.jsx(DFL.ToggleField, { label: t("settings.valueToast"), description: t("settings.valueToast.desc"), checked: valueToast, onChange: onToggleValueToast, bottomSeparator: "none" }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("glossary.button.desc"), onClick: () => openGlossaryModal(), children: t("glossary.button") }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("customize.button.desc"), onClick: () => openCustomizeModal(), children: t("customize.button") }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("gameProfiles.button.desc"), onClick: () => openGameProfilesModal(), children: t("gameProfiles.button") }), unvalidated && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("report.unvalidated.note") })), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("report.button.desc"), onClick: () => openReportModal(), children: t("report.button") }), SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: t("settings.reset.desc"), onClick: onReset, children: resetLabel }), developer && SP_JSX.jsx(DeveloperOptions, { onHide: hideDeveloper }), SP_JSX.jsx(UpdatePanel, { lang: lang, version: version, onVersionActivate: onVersionTap }), SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: [madeByBefore, SP_JSX.jsx(DFL.Focusable, { onActivate: openChannel, onClick: openChannel, "aria-label": AUTHOR, style: { display: "inline", color: theme.color.accent, cursor: "pointer", textDecoration: "underline" }, children: AUTHOR }), madeByAfter] })] }) }));
 };
 
 function buildSections(tabs, components) {
@@ -23579,7 +24166,7 @@ const BatteryCard = ({ state, onSetLimit, onSetFullChargeOnce, hideHealth = fals
         const Icon = percent <= 15 ? LuBatteryLow : LuBatteryFull;
         statusIcon = SP_JSX.jsx(Icon, { size: 13, color: theme.color.textMuted });
     }
-    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsx(BatteryGlyph, { percent: percent, charging: charging, limit: managed && cl.enabled && cl.adjustable ? cl.percent : null }), SP_JSX.jsx("span", { style: { fontSize: theme.font.value, fontWeight: 700, lineHeight: 1, color: theme.color.textPrimary, fontVariantNumeric: "tabular-nums" }, children: b.percent === null ? "—" : `${percent}%` })] }), SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: theme.font.caption, color: theme.color.textMuted, whiteSpace: "nowrap" }, children: [statusIcon, " ", statusText] }), !hideHealth && b.health_percent !== null && (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: theme.space.xs }, children: [SP_JSX.jsx(LuHeartPulse, { size: 12 }), " ", t("system.battery.health")] }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700, fontVariantNumeric: "tabular-nums" }, children: [b.health_percent, "%"] })] }), SP_JSX.jsx("div", { style: { height: 4, borderRadius: 2, background: theme.color.hairline, overflow: "hidden" }, children: SP_JSX.jsx("div", { style: { height: "100%", width: `${b.health_percent}%`, background: theme.color.ok } }) })] })), !hideHealth && (b.cycle_count !== null || b.energy_full_mwh !== null) && (SP_JSX.jsxs("div", { style: { display: "flex", gap: theme.space.sm }, children: [b.cycle_count !== null && (SP_JSX.jsx(Chip, { icon: SP_JSX.jsx(LuRefreshCw, { size: 11 }), label: t("system.battery.cycles"), value: String(b.cycle_count), grow: 1 })), b.energy_full_mwh !== null && (SP_JSX.jsx(Chip, { icon: SP_JSX.jsx(LuBatteryFull, { size: 11 }), label: t("system.battery.capacity"), grow: 2, value: formatCapacity(b.energy_full_mwh, b.energy_full_design_mwh) }))] })), managed && !hideLimitControl && (SP_JSX.jsxs("div", { style: { borderTop: `1px solid ${theme.color.hairline}`, paddingTop: theme.space.xs }, children: [SP_JSX.jsx(DFL.ToggleField, { label: t("system.battery.limit"), description: t("system.battery.limit.desc"), checked: cl.enabled, onChange: (v) => onSetLimit(v, cl.percent), bottomSeparator: "none" }), cl.enabled && cl.adjustable && (SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0 }, children: SP_JSX.jsx(ContainedSlider, { value: cl.percent, min: cl.min, max: cl.max, step: 5, showValue: false, disabled: cl.full_charge_once.active, onChange: (v) => onSetLimit(true, clampThreshold(v, cl.min, cl.max)) }) }), SP_JSX.jsxs("span", { style: { fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary, fontVariantNumeric: "tabular-nums", minWidth: 40, textAlign: "right" }, children: [cl.percent, "%"] })] })), cl.enabled && !cl.adjustable && cl.applied_percent !== null && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("system.battery.limit.fixed", { percent: cl.applied_percent }) })), cl.full_charge_once.available && (SP_JSX.jsx(DFL.ToggleField, { label: t("system.battery.fullOnce.title"), description: t(cl.full_charge_once.status === "failed"
+    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsx(BatteryGlyph, { percent: percent, charging: charging, limit: managed && cl.enabled && cl.adjustable ? cl.percent : null }), SP_JSX.jsx("span", { style: { fontSize: theme.font.value, fontWeight: 700, lineHeight: 1, color: theme.color.textPrimary, fontVariantNumeric: "tabular-nums" }, children: b.percent === null ? "—" : `${percent}%` })] }), SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: theme.font.caption, color: theme.color.textMuted, whiteSpace: "nowrap" }, children: [statusIcon, " ", statusText] }), !hideHealth && b.health_percent !== null && (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 2 }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: theme.space.xs }, children: [SP_JSX.jsx(LuHeartPulse, { size: 12 }), " ", t("system.battery.health")] }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700, fontVariantNumeric: "tabular-nums" }, children: [b.health_percent, "%"] })] }), SP_JSX.jsx("div", { style: { height: 4, borderRadius: 2, background: theme.color.hairline, overflow: "hidden" }, children: SP_JSX.jsx("div", { style: { height: "100%", width: `${b.health_percent}%`, background: theme.color.ok } }) })] })), !hideHealth && (b.cycle_count !== null || b.energy_full_mwh !== null) && (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm }, children: [b.cycle_count !== null && (SP_JSX.jsx(Chip, { icon: SP_JSX.jsx(LuRefreshCw, { size: 11 }), label: t("system.battery.cycles"), value: String(b.cycle_count), grow: 1 })), b.energy_full_mwh !== null && (SP_JSX.jsx(Chip, { icon: SP_JSX.jsx(LuBatteryFull, { size: 11 }), label: t("system.battery.capacity"), grow: 2, value: formatCapacity(b.energy_full_mwh, b.energy_full_design_mwh) }))] })), managed && !hideLimitControl && (SP_JSX.jsxs("div", { style: { borderTop: `1px solid ${theme.color.hairline}`, paddingTop: theme.space.xs }, children: [SP_JSX.jsx(DFL.ToggleField, { label: t("system.battery.limit"), description: t("system.battery.limit.desc"), checked: cl.enabled, onChange: (v) => onSetLimit(v, cl.percent), bottomSeparator: "none" }), cl.enabled && cl.adjustable && (SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0 }, children: SP_JSX.jsx(ContainedSlider, { value: cl.percent, min: cl.min, max: cl.max, step: 5, showValue: false, disabled: cl.full_charge_once.active, onChange: (v) => onSetLimit(true, clampThreshold(v, cl.min, cl.max)) }) }), SP_JSX.jsxs("span", { style: { fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary, fontVariantNumeric: "tabular-nums", minWidth: 40, textAlign: "right" }, children: [cl.percent, "%"] })] })), cl.enabled && !cl.adjustable && cl.applied_percent !== null && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("system.battery.limit.fixed", { percent: cl.applied_percent }) })), cl.full_charge_once.available && (SP_JSX.jsx(DFL.ToggleField, { label: t("system.battery.fullOnce.title"), description: t(cl.full_charge_once.status === "failed"
                             ? "system.battery.fullOnce.failed"
                             : cl.full_charge_once.active
                                 ? "system.battery.fullOnce.active"
@@ -23804,15 +24391,14 @@ const GpuClockCard = () => {
     return (SP_JSX.jsxs(Collapsible, { id: "gpu-clock", icon: SP_JSX.jsx(LuMemoryStick, { size: 16 }), title: t("gpu.clock.title"), summary: summary, children: [game && (SP_JSX.jsx(ProfileSelector, { scope: scope, gameName: game.name, hasGameProfile: state.has_game_profile, globalLabel: t("tdp.scope.global"), inheritHint: t("tdp.inherit"), onScope: onScope })), state.managed_by_power ? (SP_JSX.jsx("div", { style: { color: theme.color.textMuted, fontSize: theme.font.caption }, children: t("power.managedFrequency") })) : (SP_JSX.jsx(DFL.ToggleField, { label: t("gpu.clock.manual"), description: t("gpu.clock.manual.desc"), checked: state.manual, onChange: setManual, bottomSeparator: "none" })), shown.rejected && (SP_JSX.jsx("div", { style: { color: theme.color.danger, fontSize: theme.font.caption }, children: t("gpu.clock.rejected") })), state.manual && !state.managed_by_power && (SP_JSX.jsxs("div", { style: { marginTop: theme.space.sm }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsx("span", { children: t("gpu.clock.min") }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700 }, children: [levels ? levels[loIndex] : lo, " MHz"] })] }), levels ? (SP_JSX.jsx(ContainedSlider, { value: loIndex, min: 0, max: levels.length - 1, step: 1, onChange: (i) => setWindow(levels[Math.min(i, hiIndex)], levels[hiIndex]) })) : (SP_JSX.jsx(ContainedSlider, { value: lo, min: state.range_min, max: state.range_max, step: 50, onChange: (v) => setWindow(Math.min(v, hi), hi) })), SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsx("span", { children: t("gpu.clock.max") }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700 }, children: [levels ? levels[hiIndex] : hi, " MHz"] })] }), levels ? (SP_JSX.jsx(ContainedSlider, { value: hiIndex, min: 0, max: levels.length - 1, step: 1, onChange: (i) => setWindow(levels[loIndex], levels[Math.max(i, loIndex)]) })) : (SP_JSX.jsx(ContainedSlider, { value: hi, min: state.range_min, max: state.range_max, step: 50, onChange: (v) => setWindow(lo, clamp(v, lo, state.range_max ?? v)) }))] }))] }));
 };
 
-const Effect = ({ icon, label, active }) => (SP_JSX.jsxs("div", { style: { display: "inline-flex", alignItems: "center", gap: theme.space.xs, fontSize: theme.font.caption, color: active ? theme.color.ok : theme.color.textMuted }, children: [icon, " ", label] }));
-/** Download mode: one tap drops the device to low power (TDP min, boost off, ambient
- *  screen dim) while a game downloads unattended. Shows the effects it will apply. */
-const EcoCard = ({ state, brightnessSupported, onToggle }) => {
+const Effect = ({ icon, label, value, active }) => (SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: theme.space.xs }, children: [icon, " ", label] }), SP_JSX.jsx("span", { style: { color: active ? theme.color.ok : theme.color.textMuted, fontWeight: 700, fontVariantNumeric: "tabular-nums" }, children: value })] }));
+/** Download mode: one tap drops the device to low power (TDP min, boost off, screen
+ *  off while idle) while a game downloads unattended. Lists the effects it applies. */
+const EcoCard = ({ state, onToggle }) => {
     const { t } = useI18n();
     const on = state.enabled;
-    return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden", boxShadow: on ? `inset 0 0 0 1px ${theme.color.ok}` : theme.card.boxShadow }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: [SP_JSX.jsx(LuLeaf, { size: 16, color: theme.color.ok }), " ", t("system.eco.title")] }), SP_JSX.jsx(DFL.ToggleField, { label: t("system.eco.desc"), checked: on, onChange: onToggle, bottomSeparator: "none" }), SP_JSX.jsxs("div", { style: { display: "flex", flexWrap: "wrap", gap: theme.space.md, marginTop: theme.space.xs }, children: [SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuZap, { size: 12 }), label: state.tdp_unit === "level"
-                                ? t("system.eco.effect.level", { level: state.tdp_min_w })
-                                : t("system.eco.effect.tdp", { watts: state.tdp_min_w }), active: on }), brightnessSupported && (SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuSun, { size: 12 }), label: t("system.eco.effect.brightness"), active: on })), state.affects_boost && (SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuRocket, { size: 12 }), label: t("system.eco.effect.boost"), active: on }))] })] }) }));
+    const level = state.tdp_unit === "level";
+    return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden", boxShadow: on ? `inset 0 0 0 1px ${theme.color.ok}` : theme.card.boxShadow }, children: [SP_JSX.jsx(DFL.ToggleField, { label: SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: theme.space.xs }, children: [SP_JSX.jsx(LuLeaf, { size: 16, color: theme.color.ok }), " ", t("system.eco.title")] }), description: t("system.eco.desc"), checked: on, onChange: onToggle, bottomSeparator: "none" }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.xs, marginTop: theme.space.sm, paddingTop: theme.space.sm, borderTop: `1px solid ${theme.color.hairline}` }, children: [SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuZap, { size: 12 }), label: t(level ? "system.eco.row.level" : "system.eco.row.tdp"), value: level ? t("system.eco.value.level", { level: state.tdp_min_w }) : `${state.tdp_min_w} W`, active: on }), SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuMonitorOff, { size: 12 }), label: t("system.eco.row.screen"), value: t(state.screen_off ? "system.eco.value.screenOff" : "system.eco.value.screenBlack"), active: on }), state.affects_boost && (SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuRocket, { size: 12 }), label: t("system.eco.row.turbo"), value: t("system.eco.value.turboOff"), active: on }))] })] }) }));
 };
 
 const actionFrameStyle = {
@@ -23876,7 +24462,7 @@ const ColoresCard = ({ state, onInstall, onOpen, onOpenStore }) => {
                         color: state === "error" ? theme.color.warn : theme.color.textMuted,
                         margin: `${theme.space.xs}px 0 ${theme.space.md}px`,
                         lineHeight: 1.4,
-                    }, children: state === "error" ? t("system.rgb.error") : desc }), state === "open" && (SP_JSX.jsx(RgbAction, { label: t("system.rgb.open"), onTap: onOpen, children: t("system.rgb.open") })), state === "install" && (SP_JSX.jsx(RgbAction, { label: t("system.rgb.install"), onTap: () => DFL.showModal(SP_JSX.jsx(ConfirmDialog, { title: t("system.rgb.confirm.title"), desc: t("system.rgb.confirm.desc"), confirmLabel: t("system.rgb.confirm.ok"), cancelLabel: t("system.rgb.confirm.cancel"), onConfirm: onInstall })), children: t("system.rgb.install") })), state === "installing" && (SP_JSX.jsx(RgbAction, { label: t("system.rgb.installing"), children: t("system.rgb.installing") })), state === "error" && (SP_JSX.jsxs(RgbAction, { label: t("system.rgb.store"), onTap: onOpenStore, children: [SP_JSX.jsx(LuStore, { size: 14 }), " ", t("system.rgb.store")] }))] }) }));
+                    }, children: state === "error" ? t("system.rgb.error") : desc }), state === "open" && (SP_JSX.jsx(RgbAction, { label: t("system.rgb.open"), onTap: onOpen, children: t("system.rgb.open") })), state === "install" && (SP_JSX.jsx(RgbAction, { label: t("system.rgb.install"), onTap: () => showModal(SP_JSX.jsx(ConfirmDialog, { title: t("system.rgb.confirm.title"), desc: t("system.rgb.confirm.desc"), confirmLabel: t("system.rgb.confirm.ok"), cancelLabel: t("system.rgb.confirm.cancel"), onConfirm: onInstall })), children: t("system.rgb.install") })), state === "installing" && (SP_JSX.jsx(RgbAction, { label: t("system.rgb.installing"), children: t("system.rgb.installing") })), state === "error" && (SP_JSX.jsxs(RgbAction, { label: t("system.rgb.store"), onTap: onOpenStore, children: [SP_JSX.jsx(LuStore, { size: 14 }), " ", t("system.rgb.store")] }))] }) }));
 };
 
 // The sibling RGB plugin we integrate with. `name` must match its plugin.json
@@ -24346,147 +24932,276 @@ function subscribeActive(cb) {
     }
 }
 
-// Pure helpers for download mode's ambient dim.
-function ecoBrightness(active, wakePct, floorPct) {
-    return active ? wakePct : floorPct;
+const ID$1 = "pdc-eco-blackout";
+// Steam's main window and the QAM are separate documents; the layer covers both.
+function steamDocuments() {
+    const docs = [DFL.findSP()?.document, getQamDocument()];
+    return docs.filter((doc, i) => !!doc?.body && docs.indexOf(doc) === i);
 }
-// True when a brightness echo is our own recent write, not a user change.
-function isDimEcho(echo, lastDriven, msSinceDrive, windowMs = 2000, tol = 2) {
-    if (lastDriven === null)
-        return false;
-    return Math.abs(echo - lastDriven) <= tol && msSinceDrive <= windowMs;
+// Black layer over Steam's UI: the fallback for panels gamescope cannot switch off, and the
+// catch for the tap that wakes a sleeping panel, so it never lands on a control underneath.
+function showBlackout(onTap) {
+    for (const doc of steamDocuments()) {
+        if (doc.getElementById(ID$1))
+            continue;
+        const layer = doc.createElement("div");
+        layer.id = ID$1;
+        layer.style.cssText = "position:fixed;inset:0;background:#000;z-index:2147483647;cursor:none";
+        layer.addEventListener("pointerdown", onTap);
+        doc.body.appendChild(layer);
+    }
 }
-// A change at the idle floor is our dim, never a wake level to adopt.
-function isFloorEcho(echo, floorPct, tol = 2) {
-    return Math.abs(echo - floorPct) <= tol;
-}
-// Wake fast, hold on idle so activity flapping doesn't flicker the screen.
-function activityDebounceMs(active) {
-    return active ? 150 : 800;
+function hideBlackout() {
+    for (const doc of steamDocuments())
+        doc.getElementById(ID$1)?.remove();
 }
 
-// Download-mode ambient dim. Runs at plugin scope so it works with the QAM closed.
-const ECO_FLOOR_PCT = 12;
+const ID = "pdc-eco-countdown";
+const RING = 2 * Math.PI * 9;
+// The QAM is its own window over Steam's, and its size and offset differ per handheld (on
+// some it runs past the screen edge): centre on its visible content when it is open.
+function target() {
+    const qam = getQamDocument();
+    const view = qam?.defaultView;
+    const menu = qam?.querySelector(`.${DFL.quickAccessMenuClasses.Menu}`)?.getBoundingClientRect();
+    if (!qam || !view || !menu?.width || qam.visibilityState !== "visible" || !qam.hasFocus()) {
+        return [DFL.findSP()?.document ?? null, "left:50%;bottom:88px"];
+    }
+    const tabs = qam.querySelector(`.${DFL.quickAccessMenuClasses.Tabs}`)?.getBoundingClientRect();
+    const left = Math.max(menu.left, tabs?.right ?? menu.left);
+    const right = Math.min(menu.right, view.screen.width - view.screenX);
+    return [qam, `left:${Math.round((left + right) / 2)}px;bottom:24px`];
+}
+// Pill counting down to the screen going dark; returns its cancel. Steam's UI is not drawn
+// over a running game, so there it simply isn't seen.
+function startCountdown(seconds, label, onDone) {
+    const [doc, place] = target();
+    doc?.getElementById(ID)?.remove();
+    const pill = doc?.createElement("div");
+    if (doc && pill) {
+        pill.id = ID;
+        pill.style.cssText = `position:fixed;${place};transform:translateX(-50%);z-index:2147483646;
+      display:flex;align-items:center;gap:10px;padding:7px 8px 7px 16px;border-radius:999px;
+      background:rgba(14,20,27,.92);box-shadow:0 8px 28px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.08);
+      color:#dfe3ea;font:500 14px 'Motiva Sans',Arial,sans-serif;pointer-events:none`;
+        pill.innerHTML = `<span></span><svg width="26" height="26" viewBox="0 0 26 26">
+      <circle cx="13" cy="13" r="9" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="2.5"/>
+      <circle cx="13" cy="13" r="9" fill="none" stroke="#59bf40" stroke-width="2.5" stroke-linecap="round"
+        stroke-dasharray="${RING}" transform="rotate(-90 13 13)"/>
+      <text x="13" y="17.5" text-anchor="middle" fill="#fff" style="font:600 12px 'Motiva Sans',Arial,sans-serif">${seconds}</text></svg>`;
+        pill.querySelector("span").textContent = label;
+        doc.body.appendChild(pill);
+        // Web Animations start from the first frame on every insertion; a CSS transition set
+        // right after appending can be coalesced into its end state and never play.
+        pill.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, easing: "ease-out" });
+        pill.querySelectorAll("circle")[1].animate([{ strokeDashoffset: 0 }, { strokeDashoffset: RING }], {
+            duration: seconds * 1000,
+            fill: "forwards",
+        });
+    }
+    let left = seconds;
+    const tick = setInterval(() => {
+        left -= 1;
+        const digit = pill?.querySelector("text");
+        if (left > 0 && digit)
+            digit.textContent = String(left);
+        if (left > 0)
+            return;
+        clearInterval(tick);
+        pill?.remove();
+        onDone();
+    }, 1000);
+    return () => {
+        clearInterval(tick);
+        pill?.remove();
+    };
+}
+
+// Download mode's screen, at plugin scope so it works with the QAM closed. Panel mode:
+// gamescope switches the internal panel off. Otherwise a black layer at minimum brightness.
+// Idleness is Steam's call (it reads every control on every handheld); the backend reports
+// raw input at once so waking is instant.
 const POLL_MS$1 = 3000;
+const COUNTDOWN_S = 3;
+const WAKE_DEBOUNCE_MS = 150;
+// Raw input Steam never saw gets no idle signal after it: go dark again after this long.
+const RELAPSE_MS = 8000;
+const INPUT_EVENT = "pdc_eco_input";
 let enabled = false;
-let wakePct = 40;
 let alive = false;
-let activeState = true;
-let unsubActivity = null;
-let unsubBrightness = null;
-let pollTimer = null;
-let debounceTimer = null;
-let lastDriven = null; // last value we drove, to spot our own echoes
-let lastDriveAt = 0;
+let panel = false;
+let active = true;
+let wakePct = 40;
+let drivenAt = 0;
 let epoch = 0;
-function drive(active) {
-    if (!enabled)
-        return;
-    lastDriven = ecoBrightness(active, wakePct, ECO_FLOOR_PCT);
-    lastDriveAt = Date.now();
-    displayBrightness.set(fromPercent(lastDriven));
+let cancelCountdown = null;
+let relapse;
+let debounce;
+let poll;
+let unsubscribe = [];
+function setBrightness(pct) {
+    drivenAt = Date.now();
+    displayBrightness.set(fromPercent(pct));
 }
-function onActivity(active) {
-    if (debounceTimer !== null)
-        clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-        debounceTimer = null;
-        if (active !== activeState) {
-            activeState = active;
-            drive(active);
+function goDark() {
+    // The layer also catches the tap that wakes a sleeping panel, so it never presses anything.
+    showBlackout(onRawInput);
+    if (!panel) {
+        setBrightness(0);
+        return;
+    }
+    const e = epoch;
+    setEcoScreen(true)
+        .then((r) => {
+        if (r.ok || !enabled || e !== epoch)
+            return;
+        if (active) {
+            hideBlackout();
+            return;
         }
-    }, activityDebounceMs(active));
+        panel = false; // not confirmed off: black layer instead
+        setBrightness(0);
+    })
+        .catch(() => { });
 }
-// Adopt a user brightness change as the new wake level; skip our own echoes and the floor.
-function onBrightness(fraction) {
+function goLight() {
+    hideBlackout();
+    if (panel)
+        setEcoScreen(false).catch(() => { });
+    else
+        setBrightness(wakePct);
+}
+function stopCountdown() {
+    cancelCountdown?.();
+    cancelCountdown = null;
+}
+function setActive(next) {
+    if (!enabled || next === active)
+        return;
+    active = next;
+    stopCountdown();
+    if (next) {
+        goLight();
+        return;
+    }
+    cancelCountdown = startCountdown(COUNTDOWN_S, translate("system.eco.countdown"), () => {
+        cancelCountdown = null;
+        if (enabled && !active)
+            goDark();
+    });
+}
+function armRelapse() {
+    clearTimeout(relapse);
+    relapse = setTimeout(() => {
+        relapse = undefined;
+        setActive(false);
+    }, RELAPSE_MS);
+}
+function onRawInput() {
     if (!enabled)
         return;
-    const echo = toPercent(fraction);
-    if (isDimEcho(echo, lastDriven, Date.now() - lastDriveAt))
+    if (panel)
+        hideBlackout();
+    if (active) {
+        // Input Steam does not count keeps the screen on while it continues.
+        if (relapse !== undefined)
+            armRelapse();
         return;
-    if (isFloorEcho(echo, ECO_FLOOR_PCT))
-        return;
-    wakePct = echo;
+    }
+    setActive(true);
+    armRelapse();
 }
-function startPoll() {
-    if (pollTimer !== null)
-        return;
-    pollTimer = setInterval(() => {
+function onSteamActivity(next) {
+    clearTimeout(relapse);
+    relapse = undefined;
+    clearTimeout(debounce);
+    debounce = setTimeout(() => setActive(next), next ? WAKE_DEBOUNCE_MS : 0);
+}
+// A brightness the user picks while lit is the level to wake back to.
+function onBrightness(fraction) {
+    if (enabled && active && !panel && Date.now() - drivenAt > 2000)
+        wakePct = toPercent(fraction);
+}
+function enable(wake, screenOff) {
+    enabled = true;
+    active = true;
+    panel = screenOff;
+    wakePct = wake;
+    drivenAt = 0;
+    addEventListener(INPUT_EVENT, onRawInput);
+    unsubscribe = [
+        subscribeActive(onSteamActivity),
+        displayBrightness.subscribe(onBrightness),
+        () => removeEventListener(INPUT_EVENT, onRawInput),
+    ].filter((u) => u !== null);
+    poll = setInterval(() => {
         const e = epoch;
         getEcoState()
-            .then((s) => {
-            if (e === epoch)
-                reconcile(s.enabled, s.wake_brightness);
-        })
+            .then((s) => alive && e === epoch && sync(s))
             .catch(() => { });
     }, POLL_MS$1);
 }
-function stopPoll() {
-    if (pollTimer !== null) {
-        clearInterval(pollTimer);
-        pollTimer = null;
+function disable() {
+    enabled = false;
+    unsubscribe.forEach((u) => u());
+    unsubscribe = [];
+    clearInterval(poll);
+    clearTimeout(debounce);
+    clearTimeout(relapse);
+    relapse = undefined;
+    stopCountdown();
+    hideBlackout();
+    if (panel)
+        setEcoScreen(false).catch(() => { });
+    else
+        setBrightness(wakePct);
+}
+// The backend wins over whatever this controller believes, whatever event was missed.
+function sync(s) {
+    if (!s.enabled) {
+        if (enabled)
+            disable();
+        return;
+    }
+    if (!enabled) {
+        enable(s.wake_brightness, s.screen_off);
+        goLight(); // a running session picked up after a reload starts lit
+        return;
+    }
+    if (!active || cancelCountdown)
+        return;
+    if (!panel && s.screen_off)
+        panel = true; // panel power became available
+    if (panel) {
+        hideBlackout();
+        if (s.screen_asleep)
+            setEcoScreen(false).catch(() => { });
     }
 }
-function teardown() {
-    if (unsubActivity) {
-        unsubActivity();
-        unsubActivity = null;
-    }
-    if (unsubBrightness) {
-        unsubBrightness();
-        unsubBrightness = null;
-    }
-    if (debounceTimer !== null) {
-        clearTimeout(debounceTimer);
-        debounceTimer = null;
-    }
-    stopPoll();
-}
-function reconcile(on, wake) {
-    if (on && !enabled) {
-        wakePct = wake; // snapshot only on enable; while on, wakePct tracks the user
-        enabled = true;
-        // Dim to the floor immediately on enable, not only once idle. activeState stays
-        // true so the "active" signal fired while still in the menu doesn't bounce it back
-        // to full; a later idle→active transition still wakes it.
-        activeState = true;
-        drive(false);
-        unsubActivity = subscribeActive(onActivity);
-        unsubBrightness = displayBrightness.subscribe(onBrightness);
-        startPoll();
-    }
-    else if (!on && enabled) {
-        enabled = false;
-        teardown();
-        displayBrightness.set(fromPercent(wakePct));
-    }
-}
-function setEcoActiveHint(on, wake) {
+function setEcoActiveHint(on, wake, screenOff) {
     epoch += 1;
-    reconcile(on, wake);
+    if (on && !enabled)
+        enable(wake, screenOff);
+    else if (!on && enabled)
+        disable();
 }
 function startEcoAmbient() {
     alive = true;
     const e = epoch;
     getEcoState()
-        .then((s) => {
-        if (alive && e === epoch)
-            reconcile(s.enabled, s.wake_brightness);
-    })
+        .then((s) => alive && e === epoch && sync(s))
         .catch(() => { });
     return () => {
         alive = false;
         if (enabled)
-            displayBrightness.set(fromPercent(wakePct)); // don't leave the panel dim
-        enabled = false;
-        teardown();
+            disable();
     };
 }
 
 const POLL_MS = 3000; // keep the toggle in sync when another card's manual change clears eco
 /**
  * Drives the download-mode card. The persistent ambient controller
- * (ecoAmbient) actually owns the screen brightness; here we just flip the mode
+ * (ecoAmbient) actually owns the screen; here we just flip the mode
  * and hand it the wake level for an instant response, with the RPC as the
  * source of truth.
  */
@@ -24516,7 +25231,7 @@ function useEco() {
     }, []);
     const toggle = (enabled, currentBrightnessPct) => {
         const wake = enabled ? currentBrightnessPct : (state?.wake_brightness ?? currentBrightnessPct);
-        setEcoActiveHint(enabled, wake); // instant (persistent controller)
+        setEcoActiveHint(enabled, wake, state?.screen_off ?? false); // instant (persistent controller)
         setState((prev) => (prev ? { ...prev, enabled } : prev)); // optimistic
         pending.current = true;
         setEco(enabled, currentBrightnessPct)
@@ -24612,7 +25327,7 @@ const EcoBlock = () => {
     const brightness = useBrightness();
     if (!eco.state)
         return null;
-    return (SP_JSX.jsx(EcoCard, { state: eco.state, brightnessSupported: brightness.supported, onToggle: (en) => eco.toggle(en, brightness.percent) }));
+    return (SP_JSX.jsx(EcoCard, { state: eco.state, onToggle: (en) => eco.toggle(en, brightness.percent) }));
 };
 const BatteryBlock = () => {
     const { t } = useI18n();
@@ -24873,15 +25588,17 @@ const NOMINAL_MAX_RPM = 7000;
  * machine's two blowers run as one lock-step cooling system, so we don't tie a
  * fan to a CPU/GPU it doesn't independently cool.
  */
-const FanChipImpl = ({ label, rpm, values, maxRpm, layout = "stack" }) => {
+const FanChipImpl = ({ label, rpm, values, maxRpm, dutyPercent, layout = "stack" }) => {
     const r = (SIZE$1 - STROKE$1) / 2;
     const circ = 2 * Math.PI * r;
     // rpm null (glitch) → show "—" and an empty ring for this tick, honestly. The
     // fraction is only computed on the rpm != null branch, so observedMax's null
     // fallback is never exercised there — inline it.
     const observedMax = values.length ? Math.max(...values, rpm ?? 0) : (rpm ?? 0);
-    const fraction = rpm == null ? 0 : rpmFraction(rpm, observedMax, maxRpm ?? NOMINAL_MAX_RPM);
-    const ring = (SP_JSX.jsxs("svg", { width: SIZE$1, height: SIZE$1, viewBox: `0 0 ${SIZE$1} ${SIZE$1}`, style: { flexShrink: 0 }, children: [SP_JSX.jsx("circle", { cx: SIZE$1 / 2, cy: SIZE$1 / 2, r: r, fill: "none", stroke: theme.color.hairline, strokeWidth: STROKE$1 }), SP_JSX.jsx("circle", { cx: SIZE$1 / 2, cy: SIZE$1 / 2, r: r, fill: "none", stroke: theme.color.accent, strokeWidth: STROKE$1, strokeDasharray: `${circ * fraction} ${circ}`, strokeLinecap: "round", transform: `rotate(-90 ${SIZE$1 / 2} ${SIZE$1 / 2})` }), SP_JSX.jsx("text", { x: "50%", y: "46%", textAnchor: "middle", fill: theme.color.textPrimary, fontSize: 17, fontWeight: 700, style: { fontVariantNumeric: "tabular-nums" }, children: rpm == null ? "—" : rpm }), SP_JSX.jsx("text", { x: "50%", y: "64%", textAnchor: "middle", fill: theme.color.textMuted, fontSize: 9, children: "RPM" })] }));
+    const duty = dutyPercent === undefined ? null : dutyPercent;
+    const fraction = duty != null ? Math.max(0, Math.min(1, duty / 100))
+        : rpm == null ? 0 : rpmFraction(rpm, observedMax, maxRpm ?? NOMINAL_MAX_RPM);
+    const ring = (SP_JSX.jsxs("svg", { width: SIZE$1, height: SIZE$1, viewBox: `0 0 ${SIZE$1} ${SIZE$1}`, style: { flexShrink: 0 }, children: [SP_JSX.jsx("circle", { cx: SIZE$1 / 2, cy: SIZE$1 / 2, r: r, fill: "none", stroke: theme.color.hairline, strokeWidth: STROKE$1 }), SP_JSX.jsx("circle", { cx: SIZE$1 / 2, cy: SIZE$1 / 2, r: r, fill: "none", stroke: theme.color.accent, strokeWidth: STROKE$1, strokeDasharray: `${circ * fraction} ${circ}`, strokeLinecap: "round", transform: `rotate(-90 ${SIZE$1 / 2} ${SIZE$1 / 2})` }), SP_JSX.jsx("text", { x: "50%", y: "46%", textAnchor: "middle", fill: theme.color.textPrimary, fontSize: 17, fontWeight: 700, style: { fontVariantNumeric: "tabular-nums" }, children: duty != null ? duty : rpm == null ? "—" : rpm }), SP_JSX.jsx("text", { x: "50%", y: "64%", textAnchor: "middle", fill: theme.color.textMuted, fontSize: 9, children: duty != null ? "%" : "RPM" })] }));
     const labelEl = SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: label });
     if (layout === "wide") {
         // Ring on the left; label + a taller sparkline fill the rest of the row.
@@ -25263,7 +25980,7 @@ const ExperimentalFanCard = ({ enabled, onToggle }) => {
     const { t } = useI18n();
     return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden", marginBottom: theme.space.card }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 16, color: theme.color.warn }), " ", t("fans.experimental.title")] }), !enabled && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, margin: `${theme.space.xs}px 0`, lineHeight: 1.4 }, children: t("fans.experimental.note") })), SP_JSX.jsx(DFL.ToggleField, { label: t("fans.experimental.toggle"), checked: enabled, bottomSeparator: "none", onChange: (next) => {
                         if (next)
-                            DFL.showModal(SP_JSX.jsx(ConfirmDialog, { title: t("fans.experimental.confirm.title"), desc: t("fans.experimental.confirm.desc"), confirmLabel: t("fans.experimental.confirm.ok"), cancelLabel: t("fans.experimental.confirm.cancel"), icon: SP_JSX.jsx(LuTriangleAlert, { size: 20, color: theme.color.warn }), onConfirm: () => onToggle(true) }));
+                            showModal(SP_JSX.jsx(ConfirmDialog, { title: t("fans.experimental.confirm.title"), desc: t("fans.experimental.confirm.desc"), confirmLabel: t("fans.experimental.confirm.ok"), cancelLabel: t("fans.experimental.confirm.cancel"), icon: SP_JSX.jsx(LuTriangleAlert, { size: 20, color: theme.color.warn }), onConfirm: () => onToggle(true) }));
                         else
                             onToggle(false);
                     } })] }) }));
@@ -25370,7 +26087,7 @@ const FanCurveModal = ({ liveTemp, closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, {
 /** Open the big-screen curve editor. `onClosed` re-syncs the inline card; the
  *  live-temp marker is seeded from the section's current reading. */
 function openFanCurveModal(liveTemp, onClosed) {
-    DFL.showModal(SP_JSX.jsx(FanCurveModal, { liveTemp: liveTemp }), window, { fnOnClose: onClosed });
+    showModal(SP_JSX.jsx(FanCurveModal, { liveTemp: liveTemp }), window, { fnOnClose: onClosed });
 }
 
 function desktopFanVisible(deviceKey, channel) {
@@ -25448,7 +26165,7 @@ const DesktopFanCurveModalBody = ({ channelKey, title, initialPoints, closeModal
     if (!available || !point) {
         return SP_JSX.jsx("div", { style: { color: theme.color.textMuted }, children: t("desktop.fan.manual.unavailable") });
     }
-    return (SP_JSX.jsxs(FocusRoot, { style: { display: "flex", flexDirection: "column", gap: theme.space.md, padding: theme.space.sm }, children: [SP_JSX.jsxs("div", { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.value, color: theme.color.textPrimary }, children: title }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("desktop.fan.manual.subtitle") })] }), SP_JSX.jsxs("div", { style: { maxWidth: 760, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx(FanCurveGraph, { points: points, liveTemp: null, editable: true, onChange: setPoints }), SP_JSX.jsx(DFL.Focusable, { style: { ...segmentGroupStyle, flexWrap: "wrap" }, children: points.map(([temp, pwm], index) => {
+    return (SP_JSX.jsxs(FocusRoot, { style: { display: "flex", flexDirection: "column", gap: theme.space.md, padding: theme.space.sm }, children: [SP_JSX.jsxs("div", { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.value, color: theme.color.textPrimary }, children: title }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("desktop.fan.manual.subtitle") })] }), SP_JSX.jsxs("div", { style: { maxWidth: 760, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsx(FanCurveGraph, { points: points, liveTemp: null, editable: true, onChange: setPoints }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { ...segmentGroupStyle, flexWrap: "wrap" }, children: points.map(([temp, pwm], index) => {
                             const active = index === selected;
                             const choose = () => setSelected(index);
                             return (SP_JSX.jsxs(DFL.Focusable, { role: "button", "aria-label": t("desktop.fan.manual.point", { point: index + 1 }), style: { ...segmentItemStyle(active), flex: "1 1 76px", padding: "6px 8px" }, onActivate: choose, onClick: choose, children: [temp, "\u00B0 \u00B7 ", pwmToPercent(pwm), "%"] }, index));
@@ -25456,7 +26173,7 @@ const DesktopFanCurveModalBody = ({ channelKey, title, initialPoints, closeModal
 };
 const DesktopFanCurveModal = ({ closeModal, ...props }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(DesktopFanCurveModalBody, { ...props, closeModal: closeModal }) }));
 function openDesktopFanCurveModal(channelKey, title, initialPoints, onClosed) {
-    DFL.showModal(SP_JSX.jsx(DesktopFanCurveModal, { channelKey: channelKey, title: title, initialPoints: initialPoints }), window, { fnOnClose: onClosed });
+    showModal(SP_JSX.jsx(DesktopFanCurveModal, { channelKey: channelKey, title: title, initialPoints: initialPoints }), window, { fnOnClose: onClosed });
 }
 
 const MODES$2 = ["auto", "silent", "balanced", "performance", "custom"];
@@ -25545,7 +26262,7 @@ const tempLabel = (t, sensor) => sensor === "CPU" ? t("fans.temp.cpu")
 const DesktopFanTile = ({ fan, values, layout, t }) => {
     const channel = fan.channel;
     const label = t(`desktop.fan.channel.${channel}`);
-    return (SP_JSX.jsx("div", { style: { ...theme.tile, display: "flex", minWidth: 0, flexDirection: "column", alignItems: "center", gap: theme.space.xs }, children: SP_JSX.jsx(FanChip, { label: label, rpm: fan.rpm, values: values, maxRpm: fan.max_rpm, layout: layout }) }));
+    return (SP_JSX.jsx("div", { style: { ...theme.tile, display: "flex", minWidth: 0, flexDirection: "column", alignItems: "center", gap: theme.space.xs }, children: SP_JSX.jsx(FanChip, { label: label, rpm: fan.rpm, values: values, maxRpm: fan.max_rpm, dutyPercent: fan.duty_only ? fan.percent : undefined, layout: layout }) }));
 };
 const FanRpmBlock = () => {
     const { t } = useI18n();
@@ -25557,7 +26274,7 @@ const FanRpmBlock = () => {
     const soloFan = solo ? visibleFans[0] : null;
     const soloTemp = solo ? state.temps[0] : null;
     if (solo && soloFan && soloTemp) {
-        return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...card, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsx(FanChip, { label: t("fans.fan", { n: 1 }), rpm: soloFan.rpm, values: fanHistory[soloFan.label] ?? [], layout: "ring" }), SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0 }, children: SP_JSX.jsx(TempStat, { label: tempLabel(t, soloTemp.label), celsius: soloTemp.celsius, variant: "hero" }) })] }), SP_JSX.jsx(Sparkline, { values: fanHistory[soloFan.label] ?? [], color: theme.color.accent, height: 40 })] }) }));
+        return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...card, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsx(FanChip, { label: t("fans.fan", { n: 1 }), rpm: soloFan.rpm, dutyPercent: soloFan.duty_only ? soloFan.percent : undefined, values: fanHistory[soloFan.label] ?? [], layout: "ring" }), SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0 }, children: SP_JSX.jsx(TempStat, { label: tempLabel(t, soloTemp.label), celsius: soloTemp.celsius, variant: "hero" }) })] }), SP_JSX.jsx(Sparkline, { values: fanHistory[soloFan.label] ?? [], color: theme.color.accent, height: 40 })] }) }));
     }
     if (visibleFans.length > 0) {
         return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: {
@@ -25567,7 +26284,7 @@ const FanRpmBlock = () => {
                         ? (visibleFans.length === 1 ? "minmax(0, 1fr)" : "repeat(2, minmax(0, 1fr))")
                         : undefined,
                     gap: theme.space.sm,
-                }, children: visibleFans.map((fan, i) => (state.desktop && fan.channel ? (SP_JSX.jsx(DesktopFanTile, { fan: fan, values: fanHistory[fan.label] ?? [], layout: visibleFans.length === 1 ? "wide" : "stack", t: t }, fan.channel)) : (SP_JSX.jsx("div", { style: theme.tile, children: SP_JSX.jsx(FanChip, { label: t("fans.fan", { n: i + 1 }), rpm: fan.rpm, values: fanHistory[fan.label] ?? [], layout: visibleFans.length === 1 ? "wide" : "stack" }) }, fan.label)))) }) }));
+                }, children: visibleFans.map((fan, i) => (state.desktop && fan.channel ? (SP_JSX.jsx(DesktopFanTile, { fan: fan, values: fanHistory[fan.label] ?? [], layout: visibleFans.length === 1 ? "wide" : "stack", t: t }, fan.channel)) : (SP_JSX.jsx("div", { style: theme.tile, children: SP_JSX.jsx(FanChip, { label: t("fans.fan", { n: i + 1 }), rpm: fan.rpm, dutyPercent: fan.duty_only ? fan.percent : undefined, values: fanHistory[fan.label] ?? [], layout: visibleFans.length === 1 ? "wide" : "stack" }) }, fan.label)))) }) }));
     }
     return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("fans.unavailable") }) }));
 };
@@ -25620,17 +26337,19 @@ const OledLookCard = ({ active, onApply, onReset }) => {
                 // Accent-tinted gradient so the hero card stands apart from the plain cards.
                 background: `linear-gradient(135deg, rgba(${theme.color.accentRgb},0.18), rgba(${theme.color.accentRgb},0.04))`,
                 boxShadow: `inset 0 0 0 1px rgba(${theme.color.accentRgb},0.35)`,
-            }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx(LuSparkles, { size: 20, color: theme.color.accent }), SP_JSX.jsxs("div", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: t("display.oled.title") }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("display.oled.desc") })] })] }), SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", gap: 6, marginTop: 10 }, children: [SP_JSX.jsxs(DFL.Focusable, { style: {
+            }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx(LuSparkles, { size: 20, color: theme.color.accent }), SP_JSX.jsxs("div", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: t("display.oled.title") }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("display.oled.desc") })] })] }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: 6, marginTop: 10 }, children: [SP_JSX.jsxs(DFL.Focusable, { style: {
                                 flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                                 padding: "9px 10px", borderRadius: theme.radius.sm,
                                 background: theme.color.accent, color: "#ffffff", fontWeight: 700,
                                 fontSize: theme.font.body, cursor: "pointer",
-                            }, onActivate: onApply, onClick: onApply, children: [SP_JSX.jsx(LuSparkles, { size: 15 }), t("display.oled.apply")] }), active && (SP_JSX.jsx(DFL.Focusable, { style: {
+                            }, onActivate: onApply, onClick: onApply, children: [SP_JSX.jsx(LuSparkles, { size: 15 }), t("display.oled.apply")] }), SP_JSX.jsx(DFL.Focusable, { "aria-disabled": !active, style: {
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 padding: "9px 14px", borderRadius: theme.radius.sm,
                                 background: "rgba(255,255,255,0.06)", color: theme.color.textPrimary,
-                                fontSize: theme.font.body, cursor: "pointer",
-                            }, onActivate: onReset, onClick: onReset, children: t("display.native") }))] })] }) }));
+                                fontSize: theme.font.body, cursor: active ? "pointer" : "default", opacity: active ? 1 : 0.45,
+                            }, onActivate: () => { if (active)
+                                onReset(); }, onClick: () => { if (active)
+                                onReset(); }, children: t("display.native") })] })] }) }));
 };
 
 const AdvancedColor = ({ state, onChange }) => {
@@ -25708,13 +26427,16 @@ const ColorBlock = () => {
     if (!state?.supported)
         return null;
     const active = !isNativeColor(state);
-    const chip = (on) => ({ ...segmentItemStyle(on), flex: 1, padding: "6px 4px" });
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }, children: [SP_JSX.jsx(LuSparkles, { size: 16, color: theme.color.accent }), SP_JSX.jsx("span", { style: { fontSize: theme.font.body, fontWeight: 600, color: theme.color.textPrimary }, children: t("display.look") })] }), SP_JSX.jsx(DFL.Focusable, { style: segmentGroupStyle, children: state.presets.map((key) => (SP_JSX.jsx(DFL.Focusable, { style: chip(state.active_preset === key), onActivate: () => color.onPreset(key), onClick: () => color.onPreset(key), children: SP_JSX.jsx(MarqueeText, { text: t(`display.look.${key}`), alignWhenFits: "center" }) }, key))) })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 2 }, children: [SP_JSX.jsx(LuPalette, { size: 16, color: theme.color.accent }), SP_JSX.jsx("span", { style: { fontSize: theme.font.body, fontWeight: 600, color: theme.color.textPrimary }, children: t("display.saturation") }), SP_JSX.jsxs("span", { style: { marginLeft: "auto", fontSize: theme.font.value, fontWeight: 700, color: theme.color.textPrimary }, children: [state.saturation, "%"] })] }), SP_JSX.jsx(ContainedSlider, { value: state.saturation, min: 0, max: 200, step: 5, scale: 0.75, onChange: color.onSaturation })] }) }), SP_JSX.jsxs(Collapsible, { id: "color-advanced", icon: SP_JSX.jsx(LuSlidersHorizontal, { size: 16 }), title: t("display.advanced"), summary: isCalibrated(state) ? t("display.custom") : t("display.native"), children: [SP_JSX.jsx(AdvancedColor, { state: state, onChange: color.onCalibration }), active && (SP_JSX.jsx(DFL.Focusable, { style: {
+    const chip = (on) => ({ ...segmentItemStyle(on), flex: "1 1 0", minWidth: 0, padding: "6px 0", fontSize: theme.font.caption });
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }, children: [SP_JSX.jsx(LuSparkles, { size: 16, color: theme.color.accent }), SP_JSX.jsx("span", { style: { fontSize: theme.font.body, fontWeight: 600, color: theme.color.textPrimary }, children: t("display.look") })] }), SP_JSX.jsx(DFL.Focusable, { style: { ...segmentGroupStyle, gap: 2 }, children: state.presets.map((key) => (SP_JSX.jsx(DFL.Focusable, { style: chip(state.active_preset === key), onActivate: () => color.onPreset(key), onClick: () => color.onPreset(key), children: SP_JSX.jsx(MarqueeText, { text: t(`display.look.${key}`), alignWhenFits: "center" }) }, key))) })] }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 2 }, children: [SP_JSX.jsx(LuPalette, { size: 16, color: theme.color.accent }), SP_JSX.jsx("span", { style: { fontSize: theme.font.body, fontWeight: 600, color: theme.color.textPrimary }, children: t("display.saturation") }), SP_JSX.jsxs("span", { style: { marginLeft: "auto", fontSize: theme.font.value, fontWeight: 700, color: theme.color.textPrimary }, children: [state.saturation, "%"] })] }), SP_JSX.jsx(ContainedSlider, { value: state.saturation, min: 0, max: 200, step: 5, scale: 0.75, onChange: color.onSaturation })] }) }), SP_JSX.jsxs(Collapsible, { id: "color-advanced", icon: SP_JSX.jsx(LuSlidersHorizontal, { size: 16 }), title: t("display.advanced"), summary: isCalibrated(state) ? t("display.custom") : t("display.native"), children: [SP_JSX.jsx(AdvancedColor, { state: state, onChange: color.onCalibration }), SP_JSX.jsx(DFL.Focusable, { "aria-disabled": !active, style: {
                             display: "flex", justifyContent: "center", marginTop: 10, padding: "6px 12px",
                             borderRadius: theme.radius.sm, background: theme.color.surfaceRaised,
                             boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
-                            color: theme.color.textPrimary, fontSize: theme.font.body, cursor: "pointer",
-                        }, onActivate: color.onReset, onClick: color.onReset, children: t("display.reset") }))] })] }));
+                            color: theme.color.textPrimary, fontSize: theme.font.body,
+                            cursor: active ? "pointer" : "default", opacity: active ? 1 : 0.45,
+                        }, onActivate: () => { if (active)
+                            color.onReset(); }, onClick: () => { if (active)
+                            color.onReset(); }, children: t("display.reset") })] })] }));
 };
 const HdrBlock = () => {
     const { hdr } = usePantalla();
@@ -25784,13 +26506,13 @@ const MagicModulesCard = ({ modules, pending, result, onAction }) => {
         if (opening.current || !canEject(modules, action, pending))
             return;
         opening.current = true;
-        DFL.showModal(SP_JSX.jsx(ConfirmDialog, { title: t("mandos.modules.confirm.title"), desc: t("mandos.modules.confirm.desc"), confirmLabel: t("mandos.modules.confirm.ok"), cancelLabel: t("mandos.modules.confirm.cancel"), onConfirm: () => {
+        showModal(SP_JSX.jsx(ConfirmDialog, { title: t("mandos.modules.confirm.title"), desc: t("mandos.modules.confirm.desc"), confirmLabel: t("mandos.modules.confirm.ok"), cancelLabel: t("mandos.modules.confirm.cancel"), onConfirm: () => {
                 opening.current = false;
                 onAction(action);
             }, icon: SP_JSX.jsx(LuPuzzle, { size: 18, color: theme.color.warn }) }));
         window.setTimeout(() => { opening.current = false; }, 0);
     };
-    return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: [SP_JSX.jsx(LuPuzzle, { size: 16, color: theme.color.accent }), " ", t("mandos.modules.title")] }), SP_JSX.jsx("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.space.sm, margin: `${theme.space.sm}px 0` }, children: ["left", "right"].map((side) => (SP_JSX.jsxs("div", { style: { padding: theme.space.sm, borderRadius: theme.radius.sm, boxShadow: `inset 0 0 0 1px ${theme.color.hairline}` }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t(`mandos.modules.${side}`) }), SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textPrimary, fontWeight: 700, marginTop: 2 }, children: t(moduleStateKey(modules[side])) })] }, side))) }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4, marginBottom: theme.space.sm }, children: t("mandos.modules.source.hhd") }), !modules.supported && (SP_JSX.jsx("div", { role: "status", style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginBottom: theme.space.sm }, children: t("mandos.modules.unavailable") })), SP_JSX.jsx("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.space.xs }, children: ACTIONS.map(({ action, label }, index) => (SP_JSX.jsx(DFL.DialogButton, { disabled: !canEject(modules, action, pending), style: { gridColumn: index === 2 ? "1 / -1" : undefined, width: "100%" }, onClick: () => confirm(action), children: pending === action ? t("mandos.modules.running") : t(label) }, action))) }), result && (SP_JSX.jsx("div", { role: "status", style: { fontSize: theme.font.caption, color: result.outcome === "confirmed" ? theme.color.ok : theme.color.warn, lineHeight: 1.4, marginTop: theme.space.sm }, children: t(outcomeKey(result.outcome)) }))] }));
+    return (SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: [SP_JSX.jsx(LuPuzzle, { size: 16, color: theme.color.accent }), " ", t("mandos.modules.title")] }), SP_JSX.jsx("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.space.sm, margin: `${theme.space.sm}px 0` }, children: ["left", "right"].map((side) => (SP_JSX.jsxs("div", { style: { padding: theme.space.sm, borderRadius: theme.radius.sm, boxShadow: `inset 0 0 0 1px ${theme.color.hairline}` }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t(`mandos.modules.${side}`) }), SP_JSX.jsx("div", { style: { fontSize: theme.font.body, color: theme.color.textPrimary, fontWeight: 700, marginTop: 2 }, children: t(moduleStateKey(modules[side])) })] }, side))) }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4, marginBottom: theme.space.sm }, children: t("mandos.modules.source.hhd") }), !modules.supported && (SP_JSX.jsx("div", { role: "status", style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginBottom: theme.space.sm }, children: t("mandos.modules.unavailable") })), SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: theme.space.xs }, children: ACTIONS.map(({ action, label }, index) => (SP_JSX.jsx(DFL.DialogButton, { disabled: !canEject(modules, action, pending), style: { gridColumn: index === 2 ? "1 / -1" : undefined, width: "100%" }, onClick: () => confirm(action), children: pending === action ? t("mandos.modules.running") : t(label) }, action))) }), result && (SP_JSX.jsx("div", { role: "status", style: { fontSize: theme.font.caption, color: result.outcome === "confirmed" ? theme.color.ok : theme.color.warn, lineHeight: 1.4, marginTop: theme.space.sm }, children: t(outcomeKey(result.outcome)) }))] }));
 };
 
 const Card = ({ title, children }) => (SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.xs, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary, marginBottom: theme.space.sm }, children: [SP_JSX.jsx(LuGamepad2, { size: 16, color: theme.color.accent }), " ", title] }), children] }));
@@ -25820,7 +26542,7 @@ const RemapBlock = () => {
                 ? "mandos.remap.uncalibrated"
                 : config.extra_buttons === false
                     ? "mandos.remap.noextra"
-                    : "mandos.remap.nobuttons") })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { marginBottom: theme.space.sm }, children: SP_JSX.jsx(ProfileSelector, { scope: scope, gameName: game?.name ?? null, hasGameProfile: config.has_game_profile ?? false, globalLabel: t("tdp.scope.global"), inheritHint: t("mandos.inherit"), onScope: onScope }) }), buttons.map((b) => (SP_JSX.jsx(RemapRow, { label: b.label, children: SP_JSX.jsx(DFL.Dropdown, { rgOptions: targetGroups, selectedOption: currentTargetValue(b.target ?? []), strDefaultLabel: t("mandos.remap.default"), onChange: (o) => onSetButton(b.source, o.data) }) }, b.source))), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, margin: `${theme.space.sm}px 0`, lineHeight: 1.4 }, children: t("mandos.remap.note") }), SP_JSX.jsxs(DFL.DialogButton, { style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: theme.space.xs }, onClick: onReset, children: [SP_JSX.jsx(LuRotateCcw, { size: 14 }), " ", t("mandos.remap.reset")] })] })) }));
+                    : "mandos.remap.nobuttons") })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { marginBottom: theme.space.sm }, children: SP_JSX.jsx(ProfileSelector, { scope: scope, gameName: game?.name ?? null, hasGameProfile: config.has_game_profile ?? false, globalLabel: t("tdp.scope.global"), inheritHint: t("mandos.inherit"), onScope: onScope }) }), buttons.map((b) => (SP_JSX.jsx(RemapRow, { label: b.label, children: SP_JSX.jsx(DFL.Dropdown, { rgOptions: targetGroups, selectedOption: currentTargetValue(b.target ?? []), strDefaultLabel: t("mandos.remap.default"), onChange: (o) => onSetButton(b.source, o.data) }) }, b.source))), config.unmapped_dropped && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, marginTop: theme.space.sm, lineHeight: 1.4 }, children: t("mandos.remap.dropped") })), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, margin: `${theme.space.sm}px 0`, lineHeight: 1.4 }, children: t("mandos.remap.note") }), SP_JSX.jsxs(DFL.DialogButton, { style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: theme.space.xs }, onClick: onReset, children: [SP_JSX.jsx(LuRotateCcw, { size: 14 }), " ", t("mandos.remap.reset")] })] })) }));
 };
 const SettingsBlock = () => {
     const { t } = useI18n();
@@ -26090,7 +26812,7 @@ const BoostEditor = ({ boost, watts, pl2Max, pl3Max, onPickMode, onOffsets }) =>
     const fppt = sppt + off3;
     // "Sin boost" IS estable (flat, no headroom over PL1) — that's what "no boost" means.
     const label = (m) => (m === "estable" ? t("tdp.presets.boost.none") : t(`tdp.boost.mode.${m}`));
-    return (SP_JSX.jsxs("div", { style: { marginTop: theme.space.xs }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("tdp.boost.title") }), SP_JSX.jsx("div", { style: { ...segmentGroupStyle, marginTop: theme.space.xs }, children: BOOST_MODES.map((m) => (SP_JSX.jsx(DFL.Focusable, { style: { ...segmentItemStyle(active === m), flex: 1, padding: "4px 6px" }, onActivate: () => onPickMode({ mode: m, off2: m === "custom" ? off2 : 0, off3: m === "custom" ? off3 : 0 }), onClick: () => onPickMode({ mode: m, off2: m === "custom" ? off2 : 0, off3: m === "custom" ? off3 : 0 }), children: label(m) }, m))) }), active === "custom" && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: theme.space.xs }, children: [t("tdp.level.slow"), " \u00B7 ", sppt, " W"] }), SP_JSX.jsx(ContainedSlider, { value: sppt, min: watts, max: Math.max(watts + 1, pl2Max), step: 1, onChange: (v) => onOffsets({ mode: "custom", off2: Math.max(0, v - watts), off3: Math.min(off3, Math.max(0, pl3Max - v)) }) }), SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: [t("tdp.level.fast"), " \u00B7 ", fppt, " W"] }), SP_JSX.jsx(ContainedSlider, { value: fppt, min: sppt, max: Math.max(sppt + 1, pl3Max), step: 1, onChange: (v) => onOffsets({ mode: "custom", off2, off3: Math.max(0, v - sppt) }) })] }))] }));
+    return (SP_JSX.jsxs("div", { style: { marginTop: theme.space.xs }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("tdp.boost.title") }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { ...segmentGroupStyle, marginTop: theme.space.xs }, children: BOOST_MODES.map((m) => (SP_JSX.jsx(DFL.Focusable, { style: { ...segmentItemStyle(active === m), flex: 1, padding: "4px 6px" }, onActivate: () => onPickMode({ mode: m, off2: m === "custom" ? off2 : 0, off3: m === "custom" ? off3 : 0 }), onClick: () => onPickMode({ mode: m, off2: m === "custom" ? off2 : 0, off3: m === "custom" ? off3 : 0 }), children: label(m) }, m))) }), active === "custom" && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: theme.space.xs }, children: [t("tdp.level.slow"), " \u00B7 ", sppt, " W"] }), SP_JSX.jsx(ContainedSlider, { value: sppt, min: watts, max: Math.max(watts + 1, pl2Max), step: 1, onChange: (v) => onOffsets({ mode: "custom", off2: Math.max(0, v - watts), off3: Math.min(off3, Math.max(0, pl3Max - v)) }) }), SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: [t("tdp.level.fast"), " \u00B7 ", fppt, " W"] }), SP_JSX.jsx(ContainedSlider, { value: fppt, min: sppt, max: Math.max(sppt + 1, pl3Max), step: 1, onChange: (v) => onOffsets({ mode: "custom", off2, off3: Math.max(0, v - sppt) }) })] }))] }));
 };
 const Body = ({ builtinWatts, onAc, currentWatts, min, max, supportsAdvanced, pl2Max, pl3Max, onClose, closeModal, formatValue }) => {
     const { t } = useI18n();
@@ -26161,7 +26883,7 @@ const Body = ({ builtinWatts, onAc, currentWatts, min, max, supportsAdvanced, pl
         patch(id, entry);
         wrap(updatePowerPreset(id, entry.watts, entry.icon, entry.boost, entry.name));
     };
-    const confirmDelete = (id) => DFL.showModal(SP_JSX.jsx(ConfirmDialog, { title: t("tdp.presets.delete.title"), desc: t("tdp.presets.delete.desc"), confirmLabel: t("tdp.presets.delete"), cancelLabel: t("tdp.presets.delete.cancel"), icon: SP_JSX.jsx(LuTrash2, { size: 20, color: theme.color.danger }), onConfirm: () => wrap(deletePowerPreset(id)) }), window);
+    const confirmDelete = (id) => showModal(SP_JSX.jsx(ConfirmDialog, { title: t("tdp.presets.delete.title"), desc: t("tdp.presets.delete.desc"), confirmLabel: t("tdp.presets.delete"), cancelLabel: t("tdp.presets.delete.cancel"), icon: SP_JSX.jsx(LuTrash2, { size: 20, color: theme.color.danger }), onConfirm: () => wrap(deletePowerPreset(id)) }), window);
     // The editable fields of a preset, for building a commit payload with one field changed.
     const entryOf = (it) => ({ watts: it.watts, icon: it.icon, name: it.name, boost: it.boost });
     // Open/close the editor for a row, flushing any pending save so switching rows never drops it.
@@ -26184,7 +26906,7 @@ const Body = ({ builtinWatts, onAc, currentWatts, min, max, supportsAdvanced, pl
                             display: "flex", alignItems: "center", gap: theme.space.xs,
                             padding: `${theme.space.xs}px ${theme.space.md}px`, borderRadius: theme.radius.sm,
                             background: theme.color.accent, color: theme.color.onAccent, fontWeight: 700, cursor: "pointer",
-                        }, onActivate: onDone, onClick: onDone, children: [SP_JSX.jsx(LuCheck, { size: 16 }), " ", t("customize.views.done")] })] }), SP_JSX.jsx("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: items.map((it, i) => (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.xs }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { display: "flex", color: it.hidden ? theme.color.textMuted : theme.color.accent }, children: presetIconNode(it.icon, 16) }), SP_JSX.jsxs("span", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, color: theme.color.textPrimary, opacity: it.hidden ? 0.5 : 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: [presetTitle(it, t), presetSub(it) && SP_JSX.jsxs("span", { style: { color: theme.color.textMuted }, children: [" \u00B7 ", presetSub(it)] })] }), SP_JSX.jsx(IconAction, { label: t("customize.moveUp"), color: i === 0 ? theme.color.textMuted : theme.color.accent, disabled: i === 0, onTap: () => wrap(movePowerPreset(it.id, -1)), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.moveDown"), color: i === items.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: i === items.length - 1, onTap: () => wrap(movePowerPreset(it.id, 1)), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.hide"), color: theme.color.textMuted, onTap: () => wrap(setPowerPresetHidden(it.id, !it.hidden)), children: it.hidden ? SP_JSX.jsx(LuEyeOff, { size: 18 }) : SP_JSX.jsx(LuEye, { size: 18 }) }), it.deletable && (SP_JSX.jsx(IconAction, { label: t("tdp.presets.delete"), color: theme.color.danger, onTap: () => confirmDelete(it.id), children: SP_JSX.jsx(LuTrash2, { size: 18 }) }))] }), it.editable && editing === it.id && (() => {
+                        }, onActivate: onDone, onClick: onDone, children: [SP_JSX.jsx(LuCheck, { size: 16 }), " ", t("customize.views.done")] })] }), SP_JSX.jsx("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm }, children: items.map((it, i) => (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.xs }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { style: { display: "flex", color: it.hidden ? theme.color.textMuted : theme.color.accent }, children: presetIconNode(it.icon, 16) }), SP_JSX.jsxs("span", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, color: theme.color.textPrimary, opacity: it.hidden ? 0.5 : 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: [presetTitle(it, t), presetSub(it) && SP_JSX.jsxs("span", { style: { color: theme.color.textMuted }, children: [" \u00B7 ", presetSub(it)] })] }), SP_JSX.jsx(IconAction, { label: t("customize.moveUp"), color: i === 0 ? theme.color.textMuted : theme.color.accent, disabled: i === 0, onTap: () => wrap(movePowerPreset(it.id, -1)), children: SP_JSX.jsx(LuChevronUp, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.moveDown"), color: i === items.length - 1 ? theme.color.textMuted : theme.color.accent, disabled: i === items.length - 1, onTap: () => wrap(movePowerPreset(it.id, 1)), children: SP_JSX.jsx(LuChevronDown, { size: 18 }) }), SP_JSX.jsx(IconAction, { label: t("customize.hide"), color: theme.color.textMuted, onTap: () => wrap(setPowerPresetHidden(it.id, !it.hidden)), children: it.hidden ? SP_JSX.jsx(LuEyeOff, { size: 18 }) : SP_JSX.jsx(LuEye, { size: 18 }) }), it.deletable && (SP_JSX.jsx(IconAction, { label: t("tdp.presets.delete"), color: theme.color.danger, onTap: () => confirmDelete(it.id), children: SP_JSX.jsx(LuTrash2, { size: 18 }) }))] }), it.editable && editing === it.id && (() => {
                             const d = draft ?? entryOf(it);
                             return (SP_JSX.jsxs("div", { style: { paddingLeft: theme.space.lg, display: "flex", flexDirection: "column", gap: theme.space.xs }, children: [SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("tdp.presets.name") }), SP_JSX.jsx(DFL.TextField, { value: d.name, bShowClearAction: true, onChange: (e) => commitDebounced(it.id, { ...d, name: e.target.value }) }), SP_JSX.jsx(ContainedSlider, { value: d.watts, min: min, max: max, step: 1, showValue: true, onChange: (w) => commitDebounced(it.id, { ...d, watts: w }) }), SP_JSX.jsx(IconPickerGrid, { keys: PRESET_ICON_KEYS, value: d.icon, renderIcon: presetIconNode, onPick: (k) => commitNow(it.id, { ...d, icon: k }) }), supportsAdvanced && (SP_JSX.jsx(BoostEditor, { boost: d.boost, watts: d.watts, pl2Max: pl2Max, pl3Max: pl3Max, onPickMode: (b) => commitNow(it.id, { ...d, boost: b }), onOffsets: (b) => commitDebounced(it.id, { ...d, boost: b }) }))] }));
                         })(), it.editable && (SP_JSX.jsx(DFL.Focusable, { style: { paddingLeft: theme.space.lg, fontSize: theme.font.caption, color: theme.color.textMuted, cursor: "pointer" }, onActivate: () => toggleEdit(it), onClick: () => toggleEdit(it), children: editing === it.id ? t("tdp.presets.doneEdit") : t("tdp.presets.edit") }))] }, it.id))) }), customCount < CAP && (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => wrap(createPowerPreset(Math.round(currentWatts), "bolt", null, "")), children: SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: theme.space.xs }, children: [SP_JSX.jsx(LuPlus, { size: 16 }), " ", t("tdp.presets.add")] }) }))] }));
@@ -26194,7 +26916,7 @@ const PowerPresetsModal = (props) => (
 // cleanup flushes any pending save and then calls onClose to refresh the parent, in order.
 SP_JSX.jsx(DFL.ModalRoot, { closeModal: props.closeModal, bAllowFullSize: true, children: SP_JSX.jsx(FocusRoot, { children: SP_JSX.jsx(Body, { ...props }) }) }));
 function openPowerPresetsModal(props) {
-    DFL.showModal(SP_JSX.jsx(PowerPresetsModal, { ...props }), window);
+    showModal(SP_JSX.jsx(PowerPresetsModal, { ...props }), window);
 }
 
 const ZONE_ICON = {
@@ -26370,7 +27092,7 @@ const Presets = SP_REACT.memo(({ resolved, manageLabel, hiddenLabel, onPick, onE
     const sub = presetSub;
     // Three or fewer visible presets read better as big column tiles; more wrap compactly.
     const big = resolved.visible.length <= 3;
-    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }, children: [resolved.allHidden ? (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, textAlign: "center", padding: "4px 0" }, children: hiddenLabel })) : big ? (SP_JSX.jsx(DFL.Focusable, { style: { display: "flex", gap: 6 }, children: resolved.visible.map((it) => (SP_JSX.jsxs(DFL.Focusable, { style: iconChipStyle(it.active), onActivate: () => onPick(it), onClick: () => onPick(it), children: [presetIconNode(it.icon, 20), SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: 4, fontWeight: 600, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: [title(it), hasBoost(it) && SP_JSX.jsx(BoostDot, { active: it.active })] }), sub(it) && SP_JSX.jsx("span", { style: { color: theme.color.textMuted }, children: sub(it) })] }, it.id))) })) : (SP_JSX.jsx(DFL.Focusable, { style: { display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }, children: resolved.visible.map((it) => (SP_JSX.jsxs(DFL.Focusable, { style: rowChipStyle(it.active), onActivate: () => onPick(it), onClick: () => onPick(it), children: [presetIconNode(it.icon, 15), SP_JSX.jsx("span", { children: title(it) }), sub(it) && SP_JSX.jsx("span", { style: { color: theme.color.textMuted }, children: sub(it) }), hasBoost(it) && SP_JSX.jsx(BoostDot, { active: it.active })] }, it.id))) })), SP_JSX.jsxs(DFL.Focusable, { "aria-label": manageLabel, style: {
+    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }, children: [resolved.allHidden ? (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, textAlign: "center", padding: "4px 0" }, children: hiddenLabel })) : big ? (SP_JSX.jsx(DFL.Focusable, { style: { display: "flex", gap: 6 }, children: resolved.visible.map((it) => (SP_JSX.jsxs(DFL.Focusable, { style: iconChipStyle(it.active), onActivate: () => onPick(it), onClick: () => onPick(it), children: [presetIconNode(it.icon, 20), SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: 4, fontWeight: 600, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: [title(it), hasBoost(it) && SP_JSX.jsx(BoostDot, { active: it.active })] }), sub(it) && SP_JSX.jsx("span", { style: { color: theme.color.textMuted }, children: sub(it) })] }, it.id))) })) : (SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }, children: resolved.visible.map((it) => (SP_JSX.jsxs(DFL.Focusable, { style: rowChipStyle(it.active), onActivate: () => onPick(it), onClick: () => onPick(it), children: [presetIconNode(it.icon, 15), SP_JSX.jsx("span", { children: title(it) }), sub(it) && SP_JSX.jsx("span", { style: { color: theme.color.textMuted }, children: sub(it) }), hasBoost(it) && SP_JSX.jsx(BoostDot, { active: it.active })] }, it.id))) })), SP_JSX.jsxs(DFL.Focusable, { "aria-label": manageLabel, style: {
                     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                     padding: "6px 10px", borderRadius: theme.radius.sm,
                     background: theme.color.surfaceRaised,
@@ -26426,7 +27148,7 @@ const AdvancedBoost = ({ levels, mode, bounds, ppt = null, biosNoticeAbove = nul
             marginTop: theme.space.sm,
             marginBottom: theme.space.card,
             overflow: "hidden",
-        }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: theme.space.xs, cursor: "pointer" }, onActivate: () => setOpen((o) => !o), onClick: () => setOpen((o) => !o), children: [SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx(Chevron, { size: 16, color: theme.color.textMuted }), SP_JSX.jsx("span", { children: t(isDeckPpt ? "tdp.deckPpt.title" : "tdp.boost.title") })] }), SP_JSX.jsxs("span", { style: { display: "flex", flexWrap: "wrap", gap: theme.space.xs, paddingLeft: 16 + theme.space.sm }, children: [isDeckPpt && SP_JSX.jsx("span", { style: { ...badge, color: theme.color.warn, boxShadow: `inset 0 0 0 1px ${theme.color.warn}` }, children: t("tdp.deckPpt.experimental") }), SP_JSX.jsx("span", { style: badge, children: t(`tdp.boost.mode.${mode}`) })] })] }), open && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: theme.space.sm }, children: isDeckPpt ? t("tdp.deckPpt.hint") : t(`tdp.boost.hint.${mode}`) }), SP_JSX.jsx("div", { style: { ...segmentGroupStyle, gap: theme.space.sm, marginTop: theme.space.sm }, children: MODES$1.map((m) => (SP_JSX.jsx(DFL.Focusable, { style: {
+        }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { display: "flex", flexDirection: "column", alignItems: "stretch", gap: theme.space.xs, cursor: "pointer" }, onActivate: () => setOpen((o) => !o), onClick: () => setOpen((o) => !o), children: [SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: theme.space.sm, minWidth: 0 }, children: [SP_JSX.jsx(Chevron, { size: 16, color: theme.color.textMuted }), SP_JSX.jsx("span", { children: t(isDeckPpt ? "tdp.deckPpt.title" : "tdp.boost.title") })] }), SP_JSX.jsxs("span", { style: { display: "flex", flexWrap: "wrap", gap: theme.space.xs, paddingLeft: 16 + theme.space.sm }, children: [isDeckPpt && SP_JSX.jsx("span", { style: { ...badge, color: theme.color.warn, boxShadow: `inset 0 0 0 1px ${theme.color.warn}` }, children: t("tdp.deckPpt.experimental") }), SP_JSX.jsx("span", { style: badge, children: t(`tdp.boost.mode.${mode}`) })] })] }), open && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: theme.space.sm }, children: isDeckPpt ? t("tdp.deckPpt.hint") : t(`tdp.boost.hint.${mode}`) }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { ...segmentGroupStyle, gap: theme.space.sm, marginTop: theme.space.sm }, children: MODES$1.map((m) => (SP_JSX.jsx(DFL.Focusable, { style: {
                                 ...segmentItemStyle(m === mode),
                                 flex: 1,
                                 minWidth: 0,
@@ -26571,41 +27293,42 @@ function ownershipView(ownership, physicalMin) {
         boostFloor,
     };
 }
+// Only what the user needs to know, attributed to the device: it refuses, caps or ignores
+// the limit, or something else keeps changing it. States that work, settle or are
+// corrected automatically stay in the logs.
+function ownershipMessage(ownership, physicalMin, onAc) {
+    if (["control_disabled", "firmware_mode"].includes(ownership.reason))
+        return null;
+    const view = ownershipView(ownership, physicalMin);
+    if (ownership.status === "rejected") {
+        if (view.target === null)
+            return { key: "tdp.ownership.rejectedUnknown", vars: {}, warn: true };
+        return view.applied !== null
+            ? { key: "tdp.ownership.rejected", vars: { target: view.target, applied: view.applied }, warn: true }
+            : { key: "tdp.ownership.rejectedNoValue", vars: { target: view.target }, warn: true };
+    }
+    if (ownership.overshoot?.state === "unresolved") {
+        return { key: "tdp.ownership.overshootUnresolved", vars: { target: ownership.overshoot.target_w }, warn: true };
+    }
+    if (ownership.conflict_persistent)
+        return { key: "tdp.ownership.conflict", vars: {}, warn: true };
+    if (view.show && ownership.status === "constrained" && view.applied !== null) {
+        const key = ["safe_min", "live_min"].includes(ownership.reason)
+            ? "tdp.ownership.minimum"
+            : ownership.reason === "power_source_limit" && onAc
+                ? "tdp.ownership.powerLimited"
+                : "tdp.ownership.constrained";
+        return { key, vars: { applied: view.applied }, warn: false };
+    }
+    return null;
+}
 
 const TdpOwnershipStatus = ({ ownership, onAc, physicalMin }) => {
     const { t } = useI18n();
-    const view = ownershipView(ownership, physicalMin);
-    const overshoot = ownership.overshoot;
-    const ownershipWins = view.show && view.kind !== "constrained" && view.kind !== "settling";
-    if (overshoot && !ownershipWins) {
-        const key = {
-            correcting: "tdp.ownership.overshootCorrecting",
-            restored: "tdp.ownership.overshootRestored",
-            unresolved: "tdp.ownership.overshootUnresolved",
-        }[overshoot.state];
-        return (SP_JSX.jsx("div", { style: {
-                fontSize: theme.font.caption,
-                color: overshoot.state === "restored" ? theme.color.textMuted : theme.color.warn,
-            }, children: t(key, { peak: Math.round(overshoot.peak_w), target: overshoot.target_w }) }));
-    }
-    if (!view.show && view.boostFloor) {
-        return (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t(ownership.menu_floor ? "tdp.ownership.boostFloorMenu" : "tdp.ownership.boostFloor", view.boostFloor) }));
-    }
-    if (!view.show)
+    const message = ownershipMessage(ownership, physicalMin, onAc);
+    if (!message)
         return null;
-    const color = view.kind === "rejected" || view.kind === "conflict"
-        ? theme.color.warn
-        : theme.color.textMuted;
-    const messageKey = view.kind === "constrained"
-        && ownership.reason === "power_source_limit"
-        && onAc
-        ? "tdp.ownership.powerLimited"
-        : `tdp.ownership.${view.kind}`;
-    return (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color }, children: t(messageKey, {
-            requested: view.requested ?? "—",
-            target: view.target ?? "—",
-            applied: view.applied ?? "—",
-        }) }));
+    return (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: message.warn ? theme.color.warn : theme.color.textMuted }, children: t(message.key, message.vars) }));
 };
 
 const STEAM_DECK_NOMINAL_MAX_W = 15;
@@ -26668,7 +27391,7 @@ const TdpSection = ({ tdp, scope, power, onWatts, onSetLevels, onSetMode, onAppl
     const atCeiling = zone === null && Math.min(view.watts, sliderMax) >= sliderMax;
     const ownership = ownershipView(tdp.ownership, tdp.limits.min);
     // In the extra range the dial and the note already say the firmware decides.
-    const showOwnership = (ownership.show || ownership.boostFloor || tdp.ownership.overshoot)
+    const showOwnership = ownershipMessage(tdp.ownership, tdp.limits.min, tdp.on_ac) !== null
         && !(zone !== null && ["constrained", "rejected", "conflict"].includes(ownership.kind));
     const deckPptActive = Boolean(tdp.ppt?.supported && view.mode !== "estable");
     const arcTarget = deckPptActive ? (tdp.ppt?.requested.slow ?? shownWatts) : shownWatts;
@@ -26899,7 +27622,7 @@ const DesktopPowerCard = () => {
     const policy = power?.cpu_policy_supported && power.cpu_policy
         ? t(`desktop.cpu.policy.${power.cpu_policy}`)
         : null;
-    return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx(LuGauge, { size: 18, color: theme.color.accent }), SP_JSX.jsx("span", { style: { fontSize: theme.font.body, fontWeight: 650, color: theme.color.textPrimary }, children: t("desktop.power.title") })] }), SP_JSX.jsx(DFL.Focusable, { style: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 6 }, children: MODES.map((mode) => {
+    return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, display: "flex", flexDirection: "column", gap: theme.space.sm, overflow: "hidden" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsx(LuGauge, { size: 18, color: theme.color.accent }), SP_JSX.jsx("span", { style: { fontSize: theme.font.body, fontWeight: 650, color: theme.color.textPrimary }, children: t("desktop.power.title") })] }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "grid", style: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 6 }, children: MODES.map((mode) => {
                         const active = power?.mode === mode;
                         const label = t(`desktop.mode.${mode}`);
                         return (SP_JSX.jsxs(DFL.Focusable, { style: { ...segmentItemStyle(active), boxSizing: "border-box", minWidth: 0, minHeight: "0px", height: 32, padding: "4px 5px", color: active ? theme.color.onAccent : theme.color.textMuted, boxShadow: `inset 0 0 0 1px ${active ? "transparent" : theme.color.hairline}` }, title: label, "aria-label": label, onActivate: () => control.applyMode(mode), onClick: () => control.applyMode(mode), children: [ICONS[mode], SP_JSX.jsx("span", { style: { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: label })] }, mode));
@@ -27748,7 +28471,11 @@ const AutoTdpBlock = () => {
     return (SP_JSX.jsx(AutoTdpCard, { config: view.config, scope: scope, limits: tdp.auto_limits, requestLimits: tdp.auto_request_limits, onAc: tdp.on_ac, maxTargetFps: tdp.auto_target_max_fps, live: view.power?.auto ?? null, liveApplies: view.liveApplies && Boolean(power?.auto_tdp), onToggle: onAutoTdpToggle, onTargetFps: onAutoTargetFps, onInitialTdp: onAutoInitialTdp, onMinTdp: onAutoMinTdp, onMaxTdp: onAutoMaxTdp, unit: tdp.unit }));
 };
 const SteamPerformanceBlock = () => {
-    const { scope, game } = usePotencia();
+    const { scope, game, tdpSettled } = usePotencia();
+    // Rendering ahead of the TDP blocks above it would make this card the only
+    // focusable node when Steam assigns entry focus, leaving focus off-screen.
+    if (!tdpSettled)
+        return null;
     return (SP_JSX.jsx(SteamPerformanceCard, { profileScope: scope, runningGameId: game?.liveAppid ?? null }));
 };
 function registerPowerBlocks() {
@@ -27859,6 +28586,12 @@ function useLearningStatus(appidKey) {
     return { status, refresh };
 }
 
+// Steam unmounts the panel whenever the QAM closes, including under every modal it
+// opens. The pinned home view resumes where it was for the rest of the session.
+let pinnedHomeView = null;
+function rememberPinnedHomeView(mode, activeId) {
+    pinnedHomeView = { mode, activeId };
+}
 const ControlCenter = ({ target }) => {
     const { t, lang } = useI18n();
     const { device, failed } = useDeviceState();
@@ -27904,6 +28637,9 @@ const ControlCenter = ({ target }) => {
     const [activeId, setActiveIdState] = SP_REACT.useState(() => {
         if (targetSectionId)
             return targetSectionId;
+        const resumed = target?.kind === "home" ? pinnedHomeView?.activeId : null;
+        if (resumed && visibleTabIds.includes(resumed))
+            return resumed;
         const saved = readActiveTab();
         return (saved && visibleTabIds.includes(saved) ? saved : visibleTabIds[0]) ?? SECTIONS[0].id;
     });
@@ -27943,7 +28679,7 @@ const ControlCenter = ({ target }) => {
     if (targetSectionId && !resolvedTargetId) {
         return (SP_JSX.jsx(DFL.PanelSection, { children: SP_JSX.jsx(DFL.PanelSectionRow, { children: t("customize.qam.destinationUnavailable") }) }));
     }
-    return (SP_JSX.jsx(ControlCenterShell, { device: device, gameName: game?.name ?? null, learning: learning, sections: orderedTabs, activeId: activeId, showHome: layout.showHome, showDeviceHeader: layout.showDeviceHeader, hasUpdate: hasUpdate, updateInfo: target ? null : updateInfo, updateStatus: updateStatus, initialMode: target?.kind === "home" ? "home" : resolvedTargetId ? "detail" : undefined, onSelectSection: setActiveId }));
+    return (SP_JSX.jsx(ControlCenterShell, { device: device, gameName: game?.name ?? null, learning: learning, sections: orderedTabs, activeId: activeId, showHome: layout.showHome, showDeviceHeader: layout.showDeviceHeader, hasUpdate: hasUpdate, updateInfo: target ? null : updateInfo, updateStatus: updateStatus, initialMode: target?.kind === "home" ? pinnedHomeView?.mode ?? "home" : resolvedTargetId ? "detail" : undefined, onSelectSection: setActiveId, onViewChange: target?.kind === "home" ? rememberPinnedHomeView : undefined }));
 };
 
 function isSameGameReport(a, b) {
@@ -29514,130 +30250,6 @@ function createThemeLibraryAccess(dependencies = steamDependencies()) {
                 return null;
             return customVerticalCapsule(dependencies, overview)
                 ?? steamVerticalCapsule({ ...overview, appid: appId });
-        },
-    });
-}
-
-const DEFAULT_BUTTONS = Object.freeze({
-    up: 9,
-    down: 10,
-    confirm: 1,
-    cancel: 2,
-});
-function getSteamNavigationController() {
-    const scope = globalThis;
-    return scope.GamepadNavTree?.m_context?.m_controller ?? scope.FocusNavController;
-}
-const MAX_SEARCHED_NODES = 20000;
-const GAMEPAD_FOCUS_SOURCE = 3;
-// Steam no longer exposes FocusElement and ignores DOM focus(); only the owning node moves focus.
-function findNavigationNode(tree, element) {
-    const pending = [tree];
-    const seen = new Set();
-    let searched = 0;
-    while (pending.length > 0 && searched < MAX_SEARCHED_NODES) {
-        const current = pending.pop();
-        if (!current || typeof current !== "object" || seen.has(current))
-            continue;
-        seen.add(current);
-        searched += 1;
-        const candidate = current;
-        if (candidate.m_element === element)
-            return candidate;
-        if (candidate.m_Root)
-            pending.push(candidate.m_Root);
-        for (const list of [candidate.m_rgChildren, candidate.m_rgChildNavTrees]) {
-            if (Array.isArray(list))
-                pending.push(...list);
-        }
-    }
-    return null;
-}
-function focusThroughNavigationNode(controller, element) {
-    const tree = controller?.GetActiveNavTree?.();
-    if (!tree)
-        return false;
-    const node = findNavigationNode(tree, element);
-    if (typeof node?.BTakeFocus !== "function")
-        return false;
-    return Boolean(node.BTakeFocus(GAMEPAD_FOCUS_SOURCE));
-}
-function consumeInput(event) {
-    if (!event || typeof event !== "object")
-        return;
-    for (const method of ["preventDefault", "stopPropagation", "stopImmediatePropagation"]) {
-        const callback = Reflect.get(event, method);
-        if (typeof callback === "function")
-            callback.call(event);
-    }
-}
-function createThemeNavigationAccess({ getController = getSteamNavigationController, buttons = DEFAULT_BUTTONS, } = {}) {
-    return Object.freeze({
-        focus(element) {
-            let hostFocused = false;
-            try {
-                const controller = getController();
-                if (typeof controller?.FocusElement === "function") {
-                    controller.FocusElement(element);
-                    hostFocused = true;
-                }
-                else if (focusThroughNavigationNode(controller, element)) {
-                    return true;
-                }
-            }
-            catch {
-                hostFocused = false;
-            }
-            try {
-                element.focus({ preventScroll: true });
-            }
-            catch {
-                return hostFocused;
-            }
-            return hostFocused || element.ownerDocument.activeElement === element;
-        },
-        capture(handler) {
-            let tree;
-            try {
-                tree = getController()?.GetActiveNavTree?.();
-            }
-            catch {
-                return () => { };
-            }
-            const register = tree?.RegisterGlobalButtonHandler;
-            if (!tree || typeof register !== "function")
-                return () => { };
-            const releases = [];
-            const bindings = [
-                [buttons.up, "up"],
-                [buttons.down, "down"],
-                [buttons.confirm, "confirm"],
-                [buttons.cancel, "cancel"],
-            ];
-            try {
-                for (const [button, action] of bindings) {
-                    const release = register.call(tree, button, (event) => {
-                        consumeInput(event);
-                        handler(action);
-                        return true;
-                    });
-                    if (typeof release === "function")
-                        releases.push(release);
-                }
-            }
-            catch {
-                for (const release of releases.splice(0).reverse())
-                    release();
-                return () => { };
-            }
-            let active = true;
-            return () => {
-                if (!active)
-                    return;
-                active = false;
-                for (const release of releases.splice(0).reverse())
-                    release();
-            };
         },
     });
 }
