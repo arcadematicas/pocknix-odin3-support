@@ -1,10 +1,18 @@
 # PENDIENTES 2026-10-15
 
-## 🔴 Push del centro APARCADO — rama `master` divergida + cambios ajenos sin commitear
+## ✅ RESUELTO (2026-10-15) — push del centro alineado; la rama ya no está bloqueada
 
-**Estado:** el push de `pocknix-odin3-support` está **bloqueado**. Decisión de Fransis:
-**esperar** (nada de `stash`, ni commitear trabajo ajeno sin confirmar que está acabado, ni
-`--force`, ni rebase forzado).
+**Estado:** **RESUELTO.** Otra sesión rebasó y publicó mientras este bloqueo estaba anotado:
+`master` == `origin/master` == **`1888f929`** (ahead/behind **0/0**). Los 4 commits locales
+se publicaron con **hashes reescritos** por el rebase:
+`2366cb0`→`4127ffd`, `84b6c0b`→`68783b8`, `3be1675`→`f8b1787`, `0655fd6`→`10bb017`,
+`2764de2`→`cc923c2`. Ambos docs (el del QAM con la corrección de estado, y este pendiente)
+están ya en `origin/master`.
+
+### Historial del bloqueo (ya superado)
+Antes: el push estaba **bloqueado** — `master` divergida (**ahead 4 / behind 11**) + cambios
+sin commitear de DeckStation. Decisión de Fransis al detectarlo: **esperar** (nada de `stash`,
+ni commitear trabajo ajeno sin confirmar que está acabado, ni `--force`, ni rebase forzado).
 
 **Causa del bloqueo (dos cosas a la vez):**
 
@@ -27,7 +35,7 @@
    La `M` tracked hace que `git pull --rebase` **falle antes de empezar**
    (*"cannot pull with rebase: You have unstaged changes"*).
 
-**Qué falta para desbloquear:**
+**Qué faltaba para desbloquear (ya hecho):**
 
 1. Que **quien lleve la tarea DeckStation** commitee (o descarte) esos cambios.
 2. Después, con el árbol limpio, publicar los 4 commits locales:
