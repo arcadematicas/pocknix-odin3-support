@@ -133,6 +133,9 @@ package() {
   # powersave off, SSH on, Plasma rotation, sensor config).
   install -Dm755 "${sd}/odin3-post-boot-setup.sh"                "${bin}/odin3-post-boot-setup.sh"
   install -Dm755 "${sd}/udev/install-odin3-gamepad-perms.sh"     "${bin}/install-odin3-gamepad-perms.sh"
+  # Helper del re-escaneo de InputPlumber: lo llama la unidad .service de mas
+  # abajo cuando aparece tarde el mando interno (rsinput/UART, ~15 s).
+  install -Dm755 "${sd}/udev/pocknix-inputplumber-rescan.sh"     "${bin}/pocknix-inputplumber-rescan"
 
   # --- systemd units ----------------------------------------------------------
   local unit="${pkgdir}/usr/lib/systemd/system"
@@ -150,6 +153,10 @@ package() {
   install -Dm644 "${sd}/fake-suspend/pocknix-fake-suspend.service"        "${unit}/pocknix-fake-suspend.service"
   install -Dm644 "${sd}/hexagonrpcd/hexagonrpcd-adsp-sensorspd.service"   "${unit}/hexagonrpcd-adsp-sensorspd.service"
   install -Dm644 "${sd}/steamos-manager/pocknix-steamos-manager.service"  "${unit}/pocknix-steamos-manager.service"
+  # Re-escaneo de InputPlumber cuando aparece tarde el mando interno del Odin 3.
+  # NO se habilita (sin [Install]): la dispara la regla udev de mas abajo via
+  # ENV{SYSTEMD_WANTS} al aparecer "AYN Odin3 Gamepad".
+  install -Dm644 "${sd}/udev/pocknix-inputplumber-rescan.service"         "${unit}/pocknix-inputplumber-rescan.service"
   # Ships as 'odin3-display.service.clean' in our notes; installed under its real name.
   install -Dm644 "${sd}/odin3-display.service.clean"                      "${unit}/odin3-display.service"
   # Drop-in that adds the resume side of the fake-suspend unit (ExecStop).
@@ -169,6 +176,12 @@ package() {
   # --- udev / environment / configs -------------------------------------------
   install -Dm644 "${sd}/udev/70-odin3-gamepad.rules" \
     "${pkgdir}/usr/lib/udev/rules.d/70-odin3-gamepad.rules"
+  # Re-escaneo de InputPlumber cuando aparece TARDE el mando interno del Odin 3
+  # (rsinput arranca ~15 s despues que inputplumber y este no vuelve a escanear ->
+  # en Steam Game Mode no hay mandos). Ver tambien 60-input-id2-odin3-gamepad.rules
+  # (clasificacion ID_INPUT_JOYSTICK, vive en overlay/etc/udev/rules.d/).
+  install -Dm644 "${sd}/udev/60-input-id2-odin3-gamepad-rescan.rules" \
+    "${pkgdir}/usr/lib/udev/rules.d/60-input-id2-odin3-gamepad-rescan.rules"
   # FEX stability flags for steamwebhelper (x86_64 under FEX); see configs/fex-README.md.
   install -Dm644 "${sd}/configs/fex-fix.conf" \
     "${pkgdir}/etc/environment.d/fex-fix.conf"

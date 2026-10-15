@@ -47,6 +47,11 @@ overlay() {
 }
 
 # --- our own device packages (whole directories) -----------------------------
+# OJO: estos mirrors son del DIRECTORIO ENTERO -> las reglas/servicios nuevos del
+# paquete viajan solos, no hay que listarlos uno a uno. Ej.: pocknix-bsp-sm8750
+# lleva udev/60-input-id2-odin3-gamepad-rescan.rules + udev/pocknix-inputplumber-
+# rescan.service (re-escaneo de InputPlumber al aparecer tarde el mando del Odin 3)
+# y entran por la linea de abajo, sin registro adicional.
 mirror "packages/pocknix-bsp-sm8750"    "devices/sm8750/packages/pocknix-bsp-sm8750"
 mirror "packages/pocknix-device-sm8750" "devices/sm8750/packages/pocknix-device-sm8750"
 # El firmware del SoC como PAQUETE (mismo contrato que pocknix-firmware-sm8550): sin esto solo

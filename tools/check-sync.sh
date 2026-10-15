@@ -48,6 +48,10 @@ cmp_tree() {
 }
 
 echo "check-sync: comparing ${HERE} -> ${OS}"
+# El cmp_tree va del DIRECTORIO ENTERO del paquete: las reglas/servicios nuevos
+# entran solos. Ej.: pocknix-bsp-sm8750/udev/60-input-id2-odin3-gamepad-rescan.rules
+# + pocknix-inputplumber-rescan.service (re-escaneo de InputPlumber al aparecer
+# tarde el mando interno del Odin 3) los vigila la linea de abajo.
 cmp_tree "${HERE}/packages/pocknix-bsp-sm8750"    "${OS}/devices/sm8750/packages/pocknix-bsp-sm8750"
 cmp_tree "${HERE}/packages/pocknix-device-sm8750" "${OS}/devices/sm8750/packages/pocknix-device-sm8750"
 # El firmware del SoC como PAQUETE: PKGBUILD + ./paths. Si este PKGBUILD se queda atras, la

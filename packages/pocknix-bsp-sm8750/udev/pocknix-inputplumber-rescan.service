@@ -1,0 +1,20 @@
+[Unit]
+Description=Re-escaneo de InputPlumber cuando aparece tarde el mando interno del Odin 3
+# NO se habilita (no tiene [Install]): la arranca systemd por la regla udev
+# 60-input-id2-odin3-gamepad-rescan.rules, via ENV{SYSTEMD_WANTS}, cuando aparece
+# el mando "AYN Odin3 Gamepad" (ACTION=="add"). Por eso no va en el bucle de
+# enable del PKGBUILD ni en *.wants/.
+After=inputplumber.service
+# Refuerzo anti-bucle: la regla ya solo dispara en "add" (un restart de
+# inputplumber no re-annade el dispositivo del kernel), pero si algo rea-nadiese
+# el mando en rafaga no queremos un carrusel de reinicios.
+StartLimitIntervalSec=120
+StartLimitBurst=3
+
+[Service]
+Type=oneshot
+# El helper espera (polling <=POCKNIX_RESCAN_TIMEOUT) a que el mando tenga
+# capacidades reales y solo entonces reinicia inputplumber; si no, sale sin tocar
+# nada (guard del "empty input").
+ExecStart=/usr/local/bin/pocknix-inputplumber-rescan
+TimeoutStartSec=90

@@ -1,0 +1,30 @@
+# 60-input-id2-odin3-gamepad-rescan.rules — pedir un re-escaneo de InputPlumber
+# cuando aparece TARDE el mando interno del Odin 3.
+#
+# POR QUE: el mando interno ("AYN Odin3 Gamepad", driver rsinput sobre UART)
+# tarda ~15 s en inicializarse tras el arranque. inputplumber arranca ANTES, su
+# primer escaneo no lo ve y NO vuelve a escanear -> en Steam Game Mode no hay
+# mandos. Sintoma en el journal de inputplumber:
+#     Gamepad order: []
+#     WARN Removed device had an empty input
+# Arreglo inmediato comprobado en la Odin: `systemctl restart inputplumber`
+# (la orden de gamepads pasa a ["/org/shadowblip/..."] y vuelven los virtuales
+# "Microsoft X-Box 360 pad 0/1").
+#
+# SOLO ACTION=="add": es el evento con el que el kernel anuncia el mando. NO se
+# incluye "change" a proposito -> reiniciar inputplumber NO re-annade el
+# dispositivo del kernel, pero limitarlo a "add" elimina de raiz cualquier bucle.
+#
+# No se usa RUN+="/usr/bin/systemctl ...": RUN se ejecuta de forma sincrona dentro
+# del worker de udev (bloquea el procesado de eventos). En su lugar se marca el
+# dispositivo para systemd (TAG+="systemd") y se pide la unidad
+# pocknix-inputplumber-rescan.service, cuyo ExecStart espera a que el mando tenga
+# capacidades REALES antes de reiniciar; asi no se reinicia con un dispositivo
+# aun "vacio" (el warning "empty input").
+#
+# El nombre casa por ATTRS{name}: el mando UART interno NO tiene idVendor. Se
+# limita a KERNEL=="event*" para disparar una sola vez por dispositivo de entrada
+# (el nodo js* tambien cuelga del mismo padre y casaria el ATTRS).
+ACTION=="add", SUBSYSTEM=="input", KERNEL=="event*", \
+  ATTRS{name}=="AYN Odin3 Gamepad", \
+  TAG+="systemd", ENV{SYSTEMD_WANTS}="pocknix-inputplumber-rescan.service"
