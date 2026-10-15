@@ -223,7 +223,9 @@ overlay "packages/pocknix-wsquashfs"    "packages/shared/pocknix-wsquashfs"
 # sistema sigue siendo el nuestro: esto lo elige el tweak "Mesa Version" por juego (+13,4% FPS
 # medido). Ver packages/pocknix-vk-valve/PKGBUILD y docs/PRUEBAS-MESA.md.
 overlay "packages/pocknix-vk-valve" "packages/shared/pocknix-vk-valve"
-# Sensores Qualcomm (SSC): libssc + hexagonrpc + msm-firmware-loader (pila de Terra/armada).
+# Sensores Qualcomm (SSC): libqrtr + libssc + hexagonrpc + msm-firmware-loader
+# (pila de Terra/armada). libqrtr: ver su PKGBUILD (ALARM no lo trae).
+overlay "packages/libqrtr"             "packages/shared/libqrtr"
 overlay "packages/libssc"              "packages/shared/libssc"
 overlay "packages/hexagonrpc"          "packages/shared/hexagonrpc"
 overlay "packages/msm-firmware-loader" "packages/shared/msm-firmware-loader"

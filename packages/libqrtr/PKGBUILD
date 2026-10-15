@@ -1,0 +1,46 @@
+# libqrtr — libreria de sockets QRTR (IPC router de Qualcomm) de linux-msm.
+#
+# POR QUE EXISTE ESTE PAQUETE
+#   ALARM aarch64 NO tiene la libreria QRTR de linux-msm: escaneando las 3 bases de ALARM
+#   (core, extra y alarm) solo aparece `libqrtr-glib` — la de GLIB de ModemManager, que
+#   instala el soname libqrtr-glib.so y NO sirve para enlazar contra QRTR. Ni `libqrtr.so`
+#   ni la cabecera `libqrtr.h` existen ahi. Sin esto no se puede compilar NADA que use QRTR,
+#   y `pd-mapper` lo necesita literalmente (su Makefile: LDFLAGS += -lqrtr, y pd-mapper.c
+#   hace `#include <libqrtr.h>`). Por eso se empaqueta aqui.
+#
+# QUE INSTALA
+#   /usr/lib/libqrtr.so.1.2 (+ .so.1 y .so)   la biblioteca (meson, libdir=lib)
+#   /usr/include/libqrtr.h                    cabecera (la que incluye pd-mapper)
+#   /usr/lib/pkgconfig/qrtr.pc                para pkg-config (se llama qrtr.pc: lo genera
+#                                               meson del nombre del proyecto 'qrtr')
+#   /usr/bin/qrtr-cfg                         ajuste de QRTR (sin dependencias extra)
+#   /usr/bin/qrtr-lookup                      busqueda de servicios QRTR
+#
+# VERSION / COMMIT: upstream NO tiene ningun tag (repo sin releases). El meson.build del
+#   commit pineado (_commit) declara version '1.2', que es lo que reporta la libreria; ese
+#   es el pkgver. El commit va fijado para que el paquete sea reproducible (mismo estilo que
+#   packages/gamescope-session, que tambien pinea un commit con archive/${_commit}.tar.gz).
+#   Sin dependencias externas: meson.build no llama a dependency() alguno (solo libc).
+pkgname=libqrtr
+_commit=29e36ae164389580a0f8ea7a7fdb728140ae978d
+pkgver=1.2
+pkgrel=1
+pkgdesc="Qualcomm QRTR (IPC router) client library from linux-msm, plus qrtr-cfg/qrtr-lookup"
+arch=('aarch64')
+url="https://github.com/linux-msm/qrtr"
+license=('BSD-3-Clause')
+makedepends=('meson' 'ninja')
+source=("$url/archive/${_commit}.tar.gz")
+sha256sums=('66f846c447a0a0302e7dd9b5450c38945081100b04697bb9eb39994c45ddae4e')
+
+build() {
+  cd qrtr-${_commit}
+  meson setup build --prefix=/usr --buildtype=release
+  meson compile -C build
+}
+
+package() {
+  cd qrtr-${_commit}
+  meson install -C build --destdir "${pkgdir}"
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
