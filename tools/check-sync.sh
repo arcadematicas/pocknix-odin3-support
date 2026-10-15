@@ -64,7 +64,12 @@ cmp_tree "${HERE}/kernel/patches/05-speedup"       "${OS}/kernel/sm8750/patches/
 cmp_tree "${HERE}/kernel/patches/10-mainline"      "${OS}/kernel/sm8750/patches/10-mainline"
 cmp_tree "${HERE}/kernel/patches/20-sm8750"        "${OS}/kernel/sm8750/patches/20-sm8750"
 cmp_tree "${HERE}/kernel/patches/30-version"       "${OS}/kernel/sm8750/patches/30-version"
-cmp_tree "${HERE}/kernel/sm8750" "${OS}/kernel/sm8750"
+# kernel.conf: fichero suelto (el directorio del arbol lleva ademas patches/dts/config)
+if [ ! -f "${HERE}/kernel/sm8750/kernel.conf" ]; then
+  drift "kernel/sm8750/kernel.conf: falta en el centro"
+elif ! cmp -s "${HERE}/kernel/sm8750/kernel.conf" "${OS}/kernel/sm8750/kernel.conf"; then
+  drift "kernel/sm8750/kernel.conf: difiere (centro vs arbol)"
+fi
 cmp_tree "${HERE}/kernel/dts"                     "${OS}/kernel/sm8750/dts/qcom"
 # gamescope ya NO tiene linea propia: es un paquete packages/soc/ y lo cubre el bucle
 # `packages/soc-overrides/*` de mas abajo (antes vivia en packages/gamescope/).
