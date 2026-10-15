@@ -1430,6 +1430,12 @@
 	gamepad {
 		compatible = "gamepad,rsinput";
 
+		/* Rango de stick explicito del Odin 3 (armada 1300, parche 2104).
+		 * armada quitó su axis-deadzone de 70 (valor de bring-up ROCKNIX)
+		 * para dejar pasar el stick tal cual; nosotros aún conservamos el
+		 * default de 70 en el driver -> ver docs/pendientes. */
+		axis-range = <1024>;
+
 		gamepad-name = "AYN Odin3 Gamepad";
 		gamepad-bus = <0x0003>;
 		gamepad-vid = <0x2020>;
