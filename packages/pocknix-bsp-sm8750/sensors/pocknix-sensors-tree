@@ -1,0 +1,90 @@
+#!/bin/sh
+# pocknix-sensors-tree - prepara el arbol HexagonFS que consume el SSC del ADSP (Odin 3).
+#
+# QUE ES
+#   El SSC (Sensor Core) del ADSP pide sus ficheros por FastRPC y `hexagonrpcd` se los sirve
+#   desde el "arbol HexagonFS" que se le pasa en -R. La unidad del BSP
+#       hexagonrpcd-adsp-sensorspd.service
+#   espera ese arbol en:
+#       /run/msm-firmware-loader/hexagonrpc/{dsp,sensors/config,sensors/registry,
+#                                            sensors/sns_reg.conf,socinfo}
+#
+# POR QUE HACE FALTA ESTE SCRIPT (y no basta con msm-firmware-loader)
+#   El loader upstream construye ese arbol solo, pero en el Odin 3 falla por dos motivos reales:
+#     1) Deteccion de slot A/B: no hay `qbootctl` y /proc/cmdline NO trae `androidboot.slot_suffix`,
+#        asi que su ab_get_slot() devuelve vacio y busca la particion "dsp" en vez de "dsp_a".
+#        Resultado: solo monta `persist` y el arbol sale vacio.
+#     2) No existe particion `vendor` (el vendor va dentro de `super`): los enlaces a
+#        mnt/vendor*/etc/sensors/{config,sns_reg_config} no pueden existir nunca.
+#   Aqui se cubren los dos huecos: montamos `dsp_a` por partlabel y enlazamos las configs del
+#   vendor desde el paquete pocknix-sensors-config (/usr/lib/firmware/sensors), que son las
+#   mismas que trae el firmware Android de stock (mismos md5, ver docs/SENSORES-ODIN3-2026-10-15.md).
+#
+# TAMBIEN: los .jsn (registro de servicios servreg) DEBEN estar en el mismo directorio que el
+#   firmware-name del remoteproc, porque asi los busca `pd-mapper`:
+#       /sys/class/remoteproc/remoteproc0/firmware = qcom/sm8750/adsp.mbn
+#   -> escanea <firmware_class path>/qcom/sm8750/ buscando *.jsn (NO recursivo). Y ese path lo
+#   fija msm-firmware-loader a /run/msm-firmware-loader/target, no /usr/lib/firmware.
+#   Sin pd-mapper no se registra el process domain "sensor_pd" y el SSC se queda a medias
+#   (acelerometro/giroscopio si, magnetometro/rotv no).
+#
+# Los demonios NO se lanzan aqui: los arrancan sus unidades (pd-mapper.service y
+# hexagonrpcd-adsp-sensorspd.service), que van despues de esta.
+set -u
+
+T=/run/msm-firmware-loader/hexagonrpc
+DST=/run/msm-firmware-loader/target/qcom/sm8750
+FW=/usr/lib/firmware
+PERSIST=/run/msm-firmware-loader/mnt/persist
+
+# --- 0) esperar a que msm-firmware-loader haya montado su tmpfs -----------------------------
+i=0
+while [ $i -lt 40 ]; do
+	[ -d /run/msm-firmware-loader ] && break
+	sleep 1
+	i=$((i + 1))
+done
+if [ ! -d /run/msm-firmware-loader ]; then
+	echo "pocknix-sensors-tree: /run/msm-firmware-loader no existe (msm-firmware-loader no corrio)" >&2
+	exit 1
+fi
+
+# --- 1) la particion dsp del vendor (ro) ----------------------------------------------------
+# Contiene adsp/ con las libs del PD (libsns_*_skel.so, sns_tppe.so...) que el ADSP pide.
+mkdir -p "$PERSIST" 2>/dev/null || true
+mkdir -p /run/msm-firmware-loader/mnt/dsp_a
+if ! mountpoint -q /run/msm-firmware-loader/mnt/dsp_a; then
+	mount -o ro,nodev,noexec,nosuid \
+		/dev/disk/by-partlabel/dsp_a /run/msm-firmware-loader/mnt/dsp_a 2>&1 | sed 's/^/pocknix-sensors-tree: /' >&2
+fi
+
+# --- 2) el arbol HexagonFS ------------------------------------------------------------------
+mkdir -p "$T/sensors"
+ln -sfn /run/msm-firmware-loader/mnt/dsp_a                             "$T/dsp"
+ln -sfn "$FW/sensors/config"                                           "$T/sensors/config"
+ln -sfn "$FW/sensors/sns_reg_config"                                   "$T/sensors/sns_reg.conf"
+ln -sfn "$PERSIST/sensors/registry/registry"                           "$T/sensors/registry"
+ln -sfn /sys/devices/soc0                                              "$T/socinfo"
+# Extras del vendor (inofensivos si el SSC no los pide).
+ln -sfn "$FW/sensors/sns_odp_config"                                   "$T/sensors/sns_odp_config"
+ln -sfn "$FW/sensors/hals.conf"                                        "$T/sensors/hals.conf"
+
+# --- 3) los .jsn donde los busca pd-mapper --------------------------------------------------
+mkdir -p "$DST"
+for f in "$FW"/qcom/sm8750/*.jsn; do
+	[ -e "$f" ] || continue
+	ln -sfn "$f" "$DST/$(basename "$f")"
+done
+
+# --- 4) informe al journal ------------------------------------------------------------------
+echo "pocknix-sensors-tree: arbol listo"
+for p in dsp sensors/config sensors/registry sensors/sns_reg.conf socinfo; do
+	if [ -e "$T/$p" ]; then
+		echo "pocknix-sensors-tree:   OK   $p"
+	else
+		echo "pocknix-sensors-tree:   FALTA $p" >&2
+	fi
+done
+echo "pocknix-sensors-tree: .jsn para pd-mapper: $(ls "$DST"/*.jsn 2>/dev/null | wc -l)"
+ls "$DST"/*.jsn 2>/dev/null | sed 's|.*/|pocknix-sensors-tree:   jsn |'
+exit 0

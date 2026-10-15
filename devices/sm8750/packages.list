@@ -2,3 +2,19 @@
 # the BSP + kernel + bootloader + shared session packages).
 pocknix-device-sm8750
 pocknix-branding      # fondo PocknixOS + siembra del fondo en el primer login (pocknix-branding-init)
+
+# --- sensores del ADSP (SSC del Sensor Core) ----------------------------------
+# Cadena completa, verificada en la Odin el 15/10/2026. La pieza que faltaba era `pd-mapper`:
+# es quien lee los ficheros .jsn (registro de servicios servreg) y registra los process domains
+# del DSP, incluido "sensor_pd". Sin el, el ADSP nunca lo registra y el SSC se queda a medias:
+# acelerometro y giroscopio si, magnetometro y rotv no.
+# El arbol HexagonFS que sirve hexagonrpcd lo prepara pocknix-sensors-tree (paquete del BSP),
+# porque msm-firmware-loader no puede construirlo en este dispositivo (sin deteccion de slot A/B
+# y sin particion `vendor`).
+# Explicacion completa: docs/SENSORES-ODIN3-2026-10-15.md
+msm-firmware-loader   # monta las particiones del firmware; crea /run/msm-firmware-loader
+pocknix-sensors-config # configs del ADSP extraidas del vendor Android (json.lst + JSON + sns_reg_config)
+hexagonrpc            # hexagonrpcd: sirve el arbol HexagonFS al ADSP (configs y libs del PD)
+libssc                # cliente del Sensor Core (ssccli: con esto se verifica que hay sensores)
+libqrtr               # libqrtr de linux-msm (no esta en ALARM y pd-mapper la necesita)
+pd-mapper             # lee los .jsn y registra los PDs del DSP: sin el NO hay "sensor_pd"

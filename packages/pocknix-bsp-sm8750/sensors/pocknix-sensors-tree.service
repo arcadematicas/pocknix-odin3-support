@@ -1,0 +1,26 @@
+# pocknix-sensors-tree.service - arbol HexagonFS para los sensores del Odin 3.
+#
+# Ejecuta /usr/bin/pocknix-sensors-tree, que prepara el arbol que consume el SSC del ADSP:
+# monta la particion `dsp_a` del vendor, enlaza las configs del vendor desde
+# pocknix-sensors-config y deja los .jsn donde pd-mapper los busca.
+#
+# Por que existe: msm-firmware-loader no puede construirlo en este dispositivo (no hay
+# deteccion de slot A/B y no existe particion `vendor`). Ver docs/SENSORES-ODIN3-2026-10-15.md.
+#
+# Va DESPUES del loader (que crea el tmpfs de /run/msm-firmware-loader) y ANTES de:
+#   - hexagonrpcd-adsp-sensorspd.service (sirve el arbol)
+#   - pd-mapper.service (lee los .jsn de /run/msm-firmware-loader/target/qcom/sm8750)
+# El orden se impone con los drop-ins 10-odin3.conf / 10-tree.conf que instala este mismo BSP.
+[Unit]
+Description=Arbol HexagonFS para los sensores del Odin 3 (SM8750)
+After=msm-firmware-loader.service
+Wants=msm-firmware-loader.service
+Before=hexagonrpcd-adsp-sensorspd.service pd-mapper.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/pocknix-sensors-tree
+
+[Install]
+WantedBy=multi-user.target

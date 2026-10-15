@@ -25,9 +25,12 @@
 #     -f /dev/fastrpc-adsp-secure -s -R /usr/lib/firmware   (sin -d adsp, otro arbol)
 # esa es la vieja; la de referencia es ESTA.
 #
-# Tiene [Install] => puede habilitarse. El BSP la empaqueta pero NO la habilita a proposito (ver la
-# nota de enable de packages/pocknix-bsp-sm8750/PKGBUILD: hasta que el ADSP sensor PD no sube en
-# este SoC, habilitarla solo genera un bucle de reinicios).
+# Tiene [Install] y SE HABILITA desde el 15/10/2026: con pd-mapper registrando el process domain
+# "sensor_pd" (leyendo los .jsn) y el arbol HexagonFS servido, el sensor PD del ADSP ya sube y el SSC
+# expone acelerometro, giroscopio, magnetometro y rotv. Antes NO se habilitaba porque, sin pd-mapper,
+# solo generaba un bucle de reinicios. El orden lo impone el drop-in
+# sensors/hexagonrpcd-adsp-sensorspd.service.d/10-tree.conf (pocknix-sensors-tree.service primero).
+# Ver docs/SENSORES-ODIN3-2026-10-15.md.
 
 [Unit]
 Description=Hexagonrpcd ADSP SensorPD - Qualcomm Sensor Virtual FS
