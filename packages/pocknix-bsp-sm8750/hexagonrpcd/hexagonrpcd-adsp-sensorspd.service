@@ -1,13 +1,56 @@
+# hexagonrpcd-adsp-sensorspd.service — ADAPTADA PARA EL ODIN 3 (kernel 7.2).
+#
+# La de armada/Terra (la que instala el paquete `hexagonrpc` desde su meson) es:
+#     hexagonrpcd -f /dev/fastrpc-adsp -d adsp -s -R /run/msm-firmware-loader/hexagonrpc
+# NUESTRO kernel SOLO expone /dev/fastrpc-adsp-secure (el nodo no-secure NO existe), asi que con la
+# de arriba el demonio muere al abrir el dispositivo. Cambia el -f (y su ConditionPathExists) al nodo
+# secure y se anade -d adsp.
+#
+# RUTA DEL BINARIO: /usr/bin/hexagonrpcd, que es la real. Nuestro paquete hexagonrpc la instala en
+# get_option('bindir') = /usr/bin (meson, --prefix=/usr); lo confirma el paquete YA construido en el
+# arbol: build/pkgbuild-root-sm8750/build/hexagonrpc/pkg/hexagonrpc/usr/bin/hexagonrpcd, y el spec
+# de Terra hace %files con %{_bindir}/hexagonrpcd. El /usr/sbin/hexagonrpcd que ponia la version
+# anterior de esta unidad NUNCA existio en el sistema (por eso systemd-analyze verify lo marcaba).
+#
+# EL ARBOL HEXAGONFS lo monta msm-firmware-loader.service (tmpfs en /run/msm-firmware-loader +
+# lectura de las particiones del propio dispositivo) como:
+#     /run/msm-firmware-loader/hexagonrpc/{dsp, sensors/config, sensors/registry,
+#                                          sensors/sns_reg.conf, acdb, socinfo}
+# Es el mapa que documenta el man de hexagonrpcd (-R <dir>). Sin ese arbol el demonio arranca, falla
+# en la primera peticion de fichero al DSP y entra en bucle de reinicio ("Unexpected buffer count"
+# tras INIT_ATTACH_SNS, ~434 reinicios ya medidos).
+#
+# NO CONFUNDIR con la version que corrio en la Odin desde AGOSTO (la que hoy esta en
+# /usr/lib/systemd/system/hexagonrpcd-adsp-sensorspd.service):
+#     -f /dev/fastrpc-adsp-secure -s -R /usr/lib/firmware   (sin -d adsp, otro arbol)
+# esa es la vieja; la de referencia es ESTA.
+#
+# Tiene [Install] => puede habilitarse. El BSP la empaqueta pero NO la habilita a proposito (ver la
+# nota de enable de packages/pocknix-bsp-sm8750/PKGBUILD: hasta que el ADSP sensor PD no sube en
+# este SoC, habilitarla solo genera un bucle de reinicios).
+
 [Unit]
 Description=Hexagonrpcd ADSP SensorPD - Qualcomm Sensor Virtual FS
+# Conecta tras el loader, que es quien monta el arbol HexagonFS que vamos a servir.
+After=msm-firmware-loader.service
 After=remoteproc0.service
 Before=iio-sensor-proxy.service
 
+# SoC con SDSP: esta unidad no aplica
+ConditionPathExists=!/dev/fastrpc-sdsp
+# Nuestro kernel solo expone el nodo SECURE del FastRPC de la ADSP
+ConditionPathExists=/dev/fastrpc-adsp-secure
+# ... y solo con el arbol HexagonFS ya preparado por msm-firmware-loader
+ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/dsp
+ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/sensors/config
+ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/sensors/registry
+ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/sensors/sns_reg.conf
+ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/socinfo
+
 [Service]
-Type=oneshot
-ExecStartPre=/usr/bin/mkdir -p /vendor/etc/sensors /usr/lib/firmware/sensors/config /usr/lib/firmware/sensors/registry
-ExecStart=/usr/sbin/hexagonrpcd -f /dev/fastrpc-adsp-secure -s -R /usr/lib/firmware
-RemainAfterExit=yes
+# hexagonrpcd NO se desdobra (solo hace fork() de los listeners): vive en primer plano.
+Type=simple
+ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp-secure -d adsp -s -R /run/msm-firmware-loader/hexagonrpc
 Restart=on-failure
 RestartSec=5
 

@@ -1,9 +1,23 @@
 # msm-firmware-loader — prepara el firmware del ADSP para hexagonrpcd (postmarketOS).
-# OJO: su spec original requiere qbootctl y make-dynpart-mappings; de momento NO se anade a
-# ninguna lista de paquetes (decision pendiente).
+# NO cambia el firmware del ADSP: monta un tmpfs y LEE las particiones del propio dispositivo
+# (dsp_a/b, modem_a/b, persist, vendor_a/b, bluetooth_a/b, imagefv...) creando el arbol HexagonFS
+#   /run/msm-firmware-loader/hexagonrpc/{dsp, sensors/config, sensors/registry,
+#                                        sensors/sns_reg.conf, acdb, socinfo}
+# que luego sirve hexagonrpcd con -R /run/msm-firmware-loader/hexagonrpc.
+#
+# EL PKGBUILD ANTERIOR ESTABA INCOMPLETO: solo instalaba un renombrado /usr/bin/msm-firmware-loader.
+# Las unidades upstream apuntan a /usr/sbin/*.sh, asi que sin esos ficheros NO arrancaba NADA (y los
+# symlinks de enable no existian tampoco). El tarball trae 4 ficheros:
+#   msm-firmware-loader.sh           -> /usr/sbin/msm-firmware-loader.sh       (oneshot, sysinit)
+#   msm-firmware-loader-unpack.sh    -> /usr/sbin/msm-firmware-loader-unpack.sh(oneshot, multi-user)
+#   msm-firmware-loader.service      -> /usr/lib/systemd/system/   WantedBy=sysinit.target
+#   msm-firmware-loader-unpack.service-> /usr/lib/systemd/system/  WantedBy=multi-user.target
+#
+# OJO: su spec original requiere qbootctl y make-dynpart-mappings (opcionales: el script usa
+# `command -v`); de momento NO se anade a ninguna lista de paquetes (decision pendiente).
 pkgname=msm-firmware-loader
 pkgver=1.8.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Load the ADSP firmware from the Android partitions for hexagonrpcd"
 arch=('any')
 url="https://gitlab.postmarketos.org/postmarketOS/msm-firmware-loader"
@@ -19,5 +33,24 @@ prepare() {
 
 package() {
   cd msm-firmware-loader-$pkgver
-  install -Dm755 msm-firmware-loader.sh "${pkgdir}/usr/bin/msm-firmware-loader"
+
+  # --- scripts -> /usr/sbin (lo que EXIGE el ExecStart de las unidades) -------
+  install -Dm755 msm-firmware-loader.sh        "${pkgdir}/usr/sbin/msm-firmware-loader.sh"
+  install -Dm755 msm-firmware-loader-unpack.sh "${pkgdir}/usr/sbin/msm-firmware-loader-unpack.sh"
+
+  # --- unidades -> /usr/lib/systemd/system -----------------------------------
+  local unit="${pkgdir}/usr/lib/systemd/system"
+  install -Dm644 msm-firmware-loader.service        "${unit}/msm-firmware-loader.service"
+  install -Dm644 msm-firmware-loader-unpack.service "${unit}/msm-firmware-loader-unpack.service"
+
+  # --- enable: symlinks del propio paquete (quitarlo los quita) --------------
+  # Mismo estilo que pocknix-bsp-sm8750: el link va en <target>.wants/ y apunta a ../<unidad>.
+  #   msm-firmware-loader.service       WantedBy=sysinit.target    (antes de udev, Type=oneshot)
+  #   msm-firmware-loader-unpack.service WantedBy=multi-user.target (antes de rmtfs)
+  install -d "${unit}/sysinit.target.wants"
+  ln -sf "../msm-firmware-loader.service" \
+    "${unit}/sysinit.target.wants/msm-firmware-loader.service"
+  install -d "${unit}/multi-user.target.wants"
+  ln -sf "../msm-firmware-loader-unpack.service" \
+    "${unit}/multi-user.target.wants/msm-firmware-loader-unpack.service"
 }
