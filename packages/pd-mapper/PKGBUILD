@@ -1,0 +1,51 @@
+# pd-mapper — daemon que mapea los "process domains" (PD) del DSP de Qualcomm.
+#
+#   El ADSP publica un servicio "pd mapper" que anuncia los PDs disponibles; sin el, los
+#   clientes QRTR (p. ej. el stack de sensores / servreg) no ven los dominios. Es la pieza
+#   que le falta al bring-up de sensores del Odin 3, junto al resto de la pila (libqrtr,
+#   hexagonrpc, msm-firmware-loader, pocknix-sensors-config).
+#
+# QUE INSTALA (Makefile con prefix=/usr)
+#   /usr/bin/pd-mapper                                  el binario
+#   /usr/lib/systemd/system/pd-mapper.service           unidad generada desde
+#                                                       pd-mapper.service.in (PD_MAPPER_PATH ->
+#                                                       $(bindir)), o sea ExecStart=/usr/bin/pd-mapper
+#   /usr/lib/systemd/system/multi-user.target.wants/    symlink de enable (lo genera el paquete,
+#       pd-mapper.service                               asi quitarlo lo quita) — ver package()
+#
+# depends: SOLO libqrtr (lo empaquetamos en packages/libqrtr porque ALARM no lo trae; ver ahi).
+#   El Makefile enlaza `-lqrtr -llzma`; liblzma lo aporta `xz` (ya en el chroot, y makepkg
+#   anade ademas el soname auto-detectado liblzma.so=5-64 al metadata del paquete).
+pkgname=pd-mapper
+pkgver=1.1
+pkgrel=1
+pkgdesc="Qualcomm PD mapper: advertises the process domains (PDs) served by the remoteproc"
+arch=('aarch64')
+url="https://github.com/linux-msm/pd-mapper"
+license=('BSD-3-Clause')
+depends=('libqrtr')
+makedepends=('xz')
+source=("$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('7654a7fb8b70b0c7670f98ad9313649abc48eabcef84dad086ed01408fd538a2')
+
+build() {
+  cd pd-mapper-$pkgver
+  # prefix=/usr -> bindir=/usr/bin, servicedir=/usr/lib/systemd/system (Makefile).
+  make prefix=/usr
+}
+
+package() {
+  cd pd-mapper-$pkgver
+  # El Makefile regenera pd-mapper.service desde .in sustituyendo PD_MAPPER_PATH por
+  # $(bindir), asi que la unidad sale con ExecStart=/usr/bin/pd-mapper.
+  make prefix=/usr DESTDIR="${pkgdir}" install
+
+  # --- enable: symlink del propio paquete (quitarlo los quita) ------------------
+  # Mismo estilo que pocknix-bsp-sm8750 y msm-firmware-loader: el link va en
+  # <target>.wants/ y apunta a ../<unidad>. WantedBy=multi-user.target.
+  local unit="${pkgdir}/usr/lib/systemd/system"
+  install -d "${unit}/multi-user.target.wants"
+  ln -sf "../pd-mapper.service" "${unit}/multi-user.target.wants/pd-mapper.service"
+
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

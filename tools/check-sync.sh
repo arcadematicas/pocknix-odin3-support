@@ -101,6 +101,7 @@ cmp_tree "${HERE}/packages/pocknix-tools"     "${OS}/packages/shared/pocknix-too
   cmp_tree "${HERE}/packages/pocknix-vk-valve" "${OS}/packages/shared/pocknix-vk-valve"
 # Sensores Qualcomm (SSC)
 cmp_tree "${HERE}/packages/libqrtr"              "${OS}/packages/shared/libqrtr"
+cmp_tree "${HERE}/packages/pd-mapper"            "${OS}/packages/shared/pd-mapper"
 cmp_tree "${HERE}/packages/libssc"              "${OS}/packages/shared/libssc"
 cmp_tree "${HERE}/packages/hexagonrpc"          "${OS}/packages/shared/hexagonrpc"
 cmp_tree "${HERE}/packages/msm-firmware-loader" "${OS}/packages/shared/msm-firmware-loader"
