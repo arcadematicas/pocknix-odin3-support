@@ -1,8 +1,11 @@
 # El actualizador del QAM se quedaba atascado para siempre (2026-10-05)
 
-**Estado:** fase 1 PUBLICADA y verificada (con una republicación, ver §5.1). Fase 2
-pendiente de que Fransis pulse el botón una vez y reinicie. Nada de esto se ha publicado en
-`shuuri-labs/pocknix-os`.
+**Estado:** fase 1 PUBLICADA y verificada (con una republicación, ver §5.1) y **fase 2
+completada el 2026-10-06** (reposición de los seis paquetes; ver
+`CIERRE-20261006-REPOSICION-PAQUETES.md`). El texto de §8 sigue **SIN publicar a propósito**
+→ pendiente de decisión de Fransis (verificado a 2026-10-15: PR #81, issues #54/#92 sin
+relación y 0 comentarios nuestros sobre ficheros en conflicto/`--overwrite` en
+`shuuri-labs/pocknix-os`).
 
 ---
 
@@ -70,7 +73,8 @@ Es decir: pocknix fabricó sus propios huérfanos. **Por eso el arreglo es segur
 
 Commits: `pocknix-os` `b7a5516` y `7e2dff1` (rama `odin3-sm8750` de nuestro fork), centro
 `f28ecdb` y `f08b6e3` (`master`). Pushados **solo a `arcadematicas/*`**.
-`shuuri-labs/pocknix-os` intacto.
+`shuuri-labs/pocknix-os` intacto. La **fase 2** (reposición de los seis paquetes retirados)
+se completó el **2026-10-06** — ver `CIERRE-20261006-REPOSICION-PAQUETES.md`.
 
 `pocknix-decky` es del centro y se copia al árbol con `tools/sync-to-os.sh`; `pocknix-base`
 solo vive en el árbol. El diff completo está en los dos commits.
@@ -326,7 +330,9 @@ Preparado, sin enviar. Enviar solo cuando Fransis haya confirmado el paso 6.
   real.
 - **El camino de reinicio del paso 6.3** no se ha probado: depende de que el loader
   recargue el módulo al reiniciar.
-- **La fase 2 no se ha ejecutado ni publicado**, a propósito.
+- **La fase 2 sí se ejecutó y publicó, el 2026-10-06** (45 paquetes en
+  `r2:pocknix/shared`, los seis repuestos) — ver `CIERRE-20261006-REPOSICION-PAQUETES.md`.
+  Cuando se escribió este documento quedó anotada como pendiente a propósito.
 - Nada se ha probado en la imagen (`build`/`sd-image`): esto toca paquetes, no la imagen.
 
 ## 10. Colateral que conviene mirar
