@@ -1,0 +1,29 @@
+From 625a7f341fe7c2b1e74ef8401abc4fcbd306db96 Mon Sep 17 00:00:00 2001
+From: test <test@test.com>
+Date: Thu, 15 Oct 2026 16:58:40 +0200
+Subject: [PATCH] data: do not install hexagonrpcd-adsp-sensorspd.service
+ (owned by the BSP)
+
+The pocknix-bsp-sm8750 package ships its own adapted copy of this unit
+(/dev/fastrpc-adsp-secure + the Odin 3 hexagonfs gating, see
+packages/pocknix-bsp-sm8750/hexagonrpcd/). Two packages installing the
+same path is a pacman file conflict. The BSP owns it, so stop shipping
+it from upstream's meson list.
+---
+ data/meson.build | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/data/meson.build b/data/meson.build
+index b923624..88f7711 100644
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -1,6 +1,5 @@
+ systemd_units = [
+   'hexagonrpcd-adsp-rootpd.service',
+-  'hexagonrpcd-adsp-sensorspd.service',
+   'hexagonrpcd-sdsp.service',
+   'hexagonrpcd-resume.service',
+ ]
+-- 
+2.56.0
+

@@ -2,9 +2,23 @@
 # Parches traidos de Terra (terrapkg/packages, anda/system/hexagonrpc): unidades a systemd,
 # usar el dir de msm-firmware-loader, ARRANCAR COMO ROOT, volver tras resume, y esperar al
 # arbol hexagonfs preparado. (Hueco historico: el nuestro moria al instante.)
+#
+# DOS AJUSTES SOBRE EL UPSTREAM (0006/0007), para que encaje con lo que ya empaqueta el BSP:
+#   0006 — DEJA DE INSTALAR hexagonrpcd-adsp-sensorspd.service. El paquete
+#          pocknix-bsp-sm8750 lleva su propia copia ADAPTADA a nosotros
+#          (/dev/fastrpc-adsp-secure + el gating del arbol hexagonfs, ver
+#          packages/pocknix-bsp-sm8750/hexagonrpcd/). DOS paquetes instalando la MISMA ruta
+#          es un conflicto de ficheros de pacman; el dueño es el BSP, asi que aqui se quita.
+#   0007 — hexagonrpcd-adsp-rootpd.service pasa a /dev/fastrpc-adsp-secure en su ExecStart -f
+#          y en su ConditionPathExists: nuestro kernel SOLO expone el nodo secure (el
+#          no-secure no existe en el Odin 3), asi que con el upstream el demonio moria al
+#          abrir el dispositivo. El `-d adsp -R /run/msm-firmware-loader/hexagonrpc` ya lo pone
+#          0002, asi que no hace falta tocarlo.
+# Con eso el paquete instala 3 unidades: adsp-rootpd (adaptada), sdsp (inerte aqui: su
+# ConditionPathExists=/dev/fastrpc-sdsp no se cumple, el Odin 3 no tiene SDSP) y resume.
 pkgname=hexagonrpc
 pkgver=0.5.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Qualcomm HexagonRPC daemon (ADSP virtual filesystem)"
 arch=('aarch64')
 url="https://github.com/linux-msm/hexagonrpc"
@@ -16,14 +30,18 @@ source=("$url/archive/refs/tags/v$pkgver.tar.gz"
         '0002-use-msm-firmware-loader-dir.patch'
         '0003-run-hexagonrpcd-as-root.patch'
         '0004-bring-hexagonrpcd-back-after-resume.patch'
-        '0005-gate-hexagonrpcd-on-staged-hexagonfs-tree.patch')
-sha256sums=('2173985932ab68d8ac593f9954357123bdbbbe9ba5f1b17a098d9cbcec22c5d5' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+        '0005-gate-hexagonrpcd-on-staged-hexagonfs-tree.patch'
+        '0006-data-do-not-install-hexagonrpcd-adsp-sensorspd-servic.patch'
+        '0007-data-hexagonrpcd-adsp-rootpd-uses-the-secure-fastrpc.patch')
+sha256sums=('2173985932ab68d8ac593f9954357123bdbbbe9ba5f1b17a098d9cbcec22c5d5' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   cd hexagonrpc-$pkgver
   for p in 0001-data-install-units-to-the-canonical-systemd-unit-dir \
            0002-use-msm-firmware-loader-dir 0003-run-hexagonrpcd-as-root \
-           0004-bring-hexagonrpcd-back-after-resume 0005-gate-hexagonrpcd-on-staged-hexagonfs-tree; do
+           0004-bring-hexagonrpcd-back-after-resume 0005-gate-hexagonrpcd-on-staged-hexagonfs-tree \
+           0006-data-do-not-install-hexagonrpcd-adsp-sensorspd-servic \
+           0007-data-hexagonrpcd-adsp-rootpd-uses-the-secure-fastrpc; do
     patch -p1 -F0 < "${srcdir}/${p}.patch"
   done
 }

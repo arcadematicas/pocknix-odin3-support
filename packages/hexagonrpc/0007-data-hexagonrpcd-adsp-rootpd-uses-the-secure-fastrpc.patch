@@ -1,0 +1,39 @@
+From f27fa77a62a03bdf484c84582c11374eb13a9117 Mon Sep 17 00:00:00 2001
+From: test <test@test.com>
+Date: Thu, 15 Oct 2026 16:58:53 +0200
+Subject: [PATCH] data: hexagonrpcd-adsp-rootpd uses the secure fastrpc node
+
+Our kernel only exposes /dev/fastrpc-adsp-secure (the non-secure node
+does not exist on the Odin 3), so the daemon dies opening
+/dev/fastrpc-adsp. Point both the ExecStart -f and its
+ConditionPathExists at the secure node. The -d adsp and the -R hexagonfs
+tree are already applied by 0002.
+---
+ data/hexagonrpcd-adsp-rootpd.service.in | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/data/hexagonrpcd-adsp-rootpd.service.in b/data/hexagonrpcd-adsp-rootpd.service.in
+index 8cf68b0..cf4d161 100644
+--- a/data/hexagonrpcd-adsp-rootpd.service.in
++++ b/data/hexagonrpcd-adsp-rootpd.service.in
+@@ -6,7 +6,7 @@ Before=suspend.target
+ # FIXME: Remove this once hexagonrpcd can serve rootpd on the ADSP
+ # of the SDM845 devices
+ ConditionPathExists=!/dev/fastrpc-sdsp
+-ConditionPathExists=/dev/fastrpc-adsp
++ConditionPathExists=/dev/fastrpc-adsp-secure
+ ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/acdb
+ ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/dsp
+ ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/sensors/config
+@@ -15,7 +15,7 @@ ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/sensors/sns_reg.conf
+ ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/socinfo
+ 
+ [Service]
+-ExecStart=@bindir@/hexagonrpcd -f /dev/fastrpc-adsp -d adsp -R /run/msm-firmware-loader/hexagonrpc
++ExecStart=@bindir@/hexagonrpcd -f /dev/fastrpc-adsp-secure -d adsp -R /run/msm-firmware-loader/hexagonrpc
+ Restart=always
+ RestartSec=3
+ 
+-- 
+2.56.0
+
