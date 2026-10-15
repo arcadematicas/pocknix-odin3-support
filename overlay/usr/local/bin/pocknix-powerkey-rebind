@@ -1,0 +1,25 @@
+#!/bin/bash
+# Boton de encendido en KDE: atarlo a "Power Off" (menu de apagado) en vez de "Turn Off Screen".
+# Origen del reatribuido: pocknix-desktop-kde de shuuri-labs/pocknix-os (GPL-2.0-or-later).
+# OJO: la carpeta /etc/xdg/plasma-workspace/env NO la lee nuestro escritorio ("Plasma (Wayland)"
+# estandar) -> se ejecuta desde /etc/xdg/autostart (que SI corre) y aplica el cambio en la sesion
+# en curso reiniciando plasma-kglobalaccel (si no, KDE solo lo lee al arrancar la sesion).
+set -u
+case ":${XDG_CURRENT_DESKTOP:-}:${XDG_SESSION_DESKTOP:-}:" in
+  *:KDE:*|*:plasma*:*) ;;
+  *) exit 0 ;;
+esac
+command -v kreadconfig6 >/dev/null 2>&1 && command -v kwriteconfig6 >/dev/null 2>&1 || exit 0
+rc=kglobalshortcutsrc
+grp=org_kde_powerdevil
+changed=0
+case "$(kreadconfig6 --file "$rc" --group "$grp" --key PowerOff)" in
+  ""|none,none,*) kwriteconfig6 --file "$rc" --group "$grp" --key PowerOff "Power Off,none,Power Off"; changed=1 ;;
+esac
+case "$(kreadconfig6 --file "$rc" --group "$grp" --key 'Turn Off Screen')" in
+  ""|"Power Off,Power Off,"*) kwriteconfig6 --file "$rc" --group "$grp" --key 'Turn Off Screen' "none,Power Off,Turn Off Screen"; changed=1 ;;
+esac
+if [ "$changed" = 1 ]; then
+  systemctl --user restart plasma-kglobalaccel.service 2>/dev/null || true
+fi
+exit 0

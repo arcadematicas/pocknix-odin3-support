@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Pocknix: boton de encendido -> menu de apagado
+Comment=Rebind the power key from "Turn Off Screen" to "Power Off"
+Exec=/usr/local/bin/pocknix-powerkey-rebind
+Terminal=false
+NoDisplay=true
+OnlyShowIn=KDE;
+X-KDE-autostart-after=kded
