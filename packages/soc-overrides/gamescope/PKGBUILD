@@ -11,7 +11,7 @@
 # -ogc1 ya trae todo Valve 3.16.31.
 #
 # Parches de armada: https://github.com/armada-os/armada/tree/main/packages/gamescope/patches
-#   (en su serie no existe el 0008; ver su PATCHES.md). Descartados aqui: 0028-improve-frame-pacing
+#   (en su serie no existe el 0008; ver su PATCHES.md). Descartados aqui: ninguno (entra la serie completa)
 #   (ya incluidos en el base / no aplican). Novedades frente a nuestra copia vieja:
 #   0022 (mangoapp: cola compartida con un cliente lease), 0023, 0024, 0025,
 #   0026 (SGSR para peticiones FSR en SDR), 0027 (limite de FPS del QAM anclado al reloj).
@@ -72,9 +72,10 @@ source=("gamescope::git+https://github.com/OpenGamingCollective/gamescope.git#co
         '0025-wlserver-pass-touch-through-to-native-wayland-windows.patch'
         '0026-upscale-use-sgsr-for-sdr-fsr-requests.patch'
         '0027-steamcompmgr-elapsed-time-fps-limiter.patch'
+        '0028-improve-frame-pacing.patch'
         # --- nuestros ---
         '0010-DRMBackend-add-rotated-output-max-height.patch')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   cd gamescope
@@ -107,6 +108,7 @@ prepare() {
     0025-wlserver-pass-touch-through-to-native-wayland-windows \
     0026-upscale-use-sgsr-for-sdr-fsr-requests \
     0027-steamcompmgr-elapsed-time-fps-limiter \
+    0028-improve-frame-pacing \
     ; do
     patch -p1 -F2 < "${srcdir}/${_p}.patch"
   done
