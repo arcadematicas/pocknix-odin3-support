@@ -95,6 +95,7 @@ overlay "kernel/patches/10-mainline" "kernel/sm8750/patches/10-mainline"
 overlay "kernel/patches/20-sm8750"   "kernel/sm8750/patches/20-sm8750"
 overlay "kernel/patches/30-version"  "kernel/sm8750/patches/30-version"
 overlay "kernel/dts"                 "kernel/sm8750/dts/qcom"
+overlay "kernel/sm8750"               "kernel/sm8750"   # kernel.conf (version + sha256 del tarball)
 
 # --- config/ del build: listas de paquetes, pocknix.conf, tuning -------------
 # Antes vivia SOLO en el arbol: las listas de paquetes (base.list / base-extras.list), el
