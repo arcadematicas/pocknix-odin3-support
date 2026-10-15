@@ -1,26 +1,308 @@
 # pocknix-sensors-config — configuracion del ADSP para los sensores del Odin 3 (SM8750).
 #
-# Extraida del firmware Android de stock (Odin3_20251206, particion vendor super_7.img,
-# /etc/sensors) con `debugfs -R "rdump /etc/sensors <dir>"`. Es lo que el ADSP necesita para
-# arrancar la PD de sensores (registro sns + los ~140 JSON de config). El firmware (adsp.mbn,
-# adsp_dtb.mbn) ya lo trae la imagen: aqui solo van las configs.
+# Extraida del firmware Android de stock (Odin3_20251206, particion vendor super_7.img):
+#     debugfs -R "rdump /etc/sensors <dir>" super_7.img
+# Los ficheros van a /usr/lib/firmware/sensors/ y hexagonrpcd (con -R /usr/lib/firmware) los
+# sirve al ADSP como /vendor/etc/sensors/. NOMBRES ORIGINALES: el demonio pide
+# `sns_reg_config` y `config/json.lst` tal cual (no renombrar).
 #
-# Sin esto, hexagonrpcd arranca pero la PD de sensores no sube (visto en agosto: el ADSP se
-# queda en "Unexpected buffer count" tras INIT_ATTACH_SNS).
+# Sin esto el demonio arranca pero el ADSP no encuentra el registro y la PD no sube.
+# OJO: los ficheros van PLANOS en la raiz del paquete: makepkg busca los `source=` ahi.
 pkgname=pocknix-sensors-config
 pkgver=20251206
-pkgrel=1
+pkgrel=2
 pkgdesc="ADSP sensor configuration for the AYN Odin 3 (from the stock Android vendor partition)"
 arch=('any')
 license=('custom')
-source=('sns_reg_config' 'sns_odp_config' 'hals.conf')
-sha256sums=('SKIP' 'SKIP' 'SKIP')
+source=(        'bonito_bu52053nvx_0.json'
+        'bonito_ccd_base.json'
+        'bonito_default_sensors.json'
+        'bonito_dynamic_sensors.json'
+        'bonito_dynamic_sensors_template.json'
+        'bonito_fcal_mmc56x3x_0.json'
+        'bonito_hdk_lsm6dso_0.json'
+        'bonito_hdk_lsm6dso_1.json'
+        'bonito_irq.json'
+        'bonito_lps22df_0.json'
+        'bonito_lsm6dso_0.json'
+        'bonito_lsm6dso_1.json'
+        'bonito_mmc56x3x_0.json'
+        'bonito_mtp_lsm6dso_0.json'
+        'bonito_mtp_lsm6dso_1.json'
+        'bonito_mtp_mmc56x3x_0.json'
+        'bonito_power_0.json'
+        'bonito_qrd_default_sensors.json'
+        'bonito_qrd_icm4x6xx_0.json'
+        'bonito_qrd_mmc56x3x_0.json'
+        'bonito_qrd_tmd3765_0.json'
+        'bonito_qsh_ble_0.json'
+        'bonito_sht4x_0.json'
+        'bonito_sx932x_0.json'
+        'bonito_tmd3765_0.json'
+        'bonito_vertigo_lsm6dso_0.json'
+        'bonito_vertigo_lsm6dso_1.json'
+        'bonito_vertigo_mmc56x3x_0.json'
+        'eliza_bu52053nvx_0.json'
+        'eliza_ccd_base.json'
+        'eliza_default_sensors.json'
+        'eliza_dynamic_sensors.json'
+        'eliza_dynamic_sensors_template.json'
+        'eliza_fcal_mmc56x3x_0.json'
+        'eliza_hdk_lsm6dso_0.json'
+        'eliza_hdk_lsm6dso_1.json'
+        'eliza_irq.json'
+        'eliza_lps22df_0.json'
+        'eliza_lsm6dso_0.json'
+        'eliza_lsm6dso_1.json'
+        'eliza_mmc56x3x_0.json'
+        'eliza_mtp_lsm6dso_0.json'
+        'eliza_mtp_lsm6dso_1.json'
+        'eliza_mtp_mmc56x3x_0.json'
+        'eliza_power_0.json'
+        'eliza_qrd_default_sensors.json'
+        'eliza_qrd_icm4x6xx_0.json'
+        'eliza_qrd_mmc56x3x_0.json'
+        'eliza_qrd_tmd2755_0.json'
+        'eliza_qsh_ble_0.json'
+        'eliza_sht4x_0.json'
+        'eliza_sx932x_0.json'
+        'eliza_tmd2755_0.json'
+        'eliza_vertigo_lsm6dso_0.json'
+        'eliza_vertigo_lsm6dso_1.json'
+        'eliza_vertigo_mmc56x3x_0.json'
+        'hals.conf'
+        'json.lst'
+        'pakala_bu52053nvx_0.json'
+        'pakala_ccd_base.json'
+        'pakala_default_sensors.json'
+        'pakala_dynamic_sensors.json'
+        'pakala_dynamic_sensors_template.json'
+        'pakala_fcal_mmc56x3x_0.json'
+        'pakala_hdk_lsm6dso_0.json'
+        'pakala_hdk_lsm6dso_1.json'
+        'pakala_irq.json'
+        'pakala_lps22df_0.json'
+        'pakala_lsm6dso_0.json'
+        'pakala_lsm6dso_1.json'
+        'pakala_mmc56x3x_0.json'
+        'pakala_mtp_lsm6dso_0.json'
+        'pakala_mtp_lsm6dso_1.json'
+        'pakala_mtp_mmc56x3x_0.json'
+        'pakala_power_0.json'
+        'pakala_qmc6308_0.json'
+        'pakala_qmi8658_0.json'
+        'pakala_qrd_default_sensors.json'
+        'pakala_qrd_icm4x6xx_0.json'
+        'pakala_qrd_mmc56x3x_0.json'
+        'pakala_qrd_tmd3765_0.json'
+        'pakala_qsh_ble_0.json'
+        'pakala_sht4x_0.json'
+        'pakala_sx932x_0.json'
+        'pakala_tmd3765_0.json'
+        'pakala_vertigo_lsm6dso_0.json'
+        'pakala_vertigo_lsm6dso_1.json'
+        'pakala_vertigo_mmc56x3x_0.json'
+        'qsh_ble.json'
+        'qsh_camera_common.json'
+        'qsh_camera_common_sm8735.json'
+        'qsh_camera_imx688_6.json'
+        'qsh_camera_imx688_6_actuator.json'
+        'qsh_camera_ov32c4c_4.json'
+        'qsh_camera_ov32c4c_4_sm8735.json'
+        'sns_amd.json'
+        'sns_amd_sw_enabled.json'
+        'sns_aont.json'
+        'sns_basic_gestures.json'
+        'sns_bring_to_ear.json'
+        'sns_ccd_v1_0_amd.json'
+        'sns_ccd_v1_0_ttw.json'
+        'sns_ccd_v2_0_walk.json'
+        'sns_ccd_v3_0_walk.json'
+        'sns_ccd_v3_1_walk.json'
+        'sns_ccd_v4_0_sensors.json'
+        'sns_ccd_v4_0_te_cd_regs.json'
+        'sns_ccd_v5_0.json'
+        'sns_ccd_v5_0_te_cd_regs.json'
+        'sns_ccd_v5_1_te_cd_regs.json'
+        'sns_ccd_v6_0.json'
+        'sns_ccd_v6_0_sensors.json'
+        'sns_ccd_v6_0_te_cd_regs.json'
+        'sns_cm.json'
+        'sns_dae.json'
+        'sns_device_orient.json'
+        'sns_diag_filter.json'
+        'sns_direct_channel.json'
+        'sns_distance_bound.json'
+        'sns_dpc.json'
+        'sns_facing.json'
+        'sns_flight_md.json'
+        'sns_fmv.json'
+        'sns_fmv_legacy.json'
+        'sns_gyro_cal.json'
+        'sns_heart_rate.json'
+        'sns_mag_cal.json'
+        'sns_mag_cal_legacy.json'
+        'sns_multishake.json'
+        'sns_odp_config'
+        'sns_offbody_detect_phone.json'
+        'sns_pedometer.json'
+        'sns_psd_disable.json'
+        'sns_psd_enable.json'
+        'sns_reg_config'
+        'sns_rmd.json'
+        'sns_rotv.json'
+        'sns_smd.json'
+        'sns_tilt.json'
+        'sns_tilt_sw_enabled.json'
+        'sns_tilt_to_wake.json'
+        'sns_transport_ppe.json'
+        'sns_wrist_pedo.json')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   local dst="${pkgdir}/usr/lib/firmware/sensors"
   install -d "${dst}/config" "${dst}/registry"
-  cp -a "${srcdir}/config/." "${dst}/config/"
-  install -Dm644 "${srcdir}/sns_reg_config"    "${dst}/sns_reg.conf"
-  install -Dm644 "${srcdir}/sns_odp_config"    "${dst}/sns_odp_config"
-  install -Dm644 "${srcdir}/hals.conf"         "${dst}/hals.conf"
+  install -Dm644 "${srcdir}/bonito_bu52053nvx_0.json" "${dst}/config/bonito_bu52053nvx_0.json"
+  install -Dm644 "${srcdir}/bonito_ccd_base.json" "${dst}/config/bonito_ccd_base.json"
+  install -Dm644 "${srcdir}/bonito_default_sensors.json" "${dst}/config/bonito_default_sensors.json"
+  install -Dm644 "${srcdir}/bonito_dynamic_sensors.json" "${dst}/config/bonito_dynamic_sensors.json"
+  install -Dm644 "${srcdir}/bonito_dynamic_sensors_template.json" "${dst}/config/bonito_dynamic_sensors_template.json"
+  install -Dm644 "${srcdir}/bonito_fcal_mmc56x3x_0.json" "${dst}/config/bonito_fcal_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/bonito_hdk_lsm6dso_0.json" "${dst}/config/bonito_hdk_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/bonito_hdk_lsm6dso_1.json" "${dst}/config/bonito_hdk_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/bonito_irq.json" "${dst}/config/bonito_irq.json"
+  install -Dm644 "${srcdir}/bonito_lps22df_0.json" "${dst}/config/bonito_lps22df_0.json"
+  install -Dm644 "${srcdir}/bonito_lsm6dso_0.json" "${dst}/config/bonito_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/bonito_lsm6dso_1.json" "${dst}/config/bonito_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/bonito_mmc56x3x_0.json" "${dst}/config/bonito_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/bonito_mtp_lsm6dso_0.json" "${dst}/config/bonito_mtp_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/bonito_mtp_lsm6dso_1.json" "${dst}/config/bonito_mtp_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/bonito_mtp_mmc56x3x_0.json" "${dst}/config/bonito_mtp_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/bonito_power_0.json" "${dst}/config/bonito_power_0.json"
+  install -Dm644 "${srcdir}/bonito_qrd_default_sensors.json" "${dst}/config/bonito_qrd_default_sensors.json"
+  install -Dm644 "${srcdir}/bonito_qrd_icm4x6xx_0.json" "${dst}/config/bonito_qrd_icm4x6xx_0.json"
+  install -Dm644 "${srcdir}/bonito_qrd_mmc56x3x_0.json" "${dst}/config/bonito_qrd_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/bonito_qrd_tmd3765_0.json" "${dst}/config/bonito_qrd_tmd3765_0.json"
+  install -Dm644 "${srcdir}/bonito_qsh_ble_0.json" "${dst}/config/bonito_qsh_ble_0.json"
+  install -Dm644 "${srcdir}/bonito_sht4x_0.json" "${dst}/config/bonito_sht4x_0.json"
+  install -Dm644 "${srcdir}/bonito_sx932x_0.json" "${dst}/config/bonito_sx932x_0.json"
+  install -Dm644 "${srcdir}/bonito_tmd3765_0.json" "${dst}/config/bonito_tmd3765_0.json"
+  install -Dm644 "${srcdir}/bonito_vertigo_lsm6dso_0.json" "${dst}/config/bonito_vertigo_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/bonito_vertigo_lsm6dso_1.json" "${dst}/config/bonito_vertigo_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/bonito_vertigo_mmc56x3x_0.json" "${dst}/config/bonito_vertigo_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/eliza_bu52053nvx_0.json" "${dst}/config/eliza_bu52053nvx_0.json"
+  install -Dm644 "${srcdir}/eliza_ccd_base.json" "${dst}/config/eliza_ccd_base.json"
+  install -Dm644 "${srcdir}/eliza_default_sensors.json" "${dst}/config/eliza_default_sensors.json"
+  install -Dm644 "${srcdir}/eliza_dynamic_sensors.json" "${dst}/config/eliza_dynamic_sensors.json"
+  install -Dm644 "${srcdir}/eliza_dynamic_sensors_template.json" "${dst}/config/eliza_dynamic_sensors_template.json"
+  install -Dm644 "${srcdir}/eliza_fcal_mmc56x3x_0.json" "${dst}/config/eliza_fcal_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/eliza_hdk_lsm6dso_0.json" "${dst}/config/eliza_hdk_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/eliza_hdk_lsm6dso_1.json" "${dst}/config/eliza_hdk_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/eliza_irq.json" "${dst}/config/eliza_irq.json"
+  install -Dm644 "${srcdir}/eliza_lps22df_0.json" "${dst}/config/eliza_lps22df_0.json"
+  install -Dm644 "${srcdir}/eliza_lsm6dso_0.json" "${dst}/config/eliza_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/eliza_lsm6dso_1.json" "${dst}/config/eliza_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/eliza_mmc56x3x_0.json" "${dst}/config/eliza_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/eliza_mtp_lsm6dso_0.json" "${dst}/config/eliza_mtp_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/eliza_mtp_lsm6dso_1.json" "${dst}/config/eliza_mtp_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/eliza_mtp_mmc56x3x_0.json" "${dst}/config/eliza_mtp_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/eliza_power_0.json" "${dst}/config/eliza_power_0.json"
+  install -Dm644 "${srcdir}/eliza_qrd_default_sensors.json" "${dst}/config/eliza_qrd_default_sensors.json"
+  install -Dm644 "${srcdir}/eliza_qrd_icm4x6xx_0.json" "${dst}/config/eliza_qrd_icm4x6xx_0.json"
+  install -Dm644 "${srcdir}/eliza_qrd_mmc56x3x_0.json" "${dst}/config/eliza_qrd_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/eliza_qrd_tmd2755_0.json" "${dst}/config/eliza_qrd_tmd2755_0.json"
+  install -Dm644 "${srcdir}/eliza_qsh_ble_0.json" "${dst}/config/eliza_qsh_ble_0.json"
+  install -Dm644 "${srcdir}/eliza_sht4x_0.json" "${dst}/config/eliza_sht4x_0.json"
+  install -Dm644 "${srcdir}/eliza_sx932x_0.json" "${dst}/config/eliza_sx932x_0.json"
+  install -Dm644 "${srcdir}/eliza_tmd2755_0.json" "${dst}/config/eliza_tmd2755_0.json"
+  install -Dm644 "${srcdir}/eliza_vertigo_lsm6dso_0.json" "${dst}/config/eliza_vertigo_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/eliza_vertigo_lsm6dso_1.json" "${dst}/config/eliza_vertigo_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/eliza_vertigo_mmc56x3x_0.json" "${dst}/config/eliza_vertigo_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/json.lst" "${dst}/config/json.lst"
+  install -Dm644 "${srcdir}/pakala_bu52053nvx_0.json" "${dst}/config/pakala_bu52053nvx_0.json"
+  install -Dm644 "${srcdir}/pakala_ccd_base.json" "${dst}/config/pakala_ccd_base.json"
+  install -Dm644 "${srcdir}/pakala_default_sensors.json" "${dst}/config/pakala_default_sensors.json"
+  install -Dm644 "${srcdir}/pakala_dynamic_sensors.json" "${dst}/config/pakala_dynamic_sensors.json"
+  install -Dm644 "${srcdir}/pakala_dynamic_sensors_template.json" "${dst}/config/pakala_dynamic_sensors_template.json"
+  install -Dm644 "${srcdir}/pakala_fcal_mmc56x3x_0.json" "${dst}/config/pakala_fcal_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/pakala_hdk_lsm6dso_0.json" "${dst}/config/pakala_hdk_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/pakala_hdk_lsm6dso_1.json" "${dst}/config/pakala_hdk_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/pakala_irq.json" "${dst}/config/pakala_irq.json"
+  install -Dm644 "${srcdir}/pakala_lps22df_0.json" "${dst}/config/pakala_lps22df_0.json"
+  install -Dm644 "${srcdir}/pakala_lsm6dso_0.json" "${dst}/config/pakala_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/pakala_lsm6dso_1.json" "${dst}/config/pakala_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/pakala_mmc56x3x_0.json" "${dst}/config/pakala_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/pakala_mtp_lsm6dso_0.json" "${dst}/config/pakala_mtp_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/pakala_mtp_lsm6dso_1.json" "${dst}/config/pakala_mtp_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/pakala_mtp_mmc56x3x_0.json" "${dst}/config/pakala_mtp_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/pakala_power_0.json" "${dst}/config/pakala_power_0.json"
+  install -Dm644 "${srcdir}/pakala_qmc6308_0.json" "${dst}/config/pakala_qmc6308_0.json"
+  install -Dm644 "${srcdir}/pakala_qmi8658_0.json" "${dst}/config/pakala_qmi8658_0.json"
+  install -Dm644 "${srcdir}/pakala_qrd_default_sensors.json" "${dst}/config/pakala_qrd_default_sensors.json"
+  install -Dm644 "${srcdir}/pakala_qrd_icm4x6xx_0.json" "${dst}/config/pakala_qrd_icm4x6xx_0.json"
+  install -Dm644 "${srcdir}/pakala_qrd_mmc56x3x_0.json" "${dst}/config/pakala_qrd_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/pakala_qrd_tmd3765_0.json" "${dst}/config/pakala_qrd_tmd3765_0.json"
+  install -Dm644 "${srcdir}/pakala_qsh_ble_0.json" "${dst}/config/pakala_qsh_ble_0.json"
+  install -Dm644 "${srcdir}/pakala_sht4x_0.json" "${dst}/config/pakala_sht4x_0.json"
+  install -Dm644 "${srcdir}/pakala_sx932x_0.json" "${dst}/config/pakala_sx932x_0.json"
+  install -Dm644 "${srcdir}/pakala_tmd3765_0.json" "${dst}/config/pakala_tmd3765_0.json"
+  install -Dm644 "${srcdir}/pakala_vertigo_lsm6dso_0.json" "${dst}/config/pakala_vertigo_lsm6dso_0.json"
+  install -Dm644 "${srcdir}/pakala_vertigo_lsm6dso_1.json" "${dst}/config/pakala_vertigo_lsm6dso_1.json"
+  install -Dm644 "${srcdir}/pakala_vertigo_mmc56x3x_0.json" "${dst}/config/pakala_vertigo_mmc56x3x_0.json"
+  install -Dm644 "${srcdir}/qsh_ble.json" "${dst}/config/qsh_ble.json"
+  install -Dm644 "${srcdir}/qsh_camera_common.json" "${dst}/config/qsh_camera_common.json"
+  install -Dm644 "${srcdir}/qsh_camera_common_sm8735.json" "${dst}/config/qsh_camera_common_sm8735.json"
+  install -Dm644 "${srcdir}/qsh_camera_imx688_6.json" "${dst}/config/qsh_camera_imx688_6.json"
+  install -Dm644 "${srcdir}/qsh_camera_imx688_6_actuator.json" "${dst}/config/qsh_camera_imx688_6_actuator.json"
+  install -Dm644 "${srcdir}/qsh_camera_ov32c4c_4.json" "${dst}/config/qsh_camera_ov32c4c_4.json"
+  install -Dm644 "${srcdir}/qsh_camera_ov32c4c_4_sm8735.json" "${dst}/config/qsh_camera_ov32c4c_4_sm8735.json"
+  install -Dm644 "${srcdir}/sns_amd.json" "${dst}/config/sns_amd.json"
+  install -Dm644 "${srcdir}/sns_amd_sw_enabled.json" "${dst}/config/sns_amd_sw_enabled.json"
+  install -Dm644 "${srcdir}/sns_aont.json" "${dst}/config/sns_aont.json"
+  install -Dm644 "${srcdir}/sns_basic_gestures.json" "${dst}/config/sns_basic_gestures.json"
+  install -Dm644 "${srcdir}/sns_bring_to_ear.json" "${dst}/config/sns_bring_to_ear.json"
+  install -Dm644 "${srcdir}/sns_ccd_v1_0_amd.json" "${dst}/config/sns_ccd_v1_0_amd.json"
+  install -Dm644 "${srcdir}/sns_ccd_v1_0_ttw.json" "${dst}/config/sns_ccd_v1_0_ttw.json"
+  install -Dm644 "${srcdir}/sns_ccd_v2_0_walk.json" "${dst}/config/sns_ccd_v2_0_walk.json"
+  install -Dm644 "${srcdir}/sns_ccd_v3_0_walk.json" "${dst}/config/sns_ccd_v3_0_walk.json"
+  install -Dm644 "${srcdir}/sns_ccd_v3_1_walk.json" "${dst}/config/sns_ccd_v3_1_walk.json"
+  install -Dm644 "${srcdir}/sns_ccd_v4_0_sensors.json" "${dst}/config/sns_ccd_v4_0_sensors.json"
+  install -Dm644 "${srcdir}/sns_ccd_v4_0_te_cd_regs.json" "${dst}/config/sns_ccd_v4_0_te_cd_regs.json"
+  install -Dm644 "${srcdir}/sns_ccd_v5_0.json" "${dst}/config/sns_ccd_v5_0.json"
+  install -Dm644 "${srcdir}/sns_ccd_v5_0_te_cd_regs.json" "${dst}/config/sns_ccd_v5_0_te_cd_regs.json"
+  install -Dm644 "${srcdir}/sns_ccd_v5_1_te_cd_regs.json" "${dst}/config/sns_ccd_v5_1_te_cd_regs.json"
+  install -Dm644 "${srcdir}/sns_ccd_v6_0.json" "${dst}/config/sns_ccd_v6_0.json"
+  install -Dm644 "${srcdir}/sns_ccd_v6_0_sensors.json" "${dst}/config/sns_ccd_v6_0_sensors.json"
+  install -Dm644 "${srcdir}/sns_ccd_v6_0_te_cd_regs.json" "${dst}/config/sns_ccd_v6_0_te_cd_regs.json"
+  install -Dm644 "${srcdir}/sns_cm.json" "${dst}/config/sns_cm.json"
+  install -Dm644 "${srcdir}/sns_dae.json" "${dst}/config/sns_dae.json"
+  install -Dm644 "${srcdir}/sns_device_orient.json" "${dst}/config/sns_device_orient.json"
+  install -Dm644 "${srcdir}/sns_diag_filter.json" "${dst}/config/sns_diag_filter.json"
+  install -Dm644 "${srcdir}/sns_direct_channel.json" "${dst}/config/sns_direct_channel.json"
+  install -Dm644 "${srcdir}/sns_distance_bound.json" "${dst}/config/sns_distance_bound.json"
+  install -Dm644 "${srcdir}/sns_dpc.json" "${dst}/config/sns_dpc.json"
+  install -Dm644 "${srcdir}/sns_facing.json" "${dst}/config/sns_facing.json"
+  install -Dm644 "${srcdir}/sns_flight_md.json" "${dst}/config/sns_flight_md.json"
+  install -Dm644 "${srcdir}/sns_fmv.json" "${dst}/config/sns_fmv.json"
+  install -Dm644 "${srcdir}/sns_fmv_legacy.json" "${dst}/config/sns_fmv_legacy.json"
+  install -Dm644 "${srcdir}/sns_gyro_cal.json" "${dst}/config/sns_gyro_cal.json"
+  install -Dm644 "${srcdir}/sns_heart_rate.json" "${dst}/config/sns_heart_rate.json"
+  install -Dm644 "${srcdir}/sns_mag_cal.json" "${dst}/config/sns_mag_cal.json"
+  install -Dm644 "${srcdir}/sns_mag_cal_legacy.json" "${dst}/config/sns_mag_cal_legacy.json"
+  install -Dm644 "${srcdir}/sns_multishake.json" "${dst}/config/sns_multishake.json"
+  install -Dm644 "${srcdir}/sns_offbody_detect_phone.json" "${dst}/config/sns_offbody_detect_phone.json"
+  install -Dm644 "${srcdir}/sns_pedometer.json" "${dst}/config/sns_pedometer.json"
+  install -Dm644 "${srcdir}/sns_psd_disable.json" "${dst}/config/sns_psd_disable.json"
+  install -Dm644 "${srcdir}/sns_psd_enable.json" "${dst}/config/sns_psd_enable.json"
+  install -Dm644 "${srcdir}/sns_rmd.json" "${dst}/config/sns_rmd.json"
+  install -Dm644 "${srcdir}/sns_rotv.json" "${dst}/config/sns_rotv.json"
+  install -Dm644 "${srcdir}/sns_smd.json" "${dst}/config/sns_smd.json"
+  install -Dm644 "${srcdir}/sns_tilt.json" "${dst}/config/sns_tilt.json"
+  install -Dm644 "${srcdir}/sns_tilt_sw_enabled.json" "${dst}/config/sns_tilt_sw_enabled.json"
+  install -Dm644 "${srcdir}/sns_tilt_to_wake.json" "${dst}/config/sns_tilt_to_wake.json"
+  install -Dm644 "${srcdir}/sns_transport_ppe.json" "${dst}/config/sns_transport_ppe.json"
+  install -Dm644 "${srcdir}/sns_wrist_pedo.json" "${dst}/config/sns_wrist_pedo.json"
+  install -Dm644 "${srcdir}/sns_reg_config" "${dst}/sns_reg_config"
+  install -Dm644 "${srcdir}/sns_odp_config" "${dst}/sns_odp_config"
+  install -Dm644 "${srcdir}/hals.conf"      "${dst}/hals.conf"
 }
