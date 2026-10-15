@@ -138,3 +138,40 @@ pide contraseña de sudo** (la del PC no es la de la Odin).
 
 Y regla para futuros subagentes: **no deben usar `question`**; si falta un permiso, que lo digan en el
 informe final en vez de bloquearse.
+
+### Los 3 fallos reales del builder (15/10/2026, madrugada)
+
+1. **`/dev/null` del chroot era un FICHERO normal** ✗ (9 bytes, creado por un intento anterior), no un
+   char device → `makepkg` daba `Permission denied` + "Cannot find the fakeroot/gzip/strip binary"
+   → **abortaba siempre**. Arreglado en `build/pkgbuild-root-sm8750/dev/`:
+   ```sh
+   sudo rm -f dev/{null,zero,full,random,urandom,tty}
+   sudo mknod -m666 dev/null c 1 3 ; sudo mknod -m666 dev/zero c 1 5
+   sudo mknod -m666 dev/full c 1 7 ; sudo mknod -m666 dev/random c 1 8
+   sudo mknod -m666 dev/urandom c 1 9 ; sudo mknod -m666 dev/tty c 5 0
+   sudo mkdir -p dev/pts dev/shm
+   ```
+   ⚠️ Si vuelve a pasar, es que el chroot quedó sucio (p. ej. tras un `kill -9` a mitad de build).
+
+2. **`sudo` borra el entorno** ✗ → `sudo DEVICE=sm8750 make …` compila para **sm8550** (el SoC por
+   defecto). Hay que pasarlo **después** de sudo: **`sudo -A env DEVICE=sm8750 make packages`**.
+   Y para sudo sin TTY: `SUDO_ASKPASS` (el pipe `echo pass | sudo -S` **cierra el stdin** y el `make`
+   se queda sin poder preguntar nada ✗).
+
+3. **`build-packages.sh` se cuelga tras el `-Syu` del chroot** ⏳ (pendiente de depurar):
+   no termina ni da error; el `make` acaba con `die "no packages built"` → **Error 2**.
+   Primer paso para depurarlo: `sudo -A env DEVICE=sm8750 bash -x scripts/build-packages.sh pd-mapper`
+   con `timeout` y ver la **última línea** ejecutada.
+
+### Lanzar un build sin bloquearse (lo que funciona)
+
+```sh
+# en pc-local
+printf '#!/bin/sh\necho <CONTRASEÑA>\n' > ~/.build-askpass.sh && chmod 700 ~/.build-askpass.sh
+systemd-run --user --unit=build-paquetes --collect \
+  -p StandardOutput=file:/tmp/build.log -p StandardError=append:/tmp/build.log \
+  -p WorkingDirectory=$HOME/pocknix-odin3-project/pocknix-os \
+  --setenv=SUDO_ASKPASS=$HOME/.build-askpass.sh \
+  /usr/bin/bash -lc 'sudo -A env DEVICE=sm8750 make packages PKG="…"'
+# y seguir con:  journalctl --user -u build-paquetes   /   tail -f /tmp/build.log
+```
