@@ -1,0 +1,23 @@
+# msm-firmware-loader — prepara el firmware del ADSP para hexagonrpcd (postmarketOS).
+# OJO: su spec original requiere qbootctl y make-dynpart-mappings; de momento NO se anade a
+# ninguna lista de paquetes (decision pendiente).
+pkgname=msm-firmware-loader
+pkgver=1.8.0
+pkgrel=1
+pkgdesc="Load the ADSP firmware from the Android partitions for hexagonrpcd"
+arch=('any')
+url="https://gitlab.postmarketos.org/postmarketOS/msm-firmware-loader"
+license=('GPL-3.0-only')
+source=("$url/-/archive/$pkgver/msm-firmware-loader-$pkgver.tar.gz"
+        '0001-load-hexagonrpcd-firmware.patch')
+sha256sums=('8ce01de08a789b573c79c0c4a5499157e3cb1c617718aa16902a5784815564cc' 'SKIP')
+
+prepare() {
+  cd msm-firmware-loader-$pkgver
+  patch -p1 -F0 < "${srcdir}/0001-load-hexagonrpcd-firmware.patch"
+}
+
+package() {
+  cd msm-firmware-loader-$pkgver
+  install -Dm755 msm-firmware-loader.sh "${pkgdir}/usr/bin/msm-firmware-loader"
+}

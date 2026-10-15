@@ -1,0 +1,40 @@
+# hexagonrpc — daemon que sirve el HexagonFS al ADSP (necesario para los sensores del Odin 3).
+# Parches traidos de Terra (terrapkg/packages, anda/system/hexagonrpc): unidades a systemd,
+# usar el dir de msm-firmware-loader, ARRANCAR COMO ROOT, volver tras resume, y esperar al
+# arbol hexagonfs preparado. (Hueco historico: el nuestro moria al instante.)
+pkgname=hexagonrpc
+pkgver=0.5.0
+pkgrel=1
+pkgdesc="Qualcomm HexagonRPC daemon (ADSP virtual filesystem)"
+arch=('aarch64')
+url="https://github.com/linux-msm/hexagonrpc"
+license=('BSD-3-Clause')
+depends=('systemd-libs')
+makedepends=('meson' 'ninja' 'systemd')
+source=("$url/archive/refs/tags/v$pkgver.tar.gz"
+        '0001-data-install-units-to-the-canonical-systemd-unit-dir.patch'
+        '0002-use-msm-firmware-loader-dir.patch'
+        '0003-run-hexagonrpcd-as-root.patch'
+        '0004-bring-hexagonrpcd-back-after-resume.patch'
+        '0005-gate-hexagonrpcd-on-staged-hexagonfs-tree.patch')
+sha256sums=('2173985932ab68d8ac593f9954357123bdbbbe9ba5f1b17a098d9cbcec22c5d5' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+prepare() {
+  cd hexagonrpc-$pkgver
+  for p in 0001-data-install-units-to-the-canonical-systemd-unit-dir \
+           0002-use-msm-firmware-loader-dir 0003-run-hexagonrpcd-as-root \
+           0004-bring-hexagonrpcd-back-after-resume 0005-gate-hexagonrpcd-on-staged-hexagonfs-tree; do
+    patch -p1 -F0 < "${srcdir}/${p}.patch"
+  done
+}
+
+build() {
+  cd hexagonrpc-$pkgver
+  meson setup build --prefix=/usr --buildtype=release
+  meson compile -C build
+}
+
+package() {
+  cd hexagonrpc-$pkgver
+  meson install -C build --destdir "${pkgdir}"
+}
