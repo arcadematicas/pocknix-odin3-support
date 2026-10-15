@@ -149,3 +149,4 @@ tk
 # (comprimir juegos a .wsquashfs desde el clic derecho de Dolphin o la terminal).
 # Sin el, los menus y los scripts existen pero fallan al usarlos.
 squashfs-tools
+squashfuse            # montar .wsquashfs (lanzador WindWaker / juegos comprimidos)
