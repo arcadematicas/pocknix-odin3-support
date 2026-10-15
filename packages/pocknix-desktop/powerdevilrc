@@ -1,0 +1,12 @@
+# System default (/etc/xdg/powerdevilrc); a user's ~/.config/powerdevilrc still wins.
+# PowerButtonAction=1 is Sleep; Plasma 6 reads only this capitalised key (lowercase is the
+# Plasma 5 name it migrates from). powerdevil inhibits logind's power-key handling while the
+# session runs, so it must suspend itself; Plasma Mobile's default only toggles the screen.
+[AC][SuspendAndShutdown]
+PowerButtonAction=1
+
+[Battery][SuspendAndShutdown]
+PowerButtonAction=1
+
+[LowBattery][SuspendAndShutdown]
+PowerButtonAction=1
