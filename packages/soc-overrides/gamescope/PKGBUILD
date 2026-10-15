@@ -1,28 +1,32 @@
-# gamescope (pocknix) — base OpenGamingCollective (OGC) + parches de armada + nuestros.
+# gamescope (pocknix) — base OpenGamingCollective (OGC) + serie de armada + nuestros.
 #
-# CAMBIO 27/09/2026: se pasa de la base ROCKNIX (Valve 3.16.25, commit 6644cc9) a la base
-# OpenGamingCollective "3.16.29-ogc2" (commit 4b50dd7). Motivo: el HDR de armada (perfil
-# edidless del Odin 3 + color management por plano, parche gamescope 0021) va contra esa base.
+# CAMBIO 15/10/2026: se sube de la base OGC "3.16.29-ogc2" (4b50dd7) a "3.16.31-ogc1"
+# (afd6eac6) y se adopta la serie de armada con sus nombres originales (antes teniamos una
+# copia parcial renumerada 0101-0121). Motivo: el base viejo arrastra el bug "QAM/MangoHUD
+# se quedan enganchados con HDR activado"; 3.16.31 no. Se conserva el fork OGC (y por tanto
+# gamescopectl/gamescope_control, que usan los controles de color y HDR de los plugins Decky).
 #
-# La base OGC YA trae la rotacion (--force-composition-rotation, deteccion de rotacion en
-# scanout: drm_plane_supported_rotations/bScanoutCanRotate/currentOutputRotation), asi que
-# los parches ROCKNIX de rotacion (0007/0008) y los de touch/cursor/overlay sobran aqui.
+# Base elegido -ogc1 (28/09) y NO -ogc2 (05/10): con -ogc1 los parches aplican estrictos;
+# con -ogc2 los merges de la semana desplazan contextos y hay que tragar fuzz. Ademas
+# -ogc1 ya trae todo Valve 3.16.31.
 #
-# Parches de armada (rebautizados 01xx para no chocar con los nuestros):
-#   0102/0103 = perfil edidless + HDR del Odin 3 (650 nits, gamma 2.2)  <- CLAVE para HDR
-#   0104..0107,0110,0117,0119 = color/HDR (gamma22, tonemap, output-LUTs, P3)
-#   0121 = color management POR PLANO (usa el LUTDMA del kernel 0070/0076/0077)
-#   0111..0116 = DRM lease (leasing de la salida)
-#   0101,0109,0118 = varios (appid fallback, vulkan realtime, virtual white ARM64)
-# Nuestros: 0009 (fps-limit atom persist), 0010 (rotated-output-max-height), 0011
-# (--force-composition no cancelable por la X property).
+# Parches de armada: https://github.com/armada-os/armada/tree/main/packages/gamescope/patches
+#   (en su serie no existe el 0008; ver su PATCHES.md). Descartados aqui: 0028-improve-frame-pacing
+#   (ya incluidos en el base / no aplican). Novedades frente a nuestra copia vieja:
+#   0022 (mangoapp: cola compartida con un cliente lease), 0023, 0024, 0025,
+#   0026 (SGSR para peticiones FSR en SDR), 0027 (limite de FPS del QAM anclado al reloj).
+#
+# Nuestros: 0010-DRMBackend-add-rotated-output-max-height (rotacion; ROCKNIX tiene el
+#   equivalente como 0008). RETIRADOS el 15/10: 0009-fps-limit-atom-persist (lo supera el
+#   0027 de armada) y 0011-force-composition-not-cancelled-by-x-property (nuestra doc
+#   docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md dice expresamente que NO se reintroduzca).
 #
 # epoch=1 outranks ALARM's gamescope. El pkgver DEBE vercmp-higher que la base anterior.
 pkgname=gamescope
 epoch=1
-pkgver=3.16.29.ogc2.20260918.4b50dd7
+pkgver=3.16.31.ogc1.20260928.afd6eac6
 pkgrel=1
-_commit=4b50dd7a719c09acb1a0141ff6eac9dab1ab4f2f
+_commit=afd6eac6e1b5045119831b63854bad68ec4fd92c
 install=gamescope.install
 pkgdesc="SteamOS session compositing WM — OGC base + armada HDR patches (msm/rotated panels)"
 arch=('aarch64')
@@ -41,64 +45,73 @@ makedepends=('git' 'meson' 'ninja' 'cmake' 'pkgconf' 'glslang' 'vulkan-headers'
              'xorg-xwayland' 'libdisplay-info' 'xcb-util-errors' 'xcb-util-renderutil'
              'xcb-util-image' 'xcb-util-keysyms')
 source=("gamescope::git+https://github.com/OpenGamingCollective/gamescope.git#commit=${_commit}"
-        # --- parches de armada (serie, en orden) ---
-        '0101-steamcompmgr-fallback-appid-focus.patch'
-        '0102-drm-synthesize-edid-for-edidless-internal-panels.patch'
-        '0103-drm-support-known-display-profiles-for-edidless-panels.patch'
-        '0104-drm-compose-gamma22-hdr-without-hardware-color-management.patch'
-        '0105-wsi-filter-hdr-formats-by-underlying-support.patch'
-        '0106-color-scale-sdr-white-on-gamma22-hdr-output.patch'
-        '0107-expose-client-sampleable-formats.patch'
-        '0109-main-add-opt-in-force-vulkan-realtime.patch'
-        '0110-color-fall-back-to-app-hdr-metadata-for-tonemapping.patch'
-        '0111-wlserver-implement-drm-lease-v1.patch'
-        '0112-wsi-layer-pass-through-display-surface-swapchains.patch'
-        '0113-feat-drm-run-a-compositor-from-the-leased-output.patch'
-        '0114-wlserver-always-swallow-ignored-touch-device.patch'
-        '0115-drm-blank-leased-connector-on-release.patch'
-        '0116-drm-let-a-socket-lease-holder-yield-to-protocol-clients.patch'
-        '0117-drm-sdr-color-management-through-dpu-output-luts.patch'
-        '0118-steamcompmgr-arm64-virtual-white.patch'
-        '0119-color-p3-red-is-wide-gamut.patch'
-        '0121-drm-per-plane-color-management-through-msm-plane-color-pipelines.patch'
-        # --- nuestros (pocknix-odin3-support) ---
-        '0009-fps-limit-atom-persist.patch'
-        '0011-force-composition-not-cancelled-by-x-property.patch'
+        # --- serie de armada (orden original de su serie) ---
+        '0001-steamcompmgr-fallback-appid-focus.patch'
+        '0002-drm-synthesize-edid-for-edidless-internal-panels.patch'
+        '0003-drm-support-known-display-profiles-for-edidless-panels.patch'
+        '0004-drm-compose-gamma22-hdr-without-hardware-color-management.patch'
+        '0005-wsi-filter-hdr-formats-by-underlying-support.patch'
+        '0006-color-scale-sdr-white-on-gamma22-hdr-output.patch'
+        '0007-expose-client-sampleable-formats.patch'
+        '0009-main-add-opt-in-force-vulkan-realtime.patch'
+        '0010-color-fall-back-to-app-hdr-metadata-for-tonemapping.patch'
+        '0011-wlserver-implement-drm-lease-v1.patch'
+        '0012-wsi-layer-pass-through-display-surface-swapchains.patch'
+        '0013-feat-drm-run-a-compositor-from-the-leased-output.patch'
+        '0014-wlserver-always-swallow-ignored-touch-device.patch'
+        '0015-drm-blank-leased-connector-on-release.patch'
+        '0016-drm-let-a-socket-lease-holder-yield-to-protocol-clients.patch'
+        '0017-drm-sdr-color-management-through-dpu-output-luts.patch'
+        '0018-steamcompmgr-arm64-virtual-white.patch'
+        '0019-color-p3-red-is-wide-gamut.patch'
+        '0020-libliftoff-fix-multiple-primary-plane-stacking.patch'
+        '0021-drm-per-plane-color-management-through-msm-plane-color-pipelines.patch'
+        '0022-mangoapp-keep-a-lease-client-off-the-shared-queue.patch'
+        '0023-drm-power-down-an-idle-lease-companion-output.patch'
+        '0024-steamcompmgr-report-wayland-windows-to-steam.patch'
+        '0025-wlserver-pass-touch-through-to-native-wayland-windows.patch'
+        '0026-upscale-use-sgsr-for-sdr-fsr-requests.patch'
+        '0027-steamcompmgr-elapsed-time-fps-limiter.patch'
+        # --- nuestros ---
         '0010-DRMBackend-add-rotated-output-max-height.patch')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   cd gamescope
   git submodule update --init --recursive
-  # armada (serie, en orden numerico)
+  # Serie de armada en orden numerico. -F2 = el mismo fuzz que usa armada.
   for _p in \
-    0101-steamcompmgr-fallback-appid-focus \
-    0102-drm-synthesize-edid-for-edidless-internal-panels \
-    0103-drm-support-known-display-profiles-for-edidless-panels \
-    0104-drm-compose-gamma22-hdr-without-hardware-color-management \
-    0105-wsi-filter-hdr-formats-by-underlying-support \
-    0106-color-scale-sdr-white-on-gamma22-hdr-output \
-    0107-expose-client-sampleable-formats \
-    0109-main-add-opt-in-force-vulkan-realtime \
-    0110-color-fall-back-to-app-hdr-metadata-for-tonemapping \
-    0111-wlserver-implement-drm-lease-v1 \
-    0112-wsi-layer-pass-through-display-surface-swapchains \
-    0113-feat-drm-run-a-compositor-from-the-leased-output \
-    0114-wlserver-always-swallow-ignored-touch-device \
-    0115-drm-blank-leased-connector-on-release \
-    0116-drm-let-a-socket-lease-holder-yield-to-protocol-clients \
-    0117-drm-sdr-color-management-through-dpu-output-luts \
-    0118-steamcompmgr-arm64-virtual-white \
-    0119-color-p3-red-is-wide-gamut \
-    0121-drm-per-plane-color-management-through-msm-plane-color-pipelines ; do
-    patch -p1 < "${srcdir}/${_p}.patch"
+    0001-steamcompmgr-fallback-appid-focus \
+    0002-drm-synthesize-edid-for-edidless-internal-panels \
+    0003-drm-support-known-display-profiles-for-edidless-panels \
+    0004-drm-compose-gamma22-hdr-without-hardware-color-management \
+    0005-wsi-filter-hdr-formats-by-underlying-support \
+    0006-color-scale-sdr-white-on-gamma22-hdr-output \
+    0007-expose-client-sampleable-formats \
+    0009-main-add-opt-in-force-vulkan-realtime \
+    0010-color-fall-back-to-app-hdr-metadata-for-tonemapping \
+    0011-wlserver-implement-drm-lease-v1 \
+    0012-wsi-layer-pass-through-display-surface-swapchains \
+    0013-feat-drm-run-a-compositor-from-the-leased-output \
+    0014-wlserver-always-swallow-ignored-touch-device \
+    0015-drm-blank-leased-connector-on-release \
+    0016-drm-let-a-socket-lease-holder-yield-to-protocol-clients \
+    0017-drm-sdr-color-management-through-dpu-output-luts \
+    0018-steamcompmgr-arm64-virtual-white \
+    0019-color-p3-red-is-wide-gamut \
+    0020-libliftoff-fix-multiple-primary-plane-stacking \
+    0021-drm-per-plane-color-management-through-msm-plane-color-pipelines \
+    0022-mangoapp-keep-a-lease-client-off-the-shared-queue \
+    0023-drm-power-down-an-idle-lease-companion-output \
+    0024-steamcompmgr-report-wayland-windows-to-steam \
+    0025-wlserver-pass-touch-through-to-native-wayland-windows \
+    0026-upscale-use-sgsr-for-sdr-fsr-requests \
+    0027-steamcompmgr-elapsed-time-fps-limiter \
+    ; do
+    patch -p1 -F2 < "${srcdir}/${_p}.patch"
   done
-  # nuestros (el 0010 va despues de 0009/0011 porque se regenero sobre esa pila)
-  patch -p1 < "${srcdir}/0009-fps-limit-atom-persist.patch"
-  patch -p1 < "${srcdir}/0011-force-composition-not-cancelled-by-x-property.patch"
-  patch -p1 < "${srcdir}/0010-DRMBackend-add-rotated-output-max-height.patch"
+  # Nuestros: el 0010 va SIEMPRE al final (se regenero sobre la pila).
+  patch -p1 -F2 < "${srcdir}/0010-DRMBackend-add-rotated-output-max-height.patch"
 }
 
 build() {
