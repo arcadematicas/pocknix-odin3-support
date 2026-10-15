@@ -9,8 +9,10 @@ pkgname=linux-pocknix-sm8750
 # 7.2.4 mientras el kernel staged era 7.2.6 (el paquete llevaba los modulos
 # correctos y /usr/lib/pocknix/kernelrelease decia la verdad, pero el NOMBRE
 # del paquete mentia y pacman -Q tambien).
-pkgver=7.2.9
-pkgrel=2
+# 7.2.10 (15/10): la Odin corre y esta verificada con 7.2.10; kernel.conf ya
+# apunta a KERNEL_VERSION=7.2.10. pkgrel resetea a 1 al subir pkgver.
+pkgver=7.2.10
+pkgrel=1
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"
