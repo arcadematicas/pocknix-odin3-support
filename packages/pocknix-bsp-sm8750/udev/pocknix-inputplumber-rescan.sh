@@ -48,5 +48,13 @@ if [ -z "${ev}" ]; then
   exit 0
 fi
 
+# Si inputplumber YA expone su mando compuesto, NO reiniciar: al reiniciar, los /dev/input/js*
+# se renumeran y RetroArch (input_player1_joypad_index) acaba apuntando a OTRO mando.
+# Visto en la Odin el 16/10/2026: "el mando se detecta pero no está bien asignado al puerto".
+if grep -rqs "Generic Steam Controller" /sys/class/input/*/device/name 2>/dev/null; then
+  echo "pocknix-inputplumber-rescan: inputplumber ya lo tiene; NO reinicio"
+  exit 0
+fi
+
 echo "pocknix-inputplumber-rescan: '${DEVNAME}' listo (/dev/input/${ev}); reinicio inputplumber"
 exec systemctl restart inputplumber.service
