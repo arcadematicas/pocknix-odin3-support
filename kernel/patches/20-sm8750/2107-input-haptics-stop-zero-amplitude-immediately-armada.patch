@@ -1,0 +1,108 @@
+From: virtudude <virtudude@protonmail.com> [Pocknix port]
+Subject: [PATCH] input: qcom-hv-haptics: stop zero-amplitude effects immediately
+
+Pocknix port of the ArmadaOS patch
+`1004-input-haptics-stop-zero-amplitude-immediately.patch`
+(armada-os/armada, packages/kernel/patches/, commit ce363b8e67cfd2b5fcf44fd384686f85d777ae9d).
+Fetched raw from
+  https://raw.githubusercontent.com/armada-os/armada/ce363b8e67cfd2b5fcf44fd384686f85d777ae9d/packages/kernel/patches/1004-input-haptics-stop-zero-amplitude-immediately.patch
+
+WHY THE RENUMBERING
+-------------------
+ArmadaOS numbers its patch set independently of ours and the numbers collide:
+armada `1004` is this haptics fix, while OUR `1004` is
+`1004-input-qcom-hv-haptics-defer-rsinput-playback.patch` (ROCKNIX's
+rsinput-playback deferral, part of the synced base). Filed here as `2107-`,
+sorting after the whole 20-sm8750 stack, with the provenance in the name. Both
+patch drivers/input/misc/qcom-hv-haptics.c, so order matters: this sorts after
+`2101` (the armada-1003 serialization port) and applies on top of it.
+
+WHAT THE BUG WAS
+----------------
+ROCKNIX's periodic-sine compatibility patch (our synced base
+`1001-haptics-driver-support-periodic-sine-and-fixes.patch`) handled a
+zero-amplitude update while the chip was already playing by dropping the gain
+to 1 and scheduling a stop five seconds later. Stopping applies the configured
+brake pattern, so an ordinary rumble ended in a small but distinct tap exactly
+five seconds after it should have gone silent.
+
+Erase the active effect immediately instead, and ignore a following playback
+request when no effect is loaded, so a client that sends play right after a
+zero-amplitude update cannot restart stale motor state. In-place gain updates
+now balance their transient runtime-PM reference with
+haptics_runtime_autosuspend_put().
+
+RELATION TO THE 2026-10-16 DRY POWER-OFF
+----------------------------------------
+This is the second half of the rumble-stop story beside `2101`. On the Odin 3
+the last haptics activity before the hardware cut was a stopped-play handshake
+("poll HPWR_DISABLED failed after stopped play"); the stop path this patch
+touches is exactly the one that runs there, and the delayed brake tap is the
+extra motor activity seen around rumble stop. It is not by itself the cause of
+the dry power-off (the pstore/ramoops was empty and there was no oops/panic),
+but removing the five-second deferred stop and the stale-state restart makes
+the rumble-stop path do strictly less work, so it is landed as part of the fix.
+
+ADAPTATION
+----------
+Verbatim: the ArmadaOS hunks apply to our patched tree (the pinned source + the
+full 20-sm8750 stack, which already carries 1000/1001/1004/2101) with ZERO fuzz.
+As with our `2102` port only the hunk headers were moved to our tree's line
+numbers so the patch also lands at ZERO offset (the ArmadaOS headers were 12
+lines early); the added/removed lines are ArmadaOS' byte for byte and the
+function names in the hunk headers are unchanged.
+
+Signed-off-by: virtudude <virtudude@protonmail.com>
+---
+diff --git a/drivers/input/misc/qcom-hv-haptics.c b/drivers/input/misc/qcom-hv-haptics.c
+--- a/drivers/input/misc/qcom-hv-haptics.c
++++ b/drivers/input/misc/qcom-hv-haptics.c
+@@ -3205,6 +3205,8 @@ static void haptics_runtime_autosuspend(struct haptics_chip *chip)
+ 	pm_runtime_autosuspend(chip->dev);
+ }
+ 
++static int haptics_erase(struct input_dev *dev, int effect_id);
++
+ static int haptics_upload_effect(struct input_dev *dev,
+ 		struct ff_effect *effect, struct ff_effect *old);
+ 
+@@ -3266,16 +3268,8 @@ static int haptics_upload_effect(struct input_dev *dev,
+ 		pr_debug("tried to upload an effect while the chip was busy playing, setting gain...\n");
+ 
+ 		if (gain == 0) {
+-			//The purpose of scheduling a stop_work work is that if the program calls playback afterwards, it will play
+-			// for a very short time using the previous gain
+-			// ( Like Aethersx2, it likes to call playback with zero value EVEN when amplitude is zero)
+-			//We cant stop the playback now, so schedule rumble stop after 5s
+-			//and set the gain to a low value (essentially zero)
+-
+-			dev_dbg(chip->dev, "scheduling stop after 500ms, because gain is zero\n");
+-
+-			dev->ff->set_gain(dev, 1);
+-			schedule_delayed_work(&chip->stop_work, msecs_to_jiffies(5000));
++			haptics_runtime_autosuspend_put(chip);
++			return haptics_erase(dev, effect->id);
+ 		} else {
+ 			dev_dbg(chip->dev, "Setting gain to %hu...\n", gain);
+ 
+@@ -3285,6 +3279,7 @@ static int haptics_upload_effect(struct input_dev *dev,
+ 			schedule_delayed_work(&chip->stop_work, msecs_to_jiffies(effect->replay.length));
+ 		}
+ 
++		haptics_runtime_autosuspend_put(chip);
+ 		return 0;
+ 	}
+ 
+@@ -3389,8 +3384,10 @@ static int haptics_playback(struct input_dev *dev, int effect_id, int val)
+ 
+ 	dev_dbg(chip->dev, "playback val = %d\n", val);
+ 	if (!!val && !chip->chip_is_playing) {
+-		if (!chip->chip_effect_loaded)
+-			dev_warn(chip->dev, "Trying to playback while no effect is loaded!\n");
++		if (!chip->chip_effect_loaded) {
++			dev_dbg(chip->dev, "Trying to playback while no effect is loaded!\n");
++			return 0;
++		}
+ 
+ 		if (chip->config.measure_lra_impedance && chip->visense_enabled)
+ 			chip->pattern_start_time = ktime_get_boottime();

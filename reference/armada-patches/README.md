@@ -34,3 +34,27 @@ cd "$K" && patch -p1 --dry-run < <parche>      # comprobar antes
 Los parches del build se aplican desde `kernel/sm8750/patches/*/` **en orden numérico**
 (05-speedup → 10-mainline → 20-sm8750 → 30-version) y `build-kernel.sh` **re-extrae la fuente** en
 cada build.
+
+---
+
+## Actualización 16/10/2026 — los tres ya están portados (+ el 1004)
+
+Los tres "que nos faltan" de la tabla de arriba ya están **portados** en
+`kernel/patches/20-sm8750/` (numeración `2xxx`, procedencia en el nombre), más el
+`1004` que faltaba:
+
+| ArmadaOS | Nuestro port | Qué es |
+|---|---|---|
+| `1003-input-haptics-fix-rumble-bridge-atomic-sleep.patch` | **`2101-…-armada.patch`** | serialización del bridge de hápticos (parche completo desde 01/10/2026) |
+| `0049-drm-msm-dpu-panel-opt-in-8bpc-dither.patch` | **`2100-…-armada.patch`** | dither DPU opt-in por DT |
+| `1006-tty-serial-qcom-geni-mask-non-console-irq-on-suspend.patch` | **`2102-…-armada.patch`** | enmascara la IRQ GENI no-consola al suspender |
+| `1004-input-haptics-stop-zero-amplitude-immediately.patch` | **`2107-…-armada.patch`** | *stop* inmediato a amplitud cero (el "clic" 5 s después del rumble) |
+
+- El `1004` de armada se trajo **en crudo** a este directorio el 16/10/2026
+  (commit/rama de armada `ce363b8e67cfd2b5fcf44fd384686f85d777ae9d`,
+  sha256 `f78668f793643306450b93f2672268271c2d1e816399fd50588fb366784c161b`).
+- El `1003` y el `1006` de armada no han cambiado desde el 30/09/2026 (diff vacío
+  contra lo ya guardado aquí).
+- El `1005-input-rsinput-quiesce-the-mcu-across-system-sleep.patch` **NO se porta
+  aparte**: su paso de quiesce del MCU ya está **inline** en nuestro
+  `1007-input-rsinput-drop-the-mcu-supply-across-system-sleep.patch`.
