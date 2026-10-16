@@ -37,7 +37,14 @@ pkgver=0.2.0
 #   depends+optdepends -> sin esta arista la cadena entera quedaba huerfana y no se podia
 #   publicar. libqrtr entra transitivamente via pd-mapper.
 #   Ver docs/CIERRE-20261016-PUBLICACION.md §4 y docs/SENSORES-ODIN3-2026-10-15.md.
-pkgrel=10
+# -11 (17/10): dos arreglos de la instalacion por OTA en la Odin:
+#   (a) pocknix-sensors-tree.service apuntaba a /usr/bin/pocknix-sensors-tree, pero el paquete
+#       instala el script en /usr/local/bin -> 203/EXEC y la cadena de sensores entera se caia
+#       (sin arbol HexagonFS no hay pd-mapper ni IIO devices). Corregido el ExecStart.
+#   (b) el BSP ya no instala power-button-daemon.py/-.service: los provee pocknix-system-overlay
+#       (version del 14/10 con toque=suspender y mantener=menu). Tenerlos en los dos hacia que
+#       pacman abortara la transaccion entera ("exists in both").
+pkgrel=11
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
@@ -127,7 +134,10 @@ package() {
   # --- daemons and CLI helpers -> /usr/local/bin ------------------------------
   # /usr/local/bin, not /usr/bin: device-local glue, and every unit below hardcodes that path.
   local bin="${pkgdir}/usr/local/bin"
-  install -Dm755 "${sd}/daemons/power-button-daemon.py"          "${bin}/power-button-daemon.py"
+  # power-button-daemon.py/service NO se instalan aqui: los provee pocknix-system-overlay
+  # (version del 14/10: toque = suspender, mantener = menu de apagado). La copia de este BSP era
+  # la vieja (solo apagaba pantalla) y ambos paquetes peleaban por la MISMA ruta -> pacman
+  # abortaba la transaccion ("exists in both"). El `enable` de la unidad se mantiene aqui.
   install -Dm755 "${sd}/daemons/volume-button-daemon.py"         "${bin}/volume-button-daemon.py"
   install -Dm755 "${sd}/oled-care/oled-care-daemon.py"           "${bin}/oled-care-daemon.py"
   install -Dm755 "${sd}/oled-care/oled-refresher-auto"           "${bin}/oled-refresher-auto"
@@ -159,7 +169,7 @@ package() {
 
   # --- systemd units ----------------------------------------------------------
   local unit="${pkgdir}/usr/lib/systemd/system"
-  install -Dm644 "${sd}/daemons/power-button-daemon.service"              "${unit}/power-button-daemon.service"
+  # power-button-daemon.service lo instala pocknix-system-overlay (ver nota arriba).
   install -Dm644 "${sd}/daemons/volume-button-daemon.service"             "${unit}/volume-button-daemon.service"
   install -Dm644 "${sd}/oled-care/oled-care-daemon.service"               "${unit}/oled-care-daemon.service"
   install -Dm644 "${sd}/oled-care/oled-refresher.service"                 "${unit}/oled-refresher.service"

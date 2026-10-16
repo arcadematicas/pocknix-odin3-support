@@ -1,6 +1,6 @@
 # pocknix-sensors-tree.service - arbol HexagonFS para los sensores del Odin 3.
 #
-# Ejecuta /usr/bin/pocknix-sensors-tree, que prepara el arbol que consume el SSC del ADSP:
+# Ejecuta /usr/local/bin/pocknix-sensors-tree, que prepara el arbol que consume el SSC del ADSP:
 # monta la particion `dsp_a` del vendor, enlaza las configs del vendor desde
 # pocknix-sensors-config y deja los .jsn donde pd-mapper los busca.
 #
@@ -20,7 +20,7 @@ Before=hexagonrpcd-adsp-sensorspd.service pd-mapper.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/pocknix-sensors-tree
+ExecStart=/usr/local/bin/pocknix-sensors-tree
 
 [Install]
 WantedBy=multi-user.target
