@@ -15,6 +15,15 @@
 #   0001 battery power (Snapdragon pmic-glink reports power_now 10x off)
 #   0002 RAM label ("PMEM" -> "RAM")
 #   0003 msm GPU temperature from the hottest "gpu" hwmon zone
+#
+# NO libtracefs (16/10, CORREGIDO): el upstream lo declara OPCIONAL
+# (meson.build: dependency('libtracefs', required: false) -> solo activa
+# -DHAVE_TRACEFS_GPU_MEM, que es trazado de memoria GPU de amdgpu, irrelevante en Adreno).
+# Y no puede ser `depends` nuestro: el chroot de COMPILACION (pinned) solo ve los repos
+# pocknix ([pocknix-base] + localrepo) -> makepkg falla con "target not found: libtracefs"
+# (libtracefs-1.8.3-1 existe en el extra.db del ALARM, pero ese repo NO esta habilitado en
+# el pacman.conf pinned). Regla del AGENTS: nunca un paquete de ALARM como depends de uno
+# nuestro. Ver docs/MANGOHUD-20261016.md §6.
 pkgname=mangohud
 pkgver=0.8.4.r184.ge1430aba
 pkgrel=2
@@ -24,7 +33,7 @@ arch=('aarch64')
 url="https://github.com/flightlessmango/MangoHud"
 license=('MIT')
 depends=('gcc-libs' 'glibc' 'vulkan-icd-loader' 'libdrm' 'libcap' 'glfw' 'libglvnd' 'wayland'
-         'libxkbcommon' 'libx11' 'dbus' 'glew' 'spdlog' 'libtracefs')
+         'libxkbcommon' 'libx11' 'dbus' 'glew' 'spdlog')
 makedepends=('meson' 'ninja' 'git' 'glslang' 'vulkan-headers' 'libglvnd' 'libdrm' 'libcap'
              'glfw' 'wayland' 'wayland-protocols' 'libxkbcommon' 'libx11' 'libxrandr'
              'python-mako' 'mesa' 'dbus' 'glew' 'spdlog' 'nlohmann-json' 'python')
