@@ -519,3 +519,26 @@ instalador `tools/install-gamepad-quit.sh`.
 > `ID_INPUT_MOUSE=0` (`batocera/udev/99-ayn-odin3.rules`). No hace falta para que
 > SDL vea el mando (basta `ID_INPUT_JOYSTICK=1`), y quitarlo del todo podría tener
 > efectos en el táctil; se deja como está.
+
+---
+
+## 12. Autoconfig de RetroArch de la Odin 3 en otros sistemas — la búsqueda YA se hizo (16/10/2026)
+
+**Veredicto: ninguno de armada / rocknix / batocera trae un autoconfig de RetroArch para la
+Odin 3 → no hay nada que copiar; el nuestro es el correcto.**
+
+La búsqueda está **hecha y no hay vuelta que darle** (el inventario de este mismo doc, §4):
+
+- **ROCKNIX** (`§4.3`): solo tiene `AYN_Odin2_Gamepad.cfg`. Es de la **Odin 2** y está escrito
+  para el **mando virtual** de InputPlumber (layout X-Box 360), no para el joystick crudo del
+  AYN. Sin autoconfig de **Odin 3**.
+- **Batocera** (`§4.5`): para la Odin 3 **solo** mapea el hotkey `BTN_BACK → controlcenter`
+  (`_externos/batocera/hotkeygen/AYN_Odin3_Gamepad-2020-3001.mapping`). No es un perfil de
+  RetroArch.
+- **Armada** (`§4.6`): solo aporta el `.kl` (`Vendor_2020_Product_3001.kl`), que **ya lo usamos**
+  como fuente de los keycodes. No trae autoconfig de RetroArch.
+
+Por eso el perfil propio `configs/retroarch/autoconfig/udev/AYN Odin3 Gamepad.cfg` es el bueno
+(escrito a partir del dispositivo medido, el `.kl` y el capability map). El 16/10/2026 se cerró
+además el defecto de índices de jugador que hacía que el mando cayera como **jugador 2** — ver
+`MANDO-ODIN3-RETROARCH.md` §10.

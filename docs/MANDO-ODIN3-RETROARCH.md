@@ -265,3 +265,82 @@ scp 'AYN Odin3 Gamepad.cfg' \
 
 Si ya hubiera un fichero con ese nombre, copiarlo antes a
 `…/AYN Odin3 Gamepad.cfg.bak-$(date +%F)`.
+
+## 10. 16/10/2026 — el mando caía como jugador 2 (RESUELTO)
+
+**Síntoma**: los botones de la Odin no hacían nada en RetroArch, pero "funcionaban" los
+mandos *virtuales* de InputPlumber (los del escritorio).
+
+**Causa**: el `retroarch.cfg` que RetroArch lee **de verdad** —el del `HOME` portable que
+fija `lanzar.sh`: `Apps/RetroArch/retroarch.AppImage.home/.config/retroarch/retroarch.cfg`—
+tenía los índices de jugador **cambiados**:
+
+```cfg
+input_player1_joypad_index = "1"   # 2º device udev  -> "Microsoft X-Box 360 pad 0" (virtual)
+input_player2_joypad_index = "0"   # 1er device udev -> "AYN Odin3 Gamepad" (físico)
+```
+
+RetroArch numera los mandos `udev` por orden de aparición. En esta consola el **AYN físico
+es el slot 0** y los virtuales los slots 1 y 2 (medido, log real de RetroArch):
+
+```
+[Autoconf] Se ha configurado AYN Odin3 Gamepad en el puerto 1.
+[Autoconf] Se ha configurado Microsoft X-Box 360 pad 0 en el puerto 2.
+[Autoconf] Se ha configurado Microsoft X-Box 360 pad 0 en el puerto 3.
+[Input] Device 1, "AYN Odin3 Gamepad" (2020:3001, udev): new, in slot 0.
+[Input] Device 2, "Microsoft X-Box 360 pad 0" (28de:11ff, udev): new, in slot 1.
+[Input] Device 3, "Microsoft X-Box 360 pad 1" (28de:11ff, udev): new, in slot 2.
+```
+
+O sea: el "jugador 1" apuntaba al mando **virtual** y el AYN físico caía como **jugador 2**.
+El perfil `AYN Odin3 Gamepad.cfg` **sí** se aplicaba (el log lo dice), pero daba igual:
+el índice mandaba a otro dispositivo.
+
+**Decisión de Fransis (16/10/2026)**: el **jugador 1 = mando físico AYN (índice 0)**.
+
+**Arreglo** (`retroarch.cfg`): índices únicos, en orden **físico → virtuales**:
+
+```
+player1 → 0 (AYN físico)   player2 → 1 (virtual 0)   player3 → 2 (virtual 1)
+player4 → 3 …  player16 → 15
+```
+
+Y **todos los `input_player1_*_btn/axis` a `"nul"`**: en RetroArch el bind **manual gana al
+autoconfig**, así que con binds numéricos en player1 el perfil AYN no se aplicaba (era el
+otro defecto: estaban `a=1 b=0 x=3 y=2` + cruceta `h0*` + L/R + gatillos + ejes de sticks).
+`player2..16` ya estaban en `nul`.
+
+**Aplicado y versionado**:
+- centro: `packages/deckstation-arm/configs/retroarch/retroarch.cfg`
+  (`input_playerN_joypad_index` 0..15 + los 24 binds de player1 a `nul`);
+- `stshunz/deckstation-arm`: mismo cambio (`configs/retroarch/retroarch.cfg`);
+- Odin (con copia `.bak-20261016` en ambas):
+  - **live**: `Apps/RetroArch/retroarch.AppImage.home/.config/retroarch/retroarch.cfg`
+    (`p1=1→0`, `p2=0→1`);
+  - **shipped**: `/opt/deckstation/configs/retroarch/retroarch.cfg` (era la versión
+    *pre-fix* del centro, `fdfb45bc`: índices bien pero binds numéricos) → reemplazada por la
+    del centro.
+- Se borró el sobrante `…/autoconfig/udev/AYN Odin3 Gamepad.cfg.desactivado-20261003`:
+  era una **copia renombrada** del perfil (idéntica a la activa) que se dejó el 03/10
+  cuando el perfil todavía era un test; desde que es definitivo sobraba.
+
+**Comparación con armada / rocknix / batocera**: **ninguno** de los tres trae un autoconfig
+de RetroArch para la **Odin 3**. ROCKNIX solo tiene el de la **Odin 2** (escrito para el mando
+*virtual*), Batocera solo un hotkey (`BTN_BACK → controlcenter`) y Armada solo el `.kl` (ya
+usado). **No hay nada que copiar: el nuestro es el correcto.** Detalle en
+`MANDOS-DE-OTROS-SISTEMAS.md` (§12).
+
+**Pendiente — lo prueba Fransis con el mando en la mano** (A/B/X/Y, §6.2/§6.3): la prueba por
+SSH **no se pudo hacer** porque la consola estaba en uso (sesión de Steam en Game Mode).
+Instrucción: abrir un juego/core y en *Menú RetroArch → Controles* comprobar que
+`A (círculo)`, `B (cruz)`, `X (cuadrado)` y `Y (triángulo)` coinciden. Si salen invertidos,
+permutar **solo** estas 4 líneas del `configs/retroarch/autoconfig/udev/AYN Odin3 Gamepad.cfg`:
+
+```cfg
+input_a_btn = "1"   # BTN_SOUTH (0x130)
+input_b_btn = "2"   # BTN_EAST  (0x131)
+input_y_btn = "3"   # BTN_NORTH (0x133)
+input_x_btn = "4"   # BTN_WEST  (0x134)
+```
+
+Para **A/B invertidas**: `a=2`, `b=1`. Para **X/Y invertidas**: `x=3`, `y=4`.
