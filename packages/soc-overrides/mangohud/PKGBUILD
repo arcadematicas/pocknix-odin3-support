@@ -62,10 +62,23 @@ build() {
   # would SIGILL on the other SoC, since this one binary serves every chip.
   # with_nvml/with_xnvctrl disabled: no NVIDIA on these devices, and we have no libxnvctrl.
   # use_system_spdlog=enabled: link the repo's spdlog instead of fetching the spdlog wrap.
+  #
+  # with_mangohud_next=DISABLED (16/10): the full mangohud-next client/server is the parallel
+  # rewrite (libMangoHud-next.so + mangohud-server, env MANGOHUD_NEXT) and its server hard-requires
+  # system `yaml-cpp` (mangohud-next/server/meson.build: `dependency('yaml-cpp')`, with the
+  # subproject fallback COMMENTED OUT and no yaml-cpp.wrap). yaml-cpp is an ALARM package that is
+  # NOT in the pinned [pocknix-base] (verified), and the chroot cannot install ALARM deps.
+  #   -> LO QUE PERDEMOS: nada que use la Odin. Usamos el overlay CLASICO (MANGOHUD=1 / gamescope
+  #      --mangoapp), no MANGOHUD_NEXT. Y el parche 0003 (msm GPU temp) NO se pierde: su fichero
+  #      (mangohud-next/server/metrics/gpu/msm/dpu.cpp) lo compila el `legacy_gpu_wrapper`, que el
+  #      meson.build raiz incluye SIEMPRE (subdir incondicional, linea 332) y `src` enlaza en
+  #      libMangoHud.so (src/meson.build:212 link_with: mangohud_legacy_gpu_wrapper). Nuestro parche
+  #      0001 (src/battery.cpp) y 0002 (src/hud_elements.cpp) van al src clasico igual.
   meson setup build --prefix=/usr --buildtype=plain \
     -Dmangoapp=true \
     -Dwith_nvml=disabled \
     -Dwith_xnvctrl=disabled \
+    -Dwith_mangohud_next=false \
     -Duse_system_spdlog=enabled
   meson compile -C build
 }
