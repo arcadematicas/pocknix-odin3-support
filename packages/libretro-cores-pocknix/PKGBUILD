@@ -8,7 +8,13 @@ pkgver=0.1.0
 # 7: depends de las librerias que piden los cores precompilados (plutovg,
 # plutosvg, pocknix-soname-compat). Sin esto, en una instalacion limpia ARMSX2
 # y uae4arm no cargan. Ver el comentario de depends=() mas abajo.
-pkgrel=7
+# 8 (16/10): depends de los 3 cores que viven en paquetes PROPIOS y separados
+# (libretro-azahar, libretro-bsnes-hd, vboycolor-libretro). Son cores que ES-DE
+# pide para sistemas concretos (Switch/3DS, SNES HD, GB/GBC) y hasta ahora solo
+# llegaban al dispositivo por `devices/sm8750/packages.list`, via que el gate
+# `stage-check` NO recorre (solo sigue depends+optdepends) -> quedaban huerfanos
+# y no se podian publicar. Esta arista los mete en el grafo. Ver §4 del CIERRE.
+pkgrel=8
 pkgdesc="Prebuilt aarch64 libretro cores (vendored, christianhaitian/ArkOS set)"
 arch=('aarch64')
 url="https://github.com/christianhaitian/retroarch-cores"
@@ -26,7 +32,10 @@ license=('GPL2')  # umbrella only; per-core licenses vary, some arcade cores non
 #   Meterlos aqui (y no en la lista de la imagen) es lo que hace que instalar los
 #   cores arrastre las librerias: hasta ahora solo funcionaba porque se copiaron a
 #   mano al rootfs de la Odin. Ver los comentarios de cada PKGBUILD para el detalle.
-depends=('plutovg' 'plutosvg' 'pocknix-soname-compat')
+depends=('plutovg' 'plutosvg' 'pocknix-soname-compat'
+          # Cores que van en paquetes propios (no en este set vendored). Real dep para que
+          # el grafo del gate los alcance. Ver el comentario de pkgrel=8 arriba.
+          'libretro-azahar' 'libretro-bsnes-hd' 'vboycolor-libretro')
 makedepends=('unzip')
 
 # Pinned: upstream force-updates the files in place, so a floating ref is not reproducible.

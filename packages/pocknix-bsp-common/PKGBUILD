@@ -3,7 +3,10 @@
 # live in devices/<name>/packages/pocknix-bsp-<name>, which depends on this package.
 pkgname=pocknix-bsp-common
 pkgver=0.1.0
-pkgrel=19
+# 22 (16/10): pocknix-desktop (>=0.1.0-22) exige pocknix-bsp-common>=0.1.0-22; sin este bump
+# la dep no resuelve y pocknix-desktop-0.1.0-31 queda sin poder publicarse. Va junto con el
+# resto del cierre de publicacion del 16/10 (ver docs/CIERRE-20261016-PUBLICACION.md §4).
+pkgrel=22
 pkgdesc="pocknix shared board support: sleep.d dispatcher, suspend hooks, power-key policy, session udev rules, wheel sudo, fan/scheduler daemons, ABL updater, second-screen touch policy, suspend display hook"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"

@@ -28,7 +28,16 @@ pkgname=pocknix-bsp-sm8750
 pkgver=0.2.0
 # -8: bring-up de sensores del 15/10 (pd-mapper + cadena SSC) y unidades habilitadas
 # (el -7 se construyo ANTES del bring-up de sensores de la tarde).
-pkgrel=9
+# -10 (16/10): la cadena de sensores pasa de optdepend a DEPENDENCIA REAL. El BSP ya
+#   INSTALA los drop-ins que la necesitan (pd-mapper.service.d/10-odin3.conf,
+#   hexagonrpcd-adsp-sensorspd.service.d/10-tree.conf, pocknix-sensors-tree) y HABILITA
+#   hexagonrpcd-adsp-sensorspd, asi que sin los paquetes el dispositivo arranca medio roto.
+#   Ademas es lo que modela el grafo: `devices/sm8750/packages.list` (la via REAL de
+#   instalacion de estos paquetes) NO lo recorre el gate `stage-check`, que solo sigue
+#   depends+optdepends -> sin esta arista la cadena entera quedaba huerfana y no se podia
+#   publicar. libqrtr entra transitivamente via pd-mapper.
+#   Ver docs/CIERRE-20261016-PUBLICACION.md §4 y docs/SENSORES-ODIN3-2026-10-15.md.
+pkgrel=10
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
@@ -36,8 +45,18 @@ license=('GPL2')
 # python is for the button/OLED/pergame/MangoHud daemons and the session-manager shim; sudo is
 # for the sudoers.d drop-in that lets the shim switch power profiles without a password.
 # pocknix-firmware-sm8750 is ours (pocknix-os localrepo), so it is visible to the build chroot.
+#
+# La cadena de sensores del ADSP (bring-up del 15/10) son DEPENDENCIAS REALES, no optdepends:
+# este BSP instala los drop-ins que las usan (pd-mapper.service.d/10-odin3.conf,
+# hexagonrpcd-adsp-sensorspd.service.d/10-tree.conf, pocknix-sensors-tree) y habilita
+# hexagonrpcd-adsp-sensorspd, asi que sin los paquetes el dispositivo arranca medio roto.
+# Ademas modela el grafo: `devices/sm8750/packages.list` (la via REAL de instalacion) NO lo
+# recorre el gate `stage-check`, que solo sigue depends+optdepends -> sin esta arista la cadena
+# entera quedaba huerfana y no se podia publicar. libqrtr entra transitivamente via pd-mapper.
+# Ver docs/CIERRE-20261016-PUBLICACION.md §4 y docs/SENSORES-ODIN3-2026-10-15.md.
 depends=('pocknix-bsp-common' 'pocknix-firmware-sm8750' 'python' 'sudo' 'sdl2'
-          'pocknix-system-overlay')
+          'pocknix-system-overlay'
+          'hexagonrpc' 'libssc' 'msm-firmware-loader' 'pd-mapper' 'pocknix-sensors-config')
 # gcc + SDL2 headers to build the OLED pixel refresher (see build()).
 makedepends=('sdl2')
 # Exactly one device BSP may be installed (wrong-device guard for a shared repo).
@@ -47,7 +66,6 @@ conflicts=('pocknix-bsp')
 optdepends=('inputplumber: gamepad -> Steam Input mapping (01-ayn-controller.yaml)'
             'alsa-ucm-conf: base UCM (codec include sequences for the AYN-Odin3 UCM)'
             'mangohud: MangoHud.conf is the Odin 3 layout (compact top bar)'
-            'hexagonrpcd: sensor daemon — the unit ships but the binary does not (see its README)'
             'fex-emu: /etc/environment.d/fex-fix.conf carries the steamwebhelper stability flags')
 backup=('etc/sudoers.d/90-pocknix-steamos-manager'
         'etc/MangoHud/MangoHud.conf'

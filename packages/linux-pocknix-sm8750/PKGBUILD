@@ -11,8 +11,11 @@ pkgname=linux-pocknix-sm8750
 # del paquete mentia y pacman -Q tambien).
 # 7.2.10 (15/10): la Odin corre y esta verificada con 7.2.10; kernel.conf ya
 # apunta a KERNEL_VERSION=7.2.10. pkgrel resetea a 1 al subir pkgver.
+# pkgrel 2 (16/10): la 7.2.10-1 publicada NO llevaba el parche de rumble/haptics del
+# Odin 3 (2107-input-haptics-stop-zero-amplitude-immediately-armada); se recompila el
+# kernel con el parche aplicado y se republica como -2. Ver §3 del CIERRE.
 pkgver=7.2.10
-pkgrel=1
+pkgrel=2
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"
