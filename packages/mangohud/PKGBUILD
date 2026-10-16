@@ -1,37 +1,47 @@
 # mangohud — Vulkan/GL overlay + the mangoapp binary gamescope --mangoapp spawns.
 # mangoapp is tightly coupled to gamescope's version: bump the two together. Subprojects come
-# from meson wraps, so the build chroot needs network. Patch files stay flat in the package
-# dir: makepkg strips local source entries to their basename.
+# from meson wraps, so the build chroot needs network (see docs/MANGOHUD-20261016.md).
+#
+# BASE: upstream master at commit e1430abaa024c57624661b99314ba8f2d4c06d03 — the exact snapshot
+# Valve/Deckard ships as "1:0.8.4.r184.ge1430aba-1" (the mangohud-next rewrite). Pinned by
+# commit for reproducibility; pkgver is upstream's `git describe` (v0.8.4-184-ge1430aba).
+#
+# VERSION vs Valve: same upstream commit, so we keep the same pkgver and must BEAT Valve's
+# epoch=1 build. epoch=1 + pkgrel=2 => "1:0.8.4.r184.ge1430aba-2" > "1:0.8.4.r184.ge1430aba-1".
+# (Before the epoch, our "0.8.4-1" lost to Valve's epoch-1 build and OTA never downgraded it.)
+#
+# PATCHES: 5 of the old 8 are now upstream/superseded by the mangohud-next rewrite and were
+# dropped; see the per-patch table in docs/MANGOHUD-20261016.md. These 3 remain:
+#   0001 battery power (Snapdragon pmic-glink reports power_now 10x off)
+#   0002 RAM label ("PMEM" -> "RAM")
+#   0003 msm GPU temperature from the hottest "gpu" hwmon zone
 pkgname=mangohud
-pkgver=0.8.4
-pkgrel=1
+pkgver=0.8.4.r184.ge1430aba
+pkgrel=2
+epoch=1
 pkgdesc="Vulkan/OpenGL FPS/frametime/CPU/GPU overlay + mangoapp for the gamescope Steam session"
 arch=('aarch64')
 url="https://github.com/flightlessmango/MangoHud"
 license=('MIT')
 depends=('gcc-libs' 'glibc' 'vulkan-icd-loader' 'libdrm' 'libcap' 'glfw' 'libglvnd' 'wayland'
-         'libxkbcommon' 'libx11')
+         'libxkbcommon' 'libx11' 'dbus' 'glew' 'spdlog' 'libtracefs')
 makedepends=('meson' 'ninja' 'git' 'glslang' 'vulkan-headers' 'libglvnd' 'libdrm' 'libcap'
              'glfw' 'wayland' 'wayland-protocols' 'libxkbcommon' 'libx11' 'libxrandr'
-             'python-mako' 'mesa')
-source=("git+https://github.com/flightlessmango/MangoHud.git#tag=v${pkgver}"
-        '0001-Qualcomm-GPU-support.patch'
-        '0002-GPU-devfreq.patch'
-        '0003-Battery-name.patch'
-        '0004-Qualcomm-battery-power-now.patch'
-        '0005-RAM-name.patch'
-        '0006-mangoapp-pace-redraw-to-frame-messages.patch'
-        '0007-msm-hottest-gpu-zone.patch'
-        '0008-gpu_fdinfo-skip-unreadable-fdinfo.patch')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+             'python-mako' 'mesa' 'dbus' 'glew' 'spdlog' 'nlohmann-json' 'python')
+source=("git+https://github.com/flightlessmango/MangoHud.git#commit=e1430abaa024c57624661b99314ba8f2d4c06d03"
+        '0001-Qualcomm-battery-power-now.patch'
+        '0002-RAM-name.patch'
+        '0003-msm-hottest-gpu-zone.patch')
+sha256sums=('SKIP'
+            'bf23052af65348403bb77e4f19df348e839c647357a53854fe0364f59d9aaa11'
+            '62eeb550fd1f46699b75201d767224ad072dddeb6d55771ad78d72b14d0231a5'
+            '99dd554897b2250bea365c288b55f7de46160da1f68c26cfa40cf7b4ac5a9103')
 
 prepare() {
   cd MangoHud
-  # Order matters: 0002 and 0007 edit code 0001 adds.
-  for p in 0001-Qualcomm-GPU-support 0002-GPU-devfreq 0003-Battery-name \
-           0004-Qualcomm-battery-power-now 0005-RAM-name \
-           0006-mangoapp-pace-redraw-to-frame-messages 0007-msm-hottest-gpu-zone \
-           0008-gpu_fdinfo-skip-unreadable-fdinfo; do
+  # Order is not significant: the three patches touch disjoint files
+  # (src/battery.cpp, src/hud_elements.cpp, mangohud-next/.../msm/dpu.{cpp,hpp}).
+  for p in 0001-Qualcomm-battery-power-now 0002-RAM-name 0003-msm-hottest-gpu-zone; do
     echo "  applying ${p}.patch"
     git apply -p1 "${srcdir}/${p}.patch"
   done
@@ -41,10 +51,13 @@ build() {
   cd MangoHud
   # buildtype=plain: meson adds no flags over makepkg's. A -march above the base ISA
   # would SIGILL on the other SoC, since this one binary serves every chip.
+  # with_nvml/with_xnvctrl disabled: no NVIDIA on these devices, and we have no libxnvctrl.
+  # use_system_spdlog=enabled: link the repo's spdlog instead of fetching the spdlog wrap.
   meson setup build --prefix=/usr --buildtype=plain \
     -Dmangoapp=true \
     -Dwith_nvml=disabled \
-    -Dwith_xnvctrl=disabled
+    -Dwith_xnvctrl=disabled \
+    -Duse_system_spdlog=enabled
   meson compile -C build
 }
 

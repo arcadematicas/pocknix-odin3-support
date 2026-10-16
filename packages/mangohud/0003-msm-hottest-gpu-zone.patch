@@ -1,0 +1,95 @@
+From: pocknix
+Subject: [PATCH] mangohud-next/msm: msm GPU temperature from the hottest gpu hwmon zone
+
+REBASED for MangoHud e1430aba. Originally 0007-msm-hottest-gpu-zone.patch,
+written against v0.8.4 (old src/gpu_fdinfo.cpp). The GPU code moved to
+mangohud-next/server/metrics/gpu/msm/dpu.cpp (class MSM_DPU), which picks a
+single hwmon found by regex name "gpu" (find_hwmon_dir_by_name, first match).
+
+WHY: the SM8750 (Adreno 830) exposes several GPU thermal zones (gpuss0..7), so
+report the hottest hwmon whose name contains "gpu" instead of an arbitrary
+first match. NOT upstream.
+
+STATUS: needs validation on the Odin (confirm which hwmon zones exist).
+---
+diff --git a/mangohud-next/server/metrics/gpu/msm/dpu.cpp b/mangohud-next/server/metrics/gpu/msm/dpu.cpp
+index 1fb1ed6..6ae0266 100644
+--- a/mangohud-next/server/metrics/gpu/msm/dpu.cpp
++++ b/mangohud-next/server/metrics/gpu/msm/dpu.cpp
+@@ -1,4 +1,5 @@
+ #include "dpu.hpp"
++#include <algorithm>
+ #include <cmath>
+ #include <fstream>
+ #include <filesystem>
+@@ -126,6 +127,7 @@ MSM_DPU::MSM_DPU(
+     gpu_mem_trace = std::make_unique<MSM_GPUMemTrace>();
+     hwmon.base_dir = hwmon.find_hwmon_dir_by_name("gpu");
+     hwmon.setup(sensors, drm_node);
++    find_gpu_zones();
+     junction_temp_file = open_thermal_zone("gpuss-0-thermal");
+     memory_temp_file = open_thermal_zone("ddr-thermal");
+     core_clock_file = open_core_clock();
+@@ -140,9 +142,47 @@ void MSM_DPU::pre_poll_overrides() {
+ }
+ 
+ int MSM_DPU::get_temperature() {
++    if (!gpu_zone_streams.empty())
++        return get_gpu_zones_temp();
++
+     return static_cast<int>(::lroundf(hwmon.get_sensor_value("temp") / 1000.0f));
+ }
+ 
++// SoCs split the GPU over several hwmon zones and name them differently, so
++// report the hottest zone whose hwmon name has "gpu" rather than guess one.
++void MSM_DPU::find_gpu_zones() {
++    std::error_code ec;
++    for (fs::directory_iterator it("/sys/class/hwmon", ec), end; !ec && it != end; it.increment(ec)) {
++        std::ifstream name_stream((it->path() / "name").string());
++        std::string name;
++
++        if (!std::getline(name_stream, name) || name.find("gpu") == std::string::npos)
++            continue;
++
++        std::ifstream temp((it->path() / "temp1_input").string());
++        if (temp.is_open()) {
++            SPDLOG_DEBUG("hwmon: gpu zone {} found", name);
++            gpu_zone_streams.push_back(std::move(temp));
++        }
++    }
++}
++
++int MSM_DPU::get_gpu_zones_temp() {
++    int hottest = 0;
++
++    for (auto& s : gpu_zone_streams) {
++        std::string temp_str;
++
++        s.clear();
++        s.seekg(0);
++
++        if (std::getline(s, temp_str) && !temp_str.empty())
++            hottest = std::max(hottest, std::stoi(temp_str));
++    }
++
++    return static_cast<int>(::lroundf(hottest / 1000.0f));
++}
++
+ int MSM_DPU::get_load() {
+     if (!load_file.is_open())
+         return -1;
+diff --git a/mangohud-next/server/metrics/gpu/msm/dpu.hpp b/mangohud-next/server/metrics/gpu/msm/dpu.hpp
+index f980e7d..8da58d3 100644
+--- a/mangohud-next/server/metrics/gpu/msm/dpu.hpp
++++ b/mangohud-next/server/metrics/gpu/msm/dpu.hpp
+@@ -28,6 +28,10 @@ private:
+     std::ifstream open_load();
+     int read_thermal_zone(std::ifstream& file);
+ 
++    std::vector<std::ifstream> gpu_zone_streams;
++    void find_gpu_zones();
++    int get_gpu_zones_temp();
++
+ protected:
+     void pre_poll_overrides() override;
+ 

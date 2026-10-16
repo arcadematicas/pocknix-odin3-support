@@ -1,0 +1,57 @@
+From: pocknix
+Subject: [PATCH] battery: prefer current_now x voltage_now on Snapdragon pmic-glink
+
+REBASED for MangoHud e1430aba (the Valve/Deckard base, v0.8.4-184-ge1430aba).
+Originally 0004-Qualcomm-battery-power-now.patch, written against v0.8.4.
+
+WHY: Snapdragon pmic-glink firmware (AYN Odin 3 / Thor) reports power_now an
+order of magnitude off while current_now/voltage_now are correct. Prefer the
+current x voltage pair and keep power_now only as a fallback, read as 10 uW
+units to undo the reported 10x error. This is the same behaviour our decky
+battery reader already implements (packages/pocknix-decky/
+panel-de-control/py_modules/battery/reader.py). Upstream still prefers
+power_now (div 1e6); NOT upstream.
+
+STATUS: needs validation on the Odin (A/B wattage with the overlay).
+---
+diff --git a/src/battery.cpp b/src/battery.cpp
+index e87b2a6..a433618 100644
+--- a/src/battery.cpp
++++ b/src/battery.cpp
+@@ -161,16 +161,10 @@ float BatteryStats::getPower() {
+         if (deckard)
+             continue;
+ 
+-        // Prefer power_now (µW) when available.
+-        if (fs::exists(power_now)) {
+-            std::ifstream input(power_now);
+-            std::string line;
+-            if (std::getline(input, line)) {
+-                power_w += std::fabs(stof(line)) / 1000000.0f;
+-            }
+-            continue;
+-        }
+-
++        // Prefer current_now × voltage_now. Some Snapdragon pmic-glink firmwares
++        // (AYN handhelds) report power_now an order of magnitude off while the
++        // current/voltage pair is right, so power_now is only a fallback (read as
++        // 10 µW units to undo the reported 10× error).
+         if (fs::exists(current_now) && fs::exists(voltage_now)) {
+             float i_ua = 0.0f;
+             float v_uv = 0.0f;
+@@ -192,6 +186,15 @@ float BatteryStats::getPower() {
+ 
+             power_w += (std::fabs(i_ua) * std::fabs(v_uv)) * 1e-12f;
+         }
++
++        else if (fs::exists(power_now)) {
++            std::ifstream input(power_now);
++            std::string line;
++            if (std::getline(input, line)) {
++                power_w += std::fabs(stof(line)) / 10000000.0f;
++            }
++            continue;
++        }
+     }
+ 
+     // Keep previous power on empty or invalid reads
