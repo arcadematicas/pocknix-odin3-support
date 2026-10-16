@@ -1,0 +1,53 @@
+#!/bin/bash
+# Plasma takes its default wallpaper from the active look-and-feel, but
+# plasma-mobile-envmanager rewrites LookAndFeelPackage[$i] (immutable) on every start, so a
+# Pocknix look-and-feel would be fighting it. Seeding the user's own config once is the same
+# shape as pocknix-roms-init seeding ~/Emulation.
+set -euo pipefail
+
+WALLPAPER=/usr/share/wallpapers/PocknixOS
+STAMP="${XDG_CONFIG_HOME:-${HOME}/.config}/pocknix/branding-seeded"
+
+[ -d "$WALLPAPER" ] || exit 0
+[ -e "$STAMP" ] && exit 0
+command -v plasma-apply-wallpaperimage >/dev/null 2>&1 || exit 0
+
+# busctl rather than qdbus6: systemd is always on the image.
+shell() {
+  busctl --user --timeout=5 call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell \
+    evaluateScript s "$1" 2>/dev/null | sed -n 's/^s "\(.*\)"$/\1/p' || true
+}
+
+# systemd starts this unit once plasmashell owns its bus name, before it has any desktop, and
+# the apply tool reports success on an empty desktops() list.
+wait_for_desktop() {
+  while n=$(shell 'print(desktops().length)'); [ "${n:-0}" = 0 ]; do
+    [ "$SECONDS" -lt "$deadline" ] || return 1
+    sleep 0.5
+  done
+}
+
+# Read the value back from every desktop: the tool's exit status only says the script ran.
+applied() {
+  [ "$(shell "var ds = desktops(); var n = 0;
+for (var k in ds) { var d = ds[k]; d.currentConfigGroup = ['Wallpaper', 'org.kde.image', 'General'];
+  if (d.readConfig('Image') == 'file://${WALLPAPER}') n++; }
+print(n > 0 && n == ds.length)")" = true ]
+}
+
+# On a first-ever start the first desktop is replaced by the real Folio containment moments
+# later, so the readback must survive a pause; a lost apply is simply redone.
+deadline=$(( SECONDS + 60 ))
+until applied; do
+  [ "$SECONDS" -lt "$deadline" ] || exit 0
+  wait_for_desktop || exit 0
+  # The tool talks to the running shell rather than editing a file, so on Plasma Mobile the
+  # value lands in plasma-org.kde.plasma.mobileshell-appletsrc, not the desktop appletsrc.
+  plasma-apply-wallpaperimage "$WALLPAPER" >/dev/null 2>&1 || exit 0
+  sleep 2
+done
+
+# Stamp only after the apply is confirmed: a failed run leaves no stamp and retries next login,
+# and the stamp is what keeps a wallpaper the user later picks themselves from being reimposed.
+mkdir -p "$(dirname "$STAMP")"
+: > "$STAMP"

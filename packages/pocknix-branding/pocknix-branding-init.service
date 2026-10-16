@@ -1,0 +1,14 @@
+[Unit]
+Description=pocknix: seed the Pocknix wallpaper on first login
+PartOf=graphical-session.target
+After=plasma-plasmashell.service
+ConditionPathExists=!%E/pocknix/branding-seeded
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pocknix-branding-init
+# oneshot defaults to no start timeout; the seed waits up to 60s for the shell's first desktop.
+TimeoutStartSec=90
+
+[Install]
+WantedBy=plasma-plasmashell.service
