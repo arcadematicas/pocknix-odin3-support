@@ -3,7 +3,7 @@
 # Proyecto independiente. Versión original (x86_64): deckstation-x86_64.
 pkgname=deckstation-arm
 pkgver=1.0.0
-pkgrel=16
+pkgrel=17
 pkgdesc="Sistema de emulación portable para ARM (aarch64/armv7h)"
 arch=('aarch64' 'armv7h')
 url="https://github.com/stshunz/deckstation-arm"
@@ -65,6 +65,13 @@ package() {
         "${pkgdir}/opt/deckstation/scripts/deckstation-cores-fetch.sh"
     install -Dm755 "${sd}/scripts/deckstation-cores-sync.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-cores-sync.sh"
+    # Cores de RetroArch (ARM): el "pack" del sistema (pacman + puente) y los
+    # cores sueltos del buildbot aarch64. Motor de la opcion "Cores de
+    # RetroArch (ARM)" del Updater. Ver scripts/*.sh y docs/CORES.md.
+    install -Dm755 "${sd}/scripts/deckstation-cores-pack.sh" \
+        "${pkgdir}/opt/deckstation/scripts/deckstation-cores-pack.sh"
+    install -Dm755 "${sd}/scripts/deckstation-cores-loose.sh" \
+        "${pkgdir}/opt/deckstation/scripts/deckstation-cores-loose.sh"
     install -Dm755 "${sd}/scripts/deckstation-emulators-sync.sh" \
         "${pkgdir}/opt/deckstation/scripts/deckstation-emulators-sync.sh"
     install -Dm755 "${sd}/scripts/deckstation-steam.sh" \

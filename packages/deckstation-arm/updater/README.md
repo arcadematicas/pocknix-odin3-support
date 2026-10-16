@@ -92,7 +92,7 @@ en el script, la GUI va encima** — así una avería de pygame no te deja sin p
 | | Quién | Qué hace |
 |---|---|---|
 | **INSTALAR** (una vez) | Pocknix Tools → `deckstation-setup.sh` | entorno + **los 30 emuladores** + configs + `lanzar.sh` + BIOS. Headless. |
-| **GESTIONAR** (siempre) | Updater GUI (ES-DE → Updater) | actualizar, añadir/quitar emuladores sueltos, **estado de BIOS** |
+| **GESTIONAR** (siempre) | Updater GUI (ES-DE → Updater) | actualizar, añadir/quitar emuladores sueltos, **estado de BIOS**, **cores de RetroArch** |
 
 ### `updater.py --install-all` (modo headless)
 
@@ -129,6 +129,28 @@ En el hub del Updater hay una entrada **"BIOS / Firmware"** que muestra el infor
 `deckstation-bios.sh --check` (una fila por sistema: cuántas tienes, cuáles faltan y a
 dónde va cada una) y con **A/Enter** las reparte. DeckStation **no incluye ni descarga
 BIOS** (tienen copyright): ver `bios/README.md`.
+
+### Pantalla «Cores de RetroArch (ARM)» (submenú `CORES_MENU`)
+
+Nueva entrada en el hub → submenú con dos motores **en scripts** (la GUI solo los llama,
+igual que con las BIOS):
+
+- **«Actualizar pack de cores (paquete del sistema)»** → `scripts/deckstation-cores-pack.sh`
+  hace `pacman -Sy --needed --noconfirm libretro-cores-pocknix` y después llama al puente
+  `deckstation-cores.sh` (copia no destructiva al RetroArch portable). Pide **root solo en
+  el `pacman`** (`pkexec` con gráfico, `sudo` en consola/headless) y funciona **sin
+  escritorio**.
+- **«Cores sueltos (buildbot ARM)»** → submenú `CORES_LOOSE` con el inventario de
+  `scripts/deckstation-cores-loose.sh --list`: los cores **aarch64** del buildbot que el
+  pack **no** trae, filtrados a `free`/`installed` (**los del pack ni se muestran**). Con
+  **A** se baja el `.so` + `.info` a la carpeta portable.
+
+**REGLA**: jamás se pisa un core del pack (el script devuelve `exit 3` si se le pide uno
+que está en `/usr/lib/libretro`). Detalle completo, fuentes del buildbot y el aviso sobre
+el *Online Updater* de RetroArch: ver **`docs/CORES.md`**.
+
+Ambos trabajos corren en **hilos** (no congelan la GUI) y usan `subprocess.run` con
+`DECKSTATION_ROOT` en el entorno, igual que el resto de scripts.
 
 ### Casos especiales de emulador (aprendidos a golpes)
 

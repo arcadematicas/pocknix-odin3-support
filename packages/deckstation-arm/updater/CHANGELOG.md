@@ -1,5 +1,26 @@
 # DeckStation Updater — Changelog
 
+## [Unreleased] — 2026-10-16
+
+### Cores de RetroArch (ARM) — nueva entrada en el hub
+- **Submenú `CORES_MENU`**: «Cores de RetroArch (ARM)» con dos opciones, ambas con el
+  motor en **scripts** y lanzadas en hilo (no congelan la GUI):
+  - **«Actualizar pack de cores»** → `scripts/deckstation-cores-pack.sh`: `pacman -Sy
+    --needed --noconfirm libretro-cores-pocknix` + puente `deckstation-cores.sh`. Root
+    solo en el `pacman` (`pkexec` con gráfico, `sudo` headless). **Funciona sin escritorio.**
+  - **«Cores sueltos (buildbot ARM)»** → submenú `CORES_LOOSE` con
+    `scripts/deckstation-cores-loose.sh --list`/`--install`: cores **aarch64** del
+    buildbot que **no** trae el pack, descargados `.so` + `.info` a la carpeta portable.
+- **REGLA**: nunca se pisa un core del pack (`/usr/lib/libretro` → el script devuelve
+  `exit 3`). Los del pack **no aparecen** en la lista de sueltos. Documentado en
+  `docs/CORES.md`, con el aviso de que el *Online Updater* de RetroArch sobrescribe
+  los cores parcheados y no debe usarse como vía normal.
+- **Hub con espaciado dinámico**: el `hub_spacing` fijo (120) hacía que 7 entradas se
+  salieran de la pantalla de la Odin (1080 de alto); ahora se calcula a partir de
+  `SCREEN_HEIGHT` con mínimo 72.
+- **PKGBUILD** `pkgrel` 16 → 17 (embebe los dos scripts nuevos). Documentación en
+  `docs/CORES.md` + `updater/README.md`.
+
 ## [Unreleased] — 2026-08-10
 
 ### Fase 4 — Temas visuales

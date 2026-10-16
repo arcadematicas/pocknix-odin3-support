@@ -457,7 +457,19 @@ class UpdaterEngine:
         self.hub_idx = 0
         self.theme_idx = 0
         self.openrom_idx = 0
+        self.cores_idx = 0
         self._bezel_proc = None
+
+        # Cores de RetroArch (ARM): pack del sistema (paquete) + cores sueltos
+        # del buildbot. El motor vive en los scripts; aqui solo se orquesta.
+        self._cores_busy = False          # hilo de pack/instalacion en curso
+        self._cores_cargando = False      # hilo de --list en curso
+        self._cores_listo = False         # inventario de sueltos ya cargado
+        self._cores_msg = ""              # ultimo aviso para el usuario
+        self._cores_resumen = ""          # linea "# buildbot=.. pack=.." del script
+        self.cores_loose = []             # [(nombre, estado)] sin los del pack
+        self.cores_loose_idx = 0
+        self.cores_loose_top = 0
 
         self.current_app_idx = 0
         self.available_tags = []
@@ -750,6 +762,140 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         except Exception as e:
             self.status_msg = f"No se pudieron repartir: {e}"
         self._bios_cache = None      # refrescar el informe
+
+    # ------------------------------------------------------------------
+    # Cores de RetroArch (ARM)
+    # El motor vive en scripts/ (deckstation-cores-pack.sh y
+    # deckstation-cores-loose.sh); aqui solo se llama y se muestra.
+    #   - pack:    paquete del sistema -> copia al RetroArch portable
+    #   - sueltos: cores aarch64 del buildbot que NO trae el pack
+    # REGLA: jamas se pisa un core del pack (sustituirlo por el del buildbot,
+    # como hace el Online Updater de RetroArch, rompe los parches propios).
+    # ------------------------------------------------------------------
+    def _cores_script(self, nombre):
+        return os.path.join(self._raiz_deckstation(), "scripts", nombre)
+
+    def _cores_env(self):
+        return dict(os.environ, DECKSTATION_ROOT=self._raiz_deckstation())
+
+    def _cores_opciones(self):
+        """Opciones del menu CORES_MENU."""
+        return [
+            "Actualizar pack de cores (paquete del sistema)",
+            "Cores sueltos (buildbot ARM)",
+            "Volver",
+        ]
+
+    def _cores_ejecutar(self, idx):
+        """Ejecuta la opcion idx del menu CORES_MENU."""
+        if self._cores_busy:
+            return
+        opciones = self._cores_opciones()
+        if idx >= len(opciones):
+            return
+        accion = opciones[idx]
+        if accion.startswith("Actualizar pack"):
+            self._cores_pack_actualizar()
+        elif accion.startswith("Cores sueltos"):
+            self.state = "CORES_LOOSE"
+            self._cores_loose_cargar()
+        elif accion == "Volver":
+            self.state = "HUB"
+
+    def _cores_pack_actualizar(self):
+        """Lanza el pack (pacman + puente) en un hilo, sin bloquear la GUI."""
+        if self._cores_busy:
+            return
+        self._cores_busy = True
+        self._cores_msg = "Actualizando el pack de cores (pide root)..."
+        threading.Thread(target=self._cores_pack_worker, daemon=True).start()
+
+    def _cores_pack_worker(self):
+        script = self._cores_script("deckstation-cores-pack.sh")
+        try:
+            r = subprocess.run([script], env=self._cores_env(),
+                               capture_output=True, text=True, timeout=900)
+            lineas = ((r.stdout or "") + (r.stderr or "")).strip().split("\n")
+            ultima = next((l.strip() for l in reversed(lineas) if l.strip()), "")
+            if r.returncode == 0:
+                self._cores_msg = ultima or "Pack de cores al dia."
+            else:
+                self._cores_msg = f"El pack no se pudo actualizar: {ultima or 'error'}"
+        except Exception as e:
+            self._cores_msg = f"Error actualizando el pack: {e}"
+        self._cores_listo = False      # los estados cambian al copiar el pack
+        self._cores_busy = False
+
+    def _cores_loose_cargar(self, force=False):
+        """Pide el inventario de cores sueltos al script (en un hilo)."""
+        if self._cores_cargando:
+            return
+        if self._cores_listo and not force:
+            return
+        self._cores_cargando = True
+        threading.Thread(target=self._cores_loose_worker, daemon=True).start()
+
+    def _cores_loose_worker(self):
+        """Ejecuta `deckstation-cores-loose.sh --list` y guarda los sueltos."""
+        script = self._cores_script("deckstation-cores-loose.sh")
+        cores, resumen = [], ""
+        try:
+            r = subprocess.run([script, "--list"], env=self._cores_env(),
+                               capture_output=True, text=True, timeout=180)
+            for linea in (r.stdout or "").split("\n"):
+                if not linea.strip():
+                    continue
+                if linea.startswith("#"):
+                    resumen = linea.lstrip("#").strip()
+                    continue
+                partes = linea.split("\t")
+                if len(partes) < 2:
+                    continue
+                nombre, estado = partes[0].strip(), partes[1].strip()
+                if estado == "pack":
+                    continue       # los del pack no se muestran: no se tocan
+                cores.append((nombre, estado))
+            if not cores and not resumen:
+                err = (r.stderr or "").strip().split("\n")
+                self._cores_msg = next((l.strip() for l in reversed(err) if l.strip()), "")
+        except Exception as e:
+            self._cores_msg = f"No se pudo consultar el buildbot: {e}"
+        self.cores_loose = cores
+        self._cores_resumen = resumen
+        self.cores_loose_idx = 0
+        self.cores_loose_top = 0
+        self._cores_listo = True
+        self._cores_cargando = False
+
+    def _cores_loose_instalar(self, nombre):
+        """Baja un core suelto a la carpeta portable de RetroArch (en un hilo)."""
+        if self._cores_busy:
+            return
+        self._cores_busy = True
+        self._cores_msg = f"Descargando {nombre}..."
+        threading.Thread(target=self._cores_install_worker, args=(nombre,),
+                         daemon=True).start()
+
+    def _cores_install_worker(self, nombre):
+        script = self._cores_script("deckstation-cores-loose.sh")
+        try:
+            r = subprocess.run([script, "--install", nombre], env=self._cores_env(),
+                               capture_output=True, text=True, timeout=300)
+            if r.returncode == 0:
+                self._cores_msg = f"{nombre} instalado."
+            elif r.returncode == 3:
+                self._cores_msg = f"{nombre} viene del pack: no se toca."
+            else:
+                lineas = ((r.stdout or "") + (r.stderr or "")).strip().split("\n")
+                ultima = next((l.strip() for l in reversed(lineas) if l.strip()), "")
+                self._cores_msg = f"{nombre} no se pudo bajar. {ultima}"
+        except Exception as e:
+            self._cores_msg = f"Error con {nombre}: {e}"
+        # refrescar estados conservando la posicion en la lista
+        idx = self.cores_loose_idx
+        self._cores_loose_worker()
+        self.cores_loose_idx = min(idx, max(0, len(self.cores_loose) - 1))
+        self._cores_busy = False
 
     def _lanzar_bezel_master(self):
         """Lanza BezelMaster (bezels de TheBezelProject) como proceso aparte.
@@ -1711,6 +1857,7 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         hub_options = [
             ("Actualizar Emuladores", "EMU_MENU"),
             ("BIOS / Firmware", "BIOS_MENU"),
+            ("Cores de RetroArch (ARM)", "CORES_MENU"),
             ("Bezels / Overlays", "BEZELS"),
             ("OpenROM (convertir ROMs)", "OPENROM_MENU"),
             ("Apariencia", "THEME_MENU"),
@@ -1720,7 +1867,15 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         # si hay un payload de NUESTRA arquitectura. Ver SYSTEM_UPDATE_ENABLED.
         if SYSTEM_UPDATE_ENABLED:
             hub_options.insert(1, ("Actualizar DeckStation", "SYSTEM_UPDATE"))
+        # Espaciado dinamico: con 7 entradas el valor fijo 120 se salia de la
+        # pantalla de la Odin (1080 de alto). Se calcula para que la ultima caja
+        # quede por encima del aviso inferior, con un minimo legible.
+        hub_icon_y = 310
+        hub_box_h = 80
         hub_spacing = 120
+        if len(hub_options) > 1:
+            cabe = (SCREEN_HEIGHT - 60 - hub_box_h - hub_icon_y) // (len(hub_options) - 1)
+            hub_spacing = max(72, min(120, cabe))
         while running:
             screen.fill(BG_COLOR)
 
@@ -1739,13 +1894,13 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                 sub_text = font.render("¿Qué deseas actualizar hoy?", True, TEXT_COLOR)
                 sub_rect = sub_text.get_rect(center=(SCREEN_WIDTH//2, 290))
                 screen.blit(sub_text, sub_rect)
-                icon_x, icon_y = SCREEN_WIDTH//2 - 200, 310
+                icon_x, icon_y = SCREEN_WIDTH//2 - 200, hub_icon_y
                 for idx, (opt_text, opt_action) in enumerate(hub_options):
                     y_pos = icon_y + idx * hub_spacing
                     is_sel = (idx == self.hub_idx)
                     bg = ACCENT_COLOR if is_sel else PANEL_COLOR
                     txt_color = SEL_FG_COLOR if is_sel else TEXT_COLOR
-                    pygame.draw.rect(screen, bg, (icon_x, y_pos, 400, 80), border_radius=RADIUS)
+                    pygame.draw.rect(screen, bg, (icon_x, y_pos, 400, hub_box_h), border_radius=RADIUS)
                     # Badge de actualización en "Actualizar DeckStation" (por ACCION,
                     # no por indice: si se oculta una opcion los indices se desplazan)
                     if opt_action == "SYSTEM_UPDATE" and self._system_update_available:
@@ -1924,6 +2079,80 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                     screen.blit(font_small.render(self.status_msg[:120], True, GREEN_COLOR),
                                 (40, SCREEN_HEIGHT - 40))
 
+            elif self.state == "CORES_MENU":
+                # Cores de RetroArch (ARM): pack del sistema + sueltos del buildbot.
+                title = font_title.render(" CORES DE RETROARCH (ARM)", True, ACCENT_COLOR)
+                screen.blit(title, (40, 20))
+                hint = font_small.render("A/Enter=Seleccionar   |   Esc/B=Volver   |   ↑↓=Navegar", True, DIM_COLOR)
+                screen.blit(hint, (40, 58))
+
+                sub = font_small.render("Cores aarch64 para el RetroArch portable de DeckStation", True, DIM_COLOR)
+                screen.blit(sub, (40, 84))
+
+                y = 130
+                opciones = self._cores_opciones()
+                for idx, opt in enumerate(opciones):
+                    is_sel = (idx == self.cores_idx)
+                    bg = ACCENT_COLOR if is_sel else PANEL_COLOR
+                    txt_color = SEL_FG_COLOR if is_sel else TEXT_COLOR
+                    pygame.draw.rect(screen, bg, (40, y, 800, 56), border_radius=RADIUS)
+                    prefix = ">> " if is_sel else "   "
+                    screen.blit(font.render(f"{prefix}{opt}", True, txt_color), (60, y + 10))
+                    y += 72
+
+                if self._cores_msg:
+                    col = WARN_COLOR if self._cores_busy else GREEN_COLOR
+                    screen.blit(font_small.render(self._cores_msg[:120], True, col),
+                                (40, SCREEN_HEIGHT - 40))
+
+            elif self.state == "CORES_LOOSE":
+                # Cores sueltos: lo que el buildbot publica para aarch64 y NO
+                # trae el pack. Los del pack NO aparecen: no se tocan.
+                title = font_title.render(" CORES SUELTOS (BUILDBOT ARM)", True, ACCENT_COLOR)
+                screen.blit(title, (40, 20))
+                hint = font_small.render("A/Enter=Instalar   |   Esc/B=Volver   |   ↑↓=Navegar", True, DIM_COLOR)
+                screen.blit(hint, (40, 58))
+
+                sub = self._cores_resumen or "Cores que el pack NO trae (los del pack van parcheados y no se tocan)"
+                screen.blit(font_small.render(sub[:130], True, DIM_COLOR), (40, 84))
+
+                if self._cores_cargando:
+                    screen.blit(font.render("Consultando el buildbot...", True, WARN_COLOR), (40, 200))
+                elif not self.cores_loose:
+                    screen.blit(font.render("No hay cores sueltos disponibles.", True, TEXT_COLOR), (40, 200))
+                else:
+                    visibles = 9
+                    if self.cores_loose_idx < self.cores_loose_top:
+                        self.cores_loose_top = self.cores_loose_idx
+                    elif self.cores_loose_idx >= self.cores_loose_top + visibles:
+                        self.cores_loose_top = self.cores_loose_idx - visibles + 1
+                    y = 120
+                    ventana = self.cores_loose[self.cores_loose_top:self.cores_loose_top + visibles]
+                    for i, (nombre, estado) in enumerate(ventana):
+                        actual = self.cores_loose_top + i
+                        is_sel = (actual == self.cores_loose_idx)
+                        bg = ACCENT_COLOR if is_sel else PANEL_COLOR
+                        txt_color = SEL_FG_COLOR if is_sel else TEXT_COLOR
+                        pygame.draw.rect(screen, bg, (40, y, SCREEN_WIDTH - 80, 76), border_radius=RADIUS)
+                        prefix = ">> " if is_sel else "   "
+                        screen.blit(font.render(f"{prefix}{nombre}", True, txt_color), (60, y + 6))
+                        if estado == "installed":
+                            est, est_col = "instalado", (SEL_FG_COLOR if is_sel else GREEN_COLOR)
+                        else:
+                            est, est_col = "disponible  (A para bajar)", (SEL_FG_COLOR if is_sel else WARN_COLOR)
+                        screen.blit(font_small.render(f"     {est}", True, est_col), (60, y + 44))
+                        y += 84
+                    if self.cores_loose_top > 0:
+                        screen.blit(font_small.render("▲ hay mas arriba", True, DIM_COLOR), (40, 108))
+                    if self.cores_loose_top + visibles < len(self.cores_loose):
+                        screen.blit(font_small.render("▼ hay mas abajo", True, DIM_COLOR),
+                                    (SCREEN_WIDTH - 260, 108))
+
+                if self._cores_msg:
+                    col = WARN_COLOR if self._cores_busy else GREEN_COLOR
+                    screen.blit(font_small.render(self._cores_msg[:120], True, col),
+                                (40, SCREEN_HEIGHT - 40))
+
             elif self.state == "SELECT_VERSION":
                 # Version selection screen
                 header = font_title.render(f"Versiones disponibles para {self.apps[self.current_app_idx]['name']}", True, ACCENT_COLOR)
@@ -2076,6 +2305,10 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                                 self.start_system_update()
                             elif sel == "BIOS_MENU":
                                 self.state = "BIOS_MENU"
+                            elif sel == "CORES_MENU":
+                                self.state = "CORES_MENU"
+                                self.cores_idx = 0
+                                self._cores_msg = ""
                             elif sel == "BEZELS":
                                 self._lanzar_bezel_master()
                             elif sel == "OPENROM_MENU":
@@ -2100,6 +2333,10 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                                 self.start_system_update()
                             elif sel == "BIOS_MENU":
                                 self.state = "BIOS_MENU"
+                            elif sel == "CORES_MENU":
+                                self.state = "CORES_MENU"
+                                self.cores_idx = 0
+                                self._cores_msg = ""
                             elif sel == "BEZELS":
                                 self._lanzar_bezel_master()
                             elif sel == "OPENROM_MENU":
@@ -2219,6 +2456,66 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
                             self.openrom_idx = (self.openrom_idx - 1) % len(self._openrom_opciones())
                         elif event.value[1] < 0:
                             self.openrom_idx = (self.openrom_idx + 1) % len(self._openrom_opciones())
+
+                elif self.state == "CORES_MENU":
+                    opciones = self._cores_opciones()
+                    if event.type == pygame.KEYDOWN:
+                        if self._cores_busy:
+                            pass
+                        elif event.key == pygame.K_UP:
+                            self.cores_idx = (self.cores_idx - 1) % len(opciones)
+                        elif event.key == pygame.K_DOWN:
+                            self.cores_idx = (self.cores_idx + 1) % len(opciones)
+                        elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                            self._cores_ejecutar(self.cores_idx)
+                        elif event.key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
+                            self.state = "HUB"
+                    elif event.type == pygame.JOYBUTTONDOWN:
+                        if event.button == 0:      # A
+                            self._cores_ejecutar(self.cores_idx)
+                        elif event.button == 1:    # B
+                            self.state = "HUB"
+                        elif not self._cores_busy and event.button in (11, 13):  # DPAD up
+                            self.cores_idx = (self.cores_idx - 1) % len(opciones)
+                        elif not self._cores_busy and event.button in (12, 14):  # DPAD down
+                            self.cores_idx = (self.cores_idx + 1) % len(opciones)
+                    elif event.type == pygame.JOYHATMOTION:
+                        if not self._cores_busy:
+                            if event.value[1] > 0:
+                                self.cores_idx = (self.cores_idx - 1) % len(opciones)
+                            elif event.value[1] < 0:
+                                self.cores_idx = (self.cores_idx + 1) % len(opciones)
+
+                elif self.state == "CORES_LOOSE":
+                    n = len(self.cores_loose)
+                    if event.type == pygame.KEYDOWN:
+                        if self._cores_busy:
+                            pass
+                        elif event.key == pygame.K_UP:
+                            self.cores_loose_idx = max(0, self.cores_loose_idx - 1)
+                        elif event.key == pygame.K_DOWN:
+                            self.cores_loose_idx = min(n - 1, self.cores_loose_idx + 1) if n else 0
+                        elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                            if n and self.cores_loose[self.cores_loose_idx][1] == "free":
+                                self._cores_loose_instalar(self.cores_loose[self.cores_loose_idx][0])
+                        elif event.key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
+                            self.state = "CORES_MENU"
+                    elif event.type == pygame.JOYBUTTONDOWN:
+                        if event.button == 0:      # A
+                            if n and not self._cores_busy and self.cores_loose[self.cores_loose_idx][1] == "free":
+                                self._cores_loose_instalar(self.cores_loose[self.cores_loose_idx][0])
+                        elif event.button == 1:    # B
+                            self.state = "CORES_MENU"
+                        elif not self._cores_busy and event.button in (11, 13):  # DPAD up
+                            self.cores_loose_idx = max(0, self.cores_loose_idx - 1)
+                        elif not self._cores_busy and event.button in (12, 14):  # DPAD down
+                            self.cores_loose_idx = min(n - 1, self.cores_loose_idx + 1) if n else 0
+                    elif event.type == pygame.JOYHATMOTION:
+                        if not self._cores_busy:
+                            if event.value[1] > 0:
+                                self.cores_loose_idx = max(0, self.cores_loose_idx - 1)
+                            elif event.value[1] < 0:
+                                self.cores_loose_idx = min(n - 1, self.cores_loose_idx + 1) if n else 0
 
                 elif self.state == "SELECT_VERSION":
                     if event.type == pygame.KEYDOWN:
