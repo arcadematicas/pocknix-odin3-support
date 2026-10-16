@@ -191,6 +191,15 @@ overlay "packages/suyu-libretro" "packages/shared/suyu-libretro"
 # `virtualboy` y `virtualboycolor` de es_systems.xml.
 overlay "packages/vboycolor-libretro" "packages/shared/vboycolor-libretro"
 
+# --- libretro-azahar / libretro-bsnes-hd: cores NUEVOS compilados por nosotros ----
+# Ninguno de los dos esta en el buildbot oficial de libretro ni en el set de ArkOS, asi
+# que ES-DE pedia cores (n3ds / snesh) que no existian. Se compilan nativos aarch64 en el
+# build (el .so se instala en /usr/lib/libretro/ + su .info en /usr/share/libretro/info/,
+# que es justo lo que recoge DeckStation). Vivieron SOLO en el centro y NO estaban
+# registrados en el sync -> el arbol nunca los tuvo y el bucle los daba por NO ENCONTRADOS.
+overlay "packages/libretro-azahar"   "packages/shared/libretro-azahar"
+overlay "packages/libretro-bsnes-hd" "packages/shared/libretro-bsnes-hd"
+
 overlay "packages/libretro-cores-pocknix" "packages/shared/libretro-cores-pocknix"
 overlay "packages/pocknix-decky"   "packages/shared/pocknix-decky"
 
