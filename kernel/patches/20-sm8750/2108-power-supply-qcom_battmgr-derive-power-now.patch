@@ -1,0 +1,89 @@
+From: Fransis <fransis@pocknix>
+Subject: [PATCH] power: supply: qcom_battmgr: derive POWER_NOW from V x I
+
+The AYN Odin 3 (SM8750, qcom,sm8550-pmic-glink) fuel gauge runs in the ADSP
+firmware (pmic_glink -> qcom_battmgr). The firmware's POWER_NOW is a lie:
+measured while playing, /sys/class/power_supply/battery/power_now stayed at
+51933259 uW (~51.9 W) in five samples taken 2 s apart while voltage_now x
+current_now was 10.8-13.4 W; the value does not track load at all (it read
+62 W at idle, 53 W the day before). The same broken number is what reaches
+userspace through hwmon (hwmon46 power1_input = 49906427..51786593 uW) and
+through every consumer of the battery's POWER_NOW property: MangoHUD, the
+QAM/gamescope performance panel, the Decky battery reader and upower/KDE.
+
+VOLTAGE_NOW and CURRENT_NOW do come from the firmware correctly, so stop
+requesting its POWER_NOW on SM8350/SM8550 and derive the property from the
+voltage and current that the getter has just refreshed:
+
+	power_now (uW) = |voltage_now (uV) * current_now (uA)| / 1e6
+
+Discharge current is negative but the power drawn is a magnitude, so the
+result is reported positive. With a full battery on AC (current ~ -2441 uA
+at ~4.0 V) this yields ~0 W, the physically correct reading.
+
+SC8280XP/X1E80100 keep the firmware value: their update path never fetches
+CURRENT_NOW and their laptop-class firmware reports POWER_NOW sanely.
+
+Pocknix local work, no upstream equivalent (there is no Armada or ROCKNIX
+patch for this). Numbered 21xx as requested for battery/battmgr patches.
+
+Signed-off-by: Fransis <fransis@pocknix>
+---
+ drivers/power/supply/qcom_battmgr.c | 37 ++++++++++++++++++++++++++++++++++---
+ 1 file changed, 34 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/power/supply/qcom_battmgr.c b/drivers/power/supply/qcom_battmgr.c
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -568,7 +568,22 @@
+ 			goto out_unlock;
+ 		battmgr->info.valid = true;
+ 	}
+-	ret = qcom_battmgr_request_property(battmgr, BATTMGR_BAT_PROPERTY_GET, prop, 0);
++	/*
++	 * The ADSP firmware's POWER_NOW is nonsense on SM8350/SM8550 platforms:
++	 * the AYN Odin 3 reports a load-independent value (~52 W) while the
++	 * voltage x current pair shows 11-13 W. Skip the firmware's POWER_NOW
++	 * request and refresh the voltage and current instead; the property
++	 * getter derives POWER_NOW from them.
++	 */
++	if (psp == POWER_SUPPLY_PROP_POWER_NOW) {
++		ret = qcom_battmgr_request_property(battmgr, BATTMGR_BAT_PROPERTY_GET,
++						   BATT_VOLT_NOW, 0);
++		if (!ret)
++			ret = qcom_battmgr_request_property(battmgr, BATTMGR_BAT_PROPERTY_GET,
++							   BATT_CURR_NOW, 0);
++	} else {
++		ret = qcom_battmgr_request_property(battmgr, BATTMGR_BAT_PROPERTY_GET, prop, 0);
++	}
+ out_unlock:
+ 	mutex_unlock(&battmgr->lock);
+ 
+@@ -667,9 +682,25 @@
+ 	case POWER_SUPPLY_PROP_CURRENT_NOW:
+ 		val->intval = battmgr->status.current_now;
+ 		break;
+-	case POWER_SUPPLY_PROP_POWER_NOW:
+-		val->intval = battmgr->status.power_now;
++	case POWER_SUPPLY_PROP_POWER_NOW: {
++		s64 power_uw = (s64)battmgr->status.voltage_now *
++			       battmgr->status.current_now / 1000000;
++
++		/*
++		 * The firmware's own POWER_NOW is unusable on SM8350/SM8550
++		 * (load-independent on the Odin 3), so derive it from the voltage
++		 * and current, which the firmware does report correctly:
++		 * uV x uA / 1e6 = uW. Discharge current is negative but the
++		 * power drawn is reported as a positive magnitude; a full battery
++		 * on AC (current ~ -2.4 mA) therefore yields ~0 W.
++		 */
++		if (battmgr->variant == QCOM_BATTMGR_SC8280XP ||
++		    battmgr->variant == QCOM_BATTMGR_X1E80100)
++			val->intval = battmgr->status.power_now;
++		else
++			val->intval = power_uw < 0 ? -power_uw : power_uw;
+ 		break;
++	}
+ 	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
+ 		if (unit != QCOM_BATTMGR_UNIT_mAh)
+ 			return -ENODATA;
