@@ -10,7 +10,7 @@ import QtQuick
 
 Rectangle {
     id: root
-    color: "#202126"
+    color: "#2a2b2e"   // el campo del wallpaper final de CalvOS (16/10/2026)
 
     property int stage
 

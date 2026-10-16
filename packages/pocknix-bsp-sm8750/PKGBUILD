@@ -28,7 +28,7 @@ pkgname=pocknix-bsp-sm8750
 pkgver=0.2.0
 # -8: bring-up de sensores del 15/10 (pd-mapper + cadena SSC) y unidades habilitadas
 # (el -7 se construyo ANTES del bring-up de sensores de la tarde).
-pkgrel=8
+pkgrel=9
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
