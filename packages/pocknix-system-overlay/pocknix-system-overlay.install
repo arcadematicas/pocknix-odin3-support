@@ -29,6 +29,13 @@ post_install() {
   systemctl enable pocknix-hdr-restore.service  >/dev/null 2>&1 || true
   systemctl enable pocknix-diag.timer           >/dev/null 2>&1 || true
   systemctl enable pocknix-oobe-marker.service  >/dev/null 2>&1 || true
+  # Re-aplicado del parche HDR del plugin "Panel de Control" (Hooandee, autoupdate):
+  #  - .service  -> arranque al boot (wanted por multi-user.target; Before=loader)
+  #  - .path     -> vigila device_profiles.py y lo reaplica cuando el updater lo pisa
+  #  - .timer    -> respaldo periodico (cada 15 min) por si el inotify no ve el reemplazo
+  systemctl enable pocknix-panel-control-patch.service >/dev/null 2>&1 || true
+  systemctl enable pocknix-panel-control-patch.path    >/dev/null 2>&1 || true
+  systemctl enable pocknix-panel-control-patch.timer   >/dev/null 2>&1 || true
   _pocknix_set_wireless_regdom
   echo "   pocknix-system-overlay: udev recargado + unidades habilitadas + regdom ES"
 }

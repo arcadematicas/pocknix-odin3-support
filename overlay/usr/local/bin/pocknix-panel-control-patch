@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""pocknix-panel-control-patch — re-aplica `hdr=True` al perfil `ayn_odin3`.
+
+POR QUE EXISTE
+  El plugin Decky "Panel de Control" (Hooandee, /home/deck/homebrew/plugins/Panel de
+  Control) SE AUTOACTUALIZA desde GitHub con su propio boton (py_modules/self_updater.py):
+  descarga el zip de la ultima release y lo copia ENCIMA del plugin instalado. En cada
+  release vuelve `py_modules/device_profiles.py` SIN `hdr=True` en el perfil `ayn_odin3`
+  (el PR #947 a Hooandee sigue pendiente), y entonces la UI deja de dibujar el bloque HDR:
+  `src/sections/displayBlocks.tsx` hace `if (!hdr.state?.supported) return null;`.
+
+  El estado HDR del ARRANQUE lo sigue fijando pocknix-hdr-restore (SDR por defecto); este
+  script NO toca ese diseño. Solo se asegura de que el TOGGLE del plugin (el que manda,
+  decision de Fransis 16/10) exista, para que el usuario pueda encenderlo.
+
+QUE HACE (idempotente)
+  1. Si el fichero no existe -> no hace nada (el plugin aun no esta instalado).
+  2. Localiza la llamada `DeviceProfile(...)` del perfil `ayn_odin3` con el AST de Python
+     (no un sed fragil: respeta multilinea, comillas y parentesis anidados).
+  3. Si ya tiene un argumento `hdr=` -> no toca nada (idempotente) y sale con 0.
+  4. Si no -> inserta `, hdr=True` JUSTO DESPUES del ultimo argumento de la llamada
+     (siempre genera Python valido, sea cual sea el ultimo kwarg: posicional o keyword).
+  5. Deja un backup `.orig` (la copia SIN parchear que se va a reemplazar).
+  6. Borra el `__pycache__/device_profiles*.pyc` para que el siguiente import recompile.
+
+NO reinicia Decky: solo deja el fichero correcto para el SIGUIENTE arranque del loader
+(reiniciar el loader en modo juego crashea steamwebhelper; es un crasheo conocido).
+
+Se lanza desde pocknix-panel-control-patch.path (vigila el fichero), al arranque (la
+unidad .service esta wanted) y por el timer de respaldo (cada 15 min).
+"""
+
+from __future__ import annotations
+
+import ast
+import glob
+import os
+import shutil
+import sys
+import syslog
+import tempfile
+
+DEFAULT_FILE = "/home/deck/homebrew/plugins/Panel de Control/py_modules/device_profiles.py"
+PROFILE_KEY = "ayn_odin3"
+_TAG = "pocknix-panel-control-patch"
+
+
+def log(msg: str) -> None:
+    # stdout lo captura el journal (Type=oneshot); syslog da ademas el tag buscable.
+    print(f"{_TAG}: {msg}", flush=True)
+    try:
+        syslog.syslog(syslog.LOG_INFO, msg)
+    except Exception:  # noqa: BLE001 — el journal es best-effort
+        pass
+
+
+def _is_profile_call(node: ast.AST) -> bool:
+    """True si `node` es `DeviceProfile(...)` y su primer dato de identidad es ayn_odin3.
+
+    Acepta el estilo posicional (`DeviceProfile("ayn_odin3", ...)`) y el de keyword
+    (`DeviceProfile(key="ayn_odin3", ...)`).
+    """
+    if not isinstance(node, ast.Call):
+        return False
+    func = node.func
+    if not (isinstance(func, ast.Name) and func.id == "DeviceProfile"):
+        return False
+    firsts = list(node.args) + [kw.value for kw in node.keywords]
+    for first in firsts[:1]:  # solo el primer argumento posicional o el primer kw
+        if isinstance(first, ast.Constant) and first.value == PROFILE_KEY:
+            return True
+    for kw in node.keywords:
+        if kw.arg == "key" and isinstance(kw.value, ast.Constant) and kw.value.value == PROFILE_KEY:
+            return True
+    return False
+
+
+def _end_offset(line_starts: list[int], node: ast.AST) -> int:
+    """Offset (absoluto en el fichero) del final del token `node` (justo tras el)."""
+    return line_starts[node.end_lineno - 1] + node.end_col_offset
+
+
+def patch_file(path: str) -> int:
+    """Devuelve 0 si todo OK (cambiado o no), 1 si no se pudo parsear/escribir."""
+    if not os.path.isfile(path):
+        log(f"no existe {path!r} (el plugin no esta instalado): nada que hacer")
+        return 0
+
+    try:
+        with open(path, encoding="utf-8") as fh:
+            src = fh.read()
+    except OSError as exc:
+        log(f"ERROR leyendo {path!r}: {exc}")
+        return 1
+
+    try:
+        tree = ast.parse(src, filename=path)
+    except SyntaxError as exc:
+        # Fichero a medias (el updater copiando) o upstream roto: NO tocamos nada; el timer
+        # de respaldo lo reintenta. Devolvemos !=0 para que quede en el journal.
+        log(f"ERROR parseando {path!r} (¿escritura en curso?): {exc}")
+        return 1
+
+    call = next((n for n in ast.walk(tree) if _is_profile_call(n)), None)
+    if call is None:
+        log(f"aviso: no encontre la llamada DeviceProfile(\"{PROFILE_KEY}\") en {path!r}")
+        return 0
+
+    if any(kw.arg == "hdr" for kw in call.keywords):
+        log(f"ok: {PROFILE_KEY} ya tiene hdr -> sin cambios")
+        return 0
+
+    # Ultimo argumento de la llamada EN ORDEN DE FUENTE. Usamos el nodo expr: para un
+    # kwarg es kw.value (que termina el kwarg) y para un posicional es el propio argumento.
+    # Insertamos `, hdr=True` DESPUES de el (nunca antes del `nombre=` de un kwarg).
+    args = list(call.args) + [kw.value for kw in call.keywords]
+    if not args:
+        log(f"ERROR: DeviceProfile(\"{PROFILE_KEY}\") sin argumentos; no se donde insertar hdr")
+        return 1
+    last = max(args, key=lambda n: (n.end_lineno, n.end_col_offset))
+
+    line_starts = [0]
+    for line in src.splitlines(keepends=True):
+        line_starts.append(line_starts[-1] + len(line))
+    pos = _end_offset(line_starts, last)
+
+    new_src = src[:pos] + ", hdr=True" + src[pos:]
+
+    # Validacion final: el resultado DEBE seguir siendo Python valido. Si no, abortamos.
+    try:
+        ast.parse(new_src, filename=path)
+    except SyntaxError as exc:
+        log(f"ERROR: el resultado no seria Python valido, NO escribo: {exc}")
+        return 1
+
+    # Backup de la copia SIN parchear (refresca .orig en cada aplicacion).
+    backup = path + ".orig"
+    try:
+        shutil.copy2(path, backup)
+    except OSError as exc:
+        log(f"ERROR creando backup {backup!r}: {exc}")
+        return 1
+
+    # Escritura atomica: temp en el MISMO directorio + os.replace, conservando modo y owner.
+    st = os.stat(path)
+    directory = os.path.dirname(path) or "."
+    fd, tmp = tempfile.mkstemp(prefix=".device_profiles.", dir=directory)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(new_src)
+        os.chmod(tmp, st.st_mode & 0o7777)
+        try:
+            if hasattr(os, "chown"):
+                os.chown(tmp, st.st_uid, st.st_gid)
+        except OSError:
+            pass  # sin privilegios para chown: lo deja como root, que es lo correcto igual
+        os.replace(tmp, path)
+    except OSError as exc:
+        log(f"ERROR escribiendo {path!r}: {exc}")
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        return 1
+
+    # Invalida la cache de bytecode (por si el .pyc quedara con mtime >= el nuevo).
+    pyc_dir = os.path.join(directory, "__pycache__")
+    for pyc in glob.glob(os.path.join(pyc_dir, "device_profiles*.pyc")):
+        try:
+            os.unlink(pyc)
+        except OSError:
+            pass
+
+    log(f"APLICADO: hdr=True anadido al perfil {PROFILE_KEY} en {path!r} (backup: {backup!r})")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    path = argv[1] if len(argv) > 1 else DEFAULT_FILE
+    return patch_file(path)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

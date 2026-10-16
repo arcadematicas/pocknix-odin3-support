@@ -1,0 +1,15 @@
+[Unit]
+Description=Vigilar device_profiles.py de Panel de Control (re-aplicar hdr=True)
+Documentation=file:///usr/share/doc/pocknix/PANEL-CONTROL-HDR-PATCH.md
+
+[Path]
+# PathChanged = IN_CLOSE_WRITE | IN_MOVED_TO | IN_CREATE | IN_DELETE | IN_MOVE_SELF.
+# Es justo lo que hace el self_updater del plugin: shutil.copy2 abre el destino con 'wb'
+# (trunca) y lo cierra -> IN_CLOSE_WRITE dispara con el fichero YA completo. Deliberadamente
+# NO usamos PathModified (IN_MODIFY), que salta en cada write() y podria leer un fichero a
+# medias mientras el updater copia.
+PathChanged=/home/deck/homebrew/plugins/Panel de Control/py_modules/device_profiles.py
+Unit=pocknix-panel-control-patch.service
+
+[Install]
+WantedBy=multi-user.target

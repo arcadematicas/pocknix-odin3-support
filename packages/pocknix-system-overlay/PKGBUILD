@@ -9,7 +9,11 @@
 # packages/pocknix-system-overlay/rootfs/ (mapping `overlay "overlay" "packages/pocknix-system-overlay/rootfs"`).
 pkgname=pocknix-system-overlay
 pkgver=0.1.0
-pkgrel=3
+# 4: re-aplicado automatico del parche HDR del plugin "Panel de Control" (Hooandee, que se
+#    autoactualiza y borra el hdr=True de ayn_odin3): script pocknix-panel-control-patch +
+#    unidad .service (boot) + .path (vigila device_profiles.py) + .timer (respaldo 15 min).
+#    Ver docs/PANEL-CONTROL-HDR-PATCH-20261016.md.
+pkgrel=4
 pkgdesc="Nuestros ficheros de sistema (perfil del panel gamescope, reglas udev, pipewire, diag/oobe)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"

@@ -1,0 +1,21 @@
+[Unit]
+Description=Re-aplicar hdr=True al perfil ayn_odin3 de Panel de Control (Hooandee)
+Documentation=file:///usr/share/doc/pocknix/PANEL-CONTROL-HDR-PATCH.md
+# Se ejecuta al arrancar (wanted por multi-user), disparado por el .path cuando el
+# autoupdater del plugin reescribe device_profiles.py, y por el .timer de respaldo.
+# Ordenado tras el seed del plugin y ANTES del loader, para que el parche este aplicado
+# la primera vez que el loader lee el fichero. No depende de graphical.target -> no hay
+# ciclo (la leccion del 16/10 con pocknix-hdr-restore).
+After=local-fs.target pocknix-decky-sync.service
+Before=pocknix-decky-loader.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-panel-control-patch
+# Log al journal con tag pocknix-panel-control-patch (ademas del stdout de oneshot).
+StandardOutput=journal
+StandardError=journal
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

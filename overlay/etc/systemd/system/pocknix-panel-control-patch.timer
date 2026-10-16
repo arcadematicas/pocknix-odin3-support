@@ -1,0 +1,14 @@
+[Unit]
+Description=Respaldo periodico del parche HDR de Panel de Control (por si el .path no ve el reemplazo)
+Documentation=file:///usr/share/doc/pocknix/PANEL-CONTROL-HDR-PATCH.md
+
+[Timer]
+# Cinturon y tirantes: si el inotify del .path no ve el reemplazo de fichero (p. ej. el
+# updater escribe en otro montaje o hace un rename que se pierde), este timer lo reaplica.
+OnBootSec=3min
+OnUnitActiveSec=15min
+Unit=pocknix-panel-control-patch.service
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -28,3 +28,19 @@ Plugin upstream: https://github.com/Hooandee/panel-de-control
   así que la edición es necesaria.
 - **Cómo revertirlo**: al re-vendorizar una release que ya traiga `hdr=True` en
   `ayn_odin3`, esta edición deja de ser necesaria (no duplicar `hdr=True`).
+
+## Re-aplicado automático en el dispositivo (16/10/2026)
+
+Este plugin es el único que **se autoactualiza** desde GitHub (botón en el QAM →
+`py_modules/self_updater.py`), y cada release **borra** el `hdr=True` de la copia
+instalada en `/home/deck/homebrew/plugins/Panel de Control/`. Para no depender de que
+nadie lo repare a mano, el paquete **`pocknix-system-overlay`** instala un script
+(`/usr/local/bin/pocknix-panel-control-patch`) + una unidad `.path` que vigila
+`device_profiles.py` + un `.service` (al boot) + un `.timer` (cada 15 min) que **re-aplican
+`hdr=True` de forma idempotente y robusta (AST, no `sed`)**.
+
+- Ficheros del centro: `overlay/usr/local/bin/pocknix-panel-control-patch`,
+  `overlay/etc/systemd/system/pocknix-panel-control-patch.{service,path,timer}`.
+- Documentación completa: `docs/PANEL-CONTROL-HDR-PATCH-20261016.md`.
+- **Solución definitiva**: el PR #947 a Hooandee (cuando se mergee y salga en release, el script
+  queda como no-op).
