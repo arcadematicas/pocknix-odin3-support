@@ -230,7 +230,9 @@ overlay "packages/pd-mapper"           "packages/shared/pd-mapper"
 overlay "packages/libssc"              "packages/shared/libssc"
 overlay "packages/hexagonrpc"          "packages/shared/hexagonrpc"
 overlay "packages/msm-firmware-loader" "packages/shared/msm-firmware-loader"
-overlay "packages/pocknix-sensors-config" "packages/shared/pocknix-sensors-config"   # configs del ADSP (sensores Odin 3)
+overlay "packages/pocknix-sensors-config" "packages/shared/pocknix-sensors-config"
+overlay "packages/pocknix-branding"          "packages/shared/pocknix-branding"          # fondo/wordmark/watermark de CalvOS
+   # configs del ADSP (sensores Odin 3)
 
 # --- pocknix-steam-full: metapaquete de la capa de Steam ------------------------
 # Override de UN solo PKGBUILD (el resto del paquete es de upstream y no cambia) unicamente para
