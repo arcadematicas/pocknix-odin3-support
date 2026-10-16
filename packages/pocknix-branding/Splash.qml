@@ -23,9 +23,9 @@ Rectangle {
     Image {
         id: wordmark
         anchors.centerIn: parent
-        // authored at 787px wide; cap at 45% of the screen so it holds its
+        // authored at 1126px wide (diseno final de CalvOS, 16/10/2026); cap at 45% of the screen so it holds its
         // proportions on any panel rather than being stretched to fit
-        width: Math.min(787, parent.width * 0.45)
+        width: Math.min(1126, parent.width * 0.45)
         fillMode: Image.PreserveAspectFit
         asynchronous: true
         smooth: true
