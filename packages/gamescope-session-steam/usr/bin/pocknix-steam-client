@@ -41,11 +41,16 @@ cd "${CLIENT_DIR}" 2>/dev/null || { echo "missing ${CLIENT_DIR}" >&2; exit 1; }
 # Marker Decky's CEF remote-debugging connection looks for.
 touch "${STEAM}/.cef-enable-remote-debugging" 2>/dev/null || true
 
-# Re-pin EVERY launch: the ARM64 Big-Picture client only works on steamdeck_publicbeta, and
-# anything that flips the channel leaves Steam reading "installed version 0", stuck on
-# "Installing update" with steamwebhelper crash-looping until this reasserts it.
-mkdir -p "${STEAM}/package"
-echo steamdeck_publicbeta > "${STEAM}/package/beta"
+# El canal es PREFERENCIA DEL USUARIO (upstream 7a69f8cb): la semilla es steamdeck_publicbeta,
+# pero se respeta steamdeck_stable (Valve ya publica cliente linuxarm64 para stable). Antes se
+# re-pineaba en CADA arranque de sesion y revertia el cambio de la UI 8 s despues (visto en el
+# bootstrap_log de Steam, 17/10/2026).
+. /usr/lib/pocknix/pocknix-steam-channel 2>/dev/null || POCKNIX_STEAM_CHANNEL=steamdeck_publicbeta
+if command -v pocknix_steam_channel_guard >/dev/null 2>&1; then
+  pocknix_steam_channel_guard "${STEAM}"
+else
+  mkdir -p "${STEAM}/package"; echo "${POCKNIX_STEAM_CHANNEL}" > "${STEAM}/package/beta"
+fi
 
 # Must precede Steam, which enumerates controllers once at startup; desktop mode leaves the pad
 # on xb360, and only `deck` gives Steam Input the Steam-native pad (Guide, QAM, L4/L5).
