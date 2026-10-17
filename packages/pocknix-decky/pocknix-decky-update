@@ -1,0 +1,302 @@
+#!/bin/bash
+# pocknix-decky-update — mantiene Decky Loader al día SIN tocar la Odin a mano.
+#
+# Por qué existe: en la Odin Decky corre VIA FEX (pocknix-decky-loader.service, "Decky Loader
+# (via FEX)") con el PluginLoader x86_64 OFICIAL de SteamDeckHomebrew/decky-loader. El botón
+# de actualizar del QAM nuevo está roto en ARM, así que sin esto solo se puede subir de versión
+# empaquetándola en pocknix-decky y reflasheando/actualizando el paquete.
+#
+# Qué hace:
+#   1. Pregunta a GitHub la última release ESTABLE de SteamDeckHomebrew/decky-loader.
+#   2. La compara con ~/homebrew/services/.loader.version (sort -V, no comparación de strings).
+#   3. Si hay una más nueva: backup del PluginLoader + .loader.version actuales, descarga el
+#      asset `PluginLoader`, lo VALIDA (ELF x86_64 de tamaño razonable) y lo instala de forma
+#      ATÓMICA (staging + mv) con owner deck:deck y modo 0755, junto con .loader.version.
+#
+# Lo que NO hace (a propósito): NO reinicia nada (ni Decky ni Steam). El cambio entra en el
+# siguiente arranque del loader / de Steam. Así nunca se crashea steamwebhelper en caliente.
+#
+# Es idempotente y tolerante a fallos: sin red sale 0 con aviso (no rompe el timer). Deja rastro
+# en el journal (logger) y avisa por Telegram en éxito/fallo si encuentra avisar-telegram.sh.
+#
+# Uso:
+#   pocknix-decky-update                 # comprueba y actualiza si hace falta
+#   pocknix-decky-update --check         # solo informa (no descarga ni instala)
+#   pocknix-decky-update --loader PATH --version-file PATH   # rutas alternativas (pruebas)
+#   pocknix-decky-update --no-telegram   # sin aviso Telegram
+#
+# Revertir a la versión del paquete:  pacman -S pocknix-decky   (re-siembra la del repo).
+set -u
+
+REPO="${POCKNIX_DECKY_REPO:-SteamDeckHomebrew/decky-loader}"
+API="https://api.github.com/repos/${REPO}"
+UA="pocknix-decky-update"
+TAG="pocknix-decky-update"
+
+# --- valores por defecto (Odin) ------------------------------------------------
+LOADER_DEFAULT="/home/deck/homebrew/services/PluginLoader"
+OWNER="deck"
+# 26 MB hoy; márgenes amplios para no rechazar una release futura legítimamente mayor/menor.
+MIN_SIZE=$((5 * 1024 * 1024))
+MAX_SIZE=$((200 * 1024 * 1024))
+# sha256 esperado opcional (si algún día la release publica checksum, o para verificación manual)
+EXPECTED_SHA="${POCKNIX_DECKY_SHA256:-}"
+# URL del asset opcional (override de pruebas / pin manual; p.ej. file:///tmp/PluginLoader)
+ASSET_URL_OVERRIDE="${POCKNIX_DECKY_ASSET_URL:-}"
+
+LOADER="$LOADER_DEFAULT"
+VERSION_FILE=""
+CHECK=0
+TELEGRAM=1
+[ "${POCKNIX_NO_TELEGRAM:-0}" = 1 ] && TELEGRAM=0
+
+usage() { awk 'NR==1{next} /^#/{sub(/^# ?/,"");print;next} {exit}' "$0"; exit "${1:-0}"; }
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --check)                 CHECK=1; shift ;;
+    --loader)                LOADER="${2:?falta ruta}"; shift 2 ;;
+    --loader=*)              LOADER="${1#*=}"; shift ;;
+    --version-file|--loader-version-file) VERSION_FILE="${2:?falta ruta}"; shift 2 ;;
+    --version-file=*|--loader-version-file=*) VERSION_FILE="${1#*=}"; shift ;;
+    --owner)                 OWNER="${2:?falta usuario}"; shift 2 ;;
+    --owner=*)               OWNER="${1#*=}"; shift ;;
+    --repo)                  REPO="${2:?falta repo}"; API="https://api.github.com/repos/${REPO}"; shift 2 ;;
+    --repo=*)                REPO="${1#*=}"; API="https://api.github.com/repos/${REPO}"; shift ;;
+    --asset-url)             ASSET_URL_OVERRIDE="${2:?falta url}"; shift 2 ;;
+    --asset-url=*)           ASSET_URL_OVERRIDE="${1#*=}"; shift ;;
+    --no-telegram)           TELEGRAM=0; shift ;;
+    -h|--help)               usage 0 ;;
+    *) echo "opción desconocida: $1" >&2; usage 2 ;;
+  esac
+done
+
+# El fichero de versión vive junto al loader salvo que se indique otro.
+[ -n "$VERSION_FILE" ] || VERSION_FILE="$(dirname "$LOADER")/.loader.version"
+LOADER_DIR="$(dirname "$LOADER")"
+
+# --- logging -------------------------------------------------------------------
+log()  { printf '%s\n' "$*" >&2; logger -t "$TAG" -- "$*" 2>/dev/null || true; }
+logi() { printf '%s\n' "$*";  logger -t "$TAG" -- "$*" 2>/dev/null || true; }
+
+# --- Telegram (best-effort) ----------------------------------------------------
+telegram() {
+  local msg="$1" helper=""
+  [ "$TELEGRAM" = 1 ] || { log "telegram desactivado; no envío: $msg"; return 1; }
+  for helper in \
+      "${POCKNIX_TELEGRAM:-}" \
+      /usr/local/bin/avisar-telegram.sh \
+      /usr/bin/avisar-telegram.sh \
+      /root/bin/avisar-telegram.sh \
+      "${HOME:-/root}/bin/avisar-telegram.sh" \
+      /home/deck/bin/avisar-telegram.sh ; do
+    [ -n "$helper" ] && [ -x "$helper" ] && break
+    helper=""
+  done
+  [ -n "$helper" ] || helper="$(command -v avisar-telegram.sh 2>/dev/null || true)"
+  if [ -z "$helper" ]; then
+    log "no encuentro avisar-telegram.sh — aviso solo por journal: $msg"
+    return 1
+  fi
+  if "$helper" "$msg" >/dev/null 2>&1; then
+    log "aviso Telegram enviado."
+    return 0
+  fi
+  log "FALLO al enviar el aviso Telegram."
+  return 1
+}
+
+# --- utilidades ----------------------------------------------------------------
+# Compara dos versiones con sort -V. Imprime 'gt' si $1 > $2, 'lt' si <, 'eq' si igual.
+# Normaliza '-pre' -> '~pre' para que una prerelease ordene POR DEBAJO del release
+# (misma convención que pocknix-decky-sync).
+vcompare() {
+  local a="${1//-/\~}" b="${2//-/\~}" hi
+  [ "$a" = "$b" ] && { printf 'eq\n'; return; }
+  hi="$(printf '%s\n%s\n' "$a" "$b" | sort -V | tail -n1)"
+  [ "$hi" = "$a" ] && printf 'gt\n' || printf 'lt\n'
+}
+
+# Última release ESTABLE. Imprime: TAG|URL|SIZE|DATE|SHAURL
+# o un error 'ERR:*' (sin red, parseo, sin asset...).
+latest_release() {
+  local resp code body
+  resp="$(curl -sS --max-time 45 -w $'\n%{http_code}' \
+      -H 'Accept: application/vnd.github+json' \
+      -H "User-Agent: ${UA}" "${API}/releases/latest" 2>/dev/null)" || { printf 'ERR:net\n'; return; }
+  [ -n "$resp" ] || { printf 'ERR:net\n'; return; }
+  code="${resp##*$'\n'}"; body="${resp%$'\n'*}"
+  case "$code" in
+    000|"")  printf 'ERR:net\n'; return ;;
+    403|429) printf 'ERR:ratelimit\n'; return ;;
+    200)     : ;;
+    *)       printf 'ERR:http%s\n' "$code"; return ;;
+  esac
+  if ! command -v python3 >/dev/null 2>&1; then printf 'ERR:nopython\n'; return; fi
+  printf '%s' "$body" | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    print("ERR:parse"); raise SystemExit
+if not isinstance(d, dict) or d.get("message") and not d.get("tag_name"):
+    print("ERR:api"); raise SystemExit
+if d.get("prerelease"):
+    print("ERR:prerelease"); raise SystemExit   # releases/latest no debería devolverlas, por si acaso
+tag = d.get("tag_name") or ""
+url = size = ""
+sha_url = ""
+for a in (d.get("assets") or []):
+    n = (a.get("name") or "").lower()
+    if a.get("name") == "PluginLoader":
+        url = a.get("browser_download_url", "")
+        size = a.get("size", 0) or 0
+    elif "sha256" in n or "checksum" in n or n.endswith(".sha256sum"):
+        sha_url = a.get("browser_download_url", "")
+if not tag or not url:
+    print("ERR:noasset"); raise SystemExit
+print("|".join([tag, url, str(size), d.get("published_at") or "", sha_url]))
+'
+}
+
+# Valida que $1 es un ELF ejecutable x86_64 de tamaño razonable. 0 = ok.
+validate_elf() {
+  local f="$1" sz magic machine
+  [ -f "$f" ] || { log "  validación: no existe $f"; return 1; }
+  sz="$(stat -c%s "$f" 2>/dev/null || echo 0)"
+  if [ "$sz" -lt "$MIN_SIZE" ] || [ "$sz" -gt "$MAX_SIZE" ]; then
+    log "  validación: tamaño fuera de rango ($sz B, esperado ${MIN_SIZE}..${MAX_SIZE})"; return 1
+  fi
+  magic="$(head -c4 "$f" | od -An -tx1 | tr -d ' \n')"
+  [ "$magic" = "7f454c46" ] || { log "  validación: no es un ELF (magic=$magic)"; return 1; }
+  machine="$(od -An -tx1 -j18 -N1 "$f" | tr -d ' \n')"
+  [ "$machine" = "3e" ] || { log "  validación: no es x86_64 (e_machine=0x${machine:-??})"; return 1; }
+  return 0
+}
+
+chown_owner() { # best-effort; si el usuario no existe (p.ej. en pruebas) lo avisa y sigue
+  local f="$1"
+  if id "$OWNER" >/dev/null 2>&1; then
+    chown "$OWNER:$OWNER" "$f" 2>/dev/null || log "  aviso: no pude chown $OWNER:$OWNER $f"
+  else
+    log "  aviso: el usuario '$OWNER' no existe; dejo el owner como está ($f)"
+  fi
+}
+
+# --- 1) versión actual ---------------------------------------------------------
+cur=""
+if [ -f "$VERSION_FILE" ]; then
+  cur="$(head -n1 "$VERSION_FILE" 2>/dev/null | tr -d '[:space:]')"
+fi
+
+# --- 2) última release estable -------------------------------------------------
+up="$(latest_release)"
+case "$up" in
+  ERR:net)
+    log "sin red (o GitHub inalcanzable) — no se comprueba la actualización. Nada que hacer."
+    exit 0 ;;
+  ERR:ratelimit)
+    log "rate limit de la API de GitHub — reintento en la próxima ejecución del timer."
+    exit 0 ;;
+  ERR:*)
+    log "no pude leer la última release (${up#ERR:}) — nada que hacer."
+    exit 0 ;;
+esac
+IFS='|' read -r up_tag up_url up_size up_date up_sha <<<"$up"
+[ -n "$ASSET_URL_OVERRIDE" ] && up_url="$ASSET_URL_OVERRIDE"
+
+logi "Decky Loader: nuestra versión='${cur:-desconocida}'  upstream(estable)='${up_tag}'  ($up_date)"
+
+# --- modo --check: solo informar ----------------------------------------------
+if [ "$CHECK" = 1 ]; then
+  if [ -z "$cur" ]; then
+    logi "  -> no hay versión local en ${VERSION_FILE}; la release upstream es ${up_tag}"
+    logi "  -> (estado: NO COMPARABLE / instalar si el loader existe)"
+    exit 0
+  fi
+  case "$(vcompare "$cur" "$up_tag")" in
+    eq) logi "  -> ✅ al día (${cur})" ;;
+    gt) logi "  -> ✅ al día (vamos por delante: ${cur} > ${up_tag})" ;;
+    lt) logi "  -> ⬆️  hay versión nueva (${cur} → ${up_tag}); asset: ${up_url}" ;;
+  esac
+  logi "(modo --check: no se descarga ni instala nada)"
+  exit 0
+fi
+
+# --- 3) ¿hay que actualizar? ---------------------------------------------------
+if [ ! -e "$LOADER" ]; then
+  log "no hay PluginLoader en ${LOADER} — nada que actualizar (lo siembra pocknix-decky-sync al arrancar)."
+  exit 0
+fi
+
+if [ -n "$cur" ]; then
+  case "$(vcompare "$cur" "$up_tag")" in
+    eq|gt)
+      log "al día (${cur} >= ${up_tag}). Nada que hacer."
+      exit 0 ;;
+  esac
+fi
+# a partir de aquí: $up_tag es más nueva (o no sabemos la actual)
+
+echo_state() { log "$*"; }
+echo_state "Actualizando Decky Loader: ${cur:-desconocida} -> ${up_tag} (asset ${up_size:-?} B)"
+
+# --- 4) descarga a un temporal EN EL MISMO DIRECTORIO (para mv atómico) ---------
+tmp="${LOADER_DIR}/.pocknix-decky-dl.$$"
+cleanup() { rm -f "$tmp" 2>/dev/null || true; }
+trap cleanup EXIT
+
+if ! curl -fSL --retry 3 --retry-delay 3 --max-time 300 -o "$tmp" "$up_url" 2>/dev/null; then
+  log "FALLO la descarga de ${up_url}"
+  telegram "❌ Decky Loader: falló la descarga de ${up_tag} en la Odin. Se queda la versión actual (${cur:-?})."
+  exit 1
+fi
+
+# --- 5) validación -------------------------------------------------------------
+# checksum publicado (best-effort): si la release trae un fichero de checksum, lo usamos.
+if [ -n "${EXPECTED_SHA:-}" ]; then
+  got="$(sha256sum "$tmp" | cut -d' ' -f1)"
+  if [ "$got" != "$EXPECTED_SHA" ]; then
+    log "FALLO la verificación sha256 (esperado ${EXPECTED_SHA}, obtenido ${got})"
+    telegram "❌ Decky Loader: sha256 no coincide para ${up_tag}. No instalo nada."
+    exit 1
+  fi
+fi
+if ! validate_elf "$tmp"; then
+  log "FALLO la validación del asset descargado (no es un ELF x86_64 válido)"
+  telegram "❌ Decky Loader: el asset ${up_tag} no pasó la validación (ELF x86_64). No instalo nada."
+  exit 1
+fi
+sha="$(sha256sum "$tmp" | cut -d' ' -f1)"
+log "  descarga OK: $(stat -c%s "$tmp" 2>/dev/null || echo '?') B, sha256=${sha}"
+
+# --- 6) backup + instalación ATÓMICA + .loader.version -------------------------
+ts="$(date +%Y%m%d-%H%M%S)"
+if [ -e "$LOADER" ]; then
+  cp -a "$LOADER" "${LOADER}.bak-${cur:-unknown}-${ts}" && log "  backup: ${LOADER}.bak-${cur:-unknown}-${ts}"
+fi
+if [ -f "$VERSION_FILE" ]; then
+  cp -a "$VERSION_FILE" "${VERSION_FILE}.bak-${ts}" && log "  backup: ${VERSION_FILE}.bak-${ts}"
+fi
+
+chmod 0755 "$tmp"
+chown_owner "$tmp"
+# mv dentro del mismo fs = rename atómico: el proceso viejo (si corre) sigue con su inode.
+if ! mv -f "$tmp" "$LOADER"; then
+  log "FALLO al instalar el nuevo PluginLoader en ${LOADER}"
+  telegram "❌ Decky Loader: no pude instalar ${up_tag} en ${LOADER}."
+  exit 1
+fi
+trap - EXIT
+
+vstage="${LOADER_DIR}/.loader.version.new.$$"
+printf '%s\n' "$up_tag" >"$vstage"
+chmod 0644 "$vstage"
+chown_owner "$vstage"
+mv -f "$vstage" "$VERSION_FILE"
+
+log "INSTALADO Decky Loader ${up_tag} en ${LOADER} (owner ${OWNER}, 0755)."
+log "NO reinicio Decky ni Steam: entra en el siguiente arranque del loader / de Steam."
+telegram "✅ Decky Loader actualizado en la Odin: ${cur:-desconocida} → ${up_tag}. Sin reiniciar nada (entra al siguiente arranque de Decky/Steam)."
+
+exit 0

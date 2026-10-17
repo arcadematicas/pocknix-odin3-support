@@ -201,6 +201,10 @@ overlay "packages/libretro-azahar"   "packages/shared/libretro-azahar"
 overlay "packages/libretro-bsnes-hd" "packages/shared/libretro-bsnes-hd"
 
 overlay "packages/libretro-cores-pocknix" "packages/shared/libretro-cores-pocknix"
+# pocknix-decky: Decky Loader (via FEX) + los plugins del OS. Es un overlay del DIRECTORIO
+# ENTERO, asi que los ficheros nuevos del paquete viajan solos: el self-updater
+# pocknix-decky-update (+ sus .service/.timer y el PKGBUILD) entran por esta linea, sin
+# registro adicional. Ver docs/DECKY-AUTOUPDATE.md.
 overlay "packages/pocknix-decky"   "packages/shared/pocknix-decky"
 
 # --- librerias + shims que necesitan los cores PRECOMPILADOS de ArkOS --------

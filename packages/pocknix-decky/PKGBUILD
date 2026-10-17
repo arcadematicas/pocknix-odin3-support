@@ -23,25 +23,37 @@ pkgver=0.1.0
 #     pocknix-decky-sync copies by basename, so the old name created a duplicate CSSLoader dir
 #     and never updated the real SDH-CssLoader. Ship it as /usr/share/decky-plugins/SDH-CssLoader.
 # 52: (previous) Panel de Control v0.66.0.
-# 53: re-vendor Hooandee's "Panel de Control" to v0.70.1 (release panel-de-control-v0.70.1,
+# 53: (previous) re-vendor Hooandee's "Panel de Control" to v0.70.1 (release panel-de-control-v0.70.1,
 #     2026-10-14): brings the AYN Odin 3 device profile (upstream b0b7d612) plus remote_access
 #     (dropbear) and display input_wake/screen_sleep. LOCAL PATCH (pocknix, TEMPORARY): add
 #     hdr=True to the ayn_odin3 profile (PR #947 a Hooandee, pending merge) — see
 #     panel-de-control/NOTES.pocknix.md.
-pkgrel=53
+# 54: Decky Loader auto-update. Bump the bundled loader to the latest stable upstream
+#     (_loaderver v3.2.9 -> v3.2.10, release 2026-10-04) and ship the self-updater:
+#       - /usr/local/bin/pocknix-decky-update  (checks the latest STABLE release of
+#         SteamDeckHomebrew/decky-loader, validates the `PluginLoader` asset as an x86_64 ELF
+#         and installs it atomically into ~/homebrew/services + .loader.version; NEVER restarts
+#         Decky/Steam — the change takes effect on the next loader/Steam start. Tolerant of no
+#         network, idempotent, journal + optional Telegram notice).
+#       - pocknix-decky-update.service / .timer (daily + shortly after boot).
+#     Why: the new Decky QAM update button is broken on ARM, so on the Odin there was no way to
+#     update Decky by hand. The frontend is NOT patched locally (upstream will fix it). See
+#     docs/DECKY-AUTOUPDATE.md. To revert, `pacman -S pocknix-decky` re-seeds the bundled build.
+pkgrel=54
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
 license=('GPL2')
 depends=('fex-emu' 'fex-rootfs')
-_loaderver=v3.2.9
+_loaderver=v3.2.10
 source=('pocknix-decky-run' 'pocknix-decky-sync' 'pocknix-decky-killall' 'pocknix-decky-sync.service'
         'pocknix-decky-loader.service' 'pocknix-decky-theme-eclipse' 'pocknix-decky-theme-eclipse.service'
         'css_translations.json' 'PluginLoader.json'
+        'pocknix-decky-update' 'pocknix-decky-update.service' 'pocknix-decky-update.timer'
         "PluginLoader-${_loaderver}::https://github.com/SteamDeckHomebrew/decky-loader/releases/download/${_loaderver}/PluginLoader")
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP'
-            '0a5246db98f2df93a6685ac8230e0acfbfa6e91d99b41b8dbbf1f94c308dedce')
+            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'c2cf316a53e1c1d318c6dda8821c827e5db275922987f9097956d7a1576e8258')
 
 package() {
   install -Dm755 "${srcdir}/PluginLoader-${_loaderver}" "${pkgdir}/usr/share/decky-loader/PluginLoader"
@@ -55,6 +67,18 @@ package() {
   install -Dm644 "${srcdir}/pocknix-decky-sync.service"   "${pkgdir}/usr/lib/systemd/system/pocknix-decky-sync.service"
   install -Dm644 "${srcdir}/pocknix-decky-loader.service" "${pkgdir}/usr/lib/systemd/system/pocknix-decky-loader.service"
   install -Dm644 "${srcdir}/pocknix-decky-theme-eclipse.service" "${pkgdir}/usr/lib/systemd/system/pocknix-decky-theme-eclipse.service"
+
+  # --- Decky Loader self-updater (pkgrel 54) -----------------------------------
+  # Keeps ~/homebrew's PluginLoader on the latest STABLE upstream release without touching the
+  # Odin (Decky's QAM update button is broken on ARM). Binary in /usr/local/bin, units in
+  # /etc/systemd/system; the timer is enabled via the .wants symlink below so the PACKAGE owns
+  # the enable (removing the package removes the symlink). See docs/DECKY-AUTOUPDATE.md.
+  install -Dm755 "${srcdir}/pocknix-decky-update"         "${pkgdir}/usr/local/bin/pocknix-decky-update"
+  install -Dm644 "${srcdir}/pocknix-decky-update.service" "${pkgdir}/etc/systemd/system/pocknix-decky-update.service"
+  install -Dm644 "${srcdir}/pocknix-decky-update.timer"   "${pkgdir}/etc/systemd/system/pocknix-decky-update.timer"
+  install -d "${pkgdir}/etc/systemd/system/timers.target.wants"
+  ln -sf "../pocknix-decky-update.timer" \
+    "${pkgdir}/etc/systemd/system/timers.target.wants/pocknix-decky-update.timer"
   # Decky's self-updater restarts plugin_loader.service; the symlink aliases it to ours.
   ln -s pocknix-decky-loader.service "${pkgdir}/usr/lib/systemd/system/plugin_loader.service"
   install -Dm644 "${srcdir}/PluginLoader.json"       "${pkgdir}/usr/share/fex-emu/AppConfig/PluginLoader.json"

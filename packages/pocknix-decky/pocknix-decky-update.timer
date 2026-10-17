@@ -1,0 +1,18 @@
+[Unit]
+Description=Periodically auto-update Decky Loader (daily + shortly after boot)
+# Dispara pocknix-decky-update.service. El QAM de Decky no puede actualizar en ARM, asi que
+# este timer es la via para que el PluginLoader siga la ultima release ESTABLE por si solo.
+
+[Timer]
+# 1) poco despues de arrancar, con margen para que la red haya subido y Decky este sembrado.
+OnBootSec=10min
+# 2) una vez al dia. Persistent recupera el chequeo si el equipo estuvo apagado a esa hora.
+OnCalendar=daily
+Persistent=true
+# Reparte la hora del disparo diario para no sincronizar todos los dispositivos (y no
+# coincidir justo con el arranque de un juego).
+RandomizedDelaySec=15min
+Unit=pocknix-decky-update.service
+
+[Install]
+WantedBy=timers.target

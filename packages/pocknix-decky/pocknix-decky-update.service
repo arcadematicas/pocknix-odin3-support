@@ -1,0 +1,17 @@
+[Unit]
+Description=Auto-update Decky Loader (PluginLoader) to the latest stable upstream release
+# Decky corre via FEX con el PluginLoader x86_64 oficial; este oneshot lo mantiene al dia.
+# Solo tiene sentido si Decky ya esta sembrado en ~/homebrew (si no, pocknix-decky-sync lo
+# siembra al arrancar). Se ordena DESPUES del seed para no pelear con el.
+After=network-online.target pocknix-decky-sync.service
+Wants=network-online.target pocknix-decky-sync.service
+ConditionPathExists=/home/deck/homebrew/services/PluginLoader
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-decky-update
+# Chequeo de fondo: nunca debe competir con un juego (baja prioridad de CPU e I/O).
+Nice=10
+IOSchedulingClass=idle
+# Sin red el script sale 0 con aviso; un fallo real (descarga/validacion) queda en el journal.
+SuccessExitStatus=0
