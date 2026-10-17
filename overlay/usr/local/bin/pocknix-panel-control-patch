@@ -42,6 +42,8 @@ import tempfile
 
 DEFAULT_FILE = "/home/deck/homebrew/plugins/Panel de Control/py_modules/device_profiles.py"
 PROFILE_KEY = "ayn_odin3"
+NEEDLE = "DFL.staticClasses.Title"
+FIXED = "DFL?.staticClasses?.Title"
 _TAG = "pocknix-panel-control-patch"
 
 
@@ -175,9 +177,63 @@ def patch_file(path: str) -> int:
     return 0
 
 
+def patch_frontend(plugin_dir: str) -> int:
+    """Parchea dist/index.js: `DFL.staticClasses.Title` -> `DFL?.staticClasses?.Title`.
+
+    POR QUE: Steam actualizo su cliente (17/10/2026) y el QAM paso a vistas CEF propias
+    (QuickAccess_uid2 / MainMenu_uid2). En el cliente nuevo `DFL.staticClasses` ya no
+    existe, y el plugin registra su pestana del QAM con
+    `title: jsx('div', {className: DFL.staticClasses.Title, ...})` -> TypeError
+    "Cannot read properties of undefined (reading 'Title')" -> la pestana NO se registra
+    y el Panel de Control DESAPARECE del QAM. Con optional chaining el className queda
+    undefined y la pestana vuelve a registrarse (lo unico que se pierde es esa clase CSS).
+    """
+    p = os.path.join(plugin_dir, "dist", "index.js")
+    if not os.path.isfile(p):
+        log(f"no existe {p!r}: nada que hacer en el frontend")
+        return 0
+    try:
+        with open(p, encoding="utf-8", errors="surrogateescape") as fh:
+            src = fh.read()
+    except OSError as exc:
+        log(f"ERROR leyendo {p!r}: {exc}")
+        return 1
+
+    if NEEDLE not in src:
+        log("ok: frontend sin DFL.staticClasses (nada que parchear)")
+        return 0
+
+    backup = p + ".orig-frontend"
+    if not os.path.exists(backup):
+        try:
+            shutil.copy2(p, backup)
+        except OSError as exc:
+            log(f"ERROR creando backup {backup!r}: {exc}")
+            return 1
+    n = src.count(NEEDLE)
+    tmp = p + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8", errors="surrogateescape") as fh:
+            fh.write(src.replace(NEEDLE, FIXED))
+        os.replace(tmp, p)
+    except OSError as exc:
+        log(f"ERROR escribiendo {p!r}: {exc}")
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        return 1
+    log(f"APLICADO: frontend parcheado ({n} refs) en {p!r} (backup: {backup!r})")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     path = argv[1] if len(argv) > 1 else DEFAULT_FILE
-    return patch_file(path)
+    rc = patch_file(path)
+    # El plugin vive en <plugin>/py_modules/device_profiles.py
+    plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(path)))
+    rc2 = patch_frontend(plugin_dir)
+    return rc or rc2
 
 
 if __name__ == "__main__":
