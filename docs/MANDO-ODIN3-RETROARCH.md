@@ -344,3 +344,25 @@ input_x_btn = "4"   # BTN_WEST  (0x134)
 ```
 
 Para **A/B invertidas**: `a=2`, `b=1`. Para **X/Y invertidas**: `x=3`, `y=4`.
+
+## 11. 17/10/2026 — POR QUÉ J1 TIENE QUE SER EL **VIRTUAL** (corregido)
+
+Medido en la Odin: **InputPlumber tiene capturado el mando físico** (`/dev/input/event6` abierto
+dos veces por el proceso `inputplumber`). RetroArch lo **enumera** y le aplica este `.cfg`
+(*"Se ha configurado AYN Odin3 Gamepad en el puerto 1"*), pero **no le llega ni un evento**: los
+botones no hacen nada. Los que sí entregan eventos son los **virtuales** que crea InputPlumber
+(`Microsoft X-Box 360 pad 0/1`, `28de:11ff`), que además tienen su autoconfig estándar.
+
+Por eso el jugador 1 debe apuntar al **virtual**:
+
+    input_player1_joypad_index = "1"     # primer pad virtual de InputPlumber
+    input_player2_joypad_index = "0"     # el físico (queda de reserva)
+
+⚠️ Los índices de los virtuales **bailan entre arranques** (`pad 0` puede ser `event11` o
+`event12`), pero como los dos son "X-Box 360 pad" el autoconfig es el mismo y da igual cuál caiga
+en el índice 1.
+
+Para usar de verdad el mando físico habría que **decirle a InputPlumber que no lo capture**
+(ROCKNIX lo hace con `target: ds5` + `keyboard` y **sin `passthrough`**; en el centro ya se ha
+quitado `passthrough: true` del `01-ayn-controller.yaml`, **sin verificar aún en la consola**).
+Mientras tanto: J1 = virtual.
