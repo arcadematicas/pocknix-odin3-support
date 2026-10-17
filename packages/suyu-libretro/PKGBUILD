@@ -30,6 +30,8 @@ url="https://suyu.dev"
 license=('GPLv3')
 depends=(
     'boost'
+    'boost-libs'   # las .so de verdad: boost solo trae las cabeceras. Sin esto el core no carga
+                    # (libboost_filesystem/context.so.1.92.0) — visto en la Odin el 17/10/2026
     'openssl'
     'libusb'
     'vulkan-icd-loader'
