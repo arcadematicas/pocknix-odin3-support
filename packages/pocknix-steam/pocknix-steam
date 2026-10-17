@@ -32,11 +32,16 @@ cd "${CLIENT_DIR}" 2>/dev/null || { echo "missing ${CLIENT_DIR}" >&2; exit 1; }
 # Marker Decky's CEF remote-debugging connection looks for.
 touch "${STEAM}/.cef-enable-remote-debugging" 2>/dev/null || true
 
-# Re-pin EVERY launch: the ARM64 Big-Picture client only works on steamdeck_publicbeta, and
-# anything that flips the channel leaves Steam reading "installed version 0", stuck on
-# "Installing update" with steamwebhelper crash-looping until this reasserts it.
-mkdir -p "${STEAM}/package"
-echo steamdeck_publicbeta > "${STEAM}/package/beta"
+# El canal es una PREFERENCIA DEL USUARIO (portado del upstream shuuri-labs, 17/10/2026): la
+# semilla es steamdeck_publicbeta, pero Valve ya publica steamdeck_stable para linuxarm64 y Steam
+# deja elegir Stable/Beta en sus ajustes. Cualquier otro valor se revierte (Preview/Main no tienen
+# cliente ARM64; sin sufijo le faltan las fuentes del gamepadui). Ver pocknix-steam-channel.
+. /usr/lib/pocknix/pocknix-steam-channel 2>/dev/null || POCKNIX_STEAM_CHANNEL=steamdeck_publicbeta
+if command -v pocknix_steam_channel_guard >/dev/null 2>&1; then
+  pocknix_steam_channel_guard "${STEAM}"
+else
+  mkdir -p "${STEAM}/package"; echo "${POCKNIX_STEAM_CHANNEL}" > "${STEAM}/package/beta"
+fi
 
 # Must precede Steam, which enumerates controllers once at startup; desktop mode leaves the pad
 # on xb360, and only `deck` gives Steam Input the Steam-native pad (Guide, QAM, L4/L5).
@@ -197,13 +202,21 @@ trap cleanup EXIT
 # clasifica el overlay interactivo por root_width (panel rotado de ancho lógico <=1200 -> QAM como
 # notificación: sin foco ni toque). armadaOS, la referencia, no usa el flag.
 # Ver docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md.
+# La comprobacion de ficheros al arrancar es lo que COMPLETA un cambio de canal ya usado (al
+# reiniciar, la instalacion deja ficheros del build anterior). En SD se salta por velocidad.
+VERIFY=()
+root_disk="$(lsblk -ndo PKNAME "$(findmnt -nvo SOURCE /)" 2>/dev/null || true)"
+if [ "$(cat "/sys/block/${root_disk}/device/type" 2>/dev/null)" = SD ]; then
+  VERIFY=(-noverifyfiles)
+fi
+
 env -u WAYLAND_DISPLAY \
   GAMESCOPE_FAKE_OUTPUT_MM="${PANEL_MM}" \
   gamescope "${GS_OUTPUT[@]}" -W "${GS_W}" -H "${GS_H}" -r "${REFRESH}" --xwayland-count 2 --mangoapp --backend drm \
     --fake-output-mm "${PANEL_MM}" \
     --force-orientation "${ORIENT}" "${GS_ROTATE[@]}" -e -- \
     /usr/lib/pocknix/pocknix-steam-splash "${GS_W}x${GS_H}" -- \
-    env LD_LIBRARY_PATH="${LDLP}" "${CLIENT}" -gamepadui -steamos3 -steampal -steamdeck -noverifyfiles -noshaders \
+    env LD_LIBRARY_PATH="${LDLP}" "${CLIENT}" -gamepadui -steamos3 -steampal -steamdeck "${VERIFY[@]}" -noshaders \
   >"${GS_LOG}" 2>&1 &
 GS_PID=$!
 

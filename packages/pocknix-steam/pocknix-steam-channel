@@ -1,0 +1,16 @@
+# pocknix-steam-channel: el canal de actualizacion del cliente Steam, para los dos lanzadores y el
+# instalador. steamdeck_publicbeta es solo la SEMILLA; el usuario elige el canal en los ajustes de
+# Steam (Valve ya publica steamdeck_stable para linuxarm64, 17/10/2026 — commit del upstream
+# shuuri-labs/pocknix-os 7a69f8cb).
+POCKNIX_STEAM_CHANNEL=steamdeck_publicbeta
+
+# Cualquier otro valor se revierte: Preview (steamdeck_beta) y Main (steamdeck_main) no publican
+# cliente linuxarm64 -> Steam lee "installed version 0" y se queda en bucle en "Installing update";
+# el publicbeta sin sufijo no trae el payload de fuentes del gamepadui. Vacio = sin beta = stable.
+pocknix_steam_channel_guard() {
+  local f="$1/package/beta"
+  case "$(cat "${f}" 2>/dev/null)" in
+    ''|steamdeck_stable|"${POCKNIX_STEAM_CHANNEL}") ;;
+    *) mkdir -p "$1/package"; echo "${POCKNIX_STEAM_CHANNEL}" > "${f}" ;;
+  esac
+}
