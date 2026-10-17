@@ -12,6 +12,7 @@
 # itself to nothing (the tile never appeared in Game Mode).
 import os
 import re
+import stat
 import struct
 import sys
 import zlib
@@ -282,6 +283,199 @@ def tiles() -> list[dict]:
     return out
 
 
+# ---------------------------------------------------------------------------
+# Steam Input por atajo (localconfig.vdf) — DESACTIVARLO para DeckStation
+# ---------------------------------------------------------------------------
+# El QAM, para un atajo, ofrece "Steam Input: activado/desactivado". Ese ajuste
+# NO vive en shortcuts.vdf: vive en userdata/<id>/config/localconfig.vdf, en
+#
+#     UserLocalConfigStore > apps > <appid> > UseSteamControllerConfig
+#
+# con "1" = activado (y es el valor por defecto cuando la clave NO existe) y
+# "0" = desactivado.
+#
+# POR QUE DESACTIVARLO: con Steam Input activado, al lanzar el atajo Steam se
+# APROPIA del mando (lo traduce a su mando virtual) y los emuladores de ES-DE se
+# quedan SIN eventos — es el mismo motivo por el que InputPlumber dejo de
+# capturar el mando fisico. Desactivado, el mando llega tal cual al emulador.
+#
+# SE ESCRIBE AQUI: pocknix-steam llama a este script JUSTO ANTES de arrancar
+# Steam, que es el unico momento seguro (Steam reescribe localconfig.vdf al
+# salir y pisaria el cambio). Idempotente: si ya esta a "0", no toca el fichero.
+#
+# REVERSIBLE: con Steam CERRADO, pon la clave a "1" a mano (o borra su bloque),
+# o quita la llamada a disable_steam_input() en main() y desinstala/olvida esta
+# version del script. Ver docs/STEAM-INPUT-DECKSTATION.md.
+#
+# El editor es stdlib puro (NO usa el modulo `vdf`): tokeniza el VDF de texto y
+# lo re-emite RESPETANDO el orden de las claves. Round-trip verificado byte a
+# byte contra el localconfig.vdf real de la Odin (69 KB, con blobs JSON).
+STEAM_INPUT_KEY = "UseSteamControllerConfig"
+
+
+def _vdf_tokens(text: str) -> list:
+    """Tokeniza un VDF de texto. Devuelve (tipo, valor, ini, fin); tipo en
+    {'{','}','str','bare'}. Los strings se guardan en crudo (con sus escapes)."""
+    toks, i, n = [], 0, len(text)
+    while i < n:
+        c = text[i]
+        if c in " \t\r\n":
+            i += 1
+        elif c == "{" or c == "}":
+            toks.append((c, None, i, i + 1))
+            i += 1
+        elif c == '"':
+            j = i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == '"':
+                    break
+                j += 1
+            if j >= n:
+                raise ValueError("string sin cerrar")
+            toks.append(("str", text[i + 1:j], i, j + 1))
+            i = j + 1
+        else:
+            j = i
+            while j < n and text[j] not in " \t\r\n{}\"":
+                j += 1
+            toks.append(("bare", text[i:j], i, j))
+            i = j
+    return toks
+
+
+def _vdf_parse(toks: list, i: int) -> dict:
+    """i apunta a '{'. Devuelve {children:[(clave,valor)], index:{clave:valor},
+    close:<indice del '}'>}. valor = ({'val',token} | nodo-anidado)."""
+    if toks[i][0] != "{":
+        raise ValueError("se esperaba '{'")
+    i += 1
+    node = {"children": [], "index": {}}
+    while toks[i][0] != "}":
+        k = toks[i]
+        if k[0] != "str":
+            raise ValueError("clave no es string")
+        v = toks[i + 1]
+        if v[0] == "{":
+            child = _vdf_parse(toks, i + 1)
+            node["children"].append((k, child))
+            node["index"][k[1]] = child
+            i = child["close"] + 1
+        else:
+            node["children"].append((k, ("val", v)))
+            node["index"][k[1]] = ("val", v)
+            i += 2
+    node["close"] = i
+    return node
+
+
+def _vdf_quote(tok: tuple) -> str:
+    return '"%s"' % tok[1] if tok[0] == "str" else tok[1]
+
+
+def _vdf_emit(node: dict, indent: str) -> str:
+    out = []
+    for k, val in node["children"]:
+        key = '"%s"' % k[1]
+        if isinstance(val, dict):
+            out.append(indent + key + "\n" + indent + "{\n"
+                       + _vdf_emit(val, indent + "\t") + indent + "}\n")
+        else:
+            out.append(indent + key + "\t\t" + _vdf_quote(val[1]) + "\n")
+    return "".join(out)
+
+
+def _localconfig_set_app_key(raw: str, appid: int, key: str, value: str):
+    """Fija UserLocalConfigStore>apps><appid>>key=value en un localconfig.vdf.
+
+    Devuelve (texto_nuevo, cambiado). Solo re-emite el arbol completo cuando hay
+    que cambiar algo; si el valor YA es el pedido, devuelve (raw, False) intacto.
+    """
+    toks = _vdf_tokens(raw)
+    if len(toks) < 2 or toks[0][0] != "str" or toks[1][0] != "{":
+        raise ValueError("no es un VDF de mapa en la raiz")
+    if toks[0][1] != "UserLocalConfigStore":
+        raise ValueError("raiz inesperada: %r" % toks[0][1])
+    root = _vdf_parse(toks, 1)
+    apps = root["index"].get("apps")
+    if not isinstance(apps, dict):
+        apps = {"children": [], "index": {}}
+        root["children"].append((("str", "apps", -1, -1), apps))
+        root["index"]["apps"] = apps
+    node = apps["index"].get(str(appid))
+    if not isinstance(node, dict):
+        node = {"children": [], "index": {}}
+        apps["children"].append((("str", str(appid), -1, -1), node))
+        apps["index"][str(appid)] = node
+    cur = node["index"].get(key)
+    if isinstance(cur, dict):
+        raise ValueError("%s es un mapa, no un valor" % key)
+    if cur is not None and cur[1][1] == value:
+        return raw, False  # ya esta asi: idempotente, no tocar el fichero
+    newval = ("val", ("str", value, -1, -1))
+    for idx, (k, _v) in enumerate(node["children"]):
+        if k[1] == key:
+            node["children"][idx] = (k, newval)  # reemplaza conservando el orden
+            break
+    else:
+        node["children"].append((("str", key, -1, -1), newval))
+    node["index"][key] = newval
+    return '"UserLocalConfigStore"\n{\n' + _vdf_emit(root, "\t") + "}\n", True
+
+
+def disable_steam_input(cfgdir: str, entries: list) -> None:
+    """Desactiva Steam Input (UseSteamControllerConfig=0) para el atajo de
+    DeckStation en el localconfig.vdf de esta cuenta. Idempotente y reversible:
+    si el atajo no esta en `entries`, o el fichero no existe, o ya vale "0", no
+    hace nada. Backup .pocknix-bak + validacion antes de escribir."""
+    entry = next((e for e in entries if e.get("appname") == "DeckStation"), None)
+    if entry is None:
+        return
+    appid = entry["appid"] & 0xFFFFFFFF  # el vdf usa el appid SIN signo
+    path = os.path.join(cfgdir, "localconfig.vdf")
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = f.read()
+    except OSError as e:
+        print(f"[pocknix-steam-sync] localconfig.vdf: {e} — sin tocar", file=sys.stderr)
+        return
+    try:
+        new, changed = _localconfig_set_app_key(raw, appid, STEAM_INPUT_KEY, "0")
+    except (ValueError, IndexError) as e:
+        print(f"[pocknix-steam-sync] localconfig.vdf: {e} — sin tocar", file=sys.stderr)
+        return
+    if not changed:
+        return
+    # Validacion barata: el texto re-emitido debe re-parsear y traer la clave a "0".
+    try:
+        root = _vdf_parse(_vdf_tokens(new), 1)
+        got = root["index"]["apps"]["index"][str(appid)]["index"][STEAM_INPUT_KEY]
+        if got[1][1] != "0":
+            raise ValueError("el valor no quedo aplicado")
+    except (ValueError, IndexError, KeyError) as e:
+        print(f"[pocknix-steam-sync] localconfig.vdf: validacion fallida ({e}) — sin tocar",
+              file=sys.stderr)
+        return
+    # Escritura atomica conservando permisos, con backup previo.
+    try:
+        shutil.copyfile(path, path + ".pocknix-bak")
+        st = os.stat(path)
+        tmp = path + ".pocknix-tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(new)
+        os.chmod(tmp, stat.S_IMODE(st.st_mode))
+        os.replace(tmp, path)
+    except OSError as e:
+        print(f"[pocknix-steam-sync] localconfig.vdf: {e} — sin tocar", file=sys.stderr)
+        return
+    print(f"[pocknix-steam-sync] {os.path.basename(os.path.dirname(cfgdir))}: "
+          f"Steam Input OFF para DeckStation (appid {appid})")
+
+
 def main() -> None:
     # Un set vacio poda nuestros tiles antiguos; los del usuario se conservan
     # siempre (solo se reemplaza el subconjunto con DevkitGameID=OWNER).
@@ -294,6 +488,9 @@ def main() -> None:
             # Las imagenes de la biblioteca van aparte del .vdf: Steam las busca
             # en su carpeta `grid` por appid (ver install_grid_art).
             install_grid_art(cfgdir, desired)
+            # Steam Input OFF para DeckStation: es el ajuste del QAM que hoy hay
+            # que tocar a mano (ver el bloque de disable_steam_input arriba).
+            disable_steam_input(cfgdir, desired)
         except OSError as e:
             print(f"[pocknix-steam-sync] {cfgdir}: {e}", file=sys.stderr)
 
