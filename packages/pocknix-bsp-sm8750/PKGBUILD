@@ -44,7 +44,11 @@ pkgver=0.2.0
 #   (b) el BSP ya no instala power-button-daemon.py/-.service: los provee pocknix-system-overlay
 #       (version del 14/10 con toque=suspender y mantener=menu). Tenerlos en los dos hacia que
 #       pacman abortara la transaccion entera ("exists in both").
-pkgrel=11
+# -12 (17/10): arranque de sensores a prueba de carreras. hexagonrpcd ahora va After=pd-mapper
+#   (el ADSP solo acepta INIT_ATTACH_SNS con "sensor_pd" registrado) y con Restart=always (salia
+#   con codigo 0 y systemd no lo reintentaba), y iio-sensor-proxy se ordena despues del SSC
+#   (enumera una sola vez al arrancar). Verificado en la Odin: rotv disponible.
+pkgrel=12
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
@@ -196,6 +200,8 @@ package() {
     "${pkgdir}/usr/lib/systemd/system/pd-mapper.service.d/10-odin3.conf"
   install -Dm644 "${sd}/sensors/hexagonrpcd-adsp-sensorspd.service.d/10-tree.conf" \
     "${pkgdir}/usr/lib/systemd/system/hexagonrpcd-adsp-sensorspd.service.d/10-tree.conf"
+  install -Dm644 "${sd}/sensors/iio-sensor-proxy.service.d/10-ssc.conf" \
+    "${pkgdir}/usr/lib/systemd/system/iio-sensor-proxy.service.d/10-ssc.conf"
   install -Dm644 "${sd}/steamos-manager/pocknix-steamos-manager.service"  "${unit}/pocknix-steamos-manager.service"
   # Re-escaneo de InputPlumber cuando aparece tarde el mando interno del Odin 3.
   # NO se habilita (sin [Install]): la dispara la regla udev de mas abajo via

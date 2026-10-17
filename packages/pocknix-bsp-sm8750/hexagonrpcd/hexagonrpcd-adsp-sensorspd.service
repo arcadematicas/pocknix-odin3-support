@@ -54,8 +54,11 @@ ConditionPathExists=/run/msm-firmware-loader/hexagonrpc/socinfo
 # hexagonrpcd NO se desdobra (solo hace fork() de los listeners): vive en primer plano.
 Type=simple
 ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp-secure -d adsp -s -R /run/msm-firmware-loader/hexagonrpc
-Restart=on-failure
+Restart=always
 RestartSec=5
+# El demonio sale con codigo 0 si el ADSP aun no tiene registrado "sensor_pd"
+# ("Unexpected buffer count ... INIT_ATTACH_SNS"): con on-failure systemd NO lo reintentaba
+y lo dejaba muerto hasta el siguiente arranque (visto en la Odin el 17/10). 
 
 [Install]
 WantedBy=multi-user.target
