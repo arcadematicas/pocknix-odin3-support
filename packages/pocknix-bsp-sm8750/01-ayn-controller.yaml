@@ -24,12 +24,12 @@ single_source: false
 # One or more source devices to combine into a single virtual device. The events
 # from these devices will be watched and translated according to the key map.
 source_devices:
-  # 17/10/2026: el mando AYN NO se gestiona aqui. InputPlumber lo capturaba (EVIOCGRAB) y
-  # dejaba sin eventos tanto a RetroArch (driver udev) como a los emuladores SDL, que SOLO
-  # ven el mando fisico (medido en la Odin con pygame-ce: 1 joystick, el AYN; los virtuales
-  # no aparecen en SDL). Al liberarlo, todos usan el mismo mando: RetroArch (player1 index 0
-  # + su autoconfig udev) y los standalone (SDL). Los paddles siguen aqui: su mapeo a teclas
-  # no lo necesitan los emuladores y Steam sigue teniendo su mando virtual.
+  - group: gamepad
+    evdev:
+      phys_path: rsinput-gamepad/input0
+      handler: event*
+    capability_map_id: ayn_mcu
+    passthrough: true
 
   - group: gamepad
     evdev:
