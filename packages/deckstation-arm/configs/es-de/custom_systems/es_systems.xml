@@ -2068,6 +2068,7 @@
         <theme>psx</theme>
     <command label="ares (Standalone)">%EMULATOR_ARES% --fullscreen --system "PlayStation" %ROM%</command>
 <command label="DuckStation">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/duckstation_libretro.so %ROM%</command>
+    <command label="GooseStation">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/goosestation_libretro.so %ROM%</command>
 <command label="PCSX ReARMed Rumble">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx_rearmed_rumble_libretro.so %ROM%</command>
         </system>
     <!-- Añadido 01/10/2026: sistema para el core libretro `puzzlescript` (PuzzleScript), que estaba
