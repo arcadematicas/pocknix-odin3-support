@@ -26,8 +26,6 @@ import type { ReactElement } from "react";
 
 const TAB_ID = 0x504b43; // "PKC"
 const OWNER = "pocknix-control";
-const RETRIES = 20;
-const RETRY_MS = 500;
 
 type QamTab = {
   id: number;
@@ -115,33 +113,40 @@ export function unregisterQamTab(): void {
 }
 
 /**
- * Al cargar el plugin el hook puede no existir todavía (Decky aún montando el QAM):
- * reintenta unas cuantas veces y se rinde en silencio (fallback: pestaña normal de Decky).
- * Devuelve una función para cancelar los reintentos.
+ * Al cargar el plugin el hook puede no existir todavía, y además Decky **recrea** el
+ * `TabsHook` en algunos momentos (`window.__TABS_HOOK_INSTANCE?.deinit(); ... = this`), con
+ * lo que nuestra pestaña se pierde. Por eso no basta con registrar una vez: un vigilante
+ * comprueba cada 2 s que siga estando y la vuelve a añadir si falta.
+ * Devuelve una función para pararlo.
  */
-export function registerQamTabWithRetry(
+export function startQamTabWatchdog(
   content: ReactElement,
   icon: ReactElement,
 ): () => void {
-  let tries = 0;
-  let timer: number | undefined;
   let cancelled = false;
 
-  const attempt = () => {
+  const tick = () => {
     if (cancelled) return;
-    if (registerQamTab(content, icon)) return;
-    if (++tries >= RETRIES) {
-      console.warn(
-        "[PocknixControl] sin pestaña propia en el QAM (se usa la pestaña de Decky)",
+    try {
+      const hook = tabsHook();
+      if (!hook) return; // Decky aún no tiene el hook: se reintenta en el siguiente tick
+      const present = hook.tabs.some(
+        (tab) => tab && tab.id === TAB_ID && tab.__pkcOwner === OWNER,
       );
-      return;
+      if (present) return;
+      if (registerQamTab(content, icon)) {
+        console.log("[PocknixControl] pestaña propia del QAM (re)registrada");
+      }
+    } catch {
+      /* nunca romper el plugin por esto */
     }
-    timer = window.setTimeout(attempt, RETRY_MS);
   };
-  attempt();
+
+  tick();
+  const interval = window.setInterval(tick, 2000);
 
   return () => {
     cancelled = true;
-    if (timer !== undefined) window.clearTimeout(timer);
+    window.clearInterval(interval);
   };
 }
