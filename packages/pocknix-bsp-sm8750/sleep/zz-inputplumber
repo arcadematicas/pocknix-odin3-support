@@ -1,0 +1,9 @@
+#!/bin/sh
+# InputPlumber expone el mando virtual (deck-uhid) por vhci_hcd: con una conexion activa
+# el driver se niega a suspender (error -16) y el s2idle aborta.
+# HookSleep lo suelta antes de dormir y HookWake lo recupera al despertar.
+case "$1" in
+  pre)  busctl call org.shadowblip.InputPlumber /org/shadowblip/InputPlumber/Manager org.shadowblip.InputManager HookSleep >/dev/null 2>&1 ;;
+  post) busctl call org.shadowblip.InputPlumber /org/shadowblip/InputPlumber/Manager org.shadowblip.InputManager HookWake  >/dev/null 2>&1 ;;
+esac
+exit 0

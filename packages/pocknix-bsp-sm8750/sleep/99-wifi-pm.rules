@@ -1,0 +1,3 @@
+# WCN7860 (17cb:110e): permitir que el PCIe entre en bajo consumo. Con power/control=on
+# el endpoint no entra en L2 y el s2idle no llega a completarse.
+ACTION=="add|bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x17cb", ATTR{device}=="0x110e", ATTR{power/control}="auto"
