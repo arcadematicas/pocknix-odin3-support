@@ -1,0 +1,4 @@
+# InputPlumber con target "deck-uhid" crea un HID virtual (28DE:12F0, "Generic Steam Controller").
+# Steam lo lee por hidraw. Sin esto, el nodo queda root:root 0600 y solo root puede abrirlo.
+# Mismo criterio que usa armada (70-armada-inputplumber.rules).
+KERNEL=="hidraw*", SUBSYSTEM=="hidraw", KERNELS=="0003:28DE:12F0.*", GROUP="input", MODE="0660"

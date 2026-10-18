@@ -49,5 +49,5 @@ options:
 # pad with the Steam (Guide) and Quick Access (...) buttons on opposite sides,
 # matching ArmadaOS. pocknix-gamepad-target may re-assert deck/xb360 per session.
 target_devices:
-  - deck
+  - deck-uhid
   - keyboard
