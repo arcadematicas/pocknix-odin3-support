@@ -56,5 +56,16 @@ if grep -rqs "Generic Steam Controller" /sys/class/input/*/device/name 2>/dev/nu
   exit 0
 fi
 
+# Solo UNA vez por arranque. Si algo vuelve a disparar la regla (inputplumber oculta y vuelve a
+# mostrar el dispositivo al arrancar), sin esto se entra en un bucle de reinicios que acaba en
+# "start-limit-hit" y deja SIN MANDO (visto en la Odin el 18/10/2026, con 0.75.2 y con 0.82).
+STAMP=/run/pocknix/inputplumber-rescan.done
+if [ -e "${STAMP}" ]; then
+  echo "pocknix-inputplumber-rescan: ya se reinicio en este arranque; nada que hacer"
+  exit 0
+fi
+mkdir -p /run/pocknix 2>/dev/null || true
+: > "${STAMP}" 2>/dev/null || true
+
 echo "pocknix-inputplumber-rescan: '${DEVNAME}' listo (/dev/input/${ev}); reinicio inputplumber"
 exec systemctl restart inputplumber.service

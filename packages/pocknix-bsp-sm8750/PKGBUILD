@@ -52,7 +52,7 @@ pkgver=0.2.0
 #   (antes iba en la esquina inferior derecha), algo mas pequeno. Mismas 240 frames, 46,4 MB.
 # -14 (17/10): se vuelve a la ESQUINA (como el diseno anterior), calvOS algo mas pequeno (100px)
 #   y con FUNDIDO de entrada (frames 70-120) para que aparezca despues de "ODIN 3". 48,4 MB.
-pkgrel=15
+pkgrel=16
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
