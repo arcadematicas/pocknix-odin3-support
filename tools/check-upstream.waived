@@ -28,3 +28,9 @@ armada|0075-ASoC-wsa884x-preserve-Pocket-S2-compander-gain|dispositivo Pocket S2
 armada|0538-ASoC-qcom-sc8280xp-cap-Pocket-DS-speaker-digital-volume|Pocket DS, no Odin 3
 armada|0050-clk-qcom-gxclkctl-kaanapali-fix-gx-gdsc-collapse|ya en 7.2.11
 armada|0055-backlight-aw99706-upstream-fixes|ya en 7.2.11
+
+# --- evaluados a mano el 19/10 (no procede llevarlos tal cual) ---
+armada|0035-arm64-dts-qcom-sm8750-set-CPU-capacity-dmips-mhz|ya lo tenemos como 0076-...set-CPU-capacity-dmips-mhz
+armada|0038a-arm64-dts-qcom-sm8750-map-A8xx-RSCC-registers|se salta: nuestro DTS ya cubre el mapeo RSCC del A8xx
+armada|1022-wifi-ath12k-split-WCN7860-scans-by-firmware-ranges|pendiente: hay que rebasar 1022+1023 juntos (1023 solo rompe mac.c)
+armada|1023-wifi-ath12k-protect-TX-during-associated-range-scans|idem (va con 1022)
