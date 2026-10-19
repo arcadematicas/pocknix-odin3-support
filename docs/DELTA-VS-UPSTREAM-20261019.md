@@ -1,5 +1,12 @@
 # Nuestra rama vs `shuuri-labs:sm8750-odin3` (19/10/2026)
 
+> **DECISIÓN (19/10, Fransis): NO se rebasa. Seguimos con nuestro fork como fuente de
+> verdad.** Nosotros somos los testers del hardware; shuuri no lo tiene. Mantenemos el
+> control de versiones (Steam, MangoHUD, FEX, Mesa...) y afinamos a nuestro gusto.
+> Este documento queda como **referencia** (qué compartimos y qué es solo nuestro), no
+> como un plan a ejecutar. Upstream se usa como **fuente de parches** que evaluamos y
+> llevamos cuando nos interesan.
+
 Inventario para planificar el día que integremos nuestro trabajo en la rama de
 shuuri (o al revés). **No es un plan de hoy**: sirve de mapa.
 
