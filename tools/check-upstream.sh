@@ -92,7 +92,12 @@ PKGS=(mesa pocknix-turnip-arm mangohud fex-emu gamescope inputplumber)
 # deckard-vulkan-layers: NO lo empaquetamos (se instala directo del repo Deckard).
 # "Nuestra" versión = la instalada en la Odin; se mantiene a mano cuando se sube
 # (ver docs/REVISION-UPSTREAM-*.md). p.ej. 20261001.1-4.
-VK_LAYERS_OUR="20261001.1-4"
+VK_LAYERS_OUR="?"
+  if [ -f "${REPO}/packages/shared/pocknix-vk-valve/PKGBUILD" ]; then
+    VK_LAYERS_OUR="$(grep -m1 '^pkgver=' "${REPO}/packages/shared/pocknix-vk-valve/PKGBUILD" | cut -d= -f2-)"
+  elif [ -f "${REPO}/packages/soc/pocknix-vk-valve/PKGBUILD" ]; then
+    VK_LAYERS_OUR="$(grep -m1 '^pkgver=' "${REPO}/packages/soc/pocknix-vk-valve/PKGBUILD" | cut -d= -f2-)"
+  fi
 
 # kernel.conf -> KERNEL_VERSION
 grep -m1 '^: "${KERNEL_VERSION:=' "$REPO/kernel/sm8750/kernel.conf" 2>/dev/null \
