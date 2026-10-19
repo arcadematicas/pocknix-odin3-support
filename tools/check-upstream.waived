@@ -1,0 +1,18 @@
+# check-upstream.waived — parches que check-upstream.sh NO debe contar como "FALTAN".
+#
+# Formato de cada línea:  repo|nombre-de-parche|[motivo]
+#   repo   = ROCKNIX o armada
+#   nombre = nombre del parche (o prefijo estable); casa por prefijo
+#   motivo = por qué lo ignoramos (informativo)
+# Las líneas que empiezan por '#' y las vacías se ignoran.
+
+# --- ROCKNIX (kernel SM8750) ---
+# Estos tres ya están en linux 7.2.11; los borramos del stack a propósito
+# (ver docs/KERNEL-LIMPIEZA-20261019.md):
+ROCKNIX|0050-clk-qcom-gxclkctl-kaanapali-fix-gx-gdsc-collapse.patch|ya en 7.2.11 (gdsc_gx_disable ya existe)
+ROCKNIX|0055-backlight-aw99706-upstream-fixes.patch|ya en 7.2.11 (fixes ya en mainline)
+ROCKNIX|0517-usb-typec-mux-dont-swallow-EPROBE_DEFER.patch|ya en 7.2.11 (queda 0517-usb-typec-mux-zero-init-sw_devs)
+
+# 0044 lo tenemos deshabilitado a propósito en 90-disabled (armada lo quitó para
+# el deep sleep de PCIe). Prefijo para que no aparezca como faltante si cambia:
+ROCKNIX|0044-clk-qcom-gcc-sm8750-Do-not-turn-off-PCIe-GDSCs|deshabilitado a propósito en 90-disabled
