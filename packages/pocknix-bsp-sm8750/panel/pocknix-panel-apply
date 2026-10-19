@@ -1,0 +1,16 @@
+#!/bin/sh
+# Aplica la calibracion del panel guardada por `pocknix-panel-calib --save`.
+# El panel tarda en aparecer, asi que se espera al atributo hasta 30 s.
+CONF=/etc/pocknix/panel-calibration.conf
+[ -f "${CONF}" ] || exit 0
+. "${CONF}"
+P=""
+for i in $(seq 1 60); do
+    P=$(dirname $(echo /sys/bus/mipi-dsi/devices/*/frame_len_60 2>/dev/null) 2>/dev/null)
+    [ -e "${P}/frame_len_60" ] && break
+    sleep 0.5
+done
+[ -e "${P}/frame_len_60" ] || exit 0
+[ -n "${FRAME_LEN_60:-}" ]  && echo "${FRAME_LEN_60}"  > "${P}/frame_len_60"
+[ -n "${FRAME_LEN_120:-}" ] && echo "${FRAME_LEN_120}" > "${P}/frame_len_120"
+exit 0

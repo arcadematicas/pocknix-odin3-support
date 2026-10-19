@@ -1,8 +1,9 @@
 #!/bin/sh
 # WCN7860/ath12k no entra en L2 al suspender ("qcom-pcie: Timeout waiting for L2 entry")
-# y aborta el s2idle. Se apaga la radio antes de dormir y se recupera al despertar.
+# y aborta el s2idle. Se apagan WiFi y Bluetooth antes de dormir (BT encendido
+# se come la bateria: armada#264) y se recuperan al despertar.
 case "$1" in
-  pre)  nmcli radio wifi off ;;
-  post) nmcli radio wifi on  ;;
+  pre)  nmcli radio wifi off; rfkill block bluetooth 2>/dev/null ;;
+  post) rfkill unblock bluetooth 2>/dev/null; nmcli radio wifi on ;;
 esac
 exit 0

@@ -1,0 +1,12 @@
+[Unit]
+Description=Aplica la calibracion del panel (frame_len 60/120)
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/pocknix-panel-apply
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+# pocknix-panel-calib — mide el vblank real y ajusta frame_len_<rate> del panel
+# hasta que el refresco medido coincide con el nominal (60/120 Hz).
+#
+# El parche 0518 (ROCKNIX) expone /sys/bus/mipi-dsi/devices/*/frame_len_60|120.
+# El valor correcto es distinto en cada unidad (tolerancia del panel/clock), asi
+# que se calibra UNA vez por consola y se guarda en /etc/pocknix/panel-calibration.conf;
+# pocknix-panel-apply lo reaplica en cada arranque.
+#
+# Uso:
+#   pocknix-panel-calib 60            # mide y ajusta 60 Hz (imprime el valor)
+#   pocknix-panel-calib 120 --save    # ademas lo guarda para el arranque
+#
+# Medido de la misma forma que ROCKNIX (DRM_IOCTL_WAIT_VBLANK); ver su script
+# rocknix-panel-calibration (GPL-2.0).
+import fcntl
+import glob
+import os
+import struct
+import sys
+import time
+
+DRM_IOCTL_WAIT_VBLANK = 0xC018643A
+STEP = 4
+CONF = "/etc/pocknix/panel-calibration.conf"
+
+
+def panel_dir():
+    hits = glob.glob("/sys/bus/mipi-dsi/devices/*/frame_len_60")
+    if not hits:
+        sys.exit("no hay atributos frame_len_* (falta el parche 0518?)")
+    return os.path.dirname(hits[0])
+
+
+def wait(fd, pipe):
+    buf = bytearray(struct.pack("IIqq", 1 | pipe << 1, 1, 0, 0))
+    fcntl.ioctl(fd, DRM_IOCTL_WAIT_VBLANK, buf)
+    _, _, sec, usec = struct.unpack("IIqq", buf)
+    return sec + usec / 1e6
+
+
+def find():
+    for card in sorted(glob.glob("/dev/dri/card*")):
+        fd = os.open(card, os.O_RDWR)
+        for pipe in range(8):
+            try:
+                wait(fd, pipe)
+                return fd, pipe
+            except OSError:
+                pass
+        os.close(fd)
+    sys.exit("no hay salida de pantalla activa")
+
+
+def rate(fd, pipe):
+    ts, end = [], time.monotonic() + 0.5
+    while time.monotonic() < end:
+        ts.append(wait(fd, pipe))
+    return (len(ts) - 1) / (ts[-1] - ts[0])
+
+
+def save(rate_hz, value):
+    os.makedirs(os.path.dirname(CONF), exist_ok=True)
+    lines = []
+    if os.path.exists(CONF):
+        lines = [l for l in open(CONF).read().splitlines() if l and not l.startswith("FRAME_LEN_%d=" % rate_hz)]
+    lines.append("FRAME_LEN_%d=%d" % (rate_hz, value))
+    with open(CONF, "w") as f:
+        f.write("\n".join(sorted(lines)) + "\n")
+    print("guardado en %s" % CONF, file=sys.stderr)
+
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(__doc__)
+    target = int(sys.argv[1])
+    do_save = "--save" in sys.argv[2:]
+    tolerance, big_error = (0.05, 0.1) if target == 60 else (0.2, 0.4)
+    attr = os.path.join(panel_dir(), "frame_len_%d" % target)
+    try:
+        os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(10))
+    except OSError:
+        pass
+    fd, pipe = find()
+    start = int(open(attr).read())
+    value = start // STEP * STEP
+    start_rate = rate(fd, pipe)
+    deadline = time.monotonic() + 60
+    adjust_until = time.monotonic() + 15
+
+    def write(v):
+        with open(attr, "w") as f:
+            f.write(str(v))
+        time.sleep(0.5)
+
+    try:
+        write(value)
+        while time.monotonic() < deadline:
+            delta = rate(fd, pipe) - target
+            settled = 0 <= delta <= tolerance
+            if time.monotonic() < adjust_until:
+                if not settled:
+                    step = STEP if abs(delta) < big_error else 2 * STEP
+                    value += step if delta > 0 else -step
+                    write(value)
+            elif settled:
+                print("%d Hz: %.3f -> %.3f Hz (0x%x -> 0x%x)" % (target, start_rate, target + delta, start, value),
+                      file=sys.stderr)
+                print(value)
+                if do_save:
+                    save(target, value)
+                return
+            else:
+                adjust_until = time.monotonic() + 3.75
+    except OSError:
+        pass
+    write(start)
+    sys.exit("%d Hz: sin valor estable en rango" % target)
+
+
+if __name__ == "__main__":
+    main()
