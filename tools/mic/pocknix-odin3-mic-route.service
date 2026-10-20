@@ -1,0 +1,15 @@
+[Unit]
+Description=Routing del microfono del Odin 3 (WCD939x) fuera del UCM
+Documentation=file:///usr/share/doc/pocknix-odin3-mic/brief.md
+After=sound.target
+ConditionPathExists=/proc/asound/card0
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/pocknix-odin3-mic-route
+# Un fallo aqui no debe tumbar el audio: el script ya sale 0, pero por si acaso.
+SuccessExitStatus=0 1
+
+[Install]
+WantedBy=multi-user.target

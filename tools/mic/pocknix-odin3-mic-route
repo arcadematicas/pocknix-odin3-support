@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# pocknix-odin3-mic-route — routing del microfono del Odin 3 (WCD939x), separado del UCM.
+#
+# Por que un servicio y no csets en el UCM:
+#   * un cset a un control inexistente ABORTA la secuencia del UCM -> PipeWire descarta el
+#     perfil entero (Dummy Output, te quedas sin audio), y
+#   * modelar micro interno y micro de cascos como devices que comparten PCM fuerza a
+#     PipeWire a crear perfiles de tarjeta distintos y reconstruye la tarjeta al cambiar.
+# Aqui, si algo no existe, se avisa y se sigue; como mucho no hay micro.
+#
+# Config: /etc/pocknix/mic-route.conf  (MODE=DMIC por defecto; ADC = micros analogicos)
+set -u
+CONF=/etc/pocknix/mic-route.conf
+CARD="${MIC_CARD:-0}"
+MODE="DMIC"
+[ -r "$CONF" ] && . "$CONF"
+
+log() { echo "mic-route: $*"; }
+
+have() { amixer -c "$CARD" sget "$1" >/dev/null 2>&1; }
+
+# set <control> <valor> — solo si el control existe; un fallo no aborta nada.
+set_ctl() {
+  local ctl="$1" val="$2"
+  if ! have "$ctl"; then log "sin control '$ctl' (se omite)"; return 0; fi
+  if amixer -c "$CARD" cset "$ctl" "$val" >/dev/null 2>&1; then
+    log "$ctl = $val"
+  else
+    log "aviso: '$ctl' existe pero no acepta '$val'"
+  fi
+}
+
+log "modo $MODE, tarjeta $CARD"
+
+# El TX que usa el dai-link "WCD Capture" (parche 0046: wcd939x 1 + swr2 + lpass_txmacro).
+set_ctl "TX0 MODE" "$MODE"
+
+case "$MODE" in
+  ADC|AMIC*)
+    # Micros analogicos del codec (fragmentos de alsa-ucm-conf: AnalogMic1/3/4/5).
+    set_ctl "ADC1_MIXER Switch" 1
+    set_ctl "ADC1 MUX" "CH1_AMIC1"
+    set_ctl "ADC1 Switch" 1
+    set_ctl "ADC1 Volume" 10
+    set_ctl "ADC2 Volume" 10
+    ;;
+  *)
+    # DMIC del codec: solo el modo del TX y, si existen, los switches de DMIC.
+    set_ctl "DMIC En Capture Switch" on
+    set_ctl "DMIC Capture Switch" on
+    ;;
+esac
+
+exit 0
