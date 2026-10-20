@@ -43,7 +43,7 @@ mic_installed() {
   ssh "$HOST" "grep -q 'SectionDevice.\"Mic\"' ${UCM_DIR}/HiFi.conf 2>/dev/null" && echo si || echo no
 }
 
-case "${1:-}" in -h|--help) sed -n "2,15p" "$0"; exit 0 ;; esac
+case "${1:-}" in -h|--help) sed -n '2,14p' "$0"; exit 0 ;; esac
 
 ssh_ok || die "no puedo conectar con '$HOST' (Tailscale arriba? ODIN_HOST=usuario@ip?)"
 
