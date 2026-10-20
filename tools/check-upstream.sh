@@ -553,25 +553,21 @@ vk_d = deck_best.get('vulkan-layers')
 if vk_d is not None:
     vk_ver, vk_date, vk_dt = vk_d
     vk_show = '%s (%s)' % (vk_ver, vk_dt.strftime('%Y-%m-%d') if vk_dt else vk_date)
-    c_vk = cmp_deckard(vk_ver, vk_layers_our)
-    if c_vk is not None and c_vk > 0:
-        estado_vk = '<<< ACTUALIZAR (deckard)'
-    elif c_vk is not None:
-        estado_vk = 'ok'
-    else:
-        estado_vk = '?'
+    # No lo empaquetamos: fila solo informativa. Compararlo contra pocknix-vk-valve (que es
+    # Turnip/mesa, no las layers) era un falso positivo diario -> nunca se marca ACTUALIZAR.
+    estado_vk = 'informativo (no lo empaquetamos)'
 else:
     vk_show = '?'
     estado_vk = '?'
 print('   %-18s %-30s %-30s %-28s %s' % (
     'deckard-vulkan-layers',
-    cut(vk_layers_our if vk_layers_our != '?' else '? (no empaquetado)', 30),
+    '-',
     '-',
     cut(vk_show, 28),
     estado_vk))
 
 print('   Nota: pocknix-turnip-arm no tiene equivalente directo en ROCKNIX (usa armsx2-turnip).')
-print('   Nota: deckard-vulkan-layers no lo empaquetamos (se instala directo del repo Deckard); su versión "nuestra" se mantiene a mano en el script.')
+print('   Nota: deckard-vulkan-layers no lo empaquetamos; la fila es informativa y no cuenta como novedad.')
 
 # =========================================================
 # 3) PARCHES SM8750
@@ -741,7 +737,9 @@ if deck_entries is not None:
         'mesa': our_pkg.get('mesa', '?'),
         'mangohud': our_pkg.get('mangohud', '?'),
     }
-    for label in ('vulkan-layers', 'mesa', 'mangohud'):
+    # 'vulkan-layers' queda fuera: no lo empaquetamos (y our_deck['vulkan-layers'] es la
+    # version de pocknix-vk-valve, que es mesa -> comparar daba un falso positivo).
+    for label in ('mesa', 'mangohud'):
         b = deck_best.get(label)
         if not b:
             continue

@@ -34,3 +34,4 @@ armada|0035-arm64-dts-qcom-sm8750-set-CPU-capacity-dmips-mhz|ya lo tenemos como 
 armada|0038a-arm64-dts-qcom-sm8750-map-A8xx-RSCC-registers|se salta: nuestro DTS ya cubre el mapeo RSCC del A8xx
 armada|1022-wifi-ath12k-split-WCN7860-scans-by-firmware-ranges|pendiente: hay que rebasar 1022+1023 juntos (1023 solo rompe mac.c)
 armada|1023-wifi-ath12k-protect-TX-during-associated-range-scans|idem (va con 1022)
+armada|0037-arm64-dts-qcom-sm8750-add-CPU-thermal-cooling|en nuestro arbol como 0075-...add-CPU-thermal-cooling
