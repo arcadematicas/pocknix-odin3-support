@@ -44,3 +44,22 @@ DESCARTADO, ESPERANDO.
   comentarios de shuuri todavía.
 - [ESPERANDO] #135 part 2/2 · faltan 15 min de juego GPU-intensivo + `journalctl -k | grep -iE
   'gdsc|gmu|oob|hangcheck|recover'` (la consola se quedó en el trabajo el 19/10).
+
+## 21-22/10 — puesta al día
+- [HECHO] 22/10 · **Panel 60 Hz**: el modo funciona si es el **primero/preferido** (59,95 Hz, 0
+  errores). El bloqueo real es que el panel **no se re-inicializa tras un disable** (`0x53`/`0x9C`
+  con `-110`). Detalle en `REFRESH-60HZ-20261021.md` §9. Pendiente: parámetro `preferred_refresh`
+  y arreglar disable/enable.
+- [ESPERANDO] 21/10 · **armada #766** (issue abierto por nosotros): ¿captura en SM8750? Evidencia:
+  el FE de captura pide `graph_id=2`, `q6apm_get_audioreach_graph` falla y `audioreach_alloc_graph_pkt`
+  devuelve `ERR_CAST` **sin log**; ninguna de las dos tplg (AYN Android y Kaanapali-MTP) publica ese
+  grafo. Detalle en `MIC-SOUNDWIRE-20261021.md` §7-8.
+- [HECHO] 21/10 · kernel: `swr2` dout-ports (`1030`), tx-macro PM clocks (`1031`), 0048b PLL bias
+  (`1032`). Ninguno arregló el micro; 0048b se queda (lo lleva armada).
+- [PENDIENTE] **#135 de shuuri**: 15 min de juego GPU + `journalctl -k | grep -iE
+  'gdsc|gmu|oob|hangcheck|recover'` para cerrar el checklist.
+- [PENDIENTE] `0108` de armada (DPU flip event tras vblank irq) para frame pacing — evaluar.
+- [HECHO] 21/10 · QAM: el limitador de FPS funciona (30→30); el **refresco del panel no** (es
+  cosmético en nuestro cliente ARM; y el panel no acepta cambios en caliente, ver arriba).
+- [HECHO] 21/10 · watchdog de Steam corregido (no mata steamwebhelper mientras la UI aún no ha
+  respondido nunca) y lanzador de RetroArch con el mando virtual por nombre.
