@@ -248,3 +248,45 @@ El valor concreto de `TX SMIC MUX` (SWR_MICx) se determina empíricamente tras e
 - `sm8750.dtsi` `swr1: soundwire@6ad0000` (label RX) → `qcom,din-ports = <1>`, `qcom,dout-ports = <11>` (correcto).
 - `sm8650.dtsi` `swr2: soundwire@6d30000` en `torvalds/master` → `qcom,dout-ports = <1>` (ya arreglado; prueba de que el fix mergeó para SM8650 y no para SM8750).
 - `sm8750-mtp.dts` / `sm8650-qrd.dts` → dai-link `wcd-capture-dai-link` con `sound-dai = <&wcd939x 1>, <&swr2 0>, <&lpass_txmacro 0>` y `qcom,tx-port-mapping = <2 2 3 4>` (igual que nuestro `cq8725s-ayn-common.dtsi`).
+
+---
+
+## 7. RESULTADO EN HARDWARE (21/10, atardecer)
+
+Probado en la consola con kernels de diagnóstico (`7.2.11-10/11`, prints temporales en
+`q6apm-dai` y `q6apm-lpass-dais`, ya retirados en `-12`).
+
+### Lo que se descartó
+- **`swr2` dout-ports** (fix `1030`, upstream `c0bec4b5`): el aviso
+  `dout-ports (0) mismatch with controller (1)` **desaparece**, pero la captura sigue en EIO.
+- **Relojes del TX macro** (armada `0560` → PM clocks): aplicado, reproducción intacta,
+  captura sigue en EIO.
+- **Topología**: probada la de **Kaanapali-MTP** (38 KB, linux-firmware) en lugar de la de AYN
+  (18 KB, Android): reproducción OK, captura **igual de rota** → no es la tplg.
+- **DTS del dai-link**: idéntico al de `sm8750-mtp.dts` (codec `wcd939x 1` + `swr2 0` +
+  `lpass_txmacro 0`; cpu `q6apmbedai TX_CODEC_DMA_TX_3`).
+- **Muxes del códec**: `TX0 MODE=ADC_HIFI` + `TX DMIC MUX0` = DMIC0/1/2/3 + `MultiMedia3 Mixer`
+  on → EIO siempre.
+
+### Lo que se midió (con prints)
+```
+q6apm-dai  DIAG: graph_open ERR <basura>      ← el FE falla al abrir su grafo
+q6apm-lpass-dais DIAG: prepare dai_id=120 stream=1 graph=...   ← el BE SÍ se prepara
+q6apm-dai  DIAG: graph_prepare... / graph_start...
+q6apm-lpass-dais DIAG: trigger dai_id=120 cmd=1 → cmd=0 (0,6 s)
+```
+- **El BE (dai 120 = TX_CODEC_DMA_TX_3) sí se prepara y arranca.**
+- **El FE falla en `q6apm_graph_open`** para el stream de captura → el DSP no tiene grafo de
+  captura que empujar y `read` devuelve EIO a los 0,6 s.
+- `graph_id` que usa el FE = **2** (viene de `cpu_dai->driver->id`, es decir, de la tplg).
+
+### Conclusión y siguiente paso
+El bloqueo está en el **mapeo FE→grafo de la topología**: el id 2 que mainline usa para el FE de
+captura no corresponde a un grafo de captura válido en estas tplg (ni la de Android ni la MTP).
+Siguiente línea de trabajo:
+1. Decodificar la tplg (`SM8750-AYN-tplg.bin`) para listar sus `graph_id` de captura reales
+   (estructura GKV — se puede volcar con un parser propio o con `q6apm` en modo debug).
+2. Comparar con lo que espera `q6apm-dai` (`cpu_dai->driver->id`), y/o generar una tplg propia
+   (ROCKNIX tiene tooling de topology para SM8650/SM8750).
+3. Alternativa corta: preguntar en ROCKNIX/armada si tienen captura funcionando en algún SM8750
+   (Odin 3/Thor) y con qué tplg.
