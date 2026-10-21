@@ -1,0 +1,2 @@
+# Informes de la sonda del micro (se generan en cada --probe, no se versionan)
+mic-probe-*.txt
