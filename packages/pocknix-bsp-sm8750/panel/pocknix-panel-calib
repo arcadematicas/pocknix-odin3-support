@@ -76,6 +76,11 @@ def main():
     target = int(sys.argv[1])
     do_save = "--save" in sys.argv[2:]
     tolerance, big_error = (0.05, 0.1) if target == 60 else (0.2, 0.4)
+    # El paso tiene que ser MENOR que la tolerancia o no converge nunca: a 60 Hz cada
+    # unidad de frame_len son 60/3955 = 0.0152 Hz, asi que un paso de 4 (0.061 Hz) se
+    # salta la ventana de 0.05 Hz y el script oscila hasta rendirse. Con paso 2 (0.030 Hz)
+    # si cabe. A 120 Hz el paso 4 (0.03 Hz) ya cabe en su tolerancia de 0.2.
+    step_size = 2 if target == 60 else STEP
     attr = os.path.join(panel_dir(), "frame_len_%d" % target)
     try:
         os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(10))
@@ -83,7 +88,7 @@ def main():
         pass
     fd, pipe = find()
     start = int(open(attr).read())
-    value = start // STEP * STEP
+    value = start // step_size * step_size
     start_rate = rate(fd, pipe)
     deadline = time.monotonic() + 60
     adjust_until = time.monotonic() + 15
@@ -100,7 +105,7 @@ def main():
             settled = 0 <= delta <= tolerance
             if time.monotonic() < adjust_until:
                 if not settled:
-                    step = STEP if abs(delta) < big_error else 2 * STEP
+                    step = step_size if abs(delta) < big_error else 2 * step_size
                     value += step if delta > 0 else -step
                     write(value)
             elif settled:
