@@ -137,4 +137,30 @@ case "$(basename "${EXEC_TARGET:-}")" in
   ;;
 esac
 
+# 4c. RetroArch: el indice jsN del mando VIRTUAL cambia a mitad de sesion (Steam Input e
+#     InputPlumber crean y destruyen nodos: hemos visto js1 pasar a js2 y volver). Con un
+#     indice fijo RetroArch se queda sin mando y "desaparecen" los atajos.
+#     Se prefiere el mando FISICO de la consola (AYN Odin3 Gamepad), que existe desde el
+#     arranque y conserva su indice; si no esta, se usa el virtual de InputPlumber.
+case "$(basename "${EXEC_TARGET:-}")" in
+  *[Rr]etro[Aa]rch*)
+    _ayn=""; _virt=""; _name=""
+    for _j in /dev/input/js*; do
+      [ -e "$_j" ] || continue
+      _n="${_j##*js}"
+      _nm="$(cat "/sys/class/input/js${_n}/device/name" 2>/dev/null || true)"
+      case "$_nm" in
+        *"AYN Odin3"*) [ -z "$_ayn" ] && _ayn="$_n" ;;
+        *"X-Box 360"*|*Xbox*|*XBOX*) [ -z "$_virt" ] && _virt="$_n" ;;
+      esac
+    done
+    _idx="${_ayn:-$_virt}"
+    if [ -n "$_idx" ] && [ -d "${HOME}/.config/retroarch" ]; then
+      printf 'input_player1_joypad_index = "%s"\n' "$_idx" > "${HOME}/.config/retroarch/pad-index.cfg"
+      set -- "--appendconfig=${HOME}/.config/retroarch/pad-index.cfg" "$@"
+      echo "lanzar.sh: RetroArch con js${_idx} (fisico=${_ayn:-no}, virtual=${_virt:-no})" >&2
+    fi
+  ;;
+esac
+
 exec "$EXEC_TARGET" "$@"
