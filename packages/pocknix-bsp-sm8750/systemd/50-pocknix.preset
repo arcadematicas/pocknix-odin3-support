@@ -1,0 +1,14 @@
+# Preset propio de pocknix.
+#
+# Arch trae /usr/lib/systemd/system-preset/99-default.preset con "disable *": un
+# servicio que solo trae el enlace de vendor (/usr/lib/systemd/system/*.wants/...)
+# ARRANCA igualmente, pero `systemctl is-enabled` lo reporta como "disabled" y
+# cualquier `systemctl preset-all` lo apagaria. Estos son los que deben quedar
+# habilitados explicitamente.
+#
+# pocknix-panel-apply: reaplica la calibracion del panel (frame_len 60/120) al arrancar.
+#   Sin el, la calibracion guardada en /etc/pocknix/panel-calibration.conf no se aplica.
+# pocknix-power-profile: aplica el perfil de potencia guardado (y con el, el scheduler
+#   scx y los limites) al arrancar.
+enable pocknix-panel-apply.service
+enable pocknix-power-profile.service
