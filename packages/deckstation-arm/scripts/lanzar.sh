@@ -163,4 +163,32 @@ case "$(basename "${EXEC_TARGET:-}")" in
   ;;
 esac
 
+# 4c. RetroArch y el mando: el fisico (AYN) lo AGARRA InputPlumber (EVIOCGRAB: el nodo
+#     existe pero no emite), asi que RetroArch tiene que usar el VIRTUAL ("X-Box 360 pad").
+#     Ese nodo se crea/destruye en caliente y su indice jsN cambia, asi que se busca por
+#     NOMBRE justo antes de lanzar (esperando hasta 10 s a que aparezca) y se pasa por
+#     --appendconfig, sin tocar retroarch.cfg.
+case "$(basename "${EXEC_TARGET:-}")" in
+  *[Rr]etro[Aa]rch*)
+    _idx=""
+    for _try in $(seq 1 20); do
+      for _j in /dev/input/js*; do
+        [ -e "$_j" ] || continue
+        _n="${_j##*js}"
+        _nm="$(cat "/sys/class/input/js${_n}/device/name" 2>/dev/null || true)"
+        case "$_nm" in *"X-Box 360"*|*Xbox*|*XBOX*) _idx="$_n" ;; esac
+      done
+      [ -n "$_idx" ] && break
+      sleep 0.5
+    done
+    if [ -n "$_idx" ] && [ -d "${HOME}/.config/retroarch" ]; then
+      printf 'input_player1_joypad_index = "%s"\n' "$_idx" > "${HOME}/.config/retroarch/pad-index.cfg"
+      set -- "--appendconfig=${HOME}/.config/retroarch/pad-index.cfg" "$@"
+      echo "lanzar.sh: RetroArch con mando virtual js${_idx}" >&2
+    else
+      echo "lanzar.sh: no encontre el mando virtual; RetroArch usara su config" >&2
+    fi
+  ;;
+esac
+
 exec "$EXEC_TARGET" "$@"
