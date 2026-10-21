@@ -41,6 +41,9 @@ PLAY = "/usr/bin/deckstation-play"
 MOONLIGHT = "/usr/bin/moonlight"
 MOONLIGHT_ICON = "/usr/share/icons/hicolor/256x256/apps/moonlight.png"
 
+# Wind Waker HD (port nativo aarch64, AppImage de Linux; NO va por WProton/Wine).
+WWHD_APPIMAGE = "/opt/wproton/games/The legend of Zelda wind waker HD arm64/WindWakerHD-linux-aarch64.AppImage"
+
 # Arte de la biblioteca de DeckStation (lo instala su PKGBUILD en <root>/arte).
 # Steam lo busca en userdata/<id>/config/grid/<appid><sufijo>.png, con SUS
 # sufijos: "p" = portada vertical, "" = apaisada, "_hero" = cabecera y
@@ -280,6 +283,13 @@ def tiles() -> list[dict]:
         out.append(make_entry("Moonlight", f'"{MOONLIGHT}"',
                               startdir=HOME,
                               icon=_icon(MOONLIGHT_ICON)))
+    # The Wind Waker HD (port nativo aarch64): instalado desde el volcado propio del
+    # usuario en /opt/wproton/games (WProton es solo el sitio donde lo dejo). Es un
+    # AppImage de Linux ARM64, no un juego de Windows: se lanza directo, sin Wine.
+    if os.path.exists(WWHD_APPIMAGE):
+        out.append(make_entry("The Legend of Zelda: The Wind Waker HD",
+                              f'"{WWHD_APPIMAGE}"',
+                              startdir=os.path.dirname(WWHD_APPIMAGE)))
     return out
 
 
