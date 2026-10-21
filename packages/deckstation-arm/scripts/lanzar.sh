@@ -114,4 +114,27 @@ if [ -n "${QT_QUICK_CONTROLS_MOBILE:-}" ] || pgrep -f startplasmamobile >/dev/nu
 fi
 
 # 5. Lanzamos
+# 4c. RetroArch: el indice jsN del mando virtual CAMBIA entre arranques (Steam Input e
+#     InputPlumber crean y quitan nodos), y con un indice fijo se pierden botones y atajos
+#     ("desaparecen los atajos de RetroArch"). Se resuelve por NOMBRE en cada lanzamiento y
+#     se pasa con --appendconfig, sin tocar retroarch.cfg.
+case "$(basename "${EXEC_TARGET:-}")" in
+  *[Rr]etro[Aa]rch*)
+    _idx=""; _nm=""
+    for _j in /dev/input/js*; do
+      [ -e "$_j" ] || continue
+      _n="${_j##*js}"
+      _name="$(cat "/sys/class/input/js${_n}/device/name" 2>/dev/null || true)"
+      case "$_name" in
+        *"X-Box 360"*|*Xbox*|*XBOX*) _idx="$_n"; _nm="$_name" ;;
+      esac
+    done
+    if [ -n "$_idx" ] && [ -d "${HOME}/.config/retroarch" ]; then
+      printf 'input_player1_joypad_index = "%s"\n' "$_idx" > "${HOME}/.config/retroarch/pad-index.cfg"
+      set -- "--appendconfig=${HOME}/.config/retroarch/pad-index.cfg" "$@"
+      echo "lanzar.sh: RetroArch con mando js${_idx} (${_nm})" >&2
+    fi
+  ;;
+esac
+
 exec "$EXEC_TARGET" "$@"
