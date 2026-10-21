@@ -290,3 +290,43 @@ Siguiente línea de trabajo:
    (ROCKNIX tiene tooling de topology para SM8650/SM8750).
 3. Alternativa corta: preguntar en ROCKNIX/armada si tienen captura funcionando en algún SM8750
    (Odin 3/Thor) y con qué tplg.
+
+---
+
+## 8. CAUSA FINAL (21/10, noche): el grafo de captura no existe en la topología
+
+Siguiendo el `graph_open ERR` que salió en el kernel instrumentado, se llega a `q6apm_graph_open()`
+(`sound/soc/qcom/qdsp6/q6apm.c`):
+
+```c
+static struct audioreach_graph *q6apm_get_audioreach_graph(... graph_id ...)
+{
+        info = idr_find(&apm->graph_info_idr, graph_id);   // <- sacado de la tplg
+        ...
+        graph->graph = audioreach_alloc_graph_pkt(apm, info);
+        if (IS_ERR(graph->graph)) {
+                void *err = graph->graph;
+                kfree(graph);
+                return ERR_CAST(err);        // <-- SIN LOG (de ahi el silencio)
+        }
+```
+
+- `graph_id` = `cpu_dai->driver->id` = **2** para nuestro FE de captura.
+- `graph_info_idr` se rellena al cargar la **topología**: si el id 2 no está como grafo *de
+  captura*, `info` no vale y `audioreach_alloc_graph_pkt()` falla; el driver devuelve `ERR_CAST`
+  **sin imprimir nada** → de ahí el EIO "mudo" en `read`.
+- Con la tplg de **Kaanapali-MTP** (mainline) pasa lo mismo → **ninguna de las dos topologías
+  publica un grafo de captura para el id que mainline asigna a este FE**.
+
+### Conclusión
+No es un problema de DTS, de muxes del códec, de SoundWire ni de relojes: **falta el grafo de
+captura en la topología (DSP)** para SM8750. Para tener micrófono en mainline hace falta:
+
+1. Una **tplg propia** con un FE de captura (MultiMedia3) y su grafo conectado a
+   `TX_CODEC_DMA_TX_3` (tooling de topology de Qualcomm/ROCKNIX, o ingeniería inversa de la de
+   Android, que usa numeración propia).
+2. O que alguien (ROCKNIX/armada/Qualcomm) publique captura funcionando en SM8750.
+
+**Recomendación**: preguntar en ROCKNIX/armada si tienen captura en algún SM8750 y con qué tplg;
+si no, plantearlo en la lista linux-arm-msm. Mientras tanto, el micrófono queda **bloqueado por
+soporte de plataforma**, no por nuestra configuración.
