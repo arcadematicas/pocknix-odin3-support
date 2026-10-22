@@ -22,6 +22,13 @@ SEEN_OK=0
 
 log() { logger -t steamui-watchdog "$1"; }
 
+game_running() {
+    # Hay juego si corre un .exe de Proton/FEX o un lanzador de juego.
+    pgrep -f -d '' '\.exe( |$)' >/dev/null 2>&1 && return 0
+    pgrep -f 'pocknix-game-launch' >/dev/null 2>&1 && return 0
+    return 1
+}
+
 log "Watchdog de UI iniciado (healthcheck cada 30s, reinicio tras $MAX_FAILS fallos, solo si la UI llego a responder)"
 
 while true; do
@@ -34,7 +41,18 @@ while true; do
             log "Steam nuevo (pid $pid): esperando a que la UI responda antes de contar fallos"
         fi
 
-        if curl -s -m 5 "$URL" >/dev/null 2>&1; then
+        if game_running; then
+            # Con un juego en marcha la UI puede tardar mas de la cuenta en responder (CPU/GPU
+            # ocupadas). Antes se contaban esos fallos y se reiniciaba steamwebhelper EN MITAD
+            # de la partida: era justo el "se traba el QAM". Ahora no se cuenta ni se reinicia.
+            if [ "$FAILS" -ne 0 ]; then
+                log "juego en marcha: healthchecks en pausa (fallos $FAILS reseteados)"
+            fi
+            FAILS=0
+            sleep 30
+            continue
+        fi
+        if curl -s -m 8 "$URL" >/dev/null 2>&1; then
             if [ "$FAILS" -ne 0 ]; then
                 log "steamwebhelper responde de nuevo (fallos previos: $FAILS)"
             fi
