@@ -74,6 +74,20 @@ que **el audio va perfecto**: sin entrecortados. Activarla lo reproduce, asi que
 - Efecto secundario: algo menos de "pegada" a bajo volumen (la compander comprimia). A cambio,
   sin bombeo ni cortes.
 
+## 4. CONFIRMADO (22/10, tarde): al desenchufar, los amps del altavoz quedaban a 0
+
+El altavoz no lo mueve el codec: lo mueven **dos amplificadores AW88166** (`SPK_L`/`SPK_R PCM
+Playback Volume`, 0..1023, sin `PlaybackMixer` -> PipeWire no los toca). Tras usar los
+auriculares se quedaban a **0** = silencio absoluto, aunque la ruta de PipeWire fuese la correcta.
+
+- **Arreglo**: el dispositivo *Speaker* de la UCM (`HiFi.conf`) ahora tiene `EnableSequence` que
+  fija `SPK_L/R PCM Playback Volume` a 950 y apaga los switches de auriculares (que el codec deja
+  encendidos al desenchufar).
+- **Ademas** el vigilante (`pocknix-audio-jack`) comprueba cada pasada que, sin auriculares, los
+  amps no esten a 0.
+- **Conmutacion mas rapida**: el vigilante ya no hace polling cada 2 s; se despierta con
+  `pactl subscribe` (instantaneo) y deja una red de seguridad cada 10 s.
+
 ## Si algun dia se quiere recuperar la compander
 
 - El entrecortado **no está 100 % cerrado**: si reaparece, los siguientes candidatos son la
