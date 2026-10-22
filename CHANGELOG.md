@@ -75,11 +75,12 @@ audio de auriculares y dejar un port nativo de Wind Waker funcionando desde Stea
 - El mando físico lo agarra InputPlumber (`EVIOCGRAB`), así que solo emite el **virtual** “X-Box 360 pad”. El lanzador
   ahora lo busca **por nombre** (hasta 10 s) y lo pasa con `--appendconfig`; antes podía arrancar sin mando.
 
-### ✅ Audio del altavoz: los amplificadores se quedaban a 0
-- El altavoz del Odin no lo mueve el códec: lo mueven **dos AW88166** (`SPK_L/R PCM Playback
-  Volume`), que PipeWire **no** toca. Tras usar los auriculares se quedaban a **0** → silencio
-  absoluto aunque la ruta fuese correcta. Ahora la UCM los fija a 950 al activar el altavoz y el
-  vigilante lo comprueba en cada pasada.
+### ✅ Audio del altavoz: era la ruta, no el volumen de los amplificadores
+- El altavoz lo mueven dos **AW88166**, pero su control `SPK_L/R PCM Playback Volume` es
+  **atenuación** (0 = máximo, el valor de mute es `AW88166_MUTE_VOL`): leerlo a 0 **no** significa
+  silencio. (Lo dimos por bueno al revés durante un rato; corregido.)
+- El fallo real al volver de auriculares es de **ruta**: el códec deja encendidos `HPHL/HPHR`,
+  `RDAC` y `CLSH`. La UCM los suelta al activar el altavoz y el vigilante reengancha el sink.
 - **Conmutador instantáneo**: `pocknix-audio-jack` pasa de *polling* cada 2 s a **`pactl subscribe`**
   (con red de seguridad cada 10 s) y deja en el journal una línea con los **ms** que tarda, para
   poder medir ("tarda bastante" deja de ser una impresión).

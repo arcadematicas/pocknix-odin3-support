@@ -74,19 +74,19 @@ que **el audio va perfecto**: sin entrecortados. Activarla lo reproduce, asi que
 - Efecto secundario: algo menos de "pegada" a bajo volumen (la compander comprimia). A cambio,
   sin bombeo ni cortes.
 
-## 4. CONFIRMADO (22/10, tarde): al desenchufar, los amps del altavoz quedaban a 0
+## 4. RETIRADO (22/10, noche): los amps del altavoz NO estaban en silencio
 
-El altavoz no lo mueve el codec: lo mueven **dos amplificadores AW88166** (`SPK_L`/`SPK_R PCM
-Playback Volume`, 0..1023, sin `PlaybackMixer` -> PipeWire no los toca). Tras usar los
-auriculares se quedaban a **0** = silencio absoluto, aunque la ruta de PipeWire fuese la correcta.
+Durante un rato creimos que el fallo era que los amplificadores **AW88166** (`SPK_L/R PCM Playback
+Volume`) se quedaban a 0. **Es falso**: en este driver ese control es **atenuacion** — 0 es el
+**maximo** y `AW88166_MUTE_VOL` es el mute (`aw_dev_set_volume()` en `sound/soc/codecs/aw88166.c`).
+Con 0 se oye perfectamente (comprobado en una imagen limpia de Pocknix: los amps a 0 y audio en los
+altavoces).
 
-- **Arreglo**: el dispositivo *Speaker* de la UCM (`HiFi.conf`) ahora tiene `EnableSequence` que
-  fija `SPK_L/R PCM Playback Volume` a 950 y apaga los switches de auriculares (que el codec deja
-  encendidos al desenchufar).
-- **Ademas** el vigilante (`pocknix-audio-jack`) comprueba cada pasada que, sin auriculares, los
-  amps no esten a 0.
-- **Conmutacion mas rapida**: el vigilante ya no hace polling cada 2 s; se despierta con
-  `pactl subscribe` (instantaneo) y deja una red de seguridad cada 10 s.
+- **Lo que sí era el fallo**: la **ruta**. Al usar auriculares el codec deja encendidos
+  `HPHL/HPHR Switch`, `HPHL/HPHR_RDAC` y `CLSH`; el altavoz se queda mudo hasta que se sueltan.
+  Eso es lo que hace ahora la `EnableSequence` del *Speaker* en la UCM.
+- **Corregido en el BSP**: se quita el `cset` de `SPK_L/R ... 950` (¡atenuaba el altavoz casi al
+  mute!) y el vigilante ya no toca esos controles.
 
 ## Si algun dia se quiere recuperar la compander
 

@@ -5,8 +5,8 @@
 #  1) El filtro de ecualizacion del panel (sink "AYN Odin 3 EQ") enlaza su salida a un nodo
 #     ALSA concreto y WirePlumber NO la reengancha al enchufar/desenchufar: el sonido se
 #     quedaba en un nodo no disponible (silencio).
-#  2) Al desenchufar, los amplificadores del altavoz (AW88166, controles `SPK_L/R PCM Playback
-#     Volume`) se quedan a 0 -> silencio aunque la ruta sea correcta. Nadie los restaura.
+#  2) Al desenchufar, el codec deja encendidos los switches de auriculares (HPHL/HPHR, RDAC,
+#     CLSH) y el altavoz queda mudo aunque la ruta de PipeWire sea la correcta.
 #  3) Al reiniciar pipewire/wireplumber el filtro puede quedar sin enlace. Antes solo se
 #     corregia al cambiar el jack.
 #
@@ -25,8 +25,8 @@ CARD = "0"
 JACK_NUMID = "111"
 EQ_STREAM = "effect_output.pdc_eq"
 EQ_SINK = "AYN Odin 3 EQ"
-SPK_VOL_NUMIDS = ("2", "8")        # SPK_L/R PCM Playback Volume (AW88166)
-SPK_VOL = 950                      # 0..1023; a 0 el altavoz es silencio absoluto
+# OJO: `SPK_L/R PCM Playback Volume` (AW88166) es ATENUACION en este driver: 0 = maximo
+# y AW88166_MUTE_VOL = mute. No se toca (ponerlo alto deja el altavoz casi mudo).
 HW = {
     True: "alsa_output.platform-sound.HiFi__Headphones__sink",
     False: "alsa_output.platform-sound.HiFi__Speaker__sink",
@@ -48,17 +48,6 @@ def jack_plugged():
 
 def eq_present():
     return EQ_SINK in run(["pactl", "list", "short", "sinks"])
-
-
-def ensure_spk_volume():
-    """Si no hay auriculares, los amps del altavoz deben estar por encima de 0."""
-    changed = False
-    for numid in SPK_VOL_NUMIDS:
-        out = run(["amixer", "-c", CARD, "cget", f"numid={numid}"])
-        if "values=0" in out.replace(" ", ""):
-            run(["amixer", "-c", CARD, "cset", f"numid={numid}", str(SPK_VOL)])
-            changed = True
-    return changed
 
 
 def fix_links(plugged):
@@ -102,7 +91,7 @@ def apply_all(reason=""):
     # periodico no: WirePlumber reaplica su "default.configured.audio.sink" y entrabamos en
     # un bucle de set/revert cada 10 s (se veia como "acciones=default 28ms" sin parar).
     default = fix_default(plugged) if reason != "tick" else False
-    amps = ensure_spk_volume() if not plugged else False
+    amps = False   # no se tocan los amps del altavoz: su volumen es atenuacion (0 = maximo)
     dt_ms = (time.monotonic() - t0) * 1000.0
     if links or default or amps:
         acciones = ",".join(
