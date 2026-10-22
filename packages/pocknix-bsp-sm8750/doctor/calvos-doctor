@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+# calvos-doctor — recoge un informe de diagnostico de calvOS y, si se pide, lo envia.
+#
+# FILOSOFIA (la misma que el colector del panel de Hooandee, que esta bien hecha):
+#   1. Primero RECOGE y REDACTA (rutas personales, usuario, hostname, MAC, IP, seriales).
+#   2. Te ENSENA que va a salir y donde se ha guardado (tar.gz local). Nada sale sin `--send`.
+#   3. Con `--send`, lo POSTea al colector propio, que abre el issue y devuelve la URL (y un QR
+#      para abrirlo en el movil, porque en modo juego no hay navegador).
+#
+# El cliente NO lleva ningun token: el token de GitHub vive solo en el Worker.
+#
+# Uso:
+#   calvos-doctor                      # recoge, guarda en ~/calvos-report-*.tar.gz y no envia
+#   calvos-doctor --text "no hay audio"# idem, anotando una descripcion
+#   calvos-doctor --send --text "..."  # envia al colector (pide confirmacion salvo --yes)
+#   calvos-doctor --send --yes         # sin preguntar (para scripts)
+#   calvos-doctor --url URL            # otro colector (o CALVOS_REPORT_URL)
+import argparse
+import json
+import os
+import platform
+import re
+import shutil
+import socket
+import subprocess
+import sys
+import tarfile
+import time
+import urllib.error
+import urllib.request
+
+DEFAULT_URL = "https://calvos-reports.calvos-reports.workers.dev/api/report"
+VERSION = "0.1.0"
+HOME = os.path.expanduser("~")
+MAX_LOG_LINES = 400
+
+
+# --------------------------------------------------------------------------- shell
+def run(cmd, timeout=10, root=False):
+    """Ejecuta y devuelve stdout (str). Nunca lanza."""
+    try:
+        if root:
+            cmd = ["sh", "-c", " ".join(cmd)]
+        out = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=timeout,
+            env={**os.environ, "LC_ALL": "C"},
+        )
+        return (out.stdout or "") + (out.stderr or "")
+    except Exception as exc:  # noqa: BLE001
+        return f"<error: {exc}>"
+
+
+def read(path, default=""):
+    try:
+        with open(path, "r", errors="replace") as fh:
+            return fh.read().strip()
+    except OSError:
+        return default
+
+
+def first_line(text):
+    return (text or "").strip().splitlines()[0] if (text or "").strip() else ""
+
+
+# --------------------------------------------------------------------------- redaccion
+RULES = [
+    (re.compile(r"/home/[A-Za-z0-9._-]+"), "/home/<usuario>"),
+    (re.compile(r"/run/media/[A-Za-z0-9._-]+"), "/run/media/<usuario>"),
+    (re.compile(r"\b(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}\b"), "<mac>"),
+    (re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"), "<ip>"),
+    (re.compile(r"(?i)(ssid[\"'=:\s]+)[^\s\"',}]+"), r"\1<ssid>"),
+]
+SENSITIVE_KEY = re.compile(r"serial|imei|uuid|ssid|token|password|secret|key", re.I)
+
+
+def redact(text, extra=()):
+    """Redacta un texto. `extra` = valores literales a sustituir (hostname, usuario)."""
+    if not isinstance(text, str):
+        return text
+    out = text
+    for value, placeholder in extra:
+        if value and len(value) >= 3:
+            out = out.replace(value, placeholder)
+    for pattern, repl in RULES:
+        out = pattern.sub(repl, out)
+    return out
+
+
+def redact_obj(obj, extra, depth=0):
+    if depth > 8 or obj is None:
+        return obj
+    if isinstance(obj, str):
+        return redact(obj, extra)
+    if isinstance(obj, list):
+        return [redact_obj(v, extra, depth + 1) for v in obj[:400]]
+    if isinstance(obj, dict):
+        out = {}
+        for k, v in list(obj.items())[:200]:
+            out[k] = "<redactado>" if SENSITIVE_KEY.search(k) else redact_obj(v, extra, depth + 1)
+        return out
+    return obj
+
+
+# --------------------------------------------------------------------------- recogida
+def pkg_versions(names):
+    out = run(["pacman", "-Q"] + names)
+    versions = {}
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) == 2:
+            versions[parts[0]] = parts[1]
+    return versions
+
+
+def ctl(numid):
+    """Valor de un control de amixer por numid ('n/d' si no existe)."""
+    out = run(["amixer", "-c", "0", "cget", f"numid={numid}"])
+    m = re.search(r"^\s*:\s*values=(\S+)", out, re.M)
+    return m.group(1) if m else "n/d"
+
+
+def collect():
+    model = first_line(read("/proc/device-tree/model", "desconocido")).strip("\x00")
+    dmi = first_line(read("/sys/class/dmi/id/product_name", ""))
+
+    env = {
+        "modelo": model or dmi or "desconocido",
+        "kernel": run(["uname", "-r"]).strip(),
+        "arch": platform.machine(),
+        "os": first_line(read("/etc/os-release").replace('PRETTY_NAME="', "").replace('"', "")) or "calvOS",
+        "paquetes": pkg_versions([
+            "linux-pocknix-sm8750", "pocknix-bsp-sm8750", "pocknix-decky", "pocknix-control",
+            "gamescope", "mesa", "pocknix-turnip-arm", "steam", "pocknix-steam",
+        ]),
+        "mem_sleep": read("/sys/power/mem_sleep", "n/d"),
+        "uptime_h": round(float(read("/proc/uptime", "0 0").split()[0] or 0) / 3600, 1),
+        "panel": {
+            "brillo": read("/sys/class/backlight/ae94000.dsi.0/brightness", "n/d"),
+            "brillo_max": read("/sys/class/backlight/ae94000.dsi.0/max_brightness", "n/d"),
+            "calibracion": read("/etc/pocknix/panel-calibration.conf", "n/d"),
+        },
+        "bateria": {
+            "estado": read("/sys/class/power_supply/battery/status", "n/d"),
+            "capacidad": read("/sys/class/power_supply/battery/capacity", "n/d"),
+            "power_now": read("/sys/class/power_supply/battery/power_now", "n/d"),
+            "current_now": read("/sys/class/power_supply/battery/current_now", "n/d"),
+        },
+    }
+
+    audio = {
+        "jack": ctl(111),
+        "jack_valor": ctl(111),
+        "sink_defecto": run(["pactl", "get-default-sink"]).strip(),
+        "sinks": run(["pactl", "list", "short", "sinks"]).strip().splitlines()[:6],
+        "amps_spk": {"L": ctl(2), "R": ctl(8)},
+        "compander": {"L": ctl(23), "R": ctl(24)},
+        "quantum": run(["pw-metadata", "-n", "settings"]).strip().splitlines()[:6],
+        "xruns_sesion": run(["sh", "-c", "journalctl --user -b -u pipewire --no-pager 2>/dev/null | grep -c 'after recover'"]).strip(),
+    }
+
+    system = {
+        "unidades_fallidas": [l for l in run(["systemctl", "--failed", "--no-legend", "--plain"]).splitlines() if l.strip()][:10],
+        "servicios_pocknix": {
+            name: run(["systemctl", "is-active", name]).strip()
+            for name in ("pocknix-audio-jack", "pocknix-panel-apply", "pocknix-power-profile", "inputplumber", "steamui-watchdog")
+        },
+        "sesion": {
+            "gamescope": first_line(run(["sh", "-c", "pgrep -af 'gamescope ' | head -1"])),
+            "steam": "si" if run(["sh", "-c", "pgrep -x steam >/dev/null && echo si"]).strip() == "si" else "no",
+        },
+        "modos_panel": run(["sh", "-c", "cat /sys/class/drm/card0-DSI-1/modes 2>/dev/null | head -3"]).strip().splitlines(),
+    }
+
+    logs = {
+        "dmesg": run(["dmesg"]).strip().splitlines()[-MAX_LOG_LINES:],
+        "journal_errores": run([
+            "sh", "-c",
+            "journalctl -b -p warning --no-pager 2>/dev/null | tail -" + str(MAX_LOG_LINES),
+        ]).strip().splitlines(),
+        "audio": run([
+            "sh", "-c",
+            "journalctl -b --no-pager 2>/dev/null | grep -iE 'wcd939|sdw|swr|asoc|xrun|Broken pipe' | tail -80",
+        ]).strip().splitlines(),
+        "gpu": run([
+            "sh", "-c",
+            "journalctl -k -b --no-pager 2>/dev/null | grep -iE 'gdsc|gmu|oob|hangcheck|recover|adreno' | tail -60",
+        ]).strip().splitlines(),
+    }
+
+    return {
+        "app": "calvos-doctor",
+        "version": VERSION,
+        "kind": "bug",
+        "platform": env["modelo"],
+        "environment": env,
+        "state": {"audio": audio, "system": system},
+        "logs": logs,
+    }
+
+
+# --------------------------------------------------------------------------- salida
+def redact_bundle(bundle):
+    hostname = socket.gethostname()
+    extra = [
+        (hostname, "<hostname>"),
+        (os.path.basename(HOME), "<usuario>"),
+        (run(["sh", "-c", "id -un"]).strip(), "<usuario>"),
+    ]
+    return redact_obj(bundle, extra)
+
+
+def summarise(bundle):
+    env = bundle.get("environment", {})
+    audio = bundle.get("state", {}).get("audio", {})
+    system = bundle.get("state", {}).get("system", {})
+    print("  modelo     :", env.get("modelo"))
+    print("  kernel     :", env.get("kernel"))
+    print("  paquetes   :", ", ".join(f"{k} {v}" for k, v in (env.get("paquetes") or {}).items()))
+    print("  audio      : jack=%s  sink=%s  amps=%s/%s  compander=%s/%s  xruns=%s" % (
+        audio.get("jack_valor"), audio.get("sink_defecto"),
+        (audio.get("amps_spk") or {}).get("L"), (audio.get("amps_spk") or {}).get("R"),
+        (audio.get("compander") or {}).get("L"), (audio.get("compander") or {}).get("R"),
+        audio.get("xruns_sesion"),
+    ))
+    print("  fallidas   :", len(system.get("unidades_fallidas") or []))
+    print("  bateria    :", (env.get("bateria") or {}).get("estado"), (env.get("bateria") or {}).get("capacidad") + "%")
+
+
+def save(bundle, path=None):
+    path = path or os.path.join(HOME, time.strftime("calvos-report-%Y%m%d-%H%M%S.tar.gz"))
+    tmp = path + ".json"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(bundle, fh, ensure_ascii=False, indent=2)
+    with tarfile.open(path, "w:gz") as tar:
+        tar.add(tmp, arcname=os.path.basename(tmp))
+    os.unlink(tmp)
+    return path
+
+
+def send(bundle, url):
+    data = json.dumps(bundle).encode()
+    req = urllib.request.Request(url, data=data, headers={
+        "content-type": "application/json",
+        "user-agent": f"calvos-doctor/{VERSION}",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.loads(resp.read().decode() or "{}")
+    except urllib.error.HTTPError as exc:
+        return {"ok": False, "error": f"http {exc.code}", "detail": exc.read().decode(errors="replace")[:300]}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc)}
+
+
+def show_qr(url):
+    if not shutil.which("qrencode"):
+        return
+    print()
+    subprocess.run(["qrencode", "-t", "ansiutf8", "-m", "1", url])
+
+
+# --------------------------------------------------------------------------- main
+def main():
+    ap = argparse.ArgumentParser(description="Informe de diagnostico de calvOS")
+    ap.add_argument("--text", default="", help="descripcion del problema")
+    ap.add_argument("--send", action="store_true", help="enviar al colector")
+    ap.add_argument("--yes", action="store_true", help="no pedir confirmacion al enviar")
+    ap.add_argument("--url", default=os.environ.get("CALVOS_REPORT_URL", DEFAULT_URL))
+    ap.add_argument("--out", default=None, help="ruta del tar.gz")
+    ap.add_argument("--keep-logs", action="store_true", help="no recortar los logs")
+    args = ap.parse_args()
+
+    print("calvOS-doctor: recogiendo informe...")
+    bundle = collect()
+    if args.text:
+        bundle["text"] = args.text
+    else:
+        bundle["text"] = "(sin descripcion: informe generado con calvos-doctor)"
+    bundle = redact_bundle(bundle)
+    print("\nResumen (ya redactado):")
+    summarise(bundle)
+
+    path = save(bundle, args.out)
+    print("\n  guardado   :", path)
+
+    if not args.send:
+        print("\n  Nada se ha enviado. Para enviarlo:  calvos-doctor --send --text \"...\"")
+        print("  (el fichero se puede adjuntar a mano en github.com/arcadematicas/calvOS-reports/issues/new)")
+        return 0
+
+    if not args.yes:
+        print("\n  Se enviara al colector de calvOS (issue publico en GitHub), sin datos personales.")
+        try:
+            if input("  ¿Enviar? [s/N] ").strip().lower() not in ("s", "si", "sí", "y"):
+                print("  cancelado.")
+                return 1
+        except EOFError:
+            print("  sin terminal interactiva: usa --yes")
+            return 1
+
+    print("  enviando...", end=" ", flush=True)
+    res = send(bundle, args.url)
+    if res.get("ok"):
+        print("ok")
+        print("  issue:", res.get("issueUrl"))
+        show_qr(res.get("issueUrl") or "")
+    else:
+        print("fallo")
+        print("  error:", res.get("error"), res.get("detail", ""))
+        print("  el informe queda guardado en", path)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)

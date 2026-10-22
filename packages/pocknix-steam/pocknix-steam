@@ -43,6 +43,13 @@ else
   mkdir -p "${STEAM}/package"; echo "${POCKNIX_STEAM_CHANNEL}" > "${STEAM}/package/beta"
 fi
 
+# Colector de informes PROPIO (calvOS-reports). El backend del plugin Panel de Control ya lee
+# PDC_REPORT_URL del entorno, asi que apuntamos su boton de "Bug" a NUESTRO Worker sin tocar su
+# codigo: sobrevive a sus actualizaciones (no hay parche que reaplicar). El token de GitHub vive
+# solo en el Worker; aqui no hay ninguna credencial.
+# Si algun dia se quiere desactivar: comentar esta linea y reiniciar la sesion.
+export PDC_REPORT_URL="https://calvos-reports.calvos-reports.workers.dev/api/report"
+
 # Must precede Steam, which enumerates controllers once at startup; desktop mode leaves the pad
 # on xb360, and only `deck` gives Steam Input the Steam-native pad (Guide, QAM, L4/L5).
 if command -v pocknix-gamepad-target >/dev/null 2>&1; then
