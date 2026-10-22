@@ -88,6 +88,18 @@ altavoces).
 - **Corregido en el BSP**: se quita el `cset` de `SPK_L/R ... 950` (¡atenuaba el altavoz casi al
   mute!) y el vigilante ya no toca esos controles.
 
+## 5. La compander: apagarla en la UCM NO basta (22/10, noche)
+
+La `EnableSequence` del dispositivo *Headphones* apaga `HPHL/HPHR_COMP`, pero **DAPM la vuelve a
+encender** al alimentar la ruta (el switch forma parte del camino de audio), así que tras enchufar
+los cascos volvía a estar en `on` y con impedancias reales (el driver mide 65/69 Ω y pone
+`HPH Type = 2`) aparecía **chisporroteo**.
+
+- **Arreglo definitivo**: `pocknix-audio-jack` comprueba en cada pasada (eventos + tick de 10 s) que,
+  con auriculares puestos, `HPHL/HPHR_COMP` estén en `off`, y los apaga si DAPM los encendió.
+  Verificado en la Odin: audio limpio y conmutación ~17 ms.
+- El `cset` de la UCM se queda (es correcto apagarla al activar), pero **no es suficiente por sí solo**.
+
 ## Si algun dia se quiere recuperar la compander
 
 - El entrecortado **no está 100 % cerrado**: si reaparece, los siguientes candidatos son la

@@ -27,6 +27,11 @@ EQ_STREAM = "effect_output.pdc_eq"
 EQ_SINK = "AYN Odin 3 EQ"
 # OJO: `SPK_L/R PCM Playback Volume` (AW88166) es ATENUACION en este driver: 0 = maximo
 # y AW88166_MUTE_VOL = mute. No se toca (ponerlo alto deja el altavoz casi mudo).
+
+# Compander de los auriculares: DAPM la vuelve a encender al alimentar la ruta (la UCM la
+# apaga antes y no basta). Encendida mete chisporroteo con impedancias reales (65/69 ohm
+# medidos por el driver), asi que se apaga aqui y se vigila.
+COMP_NUMIDS = ("23", "24")
 HW = {
     True: "alsa_output.platform-sound.HiFi__Headphones__sink",
     False: "alsa_output.platform-sound.HiFi__Speaker__sink",
@@ -48,6 +53,18 @@ def jack_plugged():
 
 def eq_present():
     return EQ_SINK in run(["pactl", "list", "short", "sinks"])
+
+
+def ensure_comp_off(plugged):
+    """Con auriculares, la compander debe estar apagada (si no, chisporrotea)."""
+    if not plugged:
+        return False
+    changed = False
+    for numid in COMP_NUMIDS:
+        if "values=on" in run(["amixer", "-c", CARD, "cget", f"numid={numid}"]):
+            run(["amixer", "-c", CARD, "cset", f"numid={numid}", "off"])
+            changed = True
+    return changed
 
 
 def fix_links(plugged):
@@ -92,10 +109,11 @@ def apply_all(reason=""):
     # un bucle de set/revert cada 10 s (se veia como "acciones=default 28ms" sin parar).
     default = fix_default(plugged) if reason != "tick" else False
     amps = False   # no se tocan los amps del altavoz: su volumen es atenuacion (0 = maximo)
+    comp = ensure_comp_off(plugged)
     dt_ms = (time.monotonic() - t0) * 1000.0
-    if links or default or amps:
+    if links or default or amps or comp:
         acciones = ",".join(
-            n for n, v in (("links", links), ("default", default), ("amps", amps)) if v
+            n for n, v in (("links", links), ("default", default), ("amps", amps), ("comp", comp)) if v
         )
         print(
             f"{time.strftime('%H:%M:%S')} jack={'on' if plugged else 'off'} "

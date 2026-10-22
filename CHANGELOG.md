@@ -84,7 +84,9 @@ audio de auriculares y dejar un port nativo de Wind Waker funcionando desde Stea
 - **Conmutador instantáneo**: `pocknix-audio-jack` pasa de *polling* cada 2 s a **`pactl subscribe`**
   (con red de seguridad cada 10 s) y deja en el journal una línea con los **ms** que tarda, para
   poder medir ("tarda bastante" deja de ser una impresión).
-- **Entrecortado de auriculares**: era la **compander** (`HPHL/HPHR_COMP`), apagada en la UCM.
+- **Entrecortado de auriculares**: era la **compander** (`HPHL/HPHR_COMP`). Apagarla en la UCM no basta:
+  **DAPM la vuelve a encender** al alimentar la ruta, así que el vigilante la apaga y la vigila en cada
+  pasada. Verificado en la consola: audio limpio y conmutación de ~17 ms.
 
 ### 🚀 calvos-doctor — ya instalado
 - `calvos-doctor` recoge kernel/paquetes/audio/panel/batería/logs, **redacta** (rutas, usuario,
