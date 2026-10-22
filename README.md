@@ -31,6 +31,7 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 | 🕹️ **Juegos de Steam** | Cliente **Steam ARM64** nativo en modo juego (gamepadui) dentro de **gamescope** (base OGC). UI a escala correcta (`--fake-output-mm`). |
 | 🪟 **Juegos de Windows** | **Proton ARM64 + FEX**; **WProton** (`1.72`) para lanzar `.wsquashfs` con sus runners. |
 | 🎮 **Emulación** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 emuladores aarch64 (RetroArch + 200 cores, Dolphin, Duckstation, Cemu, Eden, MAME…). Instalación inicial **sin límites**: resuelve los assets sin la API de GitHub. |
+| 🩺 **Informes y captura** | **`calvos-doctor`** (informe redactado, se envía solo si tú quieres) + **`calvos-grabar`** (1080p60 con encoder **H.264 por hardware**) y **`dock-check`** para capturadora. |
 | 🧩 **Plugins (Decky)** | **PocknixControl** (TDP, HDR a mano, OLED care, snapshots, updates), **CSS Loader** y el tema **Eclipse 0.3.2** (autoactualizable). |
 | 🖥️ **Escritorio** | **KDE Plasma 6 (Wayland + Plasma Mobile)** con KScreen funcionando. |
 | 🖼️ **Pantalla** | **Rotación por hardware** del DPU (sin coste de GPU) y **HDR apagado por defecto** (evita que el QAM/MangoHUD caigan detrás; se enciende a mano). |

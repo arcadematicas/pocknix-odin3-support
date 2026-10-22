@@ -52,40 +52,64 @@ def eq_present():
 
 def ensure_spk_volume():
     """Si no hay auriculares, los amps del altavoz deben estar por encima de 0."""
+    changed = False
     for numid in SPK_VOL_NUMIDS:
         out = run(["amixer", "-c", CARD, "cget", f"numid={numid}"])
         if "values=0" in out.replace(" ", ""):
             run(["amixer", "-c", CARD, "cset", f"numid={numid}", str(SPK_VOL)])
+            changed = True
+    return changed
 
 
 def fix_links(plugged):
     target, other = HW[plugged], HW[not plugged]
     graph = run(["pw-link", "-l"])
     if EQ_STREAM not in graph:
-        return
+        return False
+    changed = False
     for ch in ("FL", "FR"):
         src = f"{EQ_STREAM}:output_{ch}"
         if src not in graph:
-            return
+            return changed
         dst = f"{target}:playback_{ch}"
         if dst in graph:
             continue
         run(["pw-link", "-d", src, f"{other}:playback_{ch}"])
         run(["pw-link", src, dst])
+        changed = True
+    return changed
 
 
 def fix_default(plugged):
     wanted = EQ_SINK if eq_present() else HW[plugged]
     if run(["pactl", "get-default-sink"]).strip() != wanted:
         run(["pactl", "set-default-sink", wanted])
+        return True
+    return False
 
 
-def apply_all():
+def apply_all(reason=""):
+    """Deja todo en su sitio y, si ha cambiado algo, deja una linea en el journal con tiempos.
+
+    La linea sirve para MEDIR la conmutacion: `pocknix-audio-jack` aparece en `journalctl -u`
+    con los ms que ha tardado y que acciones han hecho falta. Sin esto, "tarda bastante" es
+    una impresion; con esto es un numero.
+    """
+    t0 = time.monotonic()
     plugged = jack_plugged()
-    fix_links(plugged)
-    fix_default(plugged)
-    if not plugged:
-        ensure_spk_volume()
+    links = fix_links(plugged)
+    default = fix_default(plugged)
+    amps = ensure_spk_volume() if not plugged else False
+    dt_ms = (time.monotonic() - t0) * 1000.0
+    if links or default or amps:
+        acciones = ",".join(
+            n for n, v in (("links", links), ("default", default), ("amps", amps)) if v
+        )
+        print(
+            f"{time.strftime('%H:%M:%S')} jack={'on' if plugged else 'off'} "
+            f"acciones={acciones} {dt_ms:.0f}ms" + (f" motivo={reason}" if reason else ""),
+            flush=True,
+        )
     return plugged
 
 
@@ -108,7 +132,7 @@ def watch_events(stop):
                 low = line.lower()
                 if " on card " in low or " on sink " in low or " on server " in low:
                     time.sleep(SETTLE)
-                    apply_all()
+                    apply_all(reason="evento")
         finally:
             try:
                 proc.terminate()

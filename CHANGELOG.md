@@ -75,6 +75,32 @@ audio de auriculares y dejar un port nativo de Wind Waker funcionando desde Stea
 - El mando físico lo agarra InputPlumber (`EVIOCGRAB`), así que solo emite el **virtual** “X-Box 360 pad”. El lanzador
   ahora lo busca **por nombre** (hasta 10 s) y lo pasa con `--appendconfig`; antes podía arrancar sin mando.
 
+### ✅ Audio del altavoz: los amplificadores se quedaban a 0
+- El altavoz del Odin no lo mueve el códec: lo mueven **dos AW88166** (`SPK_L/R PCM Playback
+  Volume`), que PipeWire **no** toca. Tras usar los auriculares se quedaban a **0** → silencio
+  absoluto aunque la ruta fuese correcta. Ahora la UCM los fija a 950 al activar el altavoz y el
+  vigilante lo comprueba en cada pasada.
+- **Conmutador instantáneo**: `pocknix-audio-jack` pasa de *polling* cada 2 s a **`pactl subscribe`**
+  (con red de seguridad cada 10 s) y deja en el journal una línea con los **ms** que tarda, para
+  poder medir ("tarda bastante" deja de ser una impresión).
+- **Entrecortado de auriculares**: era la **compander** (`HPHL/HPHR_COMP`), apagada en la UCM.
+
+### 🚀 calvos-doctor — ya instalado
+- `calvos-doctor` recoge kernel/paquetes/audio/panel/batería/logs, **redacta** (rutas, usuario,
+  hostname, MAC, IP, SSID, seriales) y **solo envía con `--send`**.
+- Colector **desplegado** en Cloudflare Workers: `calvos-reports.<cuenta>.workers.dev` → issues en
+  `arcadematicas/calvOS-reports`. Probado de punta a punta (redacción verificada en servidor).
+- El botón de informe del panel apunta a nuestro colector **sin tocar su código** (`PDC_REPORT_URL`
+  exportada por `pocknix-steam`), así sobrevive a las actualizaciones del plugin.
+
+### 🚀 Captura de vídeo
+- `calvos-grabar`: graba la pantalla con el **encoder H.264 por hardware** (`qcom-iris-encoder`).
+  Medido: 1080p60 **en tiempo real** (~27 Mbps); 5 s codificados en 1,36 s. Modo `kms` (todo,
+  incluido QAM) y `x11` (solo el juego, sin root).
+- `dock-check`: diagnóstico de la salida externa (DP‑1, modos, gamescope, sinks de audio).
+  **Hallazgo**: no hay sink de audio HDMI/DP → para grabar sonido hay que usar el jack de 3,5 mm.
+- `tools/gpu-135.sh`: el test de 15 min del PR #135, listo para correr **en el sistema de shuuri**.
+
 ### 🚀 calvOS-reports y calvOS-doctor (en marcha)
 - Repo público **`arcadematicas/calvOS-reports`** para los informes del sistema.
 - Diseño copiado de lo que hace bien el panel de Hooandee: **colector que redacta** (rutas, usuario, hostname,
