@@ -12,3 +12,6 @@
 #   scx y los limites) al arrancar.
 enable pocknix-panel-apply.service
 enable pocknix-power-profile.service
+# pocknix-audio-jack: reengancha el audio al dispositivo correcto al conmutar el jack
+#   (el filtro del ecualizador no lo sigue solo) y tras reiniciar PipeWire.
+enable pocknix-audio-jack.service

@@ -52,7 +52,7 @@ pkgver=0.2.0
 #   (antes iba en la esquina inferior derecha), algo mas pequeno. Mismas 240 frames, 46,4 MB.
 # -14 (17/10): se vuelve a la ESQUINA (como el diseno anterior), calvOS algo mas pequeno (100px)
 #   y con FUNDIDO de entrada (frames 70-120) para que aparezca despues de "ODIN 3". 48,4 MB.
-pkgrel=22
+pkgrel=23
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
@@ -175,6 +175,17 @@ package() {
   # abajo cuando aparece tarde el mando interno (rsinput/UART, ~15 s).
   install -Dm755 "${sd}/udev/pocknix-inputplumber-rescan.sh"     "${bin}/pocknix-inputplumber-rescan"
 
+  # --- audio: conmutacion del jack + suelo de latencia ------------------------
+  # El ecualizador del panel (sink "AYN Odin 3 EQ") enlaza su salida a un nodo ALSA
+  # concreto y WirePlumber NO la reengancha al enchufar/desenchufar los auriculares:
+  # el sonido se quedaba en un nodo no disponible (silencio) hasta reiniciar el filtro.
+  # Ver docs/AUDIO-AURICULARES-20261022.md.
+  install -Dm755 "${sd}/audio/pocknix-audio-jack.py"             "${bin}/pocknix-audio-jack"
+  install -Dm644 "${sd}/audio/pocknix-audio-jack.service"        "${pkgdir}/usr/lib/systemd/system/pocknix-audio-jack.service"
+  # Suelo de quantum de PipeWire (evita los xrun "snd_pcm_avail after recover: Broken pipe").
+  install -Dm644 "${sd}/audio/10-pocknix-latency.conf" \
+    "${pkgdir}/etc/pipewire/pipewire.conf.d/10-pocknix-latency.conf"
+
   # --- systemd units ----------------------------------------------------------
   local unit="${pkgdir}/usr/lib/systemd/system"
   # power-button-daemon.service lo instala pocknix-system-overlay (ver nota arriba).
@@ -287,7 +298,7 @@ package() {
   for u in power-button-daemon volume-button-daemon oled-care-daemon mangohud-toggle-daemon \
            pocknix-power-profile pocknix-cpu-governor pocknix-pergame-power odin3-splash \
            steamui-watchdog pocknix-sensors-tree hexagonrpcd-adsp-sensorspd \
-           pocknix-panel-apply; do
+           pocknix-panel-apply pocknix-audio-jack; do
     ln -sf "../${u}.service" "${want}/${u}.service"
   done
   install -d "${pkgdir}/usr/lib/systemd/system/timers.target.wants"

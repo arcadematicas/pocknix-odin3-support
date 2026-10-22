@@ -1,0 +1,16 @@
+[Unit]
+Description=Pocknix: mantiene el audio en el dispositivo correcto al conmutar el jack
+Documentation=https://github.com/arcadematicas/pocknix-odin3-support
+After=pipewire.service wireplumber.service
+Wants=pipewire.service
+
+[Service]
+Type=simple
+# El audio corre en la sesion del usuario de consola: se deriva el XDG_RUNTIME_DIR
+# del uid real (no se fija 1001 a mano, que se rompe si cambia el usuario).
+ExecStart=/bin/sh -c 'XDG_RUNTIME_DIR=/run/user/$(id -u deck) exec /usr/local/bin/pocknix-audio-jack'
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
