@@ -1,0 +1,65 @@
+#!/bin/sh
+# dock-check — diagnostico de la salida externa (capturadora / dock) en el Odin 3.
+#
+# PARA QUE: cuando conectas una capturadora por USB-C, el Odin la ve como un monitor en DP-1.
+# Aqui se comprueba, en un vistazo:
+#   - que el conector aparece y con que modos,
+#   - si gamescope lo esta manejando (y con que rotacion),
+#   - si hay salida de AUDIO por HDMI/DP (si no, el video saldra mudo y hay que sacar el
+#     sonido por el jack de 3,5 mm),
+#   - el refresco que esta pidiendo la sesion.
+#
+# Uso:  dock-check        (en la consola, con la sesion de juego arriba)
+set -u
+
+echo "=== conectores DRM ==="
+for c in /sys/class/drm/card*-*; do
+  [ -e "$c/status" ] || continue
+  st=$(cat "$c/status" 2>/dev/null)
+  name=$(basename "$c")
+  case "$name" in
+    *Writeback*) continue ;;
+  esac
+  printf '  %-16s %s\n' "$name" "$st"
+  if [ "$st" = "connected" ]; then
+    echo "      modos: $(head -4 "$c/modes" 2>/dev/null | tr '\n' ' ')"
+    [ -f "$c/enabled" ] && echo "      enabled: $(cat "$c/enabled")"
+  fi
+done
+
+echo
+echo "=== gamescope en marcha ==="
+GS=$(pgrep -af "/usr/bin/gamescope " | head -1)
+if [ -n "$GS" ]; then
+  echo "$GS" | cut -c1-260 | sed 's/^/  /'
+  echo "$GS" | grep -q -- "--prefer-output" && echo "  (fija salida con --prefer-output)" \
+    || echo "  (sin --prefer-output: gamescope maneja los conectores que encuentre)"
+  echo "$GS" | grep -q -- "--force-external-orientation" \
+    && echo "  (fuerza rotacion externa)" \
+    || echo "  (externo sin forzar: deberia salir normal, la rotacion es solo de la pantalla interna)"
+else
+  echo "  gamescope NO esta corriendo (¿estas en escritorio?)"
+fi
+
+echo
+echo "=== sinks de audio (¿hay HDMI/DP?) ==="
+pactl list short sinks 2>/dev/null | sed 's/^/  /' || echo "  sin pactl"
+echo
+echo "  sink por defecto: $(pactl get-default-sink 2>/dev/null)"
+HDMI=$(pactl list short sinks 2>/dev/null | grep -icE "hdmi|displayport|dp-")
+if [ "$HDMI" -gt 0 ]; then
+  echo "  HAY salida HDMI/DP: la capturadora puede recibir el sonido por el cable."
+else
+  echo "  NO hay salida HDMI/DP de audio: para grabar sonido usa el jack de 3,5 mm"
+  echo "  (funciona con los cascos ya probados) hacia la entrada de linea del PC/capturadora."
+fi
+
+echo
+echo "=== refresco / modo que pide la sesion ==="
+if [ -n "$GS" ]; then
+  echo "$GS" | grep -oE -- "-r [0-9]+" | head -1 | sed 's/^/  /'
+else
+  echo "  (sin sesion de juego en marcha)"
+fi
+echo "  Si la capturadora es 1080p60 y la sesion pide 120 Hz, gamescope deberia negociar 60;"
+echo "  si sale negro o sin senal, se prueba a arrancar la sesion con -r 60."
