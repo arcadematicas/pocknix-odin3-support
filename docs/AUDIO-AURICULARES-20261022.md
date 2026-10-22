@@ -63,7 +63,18 @@ Si una aplicación pedía buffers por debajo de eso (o justo en el límite), el 
 - **Descartado como causa**: el ecualizador (el fallo persistía con el filtro parado). ALSA
   directo con `aplay` y buffers grandes va perfecto.
 
-## Qué queda por afinar
+## CONFIRMADO (22/10): era la compander
+
+Con la compander apagada (`HPHL_COMP`/`HPHR_COMP` = 0) y los cascos de estudio, Fransis confirma
+que **el audio va perfecto**: sin entrecortados. Activarla lo reproduce, asi que la causa esta ahi
+(el driver la configura sin impedancia declarada, `HPHL/HPHR Impedance = 0`).
+
+- **Arreglo definitivo**: la UCM (`HiFi.conf`, dispositivo *Headphones*) apaga la compander
+  **despues** del include que la enciende, asi que ya no hace falta el vigilante.
+- Efecto secundario: algo menos de "pegada" a bajo volumen (la compander comprimia). A cambio,
+  sin bombeo ni cortes.
+
+## Si algun dia se quiere recuperar la compander
 
 - El entrecortado **no está 100 % cerrado**: si reaparece, los siguientes candidatos son la
   **compander** (`HPHL_COMP`/`HPHR_COMP`, activada por la UCM) y el modo **class‑H**
