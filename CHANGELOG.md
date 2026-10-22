@@ -15,6 +15,81 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10–22 de octubre 2026 — suspensión a 0,26 W, kernel 7.2.12, audio de auriculares y Wind Waker
+
+Dos semanas de trabajo fino: bajar el consumo, entender por qué el panel no conmuta de refresco, arreglar el
+audio de auriculares y dejar un port nativo de Wind Waker funcionando desde Steam. Todo verificado en la Odin.
+
+### ✅ Suspensión: de ~0,37 W a **0,24–0,26 W**
+- Fuera los parches que peleaban entre sí: **`0044` y `0521` desactivados**, **`0512` añadido**.
+- Hooks `zz-inputplumber` y `zz-wifi` + udev `99-wifi-pm.rules` para que el mando y el WiFi suelten el bus al dormir.
+- **Medido en batería** (7.2.11‑7, dormida 359 s): **63–70 mA ≈ 0,26 W**. Antes ~0,37 W.
+- Limpieza de la pila de parches: `0035` duplicaba `0076`, `0038a` ya estaba cubierto y `1022`+`1023` exigen
+  rebase conjunto → waiveados. Solo quedó `1021`.
+
+### 🚀 Kernel: 7.2.11‑8 → 7.2.12‑16
+- **`1030`** (swr2), **`1031`** (relojes PM del tx‑macro), **`1032`** (bias del PLL del DSI, `0048b` de armada)
+  y **`1033‑TEST`** (modo 60 Hz primero en `icna3520`, para probar sin tocar el panel a mano).
+- **`7.2.12`** (estable nueva) + **`2109`** de armada: los controles **HPHL/HPHR Volume** del **WCD939x**
+  venían heredados del wcd938x y **no hacían nada** — la etapa de auriculares se quedaba fija en **+6 dB**
+  (el doble) y el `20` que escribe la UCM no servía. Ahora apuntan a `HPH_NEW_INT_PA_GAIN_CTL` y **0 dB es 0 dB**.
+- Publicado como **`linux-pocknix-sm8750 7.2.12‑16`** en el repo propio. Volver a 120 Hz “normal”:
+  `pacman -S linux-pocknix-sm8750=7.2.11-13` (sigue en R2).
+
+### ✅ Panel: qué pasa de verdad con 60 Hz
+- **El modo 60 Hz funciona** si es el **primero/preferido**: medido **59,95 Hz reales** con `panel-vhz.py` y **0 errores**.
+  `gamescope -r` **no** elige modo (es refresco anidado, no del panel).
+- **El bloqueo** es que el panel **no se reinicializa tras un `disable`** (`0x53`/`0x9C` → `-110`), así que no se puede
+  conmutar en caliente todavía. Todo el detalle en [`docs/REFRESH-60HZ-20261021.md`](docs/REFRESH-60HZ-20261021.md).
+
+### ⚠️ Micrófono: es soporte de plataforma, no configuración
+- El front‑end de captura pide **`graph_id=2`** y `q6apm_get_audioreach_graph()` / `audioreach_alloc_graph_pkt()`
+  fallan **sin log**. Ni la tplg de AYN ni la Kaanapali‑MTP publican ese grafo, así que no hay forma de arreglarlo
+  desde la UCM. Derivado a **`armada-os/armada#766`**.
+- Descartado por el camino: swr2, `0560`, dos tplg distintas. El BE `dai 120` **sí** arranca; el que falla es el FE.
+
+### ✅ Audio de auriculares: dos averías distintas
+- **Volumen**: el citado `2109` (la etapa estaba clavada a +6 dB).
+- **Conmutación**: el ecualizador del panel (`AYN Odin 3 EQ`) enlazaba su salida **a mano** al nodo de auriculares;
+  al desenchufar, el sonido se quedaba en un nodo no disponible → **silencio hasta reiniciar el filtro**.
+  Ahora el filtro **sigue al sink por defecto**, y un vigilante (`pocknix-audio-jack`) reengancha los enlaces y el
+  sink por defecto cada 2 s (también tras reiniciar PipeWire).
+- Añadido **suelo de latencia** (`default.clock.min-quantum = 512`) para evitar los xrun
+  `snd_pcm_avail after recover: Broken pipe` cuando una app pedía buffers demasiado pequeños.
+
+### ✅ Steam: por qué desaparecían nuestros atajos
+- `pocknix-steam-sync` escribía las entradas del `shortcuts.vdf` con las claves en **minúscula** (`appname`/`exe`);
+  Steam las descarta al arrancar. Corregido a **`AppName`/`Exe`** (formato canónico). Efecto visible: el tile
+  “The Legend of Zelda: The Wind Waker HD” ya sobrevive a los reinicios de Steam.
+
+### 🚀 Wind Waker HD v0.4.0 (port nativo ARM64) desde Steam
+- Instalado desde el volcado propio (`.wux` + claves), **sin WProton**: es un **AppImage de Linux ARM64**.
+- Cuatro causas encadenadas, todas resueltas en el lanzador: Steam lo ejecutaba bajo **Proton** (excepción por appid),
+  las **capas Vulkan** del overlay lo mataban (`VK_INSTANCE_LAYERS`), **FUSE** no está disponible bajo Steam
+  (`APPIMAGE_EXTRACT_AND_RUN=1`) y el launcher busca el juego en `$XDG_DATA_HOME/wwhd` (enlace + variable).
+- Ajustes por defecto: **castellano**, **una sola pantalla** (sin ventana del GamePad), **1080p** interno (`1.5x`)
+  y pantalla completa. Menú del juego sin teclado: **mantener SELECT ~1 s**.
+- **Save states** del PC (slots 1‑3 + `last_session`) copiados y funcionando entre x86_64 y ARM.
+
+### 🚀 Mandos en RetroArch (DeckStation)
+- El mando físico lo agarra InputPlumber (`EVIOCGRAB`), así que solo emite el **virtual** “X-Box 360 pad”. El lanzador
+  ahora lo busca **por nombre** (hasta 10 s) y lo pasa con `--appendconfig`; antes podía arrancar sin mando.
+
+### 🚀 calvOS-reports y calvOS-doctor (en marcha)
+- Repo público **`arcadematicas/calvOS-reports`** para los informes del sistema.
+- Diseño copiado de lo que hace bien el panel de Hooandee: **colector que redacta** (rutas, usuario, hostname,
+  seriales) → **POST a un colector propio** → el servicio abre el issue. El cliente **nunca** lleva token.
+- Pendiente: desplegar el colector (Worker de Cloudflare con el token como *secret*) y decidir si el primer envío
+  se hace con el modal del panel vendorizado o con el futuro `calvOS-doctor` propio.
+
+### 📄 Documentación y estado
+- Nuevos: [`docs/REFRESH-60HZ-20261021.md`](docs/REFRESH-60HZ-20261021.md),
+  [`docs/MIC-SOUNDWIRE-20261021.md`](docs/MIC-SOUNDWIRE-20261021.md), [`docs/UPSTREAM-BACKLOG.md`](docs/UPSTREAM-BACKLOG.md).
+- Abierto en armada: **#766** (micrófono). PRs **#146/#147/#148** en shuuri sin respuesta todavía; **#135** espera
+  test de GPU de 15 min + `journalctl -k | grep -iE 'gdsc|gmu|oob|hangcheck|recover'`.
+
+---
+
 ## 📅 05–09 de octubre 2026 — repo propio (R2), kernel 7.2.9, Decky completo y el QAM
 
 Semana de cierre del sistema: estrenamos **repo de actualizaciones propio**, subimos el kernel, dejamos **Decky
