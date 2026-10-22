@@ -98,7 +98,10 @@ def apply_all(reason=""):
     t0 = time.monotonic()
     plugged = jack_plugged()
     links = fix_links(plugged)
-    default = fix_default(plugged)
+    # El sink por defecto SOLO se toca en eventos (jack/streams) y al arrancar. En el tick
+    # periodico no: WirePlumber reaplica su "default.configured.audio.sink" y entrabamos en
+    # un bucle de set/revert cada 10 s (se veia como "acciones=default 28ms" sin parar).
+    default = fix_default(plugged) if reason != "tick" else False
     amps = ensure_spk_volume() if not plugged else False
     dt_ms = (time.monotonic() - t0) * 1000.0
     if links or default or amps:
@@ -147,9 +150,9 @@ def main():
     t = threading.Thread(target=watch_events, args=(stop,), daemon=True)
     t.start()
     try:
-        while True:                  # red de seguridad
+        while True:                  # red de seguridad: solo enlaces y amps, nunca el default
             time.sleep(TICK)
-            apply_all()
+            apply_all(reason="tick")
     except KeyboardInterrupt:
         stop.set()
 
