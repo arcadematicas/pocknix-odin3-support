@@ -17,7 +17,7 @@
 # `command -v`); de momento NO se anade a ninguna lista de paquetes (decision pendiente).
 pkgname=msm-firmware-loader
 pkgver=1.8.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Load the ADSP firmware from the Android partitions for hexagonrpcd"
 arch=('any')
 url="https://gitlab.postmarketos.org/postmarketOS/msm-firmware-loader"
@@ -34,9 +34,11 @@ prepare() {
 package() {
   cd msm-firmware-loader-$pkgver
 
-  # --- scripts -> /usr/sbin (lo que EXIGE el ExecStart de las unidades) -------
-  install -Dm755 msm-firmware-loader.sh        "${pkgdir}/usr/sbin/msm-firmware-loader.sh"
-  install -Dm755 msm-firmware-loader-unpack.sh "${pkgdir}/usr/sbin/msm-firmware-loader-unpack.sh"
+  # --- scripts -> /usr/bin (/usr/sbin es symlink a bin en Arch: meter la ENTRADA de
+  # directorio /usr/sbin/ rompe la instalacion con "exists in filesystem (owned by filesystem)")
+  # Las unidades siguen apuntando a /usr/sbin/*.sh y resuelven por el symlink. -------
+  install -Dm755 msm-firmware-loader.sh        "${pkgdir}/usr/bin/msm-firmware-loader.sh"
+  install -Dm755 msm-firmware-loader-unpack.sh "${pkgdir}/usr/bin/msm-firmware-loader-unpack.sh"
 
   # --- unidades -> /usr/lib/systemd/system -----------------------------------
   local unit="${pkgdir}/usr/lib/systemd/system"
