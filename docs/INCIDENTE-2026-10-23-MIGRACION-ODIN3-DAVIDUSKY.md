@@ -50,3 +50,37 @@ Tras lo anterior, `pacman -Syu` aborta en "checking for file conflicts":
 - 0 unidades fallidas. Nada del update instalado.
 - `pacman.conf` ya apunta a R2 + clave `85C433EE12621EED` importada.
 - Backups: `/flash/KERNEL.bak-20261023`, snapshot btrfs `0002`.
+
+---
+
+## 5. RESUELTO (24-oct) — los cuatro bloqueos corregidos y publicados
+
+Los cuatro fallos eran reales y de empaquetado nuestro. **Nada era del dispositivo.**
+Publicado en `r2:pocknix/shared` (firmado, `stage-check` en verde):
+
+| Paquete | Qué se arreglo |
+|---|---|
+| `pocknix-desktop 0.1.0-32` | **Ya no instala `/usr/bin/steamos-session-select`** (desde -27 es de `pocknix-session`) → desaparece el conflicto de ficheros. |
+| `pocknix-desktop-plasma-mobile 0.1.0-2` | Proveedor del virtual `pocknix-desktop-flavour`. **Nunca se habia publicado** → `pocknix-desktop -27..-32` eran ininstalables y R2 seguia sirviendo la -26. |
+| `pocknix-desktop-kde 0.1.0-2` | Idem (dependencia del sabor). |
+| `pocknix-homescreen 0.1.0-1` | Idem (dependencia del sabor). |
+| `pocknix-system-overlay 0.1.0-6` | Deja de empaquetar `etc/xdg/powerdevilrc`: lo trae `pocknix-desktop` → se acaba el doble dueno. |
+| `msm-firmware-loader 1.8.0-3` | Instala los scripts en `/usr/bin`. Meter la **entrada de directorio** `/usr/sbin/` rompia la transaccion (`exists in filesystem (owned by filesystem)`: en Arch `/usr/sbin` es symlink). Las unidades siguen apuntando a `/usr/sbin/*.sh` y resuelven por el symlink. |
+
+### Como reintentar
+1. `sudo pacman -Syy` (indice nuevo).
+2. `sudo pacman -Syu` **con la lista de `--overwrite` del doc de actualizacion** (la primera
+   pasada aun necesita adoptar los ficheros sin dueno que dejaron las imagenes viejas:
+   `bootanimation-odin3.zip`, `pocknix-diag.*`, `pocknix-oobe-marker.service`,
+   `pocknix-powerd.service`, `/usr/local/bin/pocknix-{oobe-marker,powerd}`).
+   Nunca `'*'`.
+3. Tras esa pasada, `pocknix-update` ya lleva politica acotada + autorreparacion y las
+   siguientes actualizaciones van solas.
+
+El workaround local (`pacman -U` del `pocknix-desktop -27` compilado a mano) se puede dejar:
+la -32 lo sustituye en la transaccion sin dejar ficheros huerfanos.
+
+### Nota para el build (nuestra parte)
+`scripts/build-packages.sh` abortaba cualquier build cuando el chroot ya estaba al dia:
+`pacman -Syu` sale con **1** y `there is nothing to do`, y el script lo trataba como base
+obsoleta. Corregido en `odin3-sm8750` (`75e894c`).

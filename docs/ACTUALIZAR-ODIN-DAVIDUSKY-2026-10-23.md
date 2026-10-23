@@ -120,8 +120,25 @@ Si no existe, la alternativa manual (política de `--overwrite` **acotada**, nun
 sudo pacman -Syu \
   --overwrite '/usr/lib/libplutovg.so*'        --overwrite '/usr/lib/libplutosvg.so*' \
   --overwrite '/usr/lib/libFLAC.so.8*'         --overwrite '/usr/lib/libpcap.so.0.8*' \
-  --overwrite '/usr/lib/libdisplay-info.so.1*' --overwrite '/usr/share/pocknix/vk-arm/*'
+  --overwrite '/usr/lib/libdisplay-info.so.1*' --overwrite '/usr/share/pocknix/vk-arm/*' \
+  --overwrite '/bootanimation-odin3.zip' \
+  --overwrite '/etc/systemd/system/pocknix-diag.service' \
+  --overwrite '/etc/systemd/system/pocknix-diag.timer' \
+  --overwrite '/etc/systemd/system/pocknix-oobe-marker.service' \
+  --overwrite '/etc/systemd/system/pocknix-powerd.service' \
+  --overwrite '/usr/local/bin/pocknix-oobe-marker' \
+  --overwrite '/usr/local/bin/pocknix-powerd'
 ```
+
+> **24/10/2026 — los 4 bloqueos del incidente están corregidos y publicados** en R2:
+> `pocknix-desktop 0.1.0-32` (ya no instala `steamos-session-select`; es de `pocknix-session`),
+> `pocknix-desktop-plasma-mobile -2`, `pocknix-desktop-kde -2`, `pocknix-homescreen -1`
+> (el refactor de sabores, que **nunca** se había publicado: por eso el repo servía `-26`),
+> `pocknix-system-overlay -6` (sin el `powerdevilrc` duplicado) y
+> `msm-firmware-loader 1.8.0-3` (instala en `/usr/bin`; `/usr/sbin` es symlink).
+> Las rutas `--overwrite` de arriba siguen haciendo falta **solo en la primera pasada**
+> (ficheros que las imágenes viejas dejaron sin dueño); el `pocknix-update` nuevo ya
+> lleva esa lista acotada + autorreparación.
 
 ## 7. PASO 5 — Reiniciar y verificar
 
