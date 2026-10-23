@@ -146,3 +146,47 @@ explícita (Opción B) hasta que MAKO publique el Renderer AArch64, y entonces s
 - `~/.local/bin/mako-diagnostics` — el oficial de MAKO (lee el log de Steam).
 - El CEF DevTools de Steam (puerto `127.0.0.1:8080`) permite evaluar `SteamClient.Apps.
   SetAppLaunchOptions` desde fuera (túnel SSH + cliente WebSocket).
+
+---
+
+## Actualización 23/10/2026 — estado real y qué pide el autor
+
+**Versión más reciente**: `render-v4.6.0` + `plugin-v4.6.0` (21/10/2026). Sigue siendo **x86_64**:
+
+> README de MAKO: *"Published Renderer packages currently target x86_64 Linux hosts... **Native
+> AArch64/Armada packages are not included in this release.**"*
+
+Y hay un cambio importante de comportamiento: **el plugin ahora se niega a instalarse/activarse en un
+host AArch64 nativo** (fail-closed). Lo documentan en `plugin/docs/ARMADA.md`:
+
+| Situación | Comportamiento |
+|---|---|
+| Host x86_64 nativo | instala y activa normal |
+| **Armada / AArch64 nativo** (incluido Decky bajo FEX) | **instalación deshabilitada**; wrapper en passthrough; se limpian activaciones antiguas |
+| Ficheros x86 del Renderer en disco | siguen ahí para limpiar, pero el wrapper **nunca** los activa |
+
+⚠️ **Consecuencia para nosotros**: si actualizamos el plugin Mako a 4.5/4.6 en la Odin, se
+**desactivará solo** en vez de intentar cargar una capa que no puede. Nuestra integración antigua
+(la que dejaba el plugin instalado) queda obsoleta por diseño.
+
+### Lo que pide el autor (issue #60, 10/10)
+> *"A native build attempt with the first concrete failures would be useful; you don't need to take on
+> the whole port..."*
+
+Es decir: **intentar compilar el Renderer para aarch64 y mandarle los primeros errores concretos**.
+Y los requisitos que ellos mismos han fijado para habilitar Armada (`ARMADA.md`):
+
+1. Renderer AArch64 **compilado desde fuente revisable** en su flujo normal (versión y checksum inmutables).
+2. Definir la matriz host nativo ↔ payload Vulkan del proceso cliente (no dar por bueno que las
+   etiquetas `64/32` x86_64 impliquen compatibilidad con FEX/Turnip).
+3. Demostrar **activación y teardown limpios** de la capa Vulkan en Armada sin editar el `Config.json`
+   global de FEX ni instalar una capa always-on.
+4. Validar `armada-game-launch`, juegos directos de Steam/Proton, lanzadores Flatpak y el *bypass*
+   explícito del Renderer.
+
+### Plan concreto nuestro
+- **Intento de build aarch64** del Renderer en el chroot de compilación del PC (mismo que usamos para
+  el kernel/BSP): recoger los **primeros errores** (toolchain, intrínsecos x86, SPIR-V, dependencias)
+  y pegarlos en el issue #60. Eso es exactamente lo que piden para mover la prioridad.
+- **No** tocar FEX `Config.json` global ni instalar nada always-on (requisito 3).
+- Si algún día hay Renderer AArch64: nuestra integración ya está hecha (ver el resto de este doc).
