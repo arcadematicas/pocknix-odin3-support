@@ -15,6 +15,52 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 23 de octubre 2026 — el sistema, a la flash interna (y los juegos, quietos en la SD)
+
+Día de mudanza: **calvOS pasa a arrancar de la UFS 4.0 interna** sin mover ni un juego, y se cierran
+los flecos de audio y mandos que quedaban de la víspera.
+
+### 🚀 Instalación en la flash interna
+- El instalador de `pocknix-tools` clona **todo** el root de la SD, así que se negaba: la SD tenía
+  **419 GiB** usados (325 en `/opt`) y la interna solo puede dar **196 GiB**.
+- **Parche propio**: `pocknix-install-internal --exclude DIR` — no clona `DIR` y **descuenta su
+  tamaño** del cálculo. Con `--exclude /opt` el clon baja a **94 GiB** ✅.
+- Instalado con `--userdata-gib 1` (Android reseteado, no se usa): `ROCKNIX`/`POCKNIX` (FAT 512 MiB) +
+  `POCKNIX_ROOT` (btrfs 196 GiB con snapshots). **~24 min** de clonado, 0 errores.
+- **Juegos sin mover**: `/opt` entero se monta desde la SD (`bind` en fstab) → DeckStation (184 GiB)
+  y WProton (140 GiB) siguen en su ruta. Nada más se redirige.
+- **Choque de nombres**: la SD se renombró a `POCKNIX_SD` (GPT + FS) para que el fstab interno no
+  montara `/home` desde la SD; su `KERNEL` se parcheó en el sitio (`root=PARTLABEL=POCKNIX_SD`) para
+  que siguiera siendo arrancable de rescate.
+- **Lección del ABL**: no elige por etiqueta del FAT; con la SD sin `KERNEL` el equipo no arrancaba
+  hasta **cambiar el origen en el menú del ABL**. Documentado en `docs/INSTALACION-INTERNA-20261023.md`.
+
+### ✅ Audio de auriculares: la compander
+- Apagarla en la UCM **no basta**: DAPM la reactiva al alimentar la ruta. El vigilante
+  `pocknix-audio-jack` la apaga y la vigila en cada pasada. Confirmado por Fransis: sin chisporroteo.
+
+### ✅ Altavoz: era la ruta, no el volumen
+- El control `SPK_L/R PCM Playback Volume` de los **AW88166** es **atenuación** (0 = máximo): leerlo a
+  0 **no** es silencio. Se retiró el `950` que habíamos puesto (atenuaba casi al mute) y el vigilante
+  ya no toca los amps. El fallo real era soltar `HPHL/HPHR`, `RDAC` y `CLSH` al volver al altavoz.
+
+### ✅ QAM jugando y botón de encendido
+- `steamui-watchdog` **no cuenta fallos ni reinicia la UI mientras hay un juego** (el reinicio a mitad
+  de partida era el "se traba el QAM").
+- `power-button-daemon.py` **faltaba en disco** (el paquete lo lista): servicio en bucle y botón
+  físico muerto. Reinstalado `pocknix-system-overlay`.
+
+### ✅ Batuta del Wind Waker
+- Arriba y derecha no registraban con el stick derecho. El port traía `stick_deadzone 0.15` y
+  `right_stick_range 1.0`; con **0.08 / 1.35** van las cuatro direcciones.
+
+### 🛡️ Memoria
+- `systemd-oomd` activo con umbrales altos (95 % swap, 70 % de presión 45 s): en el caso patológico
+  mata el proceso más pesado en vez de dejar el sistema arrastrándose (probado con un UE5 que llegó
+  a 9,1 GiB de zram y 379 MB libres).
+
+---
+
 ## 📅 10–22 de octubre 2026 — suspensión a 0,26 W, kernel 7.2.12, audio de auriculares y Wind Waker
 
 Dos semanas de trabajo fino: bajar el consumo, entender por qué el panel no conmuta de refresco, arreglar el
