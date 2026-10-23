@@ -71,7 +71,32 @@ fatlabel /dev/mmcblk0p1 ROCKNIX      # y, si hace falta, parted -s /dev/mmcblk0 
 ```
 (Su fstab usa PARTUUID para `/flash`, asi que la etiqueta no le afecta al arrancar.)
 
-## Estado final
+
+## Estado final (23/10, tras la puesta a punto)
+
+```
+/        /dev/sda19  POCKNIX_ROOT   btrfs 197G  (~87G usados, 110G libres)
+/flash   /dev/sda18  POCKNIX        vfat  511M
+/opt     /dev/mmcblk0p2[/@/opt]     bind desde la SD  (toda la carpeta)
+/mnt/sd-legacy  /dev/mmcblk0p2[/@]  SD completa (subvol @), rw, nofail
+```
+`fstab` interno: la SD por PARTUUID + **una** línea de bind `/mnt/sd-legacy/opt → /opt`
+(antes había dos binds concretos, deckstation y wproton; se unificaron).
+
+Nada más se redirige: `/home`, `/.snapshots`, `/var/log`, `/var/cache/pacman` y `/flash` viven en la
+interna. **No se copió ningún dato de juegos.**
+
+### Arranque: lo que aprendimos (importante)
+El ABL **no** elige por la etiqueta del FAT como decía el contrato: con el FAT de la SD renombrado a
+`SDDATA` seguía arrancando de la SD. Y al quitarle el `KERNEL` a la SD, el equipo **no arrancaba
+nada** (ni ABL visible) hasta **cambiar el origen de arranque en el menú del ABL**.
+
+Por tanto:
+- Para que arranque de la interna hay que **elegir el origen en el ABL** (Fransis lo dejó así).
+- La SD ya **no es arrancable** por sí sola: su `/flash/KERNEL` está como `KERNEL.disabled`.
+- **Restaurar la SD como sistema de rescate**: montar `/dev/mmcblk0p1`, `mv KERNEL.disabled KERNEL`
+  (y, si hace falta, `fatlabel /dev/mmcblk0p1 ROCKNIX`) y elegir la SD en el menú del ABL.
+
 - `/` en `/dev/sda19` (btrfs, 197 G, **110 G libres**), `/flash` en `/dev/sda18` (POCKNIX).
 - 0 unidades fallidas; audio, watchdog, botón de encendido y `oomd` activos.
 - Revertir: `pocknix-uninstall-internal` desde la SD.
