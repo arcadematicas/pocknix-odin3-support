@@ -1,3 +1,10 @@
+# ⚠️ SUPERADO — usa `ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-23.md`
+
+_Este documento se conserva por historial. La versión vigente, con el kernel 7.2.12-16, el audio
+arreglado y la instalación interna, es la del 23/10/2026._
+
+---
+
 # Actualizar la Odin 3 con seguridad — guía para Davidusky (y su IA "Jarvis")
 
 > **Contexto / por qué existe esta guía.** El repo de Pocknix que traían las imágenes apuntaba a

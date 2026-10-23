@@ -9,13 +9,16 @@ pkgname=linux-pocknix-sm8750
 # 7.2.4 mientras el kernel staged era 7.2.6 (el paquete llevaba los modulos
 # correctos y /usr/lib/pocknix/kernelrelease decia la verdad, pero el NOMBRE
 # del paquete mentia y pacman -Q tambien).
-# 7.2.10 (15/10): la Odin corre y esta verificada con 7.2.10; kernel.conf ya
-# apunta a KERNEL_VERSION=7.2.10. pkgrel resetea a 1 al subir pkgver.
+# 7.2.12 (22/10): estable nueva + 2109 (volumen analogico de auriculares WCD939x, de
+# armada: los controles HPHL/HPHR heredados del wcd938x no hacian nada y la etapa se
+# quedaba en +6 dB; ahora apuntan a HPH_NEW_INT_PA_GAIN_CTL y el 20 del UCM es 0 dB).
+# 7.2.11 (18/10): kernel.conf Y este pkgver suben juntos (aqui se olvido en 7.2.4/7.2.6).
+# Incluye la calibracion de panel del Odin 3 y la serie deep sleep de armada.
 # pkgrel 2 (16/10): la 7.2.10-1 publicada NO llevaba el parche de rumble/haptics del
 # Odin 3 (2107-input-haptics-stop-zero-amplitude-immediately-armada); se recompila el
 # kernel con el parche aplicado y se republica como -2. Ver §3 del CIERRE.
-pkgver=7.2.10
-pkgrel=2
+pkgver=7.2.12
+pkgrel=16
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"

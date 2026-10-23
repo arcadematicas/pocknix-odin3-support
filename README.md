@@ -216,6 +216,13 @@ Guía completa: [`BUILD.md`](BUILD.md)
 | Doc | Qué cuenta |
 |---|---|
 | [`docs/ROTACION-HARDWARE.md`](docs/ROTACION-HARDWARE.md) | **Rotación por hardware**: las 2 trampas, la solución, cómo verificarla, y el fix de la BTF |
+| [`docs/ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-23.md`](docs/ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-23.md) | **Guía de actualización para terceros** (Davidusky y Jarvis): repo, clave, `-Syu`, verificación y avisos |
+| [`docs/INSTALACION-INTERNA-20261023.md`](docs/INSTALACION-INTERNA-20261023.md) | **Instalar el sistema en la UFS interna** dejando los juegos en la SD (`--exclude /opt`, renombrado de la SD, ABL) |
+| [`docs/AUDIO-AURICULARES-20261022.md`](docs/AUDIO-AURICULARES-20261022.md) | **Audio**: volumen real de auriculares (`2109`), compander, conmutación y los amps AW88166 |
+| [`docs/WINDWAKER-BATUTA-20261023.md`](docs/WINDWAKER-BATUTA-20261023.md) | Wind Waker: la batuta no registraba arriba/derecha (`stick_deadzone`/`right_stick_range`) |
+| [`docs/CALVOS-DOCTOR.md`](docs/CALVOS-DOCTOR.md) | `calvos-doctor`: informe de diagnóstico y envío al colector propio |
+| [`docs/GRABAR-VIDEO.md`](docs/GRABAR-VIDEO.md) | Grabar vídeo: capturadora, `calvos-grabar` (H.264 por hardware), `dock-check` |
+| [`docs/TAILSCALE.md`](docs/TAILSCALE.md) | Acceso remoto: estado y cómo instalarlo/autenticarlo |
 | [`docs/REFRESH-60HZ-20261021.md`](docs/REFRESH-60HZ-20261021.md) | **Refresco 60/120 Hz**: por qué 60 Hz funciona como primer modo y por qué aún no conmuta en caliente |
 | [`docs/MIC-SOUNDWIRE-20261021.md`](docs/MIC-SOUNDWIRE-20261021.md) | **Micrófono**: diagnóstico completo (grafo de captura ausente en la tplg → `armada#766`) |
 | [`docs/UPSTREAM-BACKLOG.md`](docs/UPSTREAM-BACKLOG.md) | **Backlog de upstream**: qué parches entran, cuáles se waivean y por qué |
