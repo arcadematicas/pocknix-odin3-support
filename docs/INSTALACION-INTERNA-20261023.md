@@ -48,6 +48,29 @@ PARTUUID=706f636b-…0002  /mnt/sd-legacy  btrfs  rw,noatime,compress=zstd:1,com
 Con la SD puesta, todo sigue en su ruta: ROMs, juegos de WProton (incluido Wind Waker con saves y
 save states). Sin la SD, el sistema arranca igual y esos directorios salen vacíos (`nofail`).
 
+
+## Quien arranca: el ABL elige por la etiqueta del FAT
+
+Contrato del bootloader (`pocknix-bootloader-sm8750`): el ABL busca un FAT **`ROCKNIX`** y arranca
+su `/KERNEL`. La interna quedo con el FAT en **`POCKNIX`** (nuestro `pocknix-internal-boot-rename`
+la renombra) y **arranca** (probado con la SD fuera). Pero **con la SD puesta gana la SD**, porque
+su FAT seguia llamandose `ROCKNIX`.
+
+Comprobado en la consola: con la SD dentro arranco `mmcblk0p2 POCKNIX_SD` (la SD).
+
+### Arreglo aplicado
+- SD p1: `fatlabel /dev/mmcblk0p1 SDDATA` (y sin flag `boot`; conserva `legacy_boot, msftdata`).
+- Interna p18: `POCKNIX`, flags `boot, esp`.
+
+Asi el unico FAT arrancable reconocible es el de la interna: la SD puede quedarse puesta **solo como
+almacen** (juegos/ROMs).
+
+### Volver a hacer la SD arrancable (rescate)
+```sh
+fatlabel /dev/mmcblk0p1 ROCKNIX      # y, si hace falta, parted -s /dev/mmcblk0 set 1 legacy_boot on
+```
+(Su fstab usa PARTUUID para `/flash`, asi que la etiqueta no le afecta al arrancar.)
+
 ## Estado final
 - `/` en `/dev/sda19` (btrfs, 197 G, **110 G libres**), `/flash` en `/dev/sda18` (POCKNIX).
 - 0 unidades fallidas; audio, watchdog, botón de encendido y `oomd` activos.
