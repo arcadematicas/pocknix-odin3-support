@@ -1,0 +1,384 @@
+#!/bin/bash
+# pocknix-install-internal — install the running pocknix system to internal UFS storage.
+#
+# Run ON THE DEVICE, as root, booted from the SD. Shrinks the Android `userdata` partition
+# on the internal disk, appends a FAT boot partition named POCKNIX plus a POCKNIX_ROOT
+# root, copies the current KERNEL onto the FAT and clones the running rootfs onto it.
+# The internal root gets the same filesystem as the running SD: btrfs with the snapshot
+# subvol layout, or ext4 from a pre-snapshot SD. Nothing before `userdata` (abl, xbl,
+# modem, persist) is touched. When it finishes: power off, remove the SD card, power on.
+#
+# One-time gateway only. After install, update in place (pacman -S / -U a package; a kernel is
+# linux-pocknix-<soc>, deployed by pocknix-bsp-common's pacman hook), never re-run this.
+#
+# Usage: pocknix-install-internal [--dry-run] [--yes] [--userdata-gib N] [--device /dev/sdX]
+#        pocknix-install-internal --detect    # read-only probe: k=v state for pocknix-installer-gui
+#
+# Device facts (disk, boot style, partition names) default to the RP6/SM8550 values and are
+# overridden by /usr/lib/pocknix/device.conf, then /etc/pocknix/device.conf.
+set -euo pipefail
+
+[ -r /usr/lib/pocknix/device.conf ] && . /usr/lib/pocknix/device.conf
+[ -r /etc/pocknix/device.conf ] && . /etc/pocknix/device.conf
+
+# qcom-abl (sm8550): the ABL boots the /flash KERNEL boot image. arm-efi (sm8250): the ABL
+# chainloads GRUB from the FAT, /KERNEL is a raw Image and the cmdline lives in
+# boot/grub/grub.cfg. Partitioning is identical; only boot-file handling and fstab differ.
+BOOT_STYLE="${POCKNIX_BOOT_STYLE:-qcom-abl}"
+case "$BOOT_STYLE" in
+  qcom-abl|arm-efi) ;;
+  *) echo "pocknix-install-internal: unknown boot style '${BOOT_STYLE}'" >&2; exit 1 ;;
+esac
+
+DEVICE="${POCKNIX_INTERNAL_DISK:-/dev/sda}"   # internal userdata LUN on SM8550 (sda17 = Android userdata)
+BOOT_MIB=512                      # not the SD's 256: at the UFS's 4K logical sectors a 256 MiB
+                                  # partition has too few clusters for FAT32, and the ABL reads
+                                  # the result as corrupt.
+ROOT_MIN_GIB=8
+ANDROID_MIN_GIB=1
+# The ABL scans ESP-typed FAT partitions for boot files and never matches the name, so these
+# are ours. Never ROCKNIX: a ROCKNIX SD boot mounts the first ROCKNIX-labelled partition it finds.
+BOOT_GPT_NAME="${POCKNIX_BOOT_GPT_NAME:-POCKNIX}"
+BOOT_FAT_LABEL="${POCKNIX_BOOT_FAT_LABEL:-POCKNIX}"
+ROOT_GPT_NAME="${POCKNIX_ROOT_LABEL:-POCKNIX_ROOT}"   # matches the kernel cmdline root=PARTLABEL=...
+DRY_RUN=0; ASSUME_YES=0; UD_GIB=""; DETECT=0; EXCLUDES=()
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1 ;;
+    --yes|-y)  ASSUME_YES=1 ;;
+    --detect)  DETECT=1 ;;
+    --userdata-gib) UD_GIB="${2:-}"; shift ;;
+    --exclude) EXCLUDES+=("${2:-}"); shift ;;
+    --device) DEVICE="${2:-}"; shift ;;
+    -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
+    *) echo "unknown arg: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+say()  { echo -e "\033[1;34m[install]\033[0m $*"; }
+warn() { echo -e "\033[1;33m[install] WARN\033[0m $*" >&2; }
+die()  { echo -e "\033[1;31m[install] ERROR\033[0m $*" >&2; exit 1; }
+
+[ "$(id -u)" = 0 ] || die "must run as root"
+ROOT_FS="$(findmnt -no FSTYPE / 2>/dev/null || echo ext4)"
+case "$ROOT_FS" in btrfs|ext4) ;; *) die "unsupported root filesystem '$ROOT_FS'";; esac
+tools="parted partprobe blkid blockdev mkfs.vfat rsync findmnt awk"
+[ "$ROOT_FS" = btrfs ] && tools="$tools mkfs.btrfs btrfs" || tools="$tools mkfs.ext4"
+for c in $tools; do
+  command -v "$c" >/dev/null 2>&1 || die "missing required tool: $c"
+done
+[ -b "$DEVICE" ] || die "internal device $DEVICE not found (override with --device)"
+
+if [ "$(cat "/sys/block/$(basename "$DEVICE")/removable" 2>/dev/null || echo 1)" != 0 ]; then
+  die "$DEVICE is removable — refusing (this installer only targets the internal UFS). Unplug USB drives."
+fi
+
+ROOT_SRC="$(findmnt -no SOURCE / || true)"
+case "$ROOT_SRC" in
+  "$DEVICE"*) die "$DEVICE is the disk we booted from — that's the SD, not internal. Aborting." ;;
+esac
+
+partdev() { case "$DEVICE" in *mmcblk*|*nvme*) echo "${DEVICE}p$1" ;; *) echo "${DEVICE}$1" ;; esac; }
+
+existing="$(parted -m -s "$DEVICE" print 2>/dev/null | tail -n +2 | cut -d: -f6 || true)"
+if echo "$existing" | grep -qx -e "$ROOT_GPT_NAME"; then
+  if [ "$DETECT" = 1 ]; then
+    echo "mode=occupied"
+    # ROCKNIX: the boot FAT's pre-rename name (pocknix-internal-boot-rename)
+    parted -m -s "$DEVICE" unit B print | awk -F: -v r="$ROOT_GPT_NAME" -v b="$BOOT_GPT_NAME" '
+      NR>2 { sz=$4; sub("B","",sz)
+             if ($6=="userdata") a+=sz; else if ($6==r || $6==b || $6=="ROCKNIX") p+=sz }
+      END  { printf "android_gib=%d\npocknix_gib=%d\n", a/2^30, p/2^30 }'
+    exit 0
+  fi
+  die "an existing install was found on $DEVICE (a $ROOT_GPT_NAME/$BOOT_GPT_NAME/STORAGE partition).
+  This installer only does a fresh install. To reinstall, delete those partitions first
+  (carefully, with parted) or restore Android, then re-run."
+fi
+# A ROCKNIX/STORAGE tail without POCKNIX_ROOT is someone else's install (e.g. ROCKNIX itself).
+if [ "$DETECT" = 1 ] && echo "$existing" | grep -qx -e "$BOOT_GPT_NAME" -e "ROCKNIX" -e "STORAGE"; then
+  echo "mode=foreign"; exit 0
+fi
+
+mapfile -t ud < <(parted -m -s "$DEVICE" unit B print | awk -F: 'NR>2 && $6=="userdata"')
+if [ "${#ud[@]}" -ne 1 ]; then
+  [ "$DETECT" = 1 ] && { echo "mode=foreign"; exit 0; }
+  parted -s "$DEVICE" print >&2; die "could not uniquely find an Android 'userdata' partition on $DEVICE"
+fi
+IFS=: read -r UD_NUM UD_STARTB UD_ENDB _ <<< "${ud[0]}"
+UD_START="${UD_STARTB%B}"; UD_END="${UD_ENDB%B}"
+
+last_end=0
+while IFS=: read -r _ _ eb _; do eb="${eb%B}"; [ "$eb" -gt "$last_end" ] && last_end="$eb"; done \
+  < <(parted -m -s "$DEVICE" unit B print | awk -F: 'NR>2')
+if [ "$UD_END" -lt "$last_end" ]; then
+  [ "$DETECT" = 1 ] && { echo "mode=foreign"; exit 0; }
+  parted -s "$DEVICE" print >&2
+  die "userdata (#$UD_NUM) is not the last partition on $DEVICE — refusing (this installer assumes it is)."
+fi
+
+MiB=$((1024*1024)); GiB=$((1024*1024*1024))
+UD_START_MIB=$(( (UD_START + MiB - 1) / MiB ))
+UD_END_MIB=$(( UD_END / MiB ))
+ORIG_MIB=$(( UD_END_MIB - UD_START_MIB ))
+ORIG_GIB=$(( ORIG_MIB / 1024 ))
+MIN_UD_GIB=$ANDROID_MIN_GIB
+MAX_UD_GIB=$(( (ORIG_MIB - BOOT_MIB - ROOT_MIN_GIB*1024) / 1024 ))
+if [ "$MAX_UD_GIB" -lt "$MIN_UD_GIB" ]; then
+  [ "$DETECT" = 1 ] && { echo "mode=toosmall"; echo "needed_gib=$(( ANDROID_MIN_GIB + ROOT_MIN_GIB + 1 ))"; echo "android_current_gib=${ORIG_GIB}"; exit 0; }
+  die "not enough space on $DEVICE (userdata is only ${ORIG_GIB} GiB)"
+fi
+
+# The clone is the SD root's used space (df is instant; a du walk would take as long as the
+# rsync). On btrfs df spans every subvol, so the uncopied @pacman-cache is taken back off;
+# @snapshots share their extents with @ and stay counted, erring on the safe side.
+SD_USED=$(df -B1 --output=used / | tail -1)
+if [ "$ROOT_FS" = btrfs ] && findmnt -no FSTYPE /var/cache/pacman 2>/dev/null | grep -q btrfs; then
+  _cache=$(du -sxB1 /var/cache/pacman 2>/dev/null | cut -f1); _cache=${_cache:-0}
+  SD_USED=$(( SD_USED - _cache )); [ "$SD_USED" -lt 0 ] && SD_USED=0
+fi
+# rutas excluidas (p.ej. /opt): no se clonan, y su tamano se descuenta del calculo
+for _d in "${EXCLUDES[@]}"; do
+  _x=$(du -sxB1 "$_d" 2>/dev/null | cut -f1); _x=${_x:-0}
+  SD_USED=$(( SD_USED - _x )); [ "$SD_USED" -lt 0 ] && SD_USED=0
+done
+SD_USED_GIB=$(( (SD_USED + GiB - 1) / GiB ))
+# headroom: fs metadata + room to boot and update afterwards; 5% or 2 GiB, whichever is more
+_head=$(( SD_USED / 20 )); [ "$_head" -lt $(( 2*GiB )) ] && _head=$(( 2*GiB ))
+ROOT_NEED_MIB=$(( (SD_USED + _head + MiB - 1) / MiB ))
+[ "$ROOT_NEED_MIB" -lt $(( ROOT_MIN_GIB*1024 )) ] && ROOT_NEED_MIB=$(( ROOT_MIN_GIB*1024 ))
+POCKNIX_MAX_GIB=$(( (ORIG_MIB - BOOT_MIB - MIN_UD_GIB*1024) / 1024 ))
+FIT_UD_GIB=$(( (ORIG_MIB - BOOT_MIB - ROOT_NEED_MIB) / 1024 ))
+[ "$FIT_UD_GIB" -lt "$MAX_UD_GIB" ] && MAX_UD_GIB=$FIT_UD_GIB
+if [ "$MAX_UD_GIB" -lt "$MIN_UD_GIB" ]; then
+  FREE_GIB=$(( (ROOT_NEED_MIB - (ORIG_MIB - BOOT_MIB - MIN_UD_GIB*1024) + 1023) / 1024 ))
+  if [ "$DETECT" = 1 ]; then
+    echo "mode=nofit"; echo "sd_used_gib=${SD_USED_GIB}"; echo "pocknix_max_gib=${POCKNIX_MAX_GIB}"
+    echo "free_gib=${FREE_GIB}"; exit 0
+  fi
+  die "the SD card's pocknix data (${SD_USED_GIB} GiB in use) does not fit on internal storage:
+  with Android at its ${MIN_UD_GIB} GiB minimum, pocknix can get at most ${POCKNIX_MAX_GIB} GiB.
+  Free at least ${FREE_GIB} GiB on the SD (uninstall Steam games, remove ROMs; they can be
+  reinstalled onto internal afterwards) and re-run."
+fi
+
+if [ "$DETECT" = 1 ]; then
+  echo "mode=fresh"
+  echo "android_min_gib=${MIN_UD_GIB}"
+  echo "android_max_gib=${MAX_UD_GIB}"
+  echo "android_current_gib=${ORIG_GIB}"
+  echo "sd_used_gib=${SD_USED_GIB}"
+  exit 0
+fi
+
+say "Internal disk $DEVICE: Android userdata #$UD_NUM is ${ORIG_GIB} GiB."
+say "The SD's pocknix data is ${SD_USED_GIB} GiB, so Android can keep at most ${MAX_UD_GIB} GiB."
+say "You can shrink it to between ${MIN_UD_GIB} and ${MAX_UD_GIB} GiB; pocknix gets the rest."
+
+if [ -n "$UD_GIB" ]; then
+  [[ "$UD_GIB" =~ ^[0-9]+$ ]] || die "--userdata-gib must be an integer"
+else
+  while :; do
+    read -rp "New Android userdata size in GiB [${MIN_UD_GIB}..${MAX_UD_GIB}]: " UD_GIB || die "no input"
+    [[ "$UD_GIB" =~ ^[0-9]+$ ]] || { echo "enter an integer"; continue; }
+    break
+  done
+fi
+{ [ "$UD_GIB" -ge "$MIN_UD_GIB" ] && [ "$UD_GIB" -le "$MAX_UD_GIB" ]; } \
+  || die "userdata size ${UD_GIB} out of range (${MIN_UD_GIB}..${MAX_UD_GIB})"
+
+NEW_UD_END_MIB=$(( UD_START_MIB + UD_GIB*1024 ))
+BOOT_START_MIB=$NEW_UD_END_MIB
+BOOT_END_MIB=$(( BOOT_START_MIB + BOOT_MIB ))
+ROOT_START_MIB=$BOOT_END_MIB
+ROOT_GIB=$(( (UD_END_MIB - ROOT_START_MIB) / 1024 ))
+BOOT_NUM=$(( UD_NUM + 1 )); ROOT_NUM=$(( UD_NUM + 2 ))
+
+cat <<EOF
+
+  PLAN for $DEVICE (nothing before userdata #$UD_NUM is touched: abl/xbl/modem/persist all safe):
+    #$UD_NUM  userdata               ${UD_START_MIB}..${NEW_UD_END_MIB} MiB    (Android, ${UD_GIB} GiB — RESET)
+    #$BOOT_NUM  ${BOOT_GPT_NAME}           ${BOOT_START_MIB}..${BOOT_END_MIB} MiB    (FAT, 4K-sector — pocknix KERNEL+KERNEL.md5)
+    #$ROOT_NUM  $ROOT_GPT_NAME           ${ROOT_START_MIB}..${UD_END_MIB} MiB    (${ROOT_FS}, ~${ROOT_GIB} GiB — pocknix rootfs, ${SD_USED_GIB} GiB to clone)
+EOF
+
+if [ "$DRY_RUN" = 1 ]; then say "--dry-run: no changes made."; exit 0; fi
+
+if [ "$ASSUME_YES" != 1 ]; then
+  echo
+  warn "This WIPES Android userdata on $DEVICE and writes pocknix to internal storage."
+  read -rp "Type 'INSTALL' to proceed: " ans || die "no input"
+  [ "$ans" = "INSTALL" ] || die "aborted."
+fi
+
+UD_PART="$(partdev "$UD_NUM")"; BOOT_PART="$(partdev "$BOOT_NUM")"; ROOT_PART="$(partdev "$ROOT_NUM")"
+
+DESTRUCTIVE=0
+on_err() {
+  [ "$DESTRUCTIVE" = 1 ] && cat >&2 <<EOF
+
+[install] ERROR: install did not finish after internal storage was modified.
+  Do NOT boot internal storage. From the SD, run pocknix-uninstall-internal to clear the
+  half-written install, fix the cause above, then re-run this installer.
+  Only if the device won't boot the SD at all: recover with a PC (fastboot erase / re-flash userdata).
+EOF
+}
+trap on_err ERR
+
+umount_quiet() { mount | grep -q "^$1 " && umount "$1" || true; }
+say "Repartitioning $DEVICE ..."; DESTRUCTIVE=1
+umount_quiet "$UD_PART"
+parted -s "$DEVICE" rm "$UD_NUM"
+parted -a optimal -s "$DEVICE" mkpart primary ext4   "${UD_START_MIB}MiB"  "${NEW_UD_END_MIB}MiB"
+parted -s "$DEVICE" name "$UD_NUM" userdata
+parted -a optimal -s "$DEVICE" mkpart primary fat32  "${BOOT_START_MIB}MiB" "${BOOT_END_MIB}MiB"
+parted -s "$DEVICE" name "$BOOT_NUM" "$BOOT_GPT_NAME"
+# 'boot on' = ESP type GUID: the Odin 2 firmware only exposes ESP-typed internal
+# partitions to the ABL's volume scan, and bootloops on msftdata ones (#34).
+parted -s "$DEVICE" set "$BOOT_NUM" boot on
+parted -a optimal -s "$DEVICE" mkpart primary "$ROOT_FS" "${ROOT_START_MIB}MiB" "${UD_END_MIB}MiB"
+parted -s "$DEVICE" name "$ROOT_NUM" "$ROOT_GPT_NAME"
+partprobe "$DEVICE"; sleep 1
+
+say "Formatting boot ($BOOT_PART) + root ($ROOT_PART) ..."
+umount_quiet "$BOOT_PART"; umount_quiet "$ROOT_PART"
+dd if=/dev/zero of="$UD_PART" bs=1M count=8 status=none   # wipe stale Android fs signature
+# The FAT must be made at the device's logical sector size (4096 on UFS, 512 on SD): the ABL
+# reads a default 512-sector FAT on 4K-sector UFS as corrupt. -s 1 maximises cluster count so
+# 512 MiB still clears the FAT32 minimum, which a fixed -s 4 would not.
+BOOT_SS="$(blockdev --getss "$BOOT_PART")"
+mkfs.vfat -F 32 -S "$BOOT_SS" -s 1 -n "$BOOT_FAT_LABEL" "$BOOT_PART" >/dev/null
+BTRFS_OPTS="rw,noatime,compress=zstd:1"   # matches the SD image's fstab
+if [ "$ROOT_FS" = btrfs ]; then
+  mkfs.btrfs -f -q -L "$ROOT_GPT_NAME" "$ROOT_PART"
+else
+  mkfs.ext4 -F -q -L "$ROOT_GPT_NAME" -m 1 "$ROOT_PART"
+fi
+
+BMNT="$(mktemp -d)"; RMNT="$(mktemp -d)"; SDMNT="$(mktemp -d)"
+cleanup_mnt() { for m in "$BMNT" "$RMNT" "$SDMNT"; do umount -R "$m" 2>/dev/null || true; rmdir "$m" 2>/dev/null || true; done; }
+trap 'on_err; cleanup_mnt' ERR
+mount "$BOOT_PART" "$BMNT"
+if [ "$ROOT_FS" = btrfs ]; then
+  # @ becomes the fs default so nothing names a subvol for / — that is what lets
+  # pocknix-rollback switch roots by set-default alone.
+  mount -o "$BTRFS_OPTS" "$ROOT_PART" "$RMNT"
+  for sv in @ @home @snapshots @pacman-cache @var-log; do
+    btrfs subvolume create "$RMNT/$sv" >/dev/null
+  done
+  btrfs subvolume set-default "$(btrfs inspect-internal rootid "$RMNT/@")" "$RMNT"
+  umount "$RMNT"
+  mount -o "$BTRFS_OPTS,subvol=@" "$ROOT_PART" "$RMNT"
+  # @snapshots and @pacman-cache stay unmounted/empty: the SD's snapshots reference SD state.
+  mkdir -p "$RMNT/home" "$RMNT/var/log"
+  mount -o "$BTRFS_OPTS,subvol=@home"    "$ROOT_PART" "$RMNT/home"
+  mount -o "$BTRFS_OPTS,subvol=@var-log" "$ROOT_PART" "$RMNT/var/log"
+else
+  mount "$ROOT_PART" "$RMNT"
+fi
+
+# The ABL verifies KERNEL against KERNEL.md5, so the whole boot FAT is copied — a missing
+# KERNEL.md5 reads as "installation corrupt". Older SD images label their boot FAT ROCKNIX.
+SD_BOOT=""
+for _lbl in "$BOOT_FAT_LABEL" ROCKNIX; do
+  SD_BOOT="$(blkid -t LABEL="$_lbl" -o device 2>/dev/null | grep -v "^${DEVICE}" | head -1 || true)"
+  [ -n "$SD_BOOT" ] && break
+done
+[ -n "$SD_BOOT" ] || die "couldn't find the SD boot partition (LABEL=$BOOT_FAT_LABEL or ROCKNIX) to copy KERNEL from"
+# The SD image already mounts its boot FAT on /flash, and vfat refuses a second RO mount while
+# it is mounted RW ("would change RO state"), so reuse an existing mountpoint when there is one.
+SD_SRC="$(findmnt -nro TARGET "$SD_BOOT" 2>/dev/null | head -1)"
+if [ -n "$SD_SRC" ]; then
+  did_sd_mount=0; say "Copying boot files from $SD_BOOT (already mounted at $SD_SRC) ..."
+else
+  mount -o ro "$SD_BOOT" "$SDMNT"; SD_SRC="$SDMNT"; did_sd_mount=1
+  say "Copying boot files (KERNEL + KERNEL.md5) from $SD_BOOT ..."
+fi
+[ -f "$SD_SRC/KERNEL" ] || die "no KERNEL on the SD boot partition ($SD_BOOT at $SD_SRC)"
+cp -a "$SD_SRC/." "$BMNT/"
+cp "$BMNT/KERNEL" "$BMNT/KERNEL.bak"        # rollback copy, refreshed by the kernel-update hook
+[ "$did_sd_mount" = 1 ] && umount "$SDMNT" || true
+
+# SD and internal roots share the GPT name, so a PARTLABEL root= would resolve to whichever
+# the kernel enumerates first; PARTUUID is unique and keeps the internal install on its own root.
+if [ "$BOOT_STYLE" = "arm-efi" ]; then
+  [ -f "$BMNT/EFI/BOOT/bootaa64.efi" ] || die "SD boot FAT has no EFI/BOOT/bootaa64.efi — not an arm-efi layout?"
+  [ -f "$BMNT/boot/grub/grub.cfg" ]    || die "SD boot FAT has no boot/grub/grub.cfg"
+  ROOT_PARTUUID="$(blkid -s PARTUUID -o value "$ROOT_PART")"
+  [ -n "$ROOT_PARTUUID" ] || die "could not read PARTUUID of $ROOT_PART"
+  sed -i -E "s|root=PART(LABEL\|UUID)=[^ ]*|root=PARTUUID=${ROOT_PARTUUID}|g" "$BMNT/boot/grub/grub.cfg"
+  grep -q "root=PARTUUID=${ROOT_PARTUUID}" "$BMNT/boot/grub/grub.cfg" \
+    || die "failed to pin the internal grub.cfg root= (unexpected cmdline format?)"
+  say "Pinned internal grub.cfg to root=PARTUUID=${ROOT_PARTUUID}"
+fi
+
+# On btrfs every subvol is its own st_dev, so rsync -x stops at each boundary: the / pass
+# copies @ alone and /home + /var/log need their own passes below.
+say "Cloning rootfs to $ROOT_PART — can take a long time. Be patient - nothing's broken :)"
+rsync -aHAXx --numeric-ids \
+  --exclude='/proc/*' --exclude='/sys/*' --exclude='/dev/*' --exclude='/run/*' \
+  --exclude='/tmp/*'  --exclude='/mnt/*' --exclude='/media/*' --exclude='/lost+found' \
+  $(for _d in "${EXCLUDES[@]}"; do printf -- "--exclude=%s/* " "$_d"; done) \
+  / "$RMNT/"
+for _d in "${EXCLUDES[@]}"; do mkdir -p "$RMNT$_d"; done
+for d in proc sys dev run tmp mnt media flash; do mkdir -p "$RMNT/$d"; done
+if [ "$ROOT_FS" = btrfs ]; then
+  rsync -aHAXx --numeric-ids /home/    "$RMNT/home/"
+  rsync -aHAXx --numeric-ids /var/log/ "$RMNT/var/log/"
+  # a fresh install is not "rolled back", whatever the SD's state was
+  rm -f "$RMNT/var/lib/pocknix/rollback-info.json"
+fi
+
+if [ "$BOOT_STYLE" = "arm-efi" ]; then
+  BOOT_PARTUUID="$(blkid -s PARTUUID -o value "$BOOT_PART")"
+  ROOT_ID="PARTUUID=${ROOT_PARTUUID}"; BOOT_ID="PARTUUID=${BOOT_PARTUUID}"
+  FSTAB_HDR="# pocknix-os — internal install (arm-efi; PARTUUID = unambiguous vs an inserted SD)"
+else
+  ROOT_ID="PARTLABEL=${ROOT_GPT_NAME}"; BOOT_ID="PARTLABEL=${BOOT_GPT_NAME}"
+  FSTAB_HDR="# pocknix-os — internal install"
+fi
+if [ "$ROOT_FS" = btrfs ]; then
+  cat > "$RMNT/etc/fstab" <<EOF
+${FSTAB_HDR}
+${ROOT_ID}  /                  btrfs  ${BTRFS_OPTS}                       0 0
+${ROOT_ID}  /home              btrfs  ${BTRFS_OPTS},subvol=@home          0 0
+${ROOT_ID}  /.snapshots        btrfs  ${BTRFS_OPTS},subvol=@snapshots     0 0
+${ROOT_ID}  /var/cache/pacman  btrfs  ${BTRFS_OPTS},subvol=@pacman-cache  0 0
+${ROOT_ID}  /var/log           btrfs  ${BTRFS_OPTS},subvol=@var-log       0 0
+${BOOT_ID}  /flash             vfat   rw,noatime,nofail                   0 2
+EOF
+else
+  cat > "$RMNT/etc/fstab" <<EOF
+${FSTAB_HDR}
+${ROOT_ID}  /       ext4  rw,noatime          0 1
+${BOOT_ID}  /flash  vfat  rw,noatime,nofail   0 2
+EOF
+fi
+
+sync
+cleanup_mnt; trap - ERR
+say "Done. New layout on $DEVICE:"
+parted -s "$DEVICE" print | awk 'NR>6'
+if [ "$BOOT_STYLE" = "arm-efi" ]; then
+  cat <<EOF
+
+  Internal install complete. Now:
+    1) Power off.
+    2) Remove the SD card.
+    3) Power on — the stock ABL chainloads GRUB from the internal $BOOT_GPT_NAME FAT.
+  (The internal grub.cfg + fstab are PARTUUID-pinned, so an inserted SD can't steal
+   the root — but SD-vs-internal BOOT priority is the stock ABL's choice; if the SD
+   still boots first, remove it to boot internal.)
+EOF
+else
+  cat <<EOF
+
+  Internal install complete. Now:
+    1) Power off.
+    2) Remove the SD card.
+    3) Power on — the ABL boots the internal $BOOT_GPT_NAME partition (internal boots before SD).
+  (Leaving the SD in causes two ${ROOT_GPT_NAME} partitions; remove it to avoid an ambiguous root.)
+EOF
+fi
