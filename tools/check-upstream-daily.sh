@@ -30,12 +30,39 @@ done
 OUTDIR="${XDG_DATA_HOME:-${HOME}/.local/share}/pocknix/upstream"
 mkdir -p "${OUTDIR}"
 
+# --- MAKO: seguimiento de soporte AArch64 -------------------------------------
+# Interesa saber (a) si hay release nueva del Renderer y (b) si esa release ya trae
+# binarios aarch64/arm64. Mientras siga en x86_64 no hay nada que hacer en nuestro lado.
+mako_line() {
+  timeout 40 curl -fsSL -H 'User-Agent: pocknix-upstream-check' \
+    'https://api.github.com/repos/eugeniosegala/MAKO/releases?per_page=10' 2>/dev/null \
+  | python3 -c '
+import json, sys
+try:
+    rel = json.load(sys.stdin)
+except Exception:
+    print("MAKO: sin datos (API)"); raise SystemExit
+render = next((r for r in rel if str(r.get("tag_name","")).startswith("render-")), None)
+plugin = next((r for r in rel if str(r.get("tag_name","")).startswith("plugin-")), None)
+if not render:
+    print("MAKO: sin releases"); raise SystemExit
+assets = " ".join(a.get("name","") for a in render.get("assets", []))
+arm = any(t in assets.lower() for t in ("aarch64", "arm64"))
+print("MAKO: %s (%s) | aarch64=%s | plugin=%s" % (
+    render.get("tag_name"),
+    (render.get("published_at") or "")[:10],
+    "SI" if arm else "NO",
+    (plugin or {}).get("tag_name", "?")))
+' 2>/dev/null || echo "MAKO: sin datos (red)"
+}
+MAKO_LINE="$(mako_line)"
+
 RAW="$(mktemp)"
 "${HERE}/check-upstream.sh" --repo "${REPO}" > "${RAW}" 2>&1 || true
 
 # Huella: solo las lineas que implican una decision (versiones marcadas, parches que
 # faltan, resumen). Asi "novedad" = algo que merece mirarse, no ruido de commits.
-fp_now="$(grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}" | sed -E 's/[[:space:]]+/ /g' | sort -u)"
+fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${MAKO_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
 
 day="$(date +%F)"
 if [ -f "${OUTDIR}/last-fingerprint.txt" ]; then
@@ -49,6 +76,10 @@ fi
   echo
   echo "## Novedades respecto a la ejecucion anterior"
   if [ -n "${novedades}" ]; then printf '%s\n' "${novedades}"; else echo "(sin novedades)"; fi
+  echo
+  echo "## MAKO (seguimiento ARM)"
+  printf '%s\n' "${MAKO_LINE}"
+  echo "  (aarch64=SI significa que la release ya trae binarios ARM: avisar y probar)"
   echo
   echo "## Informe completo"
   cat "${RAW}"
