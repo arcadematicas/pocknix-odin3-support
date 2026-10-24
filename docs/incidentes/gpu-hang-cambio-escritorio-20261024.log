@@ -1,0 +1,88 @@
+# GPU hang al cambiar gamescope -> plasma (24/10/2026)
+## versiones
+7.2.12
+linux-pocknix-sm8750 7.2.12-16
+pocknix-bsp-sm8750 0.2.0-32
+pocknix-steam 0.1.0-70
+pocknix-desktop 0.1.0-26
+plasma-workspace 6.7.4-3
+
+## kernel: bloque del fallo (16:29-16:31)
+Oct 24 16:29:43 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000: hangcheck detected gpu lockup rb 2!
+Oct 24 16:29:43 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     completed fence: 1406581
+Oct 24 16:29:43 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     submitted fence: 1406582
+Oct 24 16:29:43 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 24 16:29:43 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: plasma-k:gdrv0 (/usr/bin/plasma-keyboard)
+Oct 24 16:29:43 pocknix kernel: gx_clkctl_gx_gdsc status stuck at 'on'
+Oct 24 16:29:43 pocknix kernel:  gdsc_gx_disable+0x40/0x60
+Oct 24 16:29:44 pocknix kernel: adreno 3d00000.gpu: [drm:a8xx_recover] *ERROR* cx gdsc didn't collapse
+Oct 24 16:29:44 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 24 16:30:27 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 24 16:30:27 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 24 16:30:28 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 24 16:30:31 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000: hangcheck detected gpu lockup rb 2!
+Oct 24 16:30:31 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     completed fence: 1406582
+Oct 24 16:30:31 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     submitted fence: 1406585
+Oct 24 16:30:31 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 24 16:30:31 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: QSGRenderThread (/usr/bin/plasmashell --no-respawn)
+Oct 24 16:30:31 pocknix kernel: gx_clkctl_gx_gdsc status stuck at 'on'
+Oct 24 16:30:31 pocknix kernel:  gdsc_gx_disable+0x40/0x60
+Oct 24 16:30:32 pocknix kernel: adreno 3d00000.gpu: [drm:a8xx_recover] *ERROR* cx gdsc didn't collapse
+Oct 24 16:30:32 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 24 16:30:36 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000: hangcheck detected gpu lockup rb 2!
+Oct 24 16:30:36 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     completed fence: 1406583
+Oct 24 16:30:36 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     submitted fence: 1406585
+Oct 24 16:30:36 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 24 16:30:36 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: QSGRenderThread (/usr/bin/plasmashell --no-respawn)
+Oct 24 16:30:36 pocknix kernel: gx_clkctl_gx_gdsc status stuck at 'on'
+Oct 24 16:30:36 pocknix kernel:  gdsc_gx_disable+0x40/0x60
+Oct 24 16:30:37 pocknix kernel: adreno 3d00000.gpu: [drm:a8xx_recover] *ERROR* cx gdsc didn't collapse
+Oct 24 16:30:37 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 24 16:30:38 pocknix kernel: msm_dpu ae01000.display-controller: [drm:adreno_wait_ring] *ERROR* timeout waiting for space in ringbuffer 2
+Oct 24 16:30:41 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000: hangcheck detected gpu lockup rb 2!
+Oct 24 16:30:41 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     completed fence: 1406584
+Oct 24 16:30:41 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     submitted fence: 1406585
+Oct 24 16:30:41 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 24 16:30:41 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: plasmash:gdrv0 (/usr/bin/plasmashell --no-respawn)
+Oct 24 16:30:41 pocknix kernel: gx_clkctl_gx_gdsc status stuck at 'on'
+Oct 24 16:30:41 pocknix kernel:  gdsc_gx_disable+0x40/0x60
+Oct 24 16:30:42 pocknix kernel: adreno 3d00000.gpu: [drm:a8xx_recover] *ERROR* cx gdsc didn't collapse
+Oct 24 16:30:42 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+
+## journal: transicion de sesion
+Oct 24 16:30:15 pocknix systemd-logind[1358]: Removed session 28.
+Oct 24 16:30:22 pocknix plasma_waitforname[79025]: WaitForName: Service was not registered within timeout
+Oct 24 16:30:25 pocknix sshd-session[79575]: Accepted publickey for deck from 192.168.4.25 port 34278 ssh2: RSA SHA256:ZABlzNPItfcQ+dkAlH2m6BYU3RtOLqaI3Bw2+3ZeU8k
+Oct 24 16:30:25 pocknix sshd-session[79575]: pam_unix(sshd:session): session opened for user deck(uid=1001) by deck(uid=0)
+Oct 24 16:30:26 pocknix systemd-logind[1358]: New session '29' of user 'deck' with class 'user' and type 'tty'.
+Oct 24 16:30:26 pocknix systemd[1]: Started Session 29 of User deck.
+Oct 24 16:30:30 pocknix sshd-session[79584]: Received disconnect from 192.168.4.25 port 34278:11: disconnected by user
+Oct 24 16:30:30 pocknix sshd-session[79584]: Disconnected from user deck 192.168.4.25 port 34278
+Oct 24 16:30:30 pocknix sshd-session[79575]: pam_unix(sshd:session): session closed for user deck
+Oct 24 16:30:30 pocknix systemd[1]: session-29.scope: Deactivated successfully.
+Oct 24 16:30:30 pocknix systemd[1]: session-29.scope: Consumed 4.095s CPU time over 4.332s wall clock time, 13.5M memory peak.
+Oct 24 16:30:30 pocknix systemd-logind[1358]: Session 29 logged out. Waiting for processes to exit.
+Oct 24 16:30:30 pocknix systemd-logind[1358]: Removed session 29.
+Oct 24 16:30:31 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: QSGRenderThread (/usr/bin/plasmashell --no-respawn)
+Oct 24 16:30:34 pocknix plasmashell[79027]: qrc:/org/kde/plasma/private/mobileshell/ListItemBase.qml:169:21: Unable to assign PulseAudioQt::StreamRestore to PulseAudioQt::VolumeObject
+Oct 24 16:30:34 pocknix plasma_waitforname[79668]: Detected locale "C" with character encoding "ANSI_X3.4-1968", which is not UTF-8.
+Oct 24 16:30:36 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: QSGRenderThread (/usr/bin/plasmashell --no-respawn)
+Oct 24 16:30:36 pocknix plasmashell[79027]: Member enabled of the object QuickSettingsDelegate_QMLTYPE_486 overrides a member of the base object. Consider renaming it or adding final or override specifier
+Oct 24 16:30:38 pocknix plasmashell[79027]: Failed enumerating MM objects: "org.freedesktop.DBus.Error.NameHasNoOwner" 
+Oct 24 16:30:39 pocknix plasmashell[79027]: No flashlight device found
+Oct 24 16:30:40 pocknix sshd-session[79711]: Accepted publickey for deck from 192.168.4.25 port 37062 ssh2: RSA SHA256:ZABlzNPItfcQ+dkAlH2m6BYU3RtOLqaI3Bw2+3ZeU8k
+Oct 24 16:30:40 pocknix sshd-session[79711]: pam_unix(sshd:session): session opened for user deck(uid=1001) by deck(uid=0)
+Oct 24 16:30:41 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: plasmash:gdrv0 (/usr/bin/plasmashell --no-respawn)
+Oct 24 16:30:41 pocknix systemd-logind[1358]: New session '30' of user 'deck' with class 'user' and type 'tty'.
+Oct 24 16:30:41 pocknix systemd[1]: Started Session 30 of User deck.
+
+## estado en el momento de capturar
+14.22 8.44 5.75 5/593 79816
+    PID STAT %CPU ELAPSED COMMAND
+  79819 R     800       0 ThreadPoolExecu
+  79817 R     612       0 ps
+  79027 Ssl  62.1      86 plasmashell
+  79808 R    41.3       1 sleep
+  79818 S    28.5       0 head
+  79338 Ssl  22.4      49 DiscoverNotifie
+  79724 Ssl  20.0       6 accounts-daemon
