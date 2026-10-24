@@ -800,6 +800,14 @@ automáticamente; para lo que NO se instala hay que listarlo a mano en `base-ext
    siempre en el que compila (`/home/fransis/pocknix-odin3-project/pocknix-os` del PC), commiteando
    después en `odin3-sm8750`.
 
+7. **El fichero vendorizado en `packages/<pkg>/` NO siempre entra en el paquete.** Si el `PKGBUILD`
+   compila de un **tarball de upstream** (`source=(https://...)` + `cp -a "${src}/usr"`), lo que hay
+   en el repo es solo una copia de referencia: **arreglarlo ahi no cambia el paquete**. Hay que
+   parchear en `package()` (sed/patch), como ya se hace con el `set -x` de `gamescope-session`.
+   Le paso el 24/10: `gamescope-session` "arreglado" en el repo durante dias, publicado tres veces,
+   y el bucle de mangoapp seguia dentro. **Verificacion obligatoria**: extraer el `.pkg.tar.xz`
+   construido y mirar el fichero (`tar -xf ... -C /tmp && grep ...`), no el fuente.
+
 ### 🎨 NUESTRO ESCRITORIO ES SIEMPRE **PLASMA MOBILE** (decisión, 24/10/2026)
 
 - La capa de escritorio de calvOS es **`pocknix-desktop-full` → `pocknix-desktop-plasma-mobile`**
