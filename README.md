@@ -24,6 +24,8 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 
 ---
 
+- [Plan de pruebas pendientes (25/10/2026)](docs/PLAN-PRUEBAS-2026-10-25.md) — qué medir, en qué orden y qué decide cada prueba.
+
 ## ✨ Lo que llevas de serie
 
 | | |
