@@ -800,6 +800,23 @@ automáticamente; para lo que NO se instala hay que listarlo a mano en `base-ext
    siempre en el que compila (`/home/fransis/pocknix-odin3-project/pocknix-os` del PC), commiteando
    después en `odin3-sm8750`.
 
+### 🎨 NUESTRO ESCRITORIO ES SIEMPRE **PLASMA MOBILE** (decisión, 24/10/2026)
+
+- La capa de escritorio de calvOS es **`pocknix-desktop-full` → `pocknix-desktop-plasma-mobile`**
+  (shell táctil + `pocknix-homescreen` + `plasma-nano`/`plasma-settings`, sin taskpanel, con el
+  touchfix del panel). **No hay escenario en el que usemos otro sabor.**
+- **`pocknix-desktop-plasma` (Plasma de escritorio, ratón) NO SE PUBLICA.** Sigue en el árbol porque
+  viene de upstream, pero publicarlo añadiría un **segundo proveedor** del virtual
+  `pocknix-desktop-flavour` y abriría la puerta a que una instalación acabara con un escritorio de
+  ratón en una pantalla táctil de 1080×1920, sin que nadie lo pruebe. Si algún día alguien lo pide,
+  es una decisión explícita de Fransis y se prueba antes.
+- Consecuencia práctica: `pocknix-desktop-full` **nombra el sabor explícitamente** (no deja que pacman
+  elija proveedor). Si se toca esa dependencia, se rompe la determinación de la actualización.
+- **`pocknix-branding` NO lleva iconos**: empaqueta tema de arranque plymouth, splash de Plasma, fondo
+  `PocknixOS` 1920×1080 y el seed del fondo en el primer login. Un set de iconos puesto a mano en la
+  consola es **preferencia de usuario** y no viaja en la imagen; si se quiere de serie, hay que
+  empaquetarlo aparte (tema + `kdeglobals`) y aplica igual a cualquier sabor.
+
 ### Dónde va cada cosa (decidido 20/09)
 
 | Necesidad | Solución |
