@@ -775,6 +775,31 @@ automáticamente; para lo que NO se instala hay que listarlo a mano en `base-ext
    `2:4.24.6` → pacman da la dep por satisfecha y NO lo actualiza → símbolos rotos
    (`SAMBA_4.24.7_PRIVATE_SAMBA not found`). **Instalar la familia entera junta.**
 
+### 🆕 Las tres trampas nuevas (24/10/2026) — nos costaron el finde de Davidusky
+
+4. **Un refactor de paquetes no está "hecho" hasta que está PUBLICADO.** El escritorio estuvo
+   dividido en sabores (`pocknix-desktop` + `-plasma-mobile` / `-plasma` / `-kde`) **cinco días en el
+   árbol sin publicar**, y `pocknix-desktop -27+` pasó a depender del virtual
+   **`pocknix-desktop-flavour`**. Resultado: R2 seguía sirviendo la `-26` y la `-27..-32` era
+   **ininstalable** para cualquiera que actualizara desde el repo (nuestro día a día no lo ve porque
+   compilamos del árbol).
+   **Regla**: si un paquete pasa a depender de un **virtual** o de otro paquete nuevo, publica **la
+   cadena entera** en el mismo pase y deja que `make stage-shared` lo valide — el `stage-check` ya
+   detecta "nothing provides X"; lo que no detecta es que **nadie ejecute el publish**.
+   Comprobación rápida tras publicar: `rclone lsf r2:pocknix/shared/ | grep <paquete>` + `pacman -Sl`
+   en una máquina con el repo.
+5. **Nunca metas la ENTRADA de directorio `/usr/sbin/` en un paquete.** En Arch `/usr/sbin` es un
+   symlink a `bin`; un `install -Dm755 x "${pkgdir}/usr/sbin/x"` crea la entrada `usr/sbin/` y pacman
+   aborta con `exists in filesystem (owned by filesystem)` — y se lleva **toda la transacción** por
+   delante (le pasó a `msm-firmware-loader`, bloqueando la actualización entera). Instala en
+   `/usr/bin`; los `ExecStart=/usr/sbin/*` del sistema siguen resolviendo por el symlink.
+6. **Antes de editar un paquete, mira EN QUÉ ÁRBOL estás.** El clon del PC (que compila) y el del
+   portátil (donde se revisa) **no van sincronizados**: el 24/10 uno tenía `pocknix-desktop` en `-31`
+   y el otro en `-27`, y un cambio aplicado en el árbol equivocado se pierde o duplica `pkgrel`.
+   `grep -E '^pkg(ver|rel)=' packages/shared/<pkg>/PKGBUILD` en **los dos** antes de tocar, y editar
+   siempre en el que compila (`/home/fransis/pocknix-odin3-project/pocknix-os` del PC), commiteando
+   después en `odin3-sm8750`.
+
 ### Dónde va cada cosa (decidido 20/09)
 
 | Necesidad | Solución |

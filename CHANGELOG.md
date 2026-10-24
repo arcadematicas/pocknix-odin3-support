@@ -15,6 +15,44 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 24 de octubre 2026 — el refactor de escritorio que nunca se publicó
+
+Davidusky (Jarvis) no pudo actualizar su Odin desde la imagen del 02-oct. Su informe era correcto y
+**los cuatro bloqueos eran nuestros**: el refactor de escritorio llevaba días en el árbol de
+compilación, pero **jamás se había publicado**. Nadie lo había notado porque nuestras consolas se
+actualizan desde el árbol, no desde el repo.
+
+### ✅ Publicado en R2 (firmado, `stage-check` en verde)
+- **`pocknix-desktop 0.1.0-32`** — deja de instalar `/usr/bin/steamos-session-select` (desde `-27`
+  ese fichero es de `pocknix-session`). Se acaba el conflicto de ficheros en la actualización.
+- **`pocknix-desktop-plasma-mobile -2`**, **`pocknix-desktop-kde -2`**, **`pocknix-homescreen -1`** —
+  los **sabores** y sus dependencias. Sin ellos, `pocknix-desktop -27..-32` era **ininstalable**: pide
+  el virtual `pocknix-desktop-flavour` y no había ningún proveedor publicado. Esa era la causa de
+  fondo de que R2 siguiera sirviendo la `-26`.
+- **`pocknix-system-overlay -6`** — ya no empaqueta `etc/xdg/powerdevilrc`: lo trae
+  `pocknix-desktop`. Eran dos dueños del mismo fichero.
+- **`msm-firmware-loader 1.8.0-3`** — instala en `/usr/bin`. El fallo no era el contenido: el paquete
+  metía la **entrada de directorio `/usr/sbin/`**, y en Arch `/usr/sbin` es un symlink a `bin` →
+  `exists in filesystem (owned by filesystem)` y la transacción entera abortaba.
+
+### ✅ Bug nuestro que salió a la luz
+- `scripts/build-packages.sh` **abortaba cualquier build con el chroot al día**: `pacman -Syu` sale
+  con código 1 y `there is nothing to do`, y el script lo interpretaba como "base obsoleta". Ahora se
+  trata como el caso sano (`75e894c`).
+
+### 🧹 Lo que NO se tocó (y por qué)
+- **`pocknix-base` / `pocknix-update`**: ya llevaba política `--overwrite` acotada + autorreparación.
+  Lo que le faltaba a su Odin era la **primera pasada manual** (política del doc de actualización).
+- **`pocknix-desktop-plasma`** (sabor Plasma de escritorio): sigue **sin publicar** por decisión. No lo
+  usa ninguna consola nuestra (la Odin es táctil → Plasma Mobile) y añadiría un segundo proveedor del
+  virtual sin nadie que lo pruebe.
+
+### 📝 Documentación
+- `docs/INCIDENTE-2026-10-23-MIGRACION-ODIN3-DAVIDUSKY.md` §5: qué se publicó y cómo reintentar.
+- `docs/ACTUALIZAR-ODIN-DAVIDUSKY-2026-10-23.md`: lista de `--overwrite` ampliada con los ficheros
+  que las imágenes viejas dejaron sin dueño (solo hacen falta en la primera pasada).
+- Reglas nuevas en `AGENTS.md` para que no vuelva a pasar.
+
 ## 📅 23 de octubre 2026 — el sistema, a la flash interna (y los juegos, quietos en la SD)
 
 Día de mudanza: **calvOS pasa a arrancar de la UFS 4.0 interna** sin mover ni un juego, y se cierran
