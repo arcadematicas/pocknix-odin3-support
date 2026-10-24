@@ -44,3 +44,29 @@ nadie lo repare a mano, el paquete **`pocknix-system-overlay`** instala un scrip
 - Documentación completa: `docs/PANEL-CONTROL-HDR-PATCH-20261016.md`.
 - **Solución definitiva**: el PR #947 a Hooandee (cuando se mergee y salga en release, el script
   queda como no-op).
+
+## Cómo actualizar (procedimiento, 25/10/2026)
+
+Datos del 25/10: vendemos **v0.70.1** (14/10) y upstream va por **v0.76.0** (23/10).
+**Ya no llevamos delta propio**: nuestro parche `hdr=True` en el perfil `ayn_odin3` entró en
+upstream (PR #947, **mergeado el 17/10**; `main` lo tiene). O sea, actualizar = sustituir.
+
+```bash
+cd <repo>/pocknix-odin3-support
+V=panel-de-control-v0.76.0     # <- el que diga tools/check-hooandee.sh
+curl -L -o /tmp/pdc.zip "https://github.com/Hooandee/panel-de-control/releases/download/$V/Panel.de.Control.zip"
+rm -rf packages/pocknix-decky/panel-de-control
+mkdir -p /tmp/pdc && unzip -q -o /tmp/pdc.zip -d /tmp/pdc
+cp -a "/tmp/pdc/Panel de Control/." packages/pocknix-decky/panel-de-control/
+echo "$V" > packages/pocknix-decky/panel-de-control/VENDORED
+# el zip NO trae NOTES.pocknix.md: recuperarlo de git
+git checkout -- packages/pocknix-decky/panel-de-control/NOTES.pocknix.md
+```
+
+Después: **bump de `pkgrel`** en `packages/pocknix-decky/PKGBUILD`, `tools/sync-to-os.sh`,
+`make packages PKG="pocknix-decky"`, `stage-shared` + `publish-shared`.
+**Comprobar antes** que upstream no cambió `plugin.json` de forma incompatible (api_version 1) y
+que `flags` sigue llevando `root`.
+
+Vigilancia: `tools/check-hooandee.sh` (enganchado a `check-upstream-daily.sh`), que compara
+`VENDORED` con el último release y marca `<<< ACTUALIZAR`.

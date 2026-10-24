@@ -55,6 +55,12 @@ print("MAKO: %s (%s) | aarch64=%s | plugin=%s" % (
     (plugin or {}).get("tag_name", "?")))
 ' 2>/dev/null || echo "MAKO: sin datos (red)"
 }
+# --- Hooandee: plugins que van en la imagen -----------------------------------
+# Delegado en tools/check-hooandee.sh. El "Panel de Control" se vende y se autoactualiza en el
+# dispositivo, pero una imagen NUEVA sigue sembrando nuestra copia semilla; y "Colores" no se
+# vende, aunque sus fallos de descarga acaban en nuestro tejado. Solo avisa: actualizar es un build.
+HOOANDEE_LINES="$("${HERE}/check-hooandee.sh" 2>/dev/null || echo 'Hooandee: sin datos (API)')"
+
 MAKO_LINE="$(mako_line)"
 
 RAW="$(mktemp)"
@@ -62,7 +68,7 @@ RAW="$(mktemp)"
 
 # Huella: solo las lineas que implican una decision (versiones marcadas, parches que
 # faltan, resumen). Asi "novedad" = algo que merece mirarse, no ruido de commits.
-fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${MAKO_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
+fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
 
 day="$(date +%F)"
 if [ -f "${OUTDIR}/last-fingerprint.txt" ]; then
@@ -76,6 +82,9 @@ fi
   echo
   echo "## Novedades respecto a la ejecucion anterior"
   if [ -n "${novedades}" ]; then printf '%s\n' "${novedades}"; else echo "(sin novedades)"; fi
+  echo
+  echo "## Hooandee (plugins)"
+  printf '%s\n' "${HOOANDEE_LINES}"
   echo
   echo "## MAKO (seguimiento ARM)"
   printf '%s\n' "${MAKO_LINE}"
