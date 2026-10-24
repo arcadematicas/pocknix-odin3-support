@@ -59,3 +59,11 @@ de modo fuerza un power-cycle del host DSI que pasa por `0048a`/`0048b`.
 ## Entorno
 kernel 7.2.12-16, `pocknix-desktop 0.1.0-32`, `pocknix-bsp-sm8750 0.2.0-32`,
 gamescope OGC (`1:3.16.31.ogc1.20260928.afd6eac6-3`), mesa 26.3.0.
+
+## No confundir con el incidente de GPU hang (2026-10-24)
+En este boot **NO** aparece la firma de GPU hang de
+`INCIDENTE-2026-10-24-GPU-HANG-Y-MANGOAPP.md` (ni `a8xx_recover: cx gdsc didn't
+collapse`, ni `GMU OOB timeout`, ni `gdrv`). Aqui los errores son **exclusivamente**
+del DPU/DSI (`enc35 intf1`, `-22/-110`, `panel-chipone-icna35xx`). Son **dos
+incidencias distintas**, aunque ambas dejan la pantalla bloqueada; esta es la del
+panel tras suspender/modeset.
