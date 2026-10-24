@@ -217,14 +217,9 @@ if [ "$(cat "/sys/block/${root_disk}/device/type" 2>/dev/null)" = SD ]; then
   VERIFY=(-noverifyfiles)
 fi
 
-# ⛔ --mangoapp: QUITADO el 24/10/2026. `gamescope-session-plus` ya arranca SU mangoapp
-# (`(while true; do mangoapp; done) &`, con el handshake STEAM_DISABLE_MANGOAPP_ATOM_WORKAROUND
-# y la barra horizontal). Pasar --mangoapp aqui hacia que gamescopereaper arrancara un SEGUNDO
-# mangoapp: dos OSD sobre el mismo juego, con muestreos independientes -> "mide bien a ratos,
-# luego se desincroniza y se para" (Wind Waker, 24/10). El overlay lo gestiona el de la sesion.
 env -u WAYLAND_DISPLAY \
   GAMESCOPE_FAKE_OUTPUT_MM="${PANEL_MM}" \
-  gamescope "${GS_OUTPUT[@]}" -W "${GS_W}" -H "${GS_H}" -r "${REFRESH}" --xwayland-count 2 --backend drm \
+  gamescope "${GS_OUTPUT[@]}" -W "${GS_W}" -H "${GS_H}" -r "${REFRESH}" --xwayland-count 2 --mangoapp --backend drm \
     --fake-output-mm "${PANEL_MM}" \
     --force-orientation "${ORIENT}" "${GS_ROTATE[@]}" -e -- \
     /usr/lib/pocknix/pocknix-steam-splash "${GS_W}x${GS_H}" -- \

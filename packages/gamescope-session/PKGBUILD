@@ -29,7 +29,7 @@
 pkgname=gamescope-session
 _commit=0232e0c0410b051b0c679c99c55bf34f5aaf9f78
 pkgver=20260928
-pkgrel=2
+pkgrel=4
 pkgdesc="gamescope-session-plus (OGC): gamescope standalone + cliente hermano, sesiones por sessions.d"
 arch=('aarch64')
 url="https://github.com/OpenGamingCollective/gamescope-session"
@@ -52,6 +52,14 @@ package() {
   # Quitar el xtrace del motor: upstream trae `set -x` (llena el log de la sesion con cada comando;
   # armada lo hace con su parche 0001). Solo la linea suelta `set -x`, NO `set -e`/`set -euo`.
   sed -i '/^set -x$/d' "${pkgdir}/usr/share/gamescope-session-plus/gamescope-session-plus"
+
+  # UN SOLO OSD. gamescope ya arranca mangoapp el mismo via `gamescopereaper --respawn -- mangoapp`
+  # porque sessions.d/steam le pasa --mangoapp. El bucle de upstream arranca un SEGUNDO mangoapp y
+  # los dos dibujan el mismo overlay con muestreos independientes -> el OSD "mide bien a ratos,
+  # luego se desincroniza y se congela" (Wind Waker, 24/10/2026).
+  # (El fichero vendorizado del repo NO entra en el paquete: se compila del tarball de upstream.)
+  sed -i '/^# If we have mangoapp binary start it$/,/^fi$/d' \
+    "${pkgdir}/usr/share/gamescope-session-plus/gamescope-session-plus"
 
   install -Dm644 "${src}/LICENSE" \
     "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
