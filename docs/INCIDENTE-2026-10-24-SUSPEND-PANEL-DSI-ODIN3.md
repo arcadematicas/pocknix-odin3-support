@@ -67,3 +67,41 @@ collapse`, ni `GMU OOB timeout`, ni `gdrv`). Aqui los errores son **exclusivamen
 del DPU/DSI (`enc35 intf1`, `-22/-110`, `panel-chipone-icna35xx`). Son **dos
 incidencias distintas**, aunque ambas dejan la pantalla bloqueada; esta es la del
 panel tras suspender/modeset.
+
+## ACTUALIZACION 2026-10-25 — el fallo reproducible es GPU/GMU (no I/O ni panel)
+
+Analizado el boot `-1` (`a44f4ab4`, 23:14 -> 00:04, el ultimo antes de reiniciar):
+
+- **NO hay errores de SD/I-O**: ningun `mmcblk*: timeout`, `card never left busy state` ni
+  `I/O error` en todo el boot. La hipotesis de I/O (Fransis) **queda descartada** en este caso.
+  (El root SI esta en la microSD, `mmcblk0p2`, UHS-I SDR104, pero sin errores.)
+- **SI hay fallo de GPU/GMU al volver de s2idle**:
+
+```
+Oct 25 00:02:08 platform 3d37000.gmu: [drm:a6xx_gmu_resume] *ERROR* GMU firmware initialization timed out
+Oct 25 00:02:10 platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 00:02:20 msm_dpu ae01000.display-controller: 44050000: preemption timed out
+Oct 25 00:02:27 adreno 3d00000.gpu: Timeout waiting for GPU to suspend
+Oct 25 00:02:27 adreno 3d00000.gpu: PM: dpm_run_callback(): platform_pm_suspend returns -16
+Oct 25 00:02:27 adreno 3d00000.gpu: PM: failed to suspend: error -16
+```
+
+- Es **la misma firma que el GPU hang** de `INCIDENTE-2026-10-24-GPU-HANG-Y-MANGOAPP.md`
+  (`a6xx_gmu_set_oob` + `44050000`). Con la GPU muerta, el DPU/DSI (`enc35`) tambien falla:
+  los `-110` del panel son **secundarios** (no la causa).
+- Despues, los suspends siguientes fallan (`-16`, "Timeout waiting for GPU to suspend") y el
+  sistema se arrastra: **solo se recupera reiniciando**.
+- Nota: el boot anterior (`-2`, 15:31 -> 23:13) si mostro el `enc35`/`-110` del panel a las 23:13;
+  dos fallos consecutivos del stack display/GPU tras s2idle, pero con firmas distintas.
+
+## Relacionado (lentitud SIN cuelgue)
+`docs/PRUEBA-ZELDA-TDP-SUSPEND-20261024.md` (Alfred): mismo juego/perfil va bien recien arrancado
+y "se arrastra" tras s2idle, sin errores en el log. Hipotesis: reguladores/rails en LPM que no
+vuelven, GPU clavada en `min_freq`, `scx_lavd`, perfil de potencia no reaplicado. Medir con
+`tools/diag-post-resume.sh` (before/after/show).
+
+## Conclusion revisada
+El bloqueo reproducible es **GPU/GMU al resumir** (`a6xx_gmu_resume`/GMU OOB/preemption timeout),
+no I/O ni el panel como causa primaria. `0048a`/`0048b` (nuestro `1032`, identico) ya estan, asi
+que no es "faltan parches DSI". La "lentitud sin cuelgue" es la otra incidencia (Zelda/TDP) y se
+mide con la herramienta de Alfred.
