@@ -59,7 +59,7 @@ snapshot() {
     echo "-- suspensiones en este boot: $(journalctl -b --no-pager 2>/dev/null | grep -c 'PM: suspend exit') --"
 
     echo "-- errores de pantalla/GPU en este boot (últimas 5) --"
-    journalctl -k -b --no-pager 2>/dev/null | grep -iE "dsi_cmds|panel-chipone|wait for commit|frame_done|a8xx_recover|GMU OOB" | tail -5 | sed 's/^/   /'
+    journalctl -k -b --no-pager 2>/dev/null | grep -iE "dsi_cmds|panel-chipone|wait for commit|frame_done|a8xx_recover|GMU OOB|a6xx_gmu|preemption timed out|Timeout waiting for GPU to suspend|failed to suspend" | tail -5 | sed 's/^/   /'
 
     echo "-- carga y top CPU --"
     echo "   load: $(cut -d' ' -f1-3 /proc/loadavg)"

@@ -24,7 +24,18 @@ desde `ff61120` — o sea, la hipótesis "faltan parches DSI" está descartada t
 
 ## Hipótesis, en orden de probabilidad
 
-1. **Reguladores/rails que quedan en LPM tras el resume.** Nuestros parches de s2idle (`0521`–`0526`)
+> **ACTUALIZACIÓN 25/10** — Davidusky encontró la firma en su Odin tras s2idle: `a6xx_gmu_resume:
+> GMU firmware initialization timed out` → `GMU OOB` → `44050000: preemption timed out` →
+> `Timeout waiting for GPU to suspend` / `PM: failed to suspend: error -16`. Es la **misma
+> familia** que su cuelgue, y **explica la lentitud sin cuelgue**: una GMU que resucita a medias
+> deja la GPU sin preemption y con el reloj mal, que es exactamente "va, pero arrastrándose".
+> Su caso NO tenía errores de SD/I-O (la hipótesis del I/O queda descartada) y los `-110` del
+> panel eran **secundarios**. Por eso la hipótesis 1 pasa a ser esta, y el test del hook DSI deja
+> de ser prioritario.
+
+
+1. **(PRINCIPAL) Fallo de resume de la GPU/GMU.** `a6xx_gmu_resume` con timeout deja la GPU
+   sin preemption/reloj. Los rails en LPM de nuestros parches s2idle son el primer sitio donde mirar. Nuestros parches de s2idle (`0521`–`0526`)
    ponen rails del códec y PCIe en modo **LPM** al suspender. Si alguno **no vuelve** a high-performance
    al despertar, el SoC va con menos ancho de banda: encaja con "funciona pero arrastrándose".
    → Mirar `dmesg` del resume y el estado de los reguladores; comparar `trans_stat` de la GPU.
