@@ -63,3 +63,19 @@ DESCARTADO, ESPERANDO.
   cosmético en nuestro cliente ARM; y el panel no acepta cambios en caliente, ver arriba).
 - [HECHO] 21/10 · watchdog de Steam corregido (no mata steamwebhelper mientras la UI aún no ha
   respondido nunca) y lanzador de RetroArch con el mando virtual por nombre.
+
+## Plugins de Hooandee (Decky)
+
+- [PENDIENTE] 2026-10-25 · **`panel-de-control` v0.70.1 (14/10) → v0.76.0 (23/10)** · actualizar la
+  **copia semilla** del bundle en el próximo build de imagen. **No urgente**: el panel se
+  autoactualiza en la consola, así que esto afecta sobre todo a imágenes nuevas/instalaciones
+  limpias. **Sin delta nuestro**: el `hdr=True` del perfil `ayn_odin3` entró en upstream
+  (PR #947, **mergeado 17/10**), así que es sustituir el árbol y nada más.
+  Procedimiento exacto: `packages/pocknix-decky/panel-de-control/NOTES.pocknix.md`.
+  Recordar **bump de `pkgrel`** en `pocknix-decky` + `sync-to-os` + `stage`/`publish`.
+- [INFO] · `decky-colores` (v0.34.1, 21/10) **no se vende**: lo instala el usuario desde el propio
+  panel (o desde archivo). Se vigila su versión porque los fallos de descarga ("no puedo
+  instalarlo") acaban en nuestro tejado: su zip está bien (181 KB, HTTP 200) y la URL es la misma
+  en nuestra copia y en upstream → el fallo, si aparece, es del dispositivo/red de quien lo baja.
+- [HECHO] 2026-10-25 · vigilancia: `tools/check-hooandee.sh` + `VENDORED`, enganchado al chequeo
+  diario (marca `<<< ACTUALIZAR`).
