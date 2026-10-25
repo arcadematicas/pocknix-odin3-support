@@ -1,0 +1,44 @@
+From: Alfred <alfred@local>
+Date: Sun, 25 Oct 2026 23:05:00 +0200
+Subject: [PATCH] drm/panel: chipone-icna35xx: harden the init after reset
+
+En un disable->enable rapido (cambio de sesion gamescope -> plasma, o resume)
+el primer comando DSI salia con -110 (dsi_cmds2buf_tx: cmd dma tx failed), el
+DPU quedaba atascado (enc35 frame done timeout / wait for commit done -110) y
+detras caia la GPU: a8xx_recover "cx gdsc didn't collapse" y GMU OOB. Solo se
+recuperaba reiniciando.
+
+Mismo fallo que el panel tras s2idle de Davidusky (misma firma: fd 5a 5a,
+"failed to initialize panel: -110").
+
+Se asienta 120 ms tras el pulso de reset y se reintenta la secuencia de init
+hasta 3 veces (con reset nuevo entre intentos). Solo actua si el init falla.
+
+---
+--- a/drivers/gpu/drm/panel/panel-chipone-icna35xx.c
++++ b/drivers/gpu/drm/panel/panel-chipone-icna35xx.c
+@@ -361,7 +361,23 @@
+ 
+ 	icna35xx_reset(pinfo);
+ 
+-	ret = pinfo->desc->init_sequence(pinfo);
++	/* Asentar tras el pulso de reset: en un disable->enable rapido (cambio de
++	 * sesion gamescope -> plasma) el primer comando DSI salia con -110
++	 * (dsi_cmds2buf_tx: cmd dma tx failed), el DPU quedaba atascado y detras
++	 * caia la GPU (a8xx_recover: cx gdsc didn't collapse). Reintentamos.
++	 */
++	usleep_range(120000, 121000);
++
++	for (int attempt = 0; attempt < 3; attempt++) {
++		ret = pinfo->desc->init_sequence(pinfo);
++		if (!ret)
++			break;
++		dev_warn(panel->dev, "panel init attempt %d failed: %d
++", attempt + 1, ret);
++		icna35xx_reset(pinfo);
++		usleep_range(120000, 121000);
++	}
++
+ 	if (ret < 0) {
+         regulator_bulk_disable(ARRAY_SIZE(panel_supplies), pinfo->supplies);
+ 		dev_err(panel->dev, "failed to initialize panel: %d\n", ret);
