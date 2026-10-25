@@ -1,0 +1,124 @@
+# Segundo GPU hang al cambiar Game Mode -> escritorio (25/10 22:53)
+## versiones
+7.2.12
+linux-pocknix-sm8750 7.2.12-16
+gamescope 1:3.16.31.ogc1.20260928.afd6eac6-3
+pocknix-desktop 0.1.0-32
+plasma-workspace 6.7.4-3
+
+## kernel: toda la firma de GPU/DPU/DSI de este boot
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/phy@ae95000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+Oct 25 19:17:42 pocknix kernel: raid6: using neon recovery algorithm
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+Oct 25 19:17:42 pocknix kernel: platform 3d37000.gmu: Adding to iommu group 1
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+Oct 25 19:17:42 pocknix kernel: /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+Oct 25 19:17:42 pocknix kernel: msm_dpu ae01000.display-controller: bound ae94000.dsi (ops dsi_ops)
+Oct 25 19:17:52 pocknix kernel: msm_dpu ae01000.display-controller: [drm:adreno_request_fw] loaded qcom/gen80000_gmu.bin from new location
+Oct 25 19:17:52 pocknix kernel: [drm] Loaded GMU firmware v5.1.25
+Oct 25 19:18:04 pocknix kernel: gcc-sm8750 100000.clock-controller: sync_state() pending due to 3d37000.gmu
+Oct 25 19:18:04 pocknix kernel: gxclkctl-kaanapali 3d64000.clock-controller: sync_state() pending due to 3d37000.gmu
+Oct 25 19:18:04 pocknix kernel: sm8750-gpucc 3d90000.clock-controller: sync_state() pending due to 3d37000.gmu
+Oct 25 22:52:59 pocknix kernel: dsi_cmds2buf_tx: cmd dma tx failed, type=0x29, data0=0xfd, len=8, ret=-110
+Oct 25 22:52:59 pocknix kernel: panel-chipone-icna35xx ae94000.dsi.0: sending generic data fd 5a 5a failed: -110
+Oct 25 22:52:59 pocknix kernel: panel-chipone-icna35xx ae94000.dsi.0: failed to initialize panel: -110
+Oct 25 22:52:59 pocknix kernel: [drm:dpu_encoder_frame_done_timeout:2769] [dpu error]enc35 frame done timeout
+Oct 25 22:52:59 pocknix kernel: [drm:dpu_encoder_frame_done_timeout:2769] [dpu error]enc35 frame done timeout
+Oct 25 22:52:59 pocknix kernel: [drm:dpu_kms_wait_for_commit_done:584] [dpu error]wait for commit done returned -110
+Oct 25 22:52:59 pocknix kernel: [drm:dpu_encoder_frame_done_timeout:2769] [dpu error]enc35 frame done timeout
+Oct 25 22:52:59 pocknix kernel: [drm:dpu_kms_wait_for_commit_done:584] [dpu error]wait for commit done returned -110
+Oct 25 22:53:00 pocknix kernel: [drm:dpu_encoder_frame_done_timeout:2769] [dpu error]enc35 frame done timeout
+Oct 25 22:53:00 pocknix kernel: [drm:dpu_kms_wait_for_commit_done:584] [dpu error]wait for commit done returned -110
+Oct 25 22:53:01 pocknix kernel: [drm:dpu_encoder_frame_done_timeout:2769] [dpu error]enc35 frame done timeout
+Oct 25 22:53:01 pocknix kernel: [drm:dpu_kms_wait_for_commit_done:584] [dpu error]wait for commit done returned -110
+Oct 25 22:53:05 pocknix kernel: [drm:dpu_encoder_frame_done_timeout:2769] [dpu error]enc35 frame done timeout
+Oct 25 22:53:05 pocknix kernel: [drm:dpu_kms_wait_for_commit_done:584] [dpu error]wait for commit done returned -110
+Oct 25 22:53:41 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_resume] *ERROR* GMU firmware initialization timed out
+Oct 25 22:53:46 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:53:46 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:53:47 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:53:47 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:53:56 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 25 22:54:13 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:16 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:16 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:17 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 25 22:54:17 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: ksplashq:gdrv0 (/usr/bin/ksplashqml)
+Oct 25 22:54:17 pocknix kernel:  a8xx_recover+0x90/0x240
+Oct 25 22:54:17 pocknix kernel:  recover_worker+0x240/0x430
+Oct 25 22:54:18 pocknix kernel: adreno 3d00000.gpu: [drm:a8xx_recover] *ERROR* cx gdsc didn't collapse
+Oct 25 22:54:18 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:22 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:22 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 25 22:54:22 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: Xwayland (/usr/bin/Xwayland :0 -auth /run/user/1001/xauth_RsIprn -listenfd 9 -listenfd 10 -displayfd 80 -wm 84 -rootless)
+Oct 25 22:54:22 pocknix kernel:  a8xx_recover+0x90/0x240
+Oct 25 22:54:22 pocknix kernel:  recover_worker+0x240/0x430
+Oct 25 22:54:23 pocknix kernel: adreno 3d00000.gpu: [drm:a8xx_recover] *ERROR* cx gdsc didn't collapse
+Oct 25 22:54:23 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+
+## journal: transicion de sesion (22:50-22:56)
+Oct 25 22:54:10 pocknix kwin_wayland_wrapper[53548]: > Warning:          Could not resolve keysym XF86ActionOnSelection
+Oct 25 22:54:10 pocknix kwin_wayland_wrapper[53548]: > Warning:          Could not resolve keysym XF86ContextualInsert
+Oct 25 22:54:10 pocknix kwin_wayland_wrapper[53548]: > Warning:          Could not resolve keysym XF86ContextualQuery
+Oct 25 22:54:10 pocknix kwin_wayland_wrapper[53548]: Errors from xkbcomp are not fatal to the X server
+Oct 25 22:54:11 pocknix kwin_wayland_wrapper[53559]: The XKEYBOARD keymap compiler (xkbcomp) reports:
+Oct 25 22:54:11 pocknix kwin_wayland_wrapper[53559]: > Warning:          Unsupported maximum keycode 709, clipping.
+Oct 25 22:54:11 pocknix kwin_wayland_wrapper[53559]: >                   X11 cannot support keycodes above 255.
+Oct 25 22:54:11 pocknix kwin_wayland_wrapper[53559]: > Warning:          Virtual modifier Hyper multiply defined
+Oct 25 22:54:11 pocknix kwin_wayland_wrapper[53559]: >                   Using 0, ignoring 0
+Oct 25 22:54:11 pocknix kwin_wayland_wrapper[53559]: > Warning:          Virtual modifier ScrollLock multiply defined
+Oct 25 22:54:11 pocknix kwin_wayland_wrapper[53559]: >                   Using 0, ignoring 0
+Oct 25 22:54:11 pocknix kwin_wayland_wrapper[53559]: Errors from xkbcomp are not fatal to the X server
+Oct 25 22:54:13 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:15 pocknix systemd[1051]: plasma-ksplash.service: start operation timed out. Terminating.
+Oct 25 22:54:15 pocknix plasma-keyboard[53327]: Member contentWidth of the object PopupList_QMLTYPE_91 overrides a member of the base object. Consider renaming it or adding final or override specifier
+Oct 25 22:54:16 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:16 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:17 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000: hangcheck detected gpu lockup rb 2!
+Oct 25 22:54:17 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     completed fence: 1665037
+Oct 25 22:54:17 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     submitted fence: 1665040
+Oct 25 22:54:17 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 25 22:54:17 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: ksplashq:gdrv0 (/usr/bin/ksplashqml)
+Oct 25 22:54:18 pocknix kernel: adreno 3d00000.gpu: [drm:a8xx_recover] *ERROR* cx gdsc didn't collapse
+Oct 25 22:54:18 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:19 pocknix kwin_wayland[53221]: file:///usr/share/kwin/scripts/convergentwindows/contents/ui/main.qml:100: TypeError: Cannot read property 'normalWindow' of null
+Oct 25 22:54:19 pocknix systemd[1051]: plasma-ksplash.service: Main process exited, code=killed, status=15/TERM
+Oct 25 22:54:20 pocknix systemd[1051]: plasma-ksplash.service: Failed with result 'timeout'.
+Oct 25 22:54:20 pocknix systemd[1051]: plasma-ksplash.service: Consumed 11.658s CPU time over 44.231s wall clock time, 110.2M memory peak.
+Oct 25 22:54:22 pocknix sshd-session[53662]: Accepted publickey for deck from 192.168.4.25 port 53328 ssh2: RSA SHA256:ZABlzNPItfcQ+dkAlH2m6BYU3RtOLqaI3Bw2+3ZeU8k
+Oct 25 22:54:22 pocknix sshd-session[53662]: pam_unix(sshd:session): session opened for user deck(uid=1001) by deck(uid=0)
+Oct 25 22:54:22 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+Oct 25 22:54:22 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000: hangcheck detected gpu lockup rb 2!
+Oct 25 22:54:22 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     completed fence: 1665038
+Oct 25 22:54:22 pocknix kernel: msm_dpu ae01000.display-controller: [drm:hangcheck_handler] *ERROR* 44050000:     submitted fence: 1665041
+Oct 25 22:54:22 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: hangcheck recover!
+Oct 25 22:54:22 pocknix kernel: msm_dpu ae01000.display-controller: [drm:recover_worker] *ERROR* 44050000: offending task: Xwayland (/usr/bin/Xwayland :0 -auth /run/user/1001/xauth_RsIprn -listenfd 9 -listenfd 10 -displayfd 80 -wm 84 -rootless)
+Oct 25 22:54:22 pocknix systemd-logind[558]: New session '34' of user 'deck' with class 'user' and type 'tty'.
+Oct 25 22:54:22 pocknix systemd[1]: Started Session 34 of User deck.
+Oct 25 22:54:23 pocknix kernel: adreno 3d00000.gpu: [drm:a8xx_recover] *ERROR* cx gdsc didn't collapse
+Oct 25 22:54:23 pocknix kernel: platform 3d37000.gmu: [drm:a6xx_gmu_set_oob] *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+
+## estado al capturar
+10.69 5.85 4.20 3/525 53741
+    PID STAT %CPU ELAPSED COMMAND
+  53742 R     480       0 ps
+  53327 Sl   37.1      40 plasma-keyboard
+  53221 Sl   37.0      50 kwin_wayland
+  53720 S    36.4       1 sleep
+  53569 Sl   19.5      13 kcminit
+  53739 S+   19.0       0 sleep
+   1916 Rs   18.2   12993 python3
+  53512 Sl   17.8      19 Xwayland
+  53662 Ss   17.1       5 sshd-session
