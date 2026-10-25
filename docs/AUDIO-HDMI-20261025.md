@@ -24,6 +24,47 @@ amixer: Cannot find the given element          # la ruta DP ni se instancia
   árbol (0 parches). Armada tiene uno para **sm8550** (`0006-add-hw_params-callback-function-to-
   drm_connector_hdmi_audio_ops.patch`, tomado de ROCKNIX).
 
+## ACTUALIZACIÓN (25/10, mismo día) — la tplg de armada SÍ trae DP
+
+Comparando `SM8750-AYN-tplg.bin` de armada (`system_files/usr/lib/firmware/qcom/sm8750/`, 24.516 B)
+con la nuestra (18.236 B del `vendor/rocknix-extra-firmware`):
+
+| Widget | Nuestra | Armada |
+|---|---|---|
+| `MultiMedia1/2 Playback`, `MultiMedia3 Capture` | sí | sí |
+| **`MultiMedia4 Playback`** (= `hw:0,3`) | **no** | **sí** |
+| **`DISPLAY_PORT_RX_0 Playback`** | **no** | **sí** |
+
+Y el kernel **ya soporta** el audio DP: `drivers/gpu/drm/msm/dp/dp_audio.c` con
+`hdmi_audio_ops`, y `CONFIG_DRM_MSM_DP=y` / `CONFIG_DRM_MSM_HDMI=y`.
+
+**Conclusión revisada**: no hace falta kernel; basta **(1)** usar la tplg de armada y
+**(2)** añadir `SectionDevice."HDMI"` al UCM. Riesgo: la tplg es el corazón del audio, hay que
+reprobar altavoz, auriculares y micro después de cambiarla.
+
+### Pasos para probarlo (cuando haya un HDMI a mano)
+1. Copiar la tplg de armada a `/usr/lib/firmware/qcom/sm8750/SM8750-AYN-tplg.bin` (backup previo) y
+   reiniciar. Comprobar que sigue habiendo altavoz/auriculares/micro.
+2. `aplay -l` debe mostrar ahora `device 3: MultiMedia4 Playback`.
+3. `speaker-test -D hw:0,3 -c 2 -t sine` con un monitor/HDMI enchufado.
+4. Si suena, añadir al `HiFi.conf`:
+   ```
+   SectionDevice."HDMI" {
+       Comment "HDMI / DisplayPort playback"
+       Value {
+           PlaybackChannels 2
+           PlaybackPriority 100
+           PlaybackPCM "hw:${CardId},3"
+           PlaybackMixer "default:${CardId}"
+           JackControl "DP0 Jack"
+           JackHWMute "Speaker"
+       }
+   }
+   ```
+5. **Pendiente de decidir**: cómo distribuir la tplg (es un binario de armada). Opciones: override en
+   `devices/sm8750/firmware/...` (va a git, 24 KB) o descarga pineada en el build (como el firmware de
+   ROCKNIX). Sin decidir: por eso no se ha tocado el paquete.
+
 ## Qué haría falta (2 piezas, no una)
 1. **Kernel**: portar el soporte de audio DP del driver `msm` (`drm_connector_hdmi_audio_ops` +
    callback `hw_params`) desde ROCKNIX/armada (su serie de sm8550). Riesgo medio; hay que probar que
