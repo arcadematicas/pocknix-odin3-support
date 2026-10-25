@@ -107,3 +107,18 @@ DESCARTADO, ESPERANDO.
   3. Empaquetar `linux-pocknix-sm8750` con `pkgrel` nuevo + `make packages`, `stage`/`publish`.
   4. Dar a Jarvis: paquete + `/flash/KERNEL.bak` previo + probar **2-3 suspends con toque corto**.
      Si aguanta → adoptarlo en `odin3-sm8750` y publicar; si no → siguiente candidato (dominio CX).
+
+## Plan de adopción (semana del 26/10 → 1/11)
+
+- [PENDIENTE] **1º — kernel de prueba GMU (0620+0622) para Jarvis.** Compromiso: listo antes del finde
+  del 31/10 (ver sección de arriba). Es lo único con fecha.
+- [PENDIENTE] **2º — `fex-emu` 2610.20261012** (tenemos 20261007). pocknix lo pasó a paquete
+  compartido el 23/10. Impacto directo en juegos x86. Comprobar que no llevamos delta del PKGBUILD;
+  build + `stage-shared`/`publish`. Probar un juego WProton/FEX después.
+- [PENDIENTE] **3º — `inputplumber` 0.83.0** (tenemos 0.82.0 y llevamos DELTA del mapa del mando).
+  Re-aplicar el delta sobre la versión nueva y probar el pad (incluido el virtual event10).
+- [ESPERANDO] **`gamescope` 3.17.0-ogc1** (armada, 25/10). Supone rebasear nuestros 19 parches de
+  HDR/rotación (`0101`–`0121` + `0009`/`0010`/`0011`). **Sesión dedicada**, no mezclar con lo anterior.
+- [DESCARTADO por ahora] Deckard: `vulkan-layers 20261023.1` (no las empaquetamos),
+  `linux-72-deckard 7.2.0` (más viejo), `mesa 26.3.0_devel` (anterior a nuestro 26.3.0).
+- [ESPERANDO] MAKO `render-v4.6.0`: sigue **x86_64**, sin binarios aarch64.
