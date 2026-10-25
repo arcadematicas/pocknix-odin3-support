@@ -126,3 +126,14 @@ DESCARTADO, ESPERANDO.
   `MultiMedia4 Playback` + `DISPLAY_PORT_RX_0 Playback`; el kernel ya soporta audio DP. Falta: probar
   la tplg de armada en la consola (con HDMI enchufado) y añadir `SectionDevice."HDMI"` al UCM.
   Detalle y pasos: `docs/AUDIO-HDMI-20261025.md`. Decidir además cómo distribuir la tplg (binario).
+
+## Correcciones pendientes de compilar (mañana)
+
+- [PENDIENTE] **`msm-firmware-loader 1.8.0-4`** — el `package()` ya reapunta las unidades a
+  `/usr/bin` (`dac51b5`), pero **falta compilar/publicar/instalar**. La `1.8.0-3` falla en cada
+  arranque con `203/EXEC` (`/usr/sbin/msm-firmware-loader.sh` no existe: en esta imagen `/usr/sbin`
+  **no** es symlink a `bin`). Impacto bajo (el firmware va como ficheros; WiFi/audio OK).
+  **Avisar a Davidusky**: su Odin tiene la `-3`, así que su cargador también está roto.
+- [PENDIENTE] **Kernel con `1034`** (panel ICNA35xx: asentar 120 ms + 3 reintentos). El parche ya
+  compila bien tras regenerarlo (`3414049`); falta build + instalar en la Odin + probar el cambio
+  a escritorio 2-3 veces (con `/flash/KERNEL.bak`).
