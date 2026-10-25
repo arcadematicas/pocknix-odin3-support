@@ -122,7 +122,7 @@ DESCARTADO, ESPERANDO.
 - [DESCARTADO por ahora] Deckard: `vulkan-layers 20261023.1` (no las empaquetamos),
   `linux-72-deckard 7.2.0` (más viejo), `mesa 26.3.0_devel` (anterior a nuestro 26.3.0).
 - [ESPERANDO] MAKO `render-v4.6.0`: sigue **x86_64**, sin binarios aarch64.
-- [PENDIENTE] **Audio HDMI/DP**: la tplg de armada (`SM8750-AYN-tplg.bin`, 24.516 B) **sí** trae
+- [PENDIENTE · bloqueada hasta tener dock] **Audio HDMI/DP**: la tplg de armada (`SM8750-AYN-tplg.bin`, 24.516 B) **sí** trae
   `MultiMedia4 Playback` + `DISPLAY_PORT_RX_0 Playback`; el kernel ya soporta audio DP. Falta: probar
   la tplg de armada en la consola (con HDMI enchufado) y añadir `SectionDevice."HDMI"` al UCM.
   Detalle y pasos: `docs/AUDIO-HDMI-20261025.md`. Decidir además cómo distribuir la tplg (binario).

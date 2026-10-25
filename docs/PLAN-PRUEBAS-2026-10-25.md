@@ -115,3 +115,26 @@ Detalle: [`INCIDENTE-2026-10-24-GPU-HANG-Y-MANGOAPP.md`](INCIDENTE-2026-10-24-GP
 Está en el backlog (`docs/UPSTREAM-BACKLOG.md`): kernel con `0620`+`0622` de armada. **Él reproduce,
 nosotros no**; él no puede probar hasta el fin de semana del 31/10, así que se deja compilado y
 publicado antes. Una cosa por build: no mezclar con el port del micrófono (ya hecho, sin kernel).
+---
+
+## 8. Audio por HDMI/DP — probar con dock  ⏱️ 5 min · **bloqueada: no hay dock**
+
+**Estado**: hoy **no hay** audio por HDMI (medido: la tarjeta solo expone PCM 0/1/2, no existe
+`DP0 Jack`). La causa: nuestra tplg no trae el backend de DisplayPort.
+
+**Sospechoso con solución**: la tplg de armada **sí** trae `MultiMedia4 Playback` +
+`DISPLAY_PORT_RX_0`, y el kernel ya soporta audio DP (`dp_audio.c`, `CONFIG_DRM_MSM_DP=y`).
+
+**Prueba (cuando haya dock con HDMI)**:
+1. Enchufar el dock con HDMI a un monitor/TV.
+2. Backup de `/usr/lib/firmware/qcom/sm8750/SM8750-AYN-tplg.bin` y copiar la de armada
+   (`system_files/usr/lib/firmware/qcom/sm8750/`, 24.516 B). Reiniciar.
+3. `aplay -l` → debe aparecer `device 3: MultiMedia4 Playback`.
+4. `speaker-test -D hw:0,3 -c 2 -t sine` → ¿suena por el HDMI?
+5. **Verificar que no se rompió nada**: altavoz (`hw:0,0`), auriculares (`hw:0,1`) y micro
+   (`hw:0,2`) siguen bien. Si algo falla → restaurar el backup de la tplg y reiniciar.
+6. Si funciona: añadir `SectionDevice."HDMI"` al `HiFi.conf` (bloque listo en
+   `docs/AUDIO-HDMI-20261025.md`) y decidir cómo distribuir la tplg (binario de armada).
+
+**Vigilancia**: `tools/check-hdmi-audio.sh` (en el chequeo diario) avisa si la tplg de armada
+cambia o si ROCKNIX publica parches de audio DP.
