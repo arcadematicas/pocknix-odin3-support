@@ -108,3 +108,10 @@ Detalle: [`INCIDENTE-2026-10-24-GPU-HANG-Y-MANGOAPP.md`](INCIDENTE-2026-10-24-GP
 
 > Regla: **una cosa por build**. Si el port del micro y un cambio de GMU van en el mismo kernel y
 > algo falla, no sabremos cuál fue.
+---
+
+## 7. Kernel de prueba GMU para Jarvis (esta semana)
+
+Está en el backlog (`docs/UPSTREAM-BACKLOG.md`): kernel con `0620`+`0622` de armada. **Él reproduce,
+nosotros no**; él no puede probar hasta el fin de semana del 31/10, así que se deja compilado y
+publicado antes. Una cosa por build: no mezclar con el port del micrófono (ya hecho, sin kernel).

@@ -79,3 +79,31 @@ DESCARTADO, ESPERANDO.
   en nuestra copia y en upstream → el fallo, si aparece, es del dispositivo/red de quien lo baja.
 - [HECHO] 2026-10-25 · vigilancia: `tools/check-hooandee.sh` + `VENDORED`, enganchado al chequeo
   diario (marca `<<< ACTUALIZAR`).
+
+## Kernel de prueba para Jarvis — GMU al resumir (preparar esta semana)
+
+- [PENDIENTE] **2026-10-25 · kernel de PRUEBA con `0620` + `0622` de armada para que lo pruebe Davidusky.**
+  Él reproduce el fallo en 2 suspends con toque corto; nosotros **no** (2 ciclos limpios el 25/10). Sin
+  reproducer en nuestra consola no se puede validar aquí: el banco de pruebas es la suya.
+  **Plazo**: preparado antes del fin de semana del 31/10 (él no puede probar antes).
+
+  **Contexto medido**:
+  - Nuestro 7.2.12-16 ya tiene `0052` (= armada `0121`, presync floor de rails de la GMU) y
+    `2103` (= armada `0621`, bound del wait de la GMU).
+  - **Faltan**: `0620` (HFI IRQ limpia solo el bit CM3) y `0622` (enmascarar la interrupción HFI antes
+    de arrancar la GMU: 30 líneas, `gmu_write(gmu, REG_A6XX_GMU_GMU2HOST_INTR_MASK, ~0)`).
+  - `0622` es **autoría de armada** (no upstream, no llega con un salto de kernel); `0620` es de gennro.
+  - Descartado: "faltan parches DSI" (`0048a`/`0048b` ya están, `1032` es idéntico al `0048b` byte a byte).
+  - Segunda pista abierta: la serie del **dominio CX en el GCC** (Neil Armstrong) cubre sm8450/8550/8650
+    pero **no sm8750** — y nuestra firma es `cx gdsc didn't collapse`. Comprobar en el fuente del kernel
+    si el nodo `gcc` de sm8750 declara `power-domains = <&rpmhpd ...CX...>`.
+
+  **Cómo prepararlo** (una cosa por build):
+  1. Copiar los dos parches a `kernel/patches/20-sm8750/` como `2110-…-track-hfi…` / `2111-…-mask-hfi…`
+     (o los números que toquen) y **verificar que aplican sin fuzz**: el build re-extrae el fuente y
+     `apply_patches` es estricto (`patch -p1` sin fuzz).
+  2. `DEVICE=sm8750 make kernel` → `KERNEL` + módulos del **mismo** build (la trampa del BTF: kernel y
+     módulos de builds distintos rompen mando y audio).
+  3. Empaquetar `linux-pocknix-sm8750` con `pkgrel` nuevo + `make packages`, `stage`/`publish`.
+  4. Dar a Jarvis: paquete + `/flash/KERNEL.bak` previo + probar **2-3 suspends con toque corto**.
+     Si aguanta → adoptarlo en `odin3-sm8750` y publicar; si no → siguiente candidato (dominio CX).
