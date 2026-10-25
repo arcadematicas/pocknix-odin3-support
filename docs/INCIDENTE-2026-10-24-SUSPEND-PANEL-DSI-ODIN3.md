@@ -105,3 +105,28 @@ El bloqueo reproducible es **GPU/GMU al resumir** (`a6xx_gmu_resume`/GMU OOB/pre
 no I/O ni el panel como causa primaria. `0048a`/`0048b` (nuestro `1032`, identico) ya estan, asi
 que no es "faltan parches DSI". La "lentitud sin cuelgue" es la otra incidencia (Zelda/TDP) y se
 mide con la herramienta de Alfred.
+
+## CAUSA DEFINITIVA (2026-10-25) — el resume de GPU/GMU deja la consola colgada
+
+Reproducido tambien por Davidusky con el **toque corto** del boton: suspende y al volver la
+consola **no responde** (pantalla apagada); solo se recupera con **toque largo** (apagado).
+En el boot afectado (`0e9ea0d0`, 00:07 -> 01:53), tras dos suspends correctos:
+
+```
+01:43:04 PM: suspend entry (s2idle)   / 01:43:50 PM: suspend exit   (OK)
+01:45:05 PM: suspend entry (s2idle)   / 01:45:47 PM: suspend exit   (OK)
+01:45:57 [drm:dpu error] enc35 frame done timeout            <- la pantalla muere
+01:46:14 a6xx_gmu_resume: *ERROR* GMU firmware initialization timed out
+01:46:14 a6xx_gmu_set_oob: *ERROR* Timeout waiting for GMU OOB set GPU_SET: 0x0
+01:48:38 adreno 3d00000.gpu: Timeout waiting for GPU to suspend -> -16
+```
+
+=> Al volver del suspend **la GPU/GMU no resucita**; con la GPU muerta no hay composicion ni
+vuelve la pantalla, y los suspends siguientes fallan con `-16`. Es el **mismo fallo que
+`INCIDENTE-2026-10-24-GPU-HANG-Y-MANGOAPP.md`** (`a6xx_gmu_set_oob` + `44050000 preemption`).
+Es **kernel (adreno/GMU)**, no se arregla con un hook.
+
+Nota: el `zz-wifi` original (radio off) SI estaba. Probe ademas un hook que saca el PCI del
+ath12k antes de dormir y **el suspend deja de fallar por WiFi** (2 pruebas: duro y desperto
+bien), pero el fallo de GPU/GMU lo tapa igual; el rescan renombraba la interfaz (wlanN) y se
+revirtio el hook.
