@@ -34,9 +34,11 @@ prepare() {
 package() {
   cd msm-firmware-loader-$pkgver
 
-  # --- scripts -> /usr/bin (/usr/sbin es symlink a bin en Arch: meter la ENTRADA de
-  # directorio /usr/sbin/ rompe la instalacion con "exists in filesystem (owned by filesystem)")
-  # Las unidades siguen apuntando a /usr/sbin/*.sh y resuelven por el symlink. -------
+  # --- scripts -> /usr/bin ---------------------------------------------------
+  # Motivo original: el paquete metia la ENTRADA de directorio /usr/sbin/ y pacman abortaba con
+  # "exists in filesystem (owned by filesystem)". Se movieron los scripts a /usr/bin.
+  # OJO (25/10): en la Odin /usr/sbin NO es un symlink a bin, asi que las unidades de upstream
+  # apuntaban a un fichero inexistente y fallaban con 203/EXEC. Se reapuntan mas abajo (sed).
   install -Dm755 msm-firmware-loader.sh        "${pkgdir}/usr/bin/msm-firmware-loader.sh"
   install -Dm755 msm-firmware-loader-unpack.sh "${pkgdir}/usr/bin/msm-firmware-loader-unpack.sh"
 
@@ -44,6 +46,11 @@ package() {
   local unit="${pkgdir}/usr/lib/systemd/system"
   install -Dm644 msm-firmware-loader.service        "${unit}/msm-firmware-loader.service"
   install -Dm644 msm-firmware-loader-unpack.service "${unit}/msm-firmware-loader-unpack.service"
+
+  # Las unidades de upstream lanzan /usr/sbin/*.sh; aqui /usr/sbin es un directorio real y los
+  # scripts viven en /usr/bin -> sin esto fallan con status=203/EXEC (visto en 1.8.0-3).
+  sed -i 's|/usr/sbin/msm-firmware-loader|/usr/bin/msm-firmware-loader|g' \
+    "${unit}"/msm-firmware-loader*.service
 
   # --- enable: symlinks del propio paquete (quitarlo los quita) --------------
   # Mismo estilo que pocknix-bsp-sm8750: el link va en <target>.wants/ y apunta a ../<unidad>.
