@@ -54,6 +54,16 @@ patches=$(curl -fsSL -H 'User-Agent: pocknix-upstream-check' \
   | grep -ciE 'hdmi[_-]audio|dp[_-]audio|audio.*displayport' 2>/dev/null || echo 0)
 rnx_patches=$(tree_count ROCKNIX/distribution 'hdmi_audio_ops|dp_audio')
 
-printf 'HDMI/DP: tplg sm8750 publicadas -> armada=%s, ROCKNIX=%s | parches audio DP -> armada=%s, ROCKNIX=%s\n' \
-  "${tplg_armada}" "${tplg_rocknix}" "${patches}" "${rnx_patches}"
+# ¿la tplg de armada trae audio DP? (24 KB; es la señal que importa)
+armada_dp="?"
+tmp=$(mktemp)
+if curl -fsSL -H 'User-Agent: pocknix-upstream-check' \
+     "https://raw.githubusercontent.com/armada-os/armada/main/system_files/usr/lib/firmware/qcom/sm8750/SM8750-AYN-tplg.bin" \
+     -o "${tmp}" 2>/dev/null; then
+  if strings -n 3 "${tmp}" 2>/dev/null | grep -qiE 'display_?port|multimedia4'; then armada_dp="CON DP"; else armada_dp="sin DP"; fi
+fi
+rm -f "${tmp}"
+
+printf 'HDMI/DP: tplg de armada %s | publicadas -> armada=%s, ROCKNIX=%s | parches audio DP -> armada=%s, ROCKNIX=%s\n' \
+  "${armada_dp}" "${tplg_armada}" "${tplg_rocknix}" "${patches}" "${rnx_patches}"
 printf '  (si aparece una tplg sm8750 CON DP o parches de audio DP para sm8750: leer docs/AUDIO-HDMI-20261025.md y probar)\n'
