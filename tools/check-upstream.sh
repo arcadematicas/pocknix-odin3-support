@@ -100,7 +100,10 @@ VK_LAYERS_OUR="?"
   fi
 
 # kernel.conf -> KERNEL_VERSION
-grep -m1 '^: "${KERNEL_VERSION:=' "$REPO/kernel/sm8750/kernel.conf" 2>/dev/null \
+# El centro es la fuente de verdad del kernel; el clon del arbol puede estar atrasado
+kver_file="${CENTRO:-$(dirname "$0")/../}/kernel/sm8750/kernel.conf"
+[ -r "$kver_file" ] || kver_file="$REPO/kernel/sm8750/kernel.conf"
+grep -m1 '^: "${KERNEL_VERSION:=' "$kver_file" 2>/dev/null \
   | sed 's/^.*KERNEL_VERSION:=//; s/}".*$//' > "$TMP/our_kernel.txt"
 [ -s "$TMP/our_kernel.txt" ] || echo "?" > "$TMP/our_kernel.txt"
 
