@@ -15,6 +15,27 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 25 de octubre 2026 — el micrófono del Odin 3 vuelve a la vida
+
+ArmadaOS lo resolvió el 21/10 y **no era kernel**: nuestro `lpass-tx-macro` de 7.2.12 ya trae su
+parche `0080` (tracking de decimadores por DAI) y su `0081` es nuestro `2109` (Diogo Trindade).
+Lo que faltaba era declarar la **captura en el UCM**: nuestro `HiFi.conf` solo tenía `Speaker` y
+`Headphones`.
+
+### 🚀 Añadido
+- `Mic` (micro interno, DMIC2/DMIC3 → `SWR_MIC6`) y `Headset` (micro del jack, wcd939x →
+  `SWR_MIC1`, con `Mic Jack`), ambos por `CapturePCM "hw:${CardId},2"` con los dos decimadores.
+- `pocknix-bsp-sm8750 0.2.0-33`, publicado en R2.
+
+### ✅ Verificado en la Odin
+- `arecord -l` muestra el PCM de captura; grabación de 5 s con **señal real** (`peak=22403`).
+- PipeWire expone `alsa_input…__Mic__source` y queda como **fuente por defecto**;
+  `pw-record` graba señal. El perfil de auricular con micro aparece al enchufarlo.
+- No se tocó el kernel (cero reinicios, cero rebuild).
+
+### 📝 Docs
+- `docs/MICROFONO-20261025.md` (causa, port, verificación y diagnóstico si falla).
+
 ## 📅 24 de octubre 2026 — el refactor de escritorio que nunca se publicó
 
 Davidusky (Jarvis) no pudo actualizar su Odin desde la imagen del 02-oct. Su informe era correcto y

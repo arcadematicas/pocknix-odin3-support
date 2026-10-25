@@ -29,6 +29,31 @@ se alimenta a los dos canales con los dos decimadores DEC0/DEC1).
 - El `0073` de armada (HPH PCM HiFi) también está; las versiones difieren de formato, pero la
   funcionalidad está cubierta por el nuestro.
 
+## Verificado en la Odin (25/10/2026, bsp 0.2.0-33)
+
+```
+$ arecord -l
+card 0: SM8750AYN [SM8750-AYN], device 2: MultiMedia3 Capture (*) []
+
+$ alsaucm -c 0 list _devices/HiFi
+  0: Speaker · 1: Headphones · 2: Mic · 3: Headset
+
+$ alsaucm -c 0 set _verb HiFi set _enadev Mic
+$ arecord -D hw:0,2 -f S16_LE -r 48000 -c 2 -d 5 /tmp/mic.wav
+  frames=240000 peak=22403 rms=1419.9  (SEÑAL)
+```
+
+Y por **PipeWire** (lo que usan las apps): tras `systemctl --user restart wireplumber`
+aparece `alsa_input.platform-sound.HiFi__Mic__source` ("Built-in Audio Internal microphone"),
+queda como **fuente por defecto**, y `pw-record` graba señal (`peak=22403 rms=909`).
+
+Perfiles de tarjeta que expone el UCM:
+- `HiFi (Headphones, Mic, Speaker)` → disponible.
+- `HiFi (Headphones, Headset, Speaker)` → aparece cuando se enchufa un **auricular con micro**.
+
+`alsaucm ... set _enadev` **no** sirve para probar a mano en dos invocaciones: hay que encadenarlo
+(`set _verb HiFi set _enadev Mic`), o sale "No such file or directory".
+
 ## Cómo probar
 ```bash
 arecord -l                       # debe aparecer "Mic" y "Headset"
