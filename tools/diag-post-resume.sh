@@ -69,17 +69,15 @@ snapshot() {
   echo "foto '$label' añadida a $LOG"
 }
 
-case "${1:-}" in
-  before|after) snapshot "$1" ;;
-  show)
-    [ -s "$LOG" ] || { echo "no hay fotos todavía ($LOG)"; exit 1; }
-    # pares before/after consecutivos: muestra solo las líneas que difieren
-    awk '/^== (before|after)/{lbl=$2} {print lbl"|"$0}' "$LOG" >/tmp/.sd.tmp
-    echo "--- log completo: $LOG ---"
-    grep -E "^== (before|after)|^   (cur=|activo=|perfil=|load:)" "$LOG"
-    ;;
-  *)
-    echo "uso: $0 before|after|show" >&2
-    exit 2
-    ;;
-esac
+label="${1:-}"
+if [ "${label}" = "show" ]; then
+  [ -s "${LOG}" ] || { echo "no hay fotos todavia (${LOG})"; exit 1; }
+  echo "--- log completo: ${LOG} ---"
+  grep -E "^== |^   (cur=|activo=|perfil=|load:)" "${LOG}"
+  exit 0
+fi
+if ! printf '%s' "${label}" | grep -qE '^[a-z][a-z0-9-]{0,20}$'; then
+  echo "uso: $0 <etiqueta> | show      (etiqueta: before, after, after-play, ...)" >&2
+  exit 2
+fi
+snapshot "${label}"
