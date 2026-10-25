@@ -17,7 +17,7 @@
 # `command -v`); de momento NO se anade a ninguna lista de paquetes (decision pendiente).
 pkgname=msm-firmware-loader
 pkgver=1.8.0
-pkgrel=3
+pkgrel=4
 pkgdesc="Load the ADSP firmware from the Android partitions for hexagonrpcd"
 arch=('any')
 url="https://gitlab.postmarketos.org/postmarketOS/msm-firmware-loader"
