@@ -1,0 +1,21 @@
+#!/bin/sh
+# pocknix-kernel-pair — deja en /flash el par reparador: md5 del KERNEL en curso y
+# el tar de modulos de ESE build. Lo llama el hook 91 tras instalar/actualizar kernel
+# o modulos, asi que el guardia siempre tiene de donde reparar.
+set -u
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[ -f /flash/KERNEL ] || exit 0
+VER=$(ls -1dt /usr/lib/modules/*/ 2>/dev/null | head -1)
+[ -n "$VER" ] || exit 0
+VER=$(basename "$VER")
+MOD="/usr/lib/modules/$VER"
+[ -f "$MOD/modules.dep" ] || exit 0
+md5sum /flash/KERNEL | cut -d' ' -f1 > "$MOD/.pocknix-kernel-md5"
+TMP="/flash/modules-$VER.tar.zst.tmp"
+tar -I zstd -cf "$TMP" -C "$MOD" . && mv -f "$TMP" "/flash/modules-$VER.tar.zst"
+# una sola version en /flash: sobra espacio y evita reparar con el tar equivocado
+for old in /flash/modules-*.tar.zst; do
+    [ -e "$old" ] || continue
+    [ "$old" = "/flash/modules-$VER.tar.zst" ] || rm -f "$old"
+done
+echo "pocknix-kernel-pair: $VER listo"

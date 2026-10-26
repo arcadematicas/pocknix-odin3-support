@@ -1,0 +1,9 @@
+[Unit]
+Description=pocknix kernel/modules coherence guard
+ConditionPathIsMountPoint=/flash
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-kernel-guard
+RemainAfterExit=yes

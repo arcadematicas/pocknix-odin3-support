@@ -1,0 +1,40 @@
+# pocknix-kernel-guard — red de seguridad kernel/modulos.
+#
+# Incidente 26/10/2026: se copio un KERNEL nuevo a /flash sin los modulos del mismo build.
+# Como ambos son 7.2.12, el sistema arrancaba pero sin mando, wifi ni audio (los .ko fallan
+# con "failed to validate module [...] BTF: -22"), y al estar el sistema en la memoria
+# interna no habia ni teclado ni red para arreglarlo. Solo se pudo recuperar por la SD.
+#
+# Este paquete instala:
+#   pocknix-kernel-guard  (timer 75s tras arrancar): compara el md5 de /flash/KERNEL con el
+#                         marcador del build de los modulos y usa ath12k como canario. Si no
+#                         cuadra, reinstala desde /flash/modules-<ver>.tar.zst y reinicia
+#                         una sola vez (flag en /run).
+#   pocknix-kernel-pair   (hook alpm 91): tras instalar/actualizar kernel o modulos deja en
+#                         /flash el md5 y el tar de modulos de ESE build (y limpia los viejos).
+pkgname=pocknix-kernel-guard
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Detecta y repara solo un desajuste kernel/modulos usando el par guardado en /flash"
+arch=('aarch64')
+url="https://github.com/arcadematicas/pocknix-odin3-support"
+license=('MIT')
+depends=('zstd' 'kmod')
+source=('pocknix-kernel-guard'
+        'pocknix-kernel-pair'
+        'pocknix-kernel-guard.service'
+        'pocknix-kernel-guard.timer'
+        '91-pocknix-kernel-pair.hook')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/pocknix-kernel-guard" "${pkgdir}/usr/local/bin/pocknix-kernel-guard"
+  install -Dm755 "${srcdir}/pocknix-kernel-pair"  "${pkgdir}/usr/local/bin/pocknix-kernel-pair"
+
+  install -Dm644 "${srcdir}/pocknix-kernel-guard.service" "${pkgdir}/usr/lib/systemd/system/pocknix-kernel-guard.service"
+  install -Dm644 "${srcdir}/pocknix-kernel-guard.timer"   "${pkgdir}/usr/lib/systemd/system/pocknix-kernel-guard.timer"
+  install -d "${pkgdir}/usr/lib/systemd/system/timers.target.wants"
+  ln -sf ../pocknix-kernel-guard.timer "${pkgdir}/usr/lib/systemd/system/timers.target.wants/pocknix-kernel-guard.timer"
+
+  install -Dm644 "${srcdir}/91-pocknix-kernel-pair.hook" "${pkgdir}/usr/share/libalpm/hooks/91-pocknix-kernel-pair.hook"
+}

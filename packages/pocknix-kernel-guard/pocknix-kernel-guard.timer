@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the pocknix kernel guard shortly after boot
+
+[Timer]
+OnBootSec=75s
+AccuracySec=5s
+Unit=pocknix-kernel-guard.service
+
+[Install]
+WantedBy=timers.target
