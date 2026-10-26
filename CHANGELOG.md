@@ -17,6 +17,14 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ## 📅 26 de octubre 2026 — la regresión del cargador de firmware y el panel de Hooandee al día
 
+### 🧩 `linux-pocknix-sm8750 7.2.12-17` — el parche del panel, ahora en paquete
+- El paquete **-16 no incluía módulos** (0 entradas bajo `usr/lib/modules`): por eso un `KERNEL`
+  copiado a mano podía convivir con módulos viejos sin que nada avisara. El **-17 sí los trae**
+  (290 `.ko`) y dispara los hooks 90 (regenera `/flash/KERNEL`) y 91 (par de reparación).
+- Validado en la consola: **varios cambios Game Mode ↔ escritorio + 4 suspends** sin
+  `failed to initialize panel`, `dsi_cmds2buf_tx`, `a8xx_recover`/`gdsc` ni hangcheck.
+- Publicado en `r2:pocknix/sm8750`. Aviso a Jarvis/Davidusky: issue #2 del repo.
+
 ### 🛡️ Red de seguridad kernel/módulos (tras el susto del 26/10)
 - **`pocknix-kernel-guard`** (nuevo paquete *shared*, dependencia de `pocknix-core`): a los 75 s del
   arranque comprueba que los módulos son del mismo build que `/flash/KERNEL` (md5 + `failed to

@@ -57,3 +57,13 @@ Desde otro equipo, si hay red: lo mismo por SSH (sin contraseña, `systemd-run` 
 - Prueba real forzando un marcador falso: el guardia detectó el desajuste, reinstaló los módulos,
   corrigió el marcador y reinició → tras el arranque, `0` fallos BTF, wifi y mando OK.
 - `systemctl --failed` vacío; `pocknix-kernel-guard.timer` activo.
+
+## Segunda vuelta (misma tarde): el parche, dentro del paquete
+
+- El paquete `linux-pocknix-sm8750 7.2.12-16` **no llevaba módulos**: 0 entradas bajo
+  `usr/lib/modules`. Ese era el agujero estructural — el `KERNEL` de `/flash` se regeneraba con el
+  hook 90, pero los módulos del sistema eran los de la imagen, de otro build.
+- `7.2.12-17` recompila el kernel (con el parche 1034) y **empaqueta los 290 `.ko`**.
+- Instalado en la Odin: `/flash/KERNEL` → md5 `d538b1be40d90a9c`, marcador idéntico, 0 fallos BTF,
+  wifi y mando OK, guardia en OK. Publicado en `r2:pocknix/sm8750`.
+- Aviso con el lote completo: issue #2 de `arcadematicas/pocknix-odin3-support`.
