@@ -15,6 +15,31 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 26 de octubre 2026 — la regresión del cargador de firmware y el panel de Hooandee al día
+
+### 🔴 Regresión corregida: `msm-firmware-loader`
+El cambio del 24/10 (`-3`) movió los scripts a `/usr/bin` dando por hecho que `/usr/sbin` es un
+symlink a `bin`. **En estas imágenes no lo es** (es un directorio real), así que las unidades de
+upstream seguían apuntando a `/usr/sbin/*.sh` y **fallaban en cada arranque**:
+`Unable to locate executable '/usr/sbin/msm-firmware-loader.sh'` → `status=203/EXEC`.
+- **`msm-firmware-loader 1.8.0-4`**, publicado: el `package()` reapunta las unidades con
+  `sed 's|/usr/sbin/msm-firmware-loader|/usr/bin/msm-firmware-loader|g'`.
+- Lección: las unidades vienen del **tarball de upstream**; parchear solo la ruta de instalación no
+  basta (misma trampa que `gamescope-session`).
+- Aviso publicado a Davidusky en su commit.
+
+### 🚀 Panel de Control de Hooandee al día
+- `pocknix-decky 0.1.0-57`: re-vendorizado de **v0.70.1 → v0.76.0** (23/10). **Sin delta propio**: el
+  `hdr=True` del perfil `ayn_odin3` entró en upstream (PR #947, mergeado el 17/10).
+- `tools/check-hooandee.sh` (en el chequeo diario) avisa cuando se queda atrás.
+
+### 🧪 Compilado y pendiente de probar (no publicado a propósito)
+- **`fex-emu 2610.20261012.896a8691`**: adoptado el PKGBUILD de pocknix; el commit nuevo hace
+  **innecesarios nuestros 4 parches** (upstream ya no llama a `clearStatCache`, que clang 23 quitó).
+  Se publica **después** de probar un juego x86 (lo usan todos).
+- **Kernel 7.2.12 con el parche `1034`** (panel ICNA35xx: asentamiento de 120 ms + 3 reintentos tras
+  el reset). Es el candidato para el cuelgue al cambiar a escritorio / volver de suspender.
+
 ## 📅 25 de octubre 2026 — el micrófono del Odin 3 vuelve a la vida
 
 ArmadaOS lo resolvió el 21/10 y **no era kernel**: nuestro `lpass-tx-macro` de 7.2.12 ya trae su
