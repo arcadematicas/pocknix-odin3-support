@@ -18,9 +18,10 @@ bad=""
 if [ -z "$bad" ] && [ -n "$want" ] && [ "$want" != "$have" ]; then
     bad="md5 no coincide: marcador=$want /flash=$have"
 fi
-# Canario: si el kernel puede cargar modulos, ath12k existe. Con BTF rota, no.
-if [ -z "$bad" ] && [ ! -d /sys/module/ath12k ]; then
-    bad="el modulo canario ath12k no esta cargado"
+# Senal generica (vale en cualquier SoC): si el kernel rechazo algun modulo por BTF,
+# es que los .ko no son de este build. No depende de nombres de modulo de un SoC.
+if [ -z "$bad" ] && journalctl -k -b --no-pager 2>/dev/null | grep -q "failed to validate module"; then
+    bad="el kernel rechazo modulos por BTF (failed to validate module)"
 fi
 
 if [ -z "$bad" ]; then say "OK: kernel $VER con modulos coherentes"; exit 0; fi
