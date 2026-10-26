@@ -17,6 +17,16 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ## 📅 26 de octubre 2026 — la regresión del cargador de firmware y el panel de Hooandee al día
 
+### 🚀 Informes de incidencia desde PocknixControl (nuestro propio mecanismo)
+- Botón **"Enviar informe"** en la pestaña *Sistema* del plugin: descripción opcional + envío.
+- **No duplica nada**: el backend lanza `calvos-doctor --send --yes [--text ...]` (el script del BSP que
+  ya recoge el diagnóstico y **redacta** PII) y parsea la URL del issue. El token de GitHub sigue
+  viviendo **solo** en el Worker; el plugin solo hace POST.
+- Los issues van a **`arcadematicas/calvOS-reports`** (nuestro repo de incidencias, como el de Hooandee
+  pero nuestro).
+- `pocknix-decky 0.1.0-58` (dist recompilado). `report.py` + `send_report` + `sendReport` + sección
+  `INFORME` en `System.tsx`.
+
 ### 🔴 Regresión corregida: `msm-firmware-loader`
 El cambio del 24/10 (`-3`) movió los scripts a `/usr/bin` dando por hecho que `/usr/sbin` es un
 symlink a `bin`. **En estas imágenes no lo es** (es un directorio real), así que las unidades de

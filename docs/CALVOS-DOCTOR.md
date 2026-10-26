@@ -40,3 +40,14 @@ funcionando aunque el plugin se actualice.
 
 - `packages/pocknix-bsp-sm8750/doctor/calvos-doctor` → `/usr/local/bin/calvos-doctor`
 - Colector: `github.com/arcadematicas/calvOS-reports` (`worker/src/index.js`)
+
+## Integración en PocknixControl (26/10/2026)
+
+Pestaña **Sistema** → sección **INFORME**: descripción opcional + botón **"Enviar informe"**.
+
+- El backend (`py_modules/pocknix_control/report.py`) lanza `calvos-doctor --send --yes [--text ...]`
+  y parsea la línea `issue: <url>`. **No** reimplementa la recogida, la redacción ni el envío: el
+  script del BSP es la única fuente.
+- `main.py`: `send_report(text)` (con `asyncio.to_thread`), `src/backend.ts`: `sendReport(text)`.
+- Mismo colector que la CLI: Worker → issues en `arcadematicas/calvOS-reports`.
+- El token de GitHub **nunca** viaja en la imagen: solo el secret del Worker.
