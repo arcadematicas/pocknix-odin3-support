@@ -1304,3 +1304,11 @@ scripts/publish-repo.sh                                    # sube el localrepo a
   probarlo todo junto.
 - El **kernel** de upstream (p.ej. 7.2.10) vive en la **rama del PR** (`origin/sm8750-odin3`) hasta que se
   mergee → el rebase de CalvOS (A2 del roadmap) se hace **cuando mergee**.
+
+## 8) Kernel: solo por paquete (26/10/2026)
+El kernel y sus módulos entran **siempre** con el paquete `linux-pocknix-sm8750`: instala
+`/usr/lib/modules/<ver>` y el hook `90-linux-pocknix.hook` regenera `/flash/KERNEL` con
+`pocknix-build-bootimg`. **Nunca** copiar `KERNEL` ni extraer módulos a mano: un desajuste
+kernel/módulos deja la consola sin mando, wifi ni audio, y al vivir el sistema en la memoria
+interna no hay teclado ni red para arreglarlo. Red de seguridad: `pocknix-kernel-guard`
+(+ `pocknix-kernel-pair`, ver `docs/RED-SEGURIDAD-KERNEL-20261026.md`).

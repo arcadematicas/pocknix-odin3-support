@@ -17,6 +17,17 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ## 📅 26 de octubre 2026 — la regresión del cargador de firmware y el panel de Hooandee al día
 
+### 🛡️ Red de seguridad kernel/módulos (tras el susto del 26/10)
+- **`pocknix-kernel-guard`** (nuevo paquete *shared*, dependencia de `pocknix-core`): a los 75 s del
+  arranque comprueba que los módulos son del mismo build que `/flash/KERNEL` (md5 + `failed to
+  validate module` en el log). Si no, reinstala desde `/flash/modules-<ver>.tar.zst` y reinicia una vez.
+- **`pocknix-kernel-pair`** (hook alpm 91): mantiene en `/flash` el md5 y el tar de módulos del build
+  en curso, para que el guardia siempre pueda reparar.
+- **`pocknix-core 0.1.0-6`**: añade la dependencia, así llega a todas las consolas.
+- Regla nueva: el kernel entra **siempre por paquete** (hook 90 regenera `/flash/KERNEL`); nunca
+  copiar `KERNEL`/módulos a mano.
+- Documento: `docs/RED-SEGURIDAD-KERNEL-20261026.md`.
+
 ### 🚀 Informes de incidencia desde PocknixControl (nuestro propio mecanismo)
 - Botón **"Enviar informe"** en la pestaña *Sistema* del plugin: descripción opcional + envío.
 - **No duplica nada**: el backend lanza `calvos-doctor --send --yes [--text ...]` (el script del BSP que
