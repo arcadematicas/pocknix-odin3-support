@@ -21,6 +21,7 @@ from pocknix_control.sharing import install_samba, set_share, share_status
 from pocknix_control.snapshots import reboot_system, snapshot_status, start_rollback
 from pocknix_control.tweaks import save_tweaks
 from pocknix_control.updates import check_updates, start_update, update_status
+from pocknix_control.report import send_report as _send_report
 
 
 class Plugin:
@@ -97,6 +98,10 @@ class Plugin:
 
     async def system_status(self):
         return await asyncio.to_thread(system_status)
+
+    async def send_report(self, text: str = ""):
+        # Recoge + redacta + envia al colector propio (calvos-doctor); bloqueante -> hilo.
+        return await asyncio.to_thread(_send_report, text)
 
     async def cleanup_scan(self):
         return await asyncio.to_thread(scan)

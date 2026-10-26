@@ -1,6 +1,6 @@
-import { Field, PanelSection, PanelSectionRow } from "@decky/ui";
+import { Button, Field, PanelSection, PanelSectionRow, TextField } from "@decky/ui";
 import { useEffect, useState } from "react";
-import { systemStatus } from "../backend";
+import { sendReport, systemStatus } from "../backend";
 import type { SystemStatus } from "../backend";
 
 const voltios = (uv: number | null | undefined) => (uv == null ? null : `${(uv / 1_000_000).toFixed(2)} V`);
@@ -19,6 +19,9 @@ const amperios = (ua: number | null | undefined) => (ua == null ? null : `${(ua 
 export function System() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [error, setError] = useState("");
+  const [texto, setTexto] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [informe, setInforme] = useState<{ ok: boolean; issue?: string; error?: string } | null>(null);
 
   useEffect(() => {
     systemStatus()
@@ -32,6 +35,18 @@ export function System() {
         .filter(Boolean)
         .join(" · ")
     : "no disponible en este equipo";
+
+  const enviarInforme = async () => {
+    setEnviando(true);
+    setInforme(null);
+    try {
+      setInforme(await sendReport(texto));
+    } catch (err) {
+      setInforme({ ok: false, error: String(err) });
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   return (
     <>
@@ -55,6 +70,35 @@ export function System() {
           <Field label="Error" description={error} />
         </PanelSectionRow>
       ) : null}
+
+      <PanelSection title="INFORME">
+        <PanelSectionRow>
+          <TextField
+            label="Descripcion (opcional)"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+          />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <Button onClick={enviarInforme} disabled={enviando}>
+            {enviando ? "Enviando..." : "Enviar informe"}
+          </Button>
+        </PanelSectionRow>
+        {informe ? (
+          <PanelSectionRow>
+            <Field
+              label={informe.ok ? "Informe enviado" : "No se pudo enviar"}
+              description={informe.ok ? (informe.issue || "") : (informe.error || "")}
+            />
+          </PanelSectionRow>
+        ) : null}
+        <PanelSectionRow>
+          <Field
+            label=""
+            description="Se envia a nuestro GitHub (arcadematicas/calvOS-reports). El informe se redacta antes de salir: sin rutas de usuario, hostname, IP, MAC ni claves."
+          />
+        </PanelSectionRow>
+      </PanelSection>
     </>
   );
 }
