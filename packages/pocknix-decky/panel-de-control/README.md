@@ -25,8 +25,8 @@ Lo hago yo, Hooandee, y cada cosa la pruebo en mis propias máquinas. Panel no s
 Si tu equipo no deja leer o cambiar algo, simplemente no aparece, y los números que ves son los
 reales.
 
-Funciona con [Decky Loader](https://decky.xyz/) y está en español, inglés, italiano, alemán y
-portugués de Brasil.
+Funciona con [Decky Loader](https://decky.xyz/) y está en español, inglés, italiano, alemán,
+portugués de Brasil y francés.
 
 ## 🎬 Guías en vídeo
 
@@ -64,7 +64,8 @@ explicación. FSR4, HDR, escalado y compañía, pero solo lo que tu versión de 
 espacio en un momento.
 
 ✨ **Temas.** Cambia la cara de Steam por completo con temas que se instalan y se actualizan desde
-el propio Panel.
+el propio Panel. Los que están en acceso anticipado salen con la etiqueta Early y se instalan
+desde su zip.
 
 🎮 **Mandos.** Remapeo de botones que se entiende con Handheld Daemon e InputPlumber. Todavía en
 beta.
@@ -78,8 +79,18 @@ Panel no es solo para PC. Con Armada también funciona en consolas ARM, reconoce
 y solo te enseña lo que ese hardware permite tocar. En el [vídeo](https://youtu.be/1BHufGK6nbo)
 explico cómo montarlo paso a paso.
 
+El dial de Potencia mueve la CPU y la GPU juntas o por separado: si un juego tira de gráfica, puedes
+bajar la CPU y dejar la GPU arriba.
+
 Y si tienes una AYN Thor, Panel puede usar la pantalla de abajo como panel táctil mientras juegas en
 la de arriba.
+
+## 🪟 También en Windows
+
+Panel llega a Windows en early access, como widget de Xbox Game Bar y como app. Los temas ya
+funcionan en el Big Picture de Steam igual que en Linux, sin CSS Loader: se instalan, se activan y
+se ajustan desde el propio Panel. El resto de secciones enseña lo que lee tu equipo y se irá abriendo
+poco a poco. Si algo no funciona como esperabas, desde Ajustes puedes mandarme un reporte.
 
 ## 🕹️ Equipos
 

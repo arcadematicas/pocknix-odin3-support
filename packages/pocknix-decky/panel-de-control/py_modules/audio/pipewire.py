@@ -675,10 +675,7 @@ class PipeWireEq:
                 bass,
                 loudness,
                 caps_plugin(),
-                # Sin destino fijo: el filtro sigue al sink por defecto (WirePlumber) y
-                # cambia solo al enchufar/desenchufar. Antes iba clavado a
-                # HiFi__Headphones__sink y al desenchufar se quedaba sin audio.
-                target=None,
+                target=downstream,
             ),
         )
 

@@ -19,6 +19,7 @@ const callable = api.callable;
 const addEventListener = api.addEventListener;
 const removeEventListener = api.removeEventListener;
 const toaster = api.toaster;
+const openFilePicker = api.openFilePicker;
 const definePlugin = (fn) => {
     return (...args) => {
         return fn(...args);
@@ -99,6 +100,8 @@ function LuZap (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"},"child":[]},{"tag":"path","attr":{"d":"M16 9a5 5 0 0 1 0 6"},"child":[]},{"tag":"path","attr":{"d":"M19.364 18.364a9 9 0 0 0 0-12.728"},"child":[]}]})(props);
 }function LuVideo (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"},"child":[]},{"tag":"rect","attr":{"x":"2","y":"6","width":"14","height":"12","rx":"2"},"child":[]}]})(props);
+}function LuUnlink2 (props) {
+  return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M15 7h2a5 5 0 0 1 0 10h-2m-6 0H7A5 5 0 0 1 7 7h2"},"child":[]}]})(props);
 }function LuUndo2 (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M9 14 4 9l5-5"},"child":[]},{"tag":"path","attr":{"d":"M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"},"child":[]}]})(props);
 }function LuType (props) {
@@ -211,6 +214,8 @@ function LuZap (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"circle","attr":{"cx":"12","cy":"16","r":"1"},"child":[]},{"tag":"rect","attr":{"x":"3","y":"10","width":"18","height":"12","rx":"2"},"child":[]},{"tag":"path","attr":{"d":"M7 10V7a5 5 0 0 1 10 0v3"},"child":[]}]})(props);
 }function LuLoaderCircle (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M21 12a9 9 0 1 1-6.219-8.56"},"child":[]}]})(props);
+}function LuLink2 (props) {
+  return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M9 17H7A5 5 0 0 1 7 7h2"},"child":[]},{"tag":"path","attr":{"d":"M15 7h2a5 5 0 1 1 0 10h-2"},"child":[]},{"tag":"line","attr":{"x1":"8","x2":"16","y1":"12","y2":"12"},"child":[]}]})(props);
 }function LuLightbulb (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"},"child":[]},{"tag":"path","attr":{"d":"M9 18h6"},"child":[]},{"tag":"path","attr":{"d":"M10 22h4"},"child":[]}]})(props);
 }function LuLibrary (props) {
@@ -247,6 +252,8 @@ function LuZap (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"},"child":[]}]})(props);
 }function LuFilter (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"polygon","attr":{"points":"22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"},"child":[]}]})(props);
+}function LuFileArchive (props) {
+  return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M10 12v-1"},"child":[]},{"tag":"path","attr":{"d":"M10 18v-2"},"child":[]},{"tag":"path","attr":{"d":"M10 7V6"},"child":[]},{"tag":"path","attr":{"d":"M14 2v4a2 2 0 0 0 2 2h4"},"child":[]},{"tag":"path","attr":{"d":"M15.5 22H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v16a2 2 0 0 0 .274 1.01"},"child":[]},{"tag":"circle","attr":{"cx":"10","cy":"20","r":"2"},"child":[]}]})(props);
 }function LuFan (props) {
   return GenIcon({"attr":{"viewBox":"0 0 24 24","fill":"none","stroke":"currentColor","strokeWidth":"2","strokeLinecap":"round","strokeLinejoin":"round"},"child":[{"tag":"path","attr":{"d":"M10.827 16.379a6.082 6.082 0 0 1-8.618-7.002l5.412 1.45a6.082 6.082 0 0 1 7.002-8.618l-1.45 5.412a6.082 6.082 0 0 1 8.618 7.002l-5.412-1.45a6.082 6.082 0 0 1-7.002 8.618l1.45-5.412Z"},"child":[]},{"tag":"path","attr":{"d":"M12 12v.01"},"child":[]}]})(props);
 }function LuEye (props) {
@@ -331,6 +338,9 @@ const prepareProtonCleaner = callable("prepare_proton_cleaner");
 const executeProtonCleaner = callable("execute_proton_cleaner");
 const prepareRemoteThemeInstall = callable("prepare_remote_theme_install");
 const checkThemeReleases = callable("check_theme_releases");
+const checkThemeEarly = callable("check_theme_early");
+const prepareEarlyThemeInstall = callable("prepare_early_theme_install");
+const earlyThemeArchiveFolder = callable("early_theme_archive_folder");
 const listThemeExtensions = callable("list_theme_extensions");
 const getThemeHealth = callable("get_theme_health");
 const setAsideThemeLeftovers = callable("set_aside_theme_leftovers");
@@ -381,6 +391,7 @@ const getFanState = callable("get_fan_state");
 const getTdpState = callable("get_tdp_state");
 const setLowBatteryTdpHold = callable("set_low_battery_tdp_hold");
 const setTdpWatts = callable("set_tdp_watts");
+const setGpuLevel = callable("set_gpu_level");
 callable("create_game_profile");
 const setCurrentGame = callable("set_current_game");
 const setTdpLevels = callable("set_tdp_levels");
@@ -690,6 +701,8 @@ function steamLangToLang(raw) {
         return "it";
     if (v === "de" || v.startsWith("german"))
         return "de";
+    if (v === "fr" || v.startsWith("french"))
+        return "fr";
     if (v === "pt-br" || v === "brazilian" || v === "brazilian portuguese")
         return "pt-BR";
     return "es";
@@ -764,6 +777,8 @@ const it = {
     "kiosk.header.temp": "Temp.",
     "kiosk.perf.auto": "Auto",
     "kiosk.perf.custom": "Personalizzato",
+    "kiosk.perf.linked": "Unite",
+    "kiosk.perf.split": "Separate",
     "kiosk.perf.autoNote": "L'obiettivo FPS sta regolando la potenza. Mettilo su Libero per sceglierla a mano.",
     "kiosk.unavailable": "Non disponibile",
     "kiosk.fps.target": "Obiettivo",
@@ -1259,6 +1274,11 @@ const it = {
     "params.advanced": "Avanzate",
     "params.showCommand": "Mostra comando",
     "params.off": "Disattivato",
+    "params.fsr4.loading": "Verifica della compatibilità di Proton…",
+    "params.fsr4.missing": "Non è stato possibile identificare l’installazione di Proton. Seleziona una versione compatibile nelle proprietà del gioco.",
+    "params.fsr4.error": "Non è stato possibile verificare la compatibilità di Proton. Riapri l’editor per riprovare.",
+    "params.fsr4.unsupported": "Non è stato rilevato il supporto per FSR 4 in questa versione di Proton.",
+    "params.fsr4.unavailable": "Non disponibile",
     "params.notInstalled": "non installato",
     "params.sub.perf": "Prestazioni",
     "params.sub.lang": "Lingua",
@@ -1475,6 +1495,11 @@ const it = {
     "gpu.clock.min": "Minimo",
     "gpu.clock.max": "Massimo",
     "gpu.clock.rejected": "Non applicato. Il riepilogo mostra il valore effettivamente letto.",
+    "gpu.clock.capped": "Limite {mhz} MHz",
+    "gpu.clock.powerLevel": "Livello di Potenza",
+    "gpu.clock.powerLevel.own": "{level} · proprio",
+    "gpu.clock.powerLevel.linked": "{level} · come la CPU",
+    "gpu.clock.managed": "Lo decide Potenza. Si regola lì con la scheda GPU sopra il selettore.",
     "learning.title": "Sto imparando da {name}",
     "learning.active": "Sto imparando",
     "learning.tag.tdp": "TDP",
@@ -1658,6 +1683,12 @@ const it = {
     "tdp.reset.default": "Ripristina valore predefinito ({w} W)",
     "tdp.reset.default.level": "Ripristina livello predefinito ({w})",
     "tdp.level.value": "Livello {level}",
+    "tdp.target.label": "Cosa muove il selettore",
+    "tdp.target.cpu": "CPU",
+    "tdp.target.gpu": "GPU",
+    "tdp.target.link": "Unisci CPU e GPU",
+    "tdp.target.unlink": "Separa CPU e GPU",
+    "tdp.split.summary": "CPU {cpu} · GPU {gpu}",
     "tdp.level.inline": "livello {level}",
     "tdp.fwmode.low-power": "Silenziosa",
     "tdp.fwmode.balanced": "Bilanciata",
@@ -2052,6 +2083,8 @@ const de = {
     "kiosk.header.temp": "Temp.",
     "kiosk.perf.auto": "Auto",
     "kiosk.perf.custom": "Eigene",
+    "kiosk.perf.linked": "Gekoppelt",
+    "kiosk.perf.split": "Getrennt",
     "kiosk.perf.autoNote": "Das FPS-Ziel regelt gerade die Leistung. Stelle es auf Frei, um sie selbst zu wählen.",
     "kiosk.unavailable": "Nicht verfügbar",
     "kiosk.fps.target": "Ziel",
@@ -2462,7 +2495,7 @@ const de = {
     "themes.loading": "CSS Loader wird geprüft…",
     "themes.recovery.blocked": "Die Theme-Wiederherstellung ist blockiert. Bis zum erfolgreichen Abschluss der Prüfung werden keine Änderungen angewendet.",
     "themes.recovery.keptCurrent": "Der vorherige Theme-Zustand konnte nicht wiederhergestellt werden. Der aktuelle bleibt erhalten.",
-    "themes.engine": "Das Panel installiert geprüfte Theme-Pakete. CSS Loader bindet sie ein und behält ihre Aktivierung sowie kompatible Einstellungen bei.",
+    "themes.engine": "Geprüfte Themes, bereit zur Installation.",
     "themes.cssLoader.missing": "Zum Installieren und Verwenden von Themes brauchst du CSS Loader. Installiere ihn aus dem Decky Store und wähle danach Erneut prüfen.",
     "themes.cssLoader.disabled": "CSS Loader ist installiert, aber deaktiviert. Aktiviere ihn in Decky und versuche es erneut.",
     "themes.cssLoader.error": "CSS Loader konnte nicht sicher geprüft werden.",
@@ -2538,6 +2571,13 @@ const de = {
     "themes.action.deactivate": "Theme deaktivieren",
     "themes.action.deactivating": "Wird deaktiviert…",
     "themes.action.install": "Theme installieren",
+    "themes.early.badge": "Early",
+    "themes.early.title": "Früher Zugang",
+    "themes.early.version": "Early-Version: {version}",
+    "themes.early.desc": "Installiere die heruntergeladene .zip der Early-Version. Panel akzeptiert nur vom Autor veröffentlichte Dateien.",
+    "themes.early.install": "Aus Datei installieren",
+    "themes.early.rejected": "Diese Datei ist keine veröffentlichte Early-Version dieses Themes.",
+    "themes.early.unavailable": "Diese Early-Version benötigt eine neuere Panel-Version.",
     "themes.action.installing": "Wird installiert…",
     "themes.action.delete": "Theme entfernen",
     "themes.action.deleting": "Wird entfernt…",
@@ -2654,6 +2694,11 @@ const de = {
     "params.advanced": "Erweitert",
     "params.showCommand": "Befehl anzeigen",
     "params.off": "Deaktiviert",
+    "params.fsr4.loading": "Proton-Kompatibilität wird geprüft…",
+    "params.fsr4.missing": "Die Proton-Installation konnte nicht erkannt werden. Wähle in den Spieleigenschaften eine kompatible Version aus.",
+    "params.fsr4.error": "Die Proton-Kompatibilität konnte nicht geprüft werden. Öffne den Editor erneut, um es noch einmal zu versuchen.",
+    "params.fsr4.unsupported": "In dieser Proton-Version wurde keine Unterstützung für FSR 4 erkannt.",
+    "params.fsr4.unavailable": "Nicht verfügbar",
     "params.notInstalled": "nicht installiert",
     "params.sub.perf": "Leistung",
     "params.sub.lang": "Sprache",
@@ -2870,6 +2915,11 @@ const de = {
     "gpu.clock.min": "Minimum",
     "gpu.clock.max": "Maximum",
     "gpu.clock.rejected": "Nicht angewendet. Die Zusammenfassung zeigt den tatsächlichen Messwert.",
+    "gpu.clock.capped": "Begrenzt auf {mhz} MHz",
+    "gpu.clock.powerLevel": "Leistungsstufe",
+    "gpu.clock.powerLevel.own": "{level} · eigene",
+    "gpu.clock.powerLevel.linked": "{level} · wie die CPU",
+    "gpu.clock.managed": "Wird von Leistung gesteuert. Dort über den GPU-Tab über dem Regler einstellbar.",
     "learning.title": "Lernt aus {name}",
     "learning.active": "Lernt",
     "learning.tag.tdp": "TDP",
@@ -3058,6 +3108,12 @@ const de = {
     "tdp.reset.default": "Auf Standardwert zurücksetzen ({w} W)",
     "tdp.reset.default.level": "Auf Standardstufe zurücksetzen ({w})",
     "tdp.level.value": "Stufe {level}",
+    "tdp.target.label": "Was der Regler steuert",
+    "tdp.target.cpu": "CPU",
+    "tdp.target.gpu": "GPU",
+    "tdp.target.link": "CPU und GPU koppeln",
+    "tdp.target.unlink": "CPU und GPU trennen",
+    "tdp.split.summary": "CPU {cpu} · GPU {gpu}",
     "tdp.level.inline": "Stufe {level}",
     "tdp.fwmode.low-power": "Leise",
     "tdp.fwmode.balanced": "Ausgewogen",
@@ -3447,6 +3503,8 @@ const ptBR = {
     "kiosk.header.temp": "Temp.",
     "kiosk.perf.auto": "Auto",
     "kiosk.perf.custom": "Personalizado",
+    "kiosk.perf.linked": "Unidas",
+    "kiosk.perf.split": "Separadas",
     "kiosk.perf.autoNote": "A meta de FPS está ajustando a potência. Coloque em Livre para escolher manualmente.",
     "kiosk.unavailable": "Indisponível",
     "kiosk.fps.target": "Meta",
@@ -3857,7 +3915,7 @@ const ptBR = {
     "themes.loading": "Verificando CSS Loader…",
     "themes.recovery.blocked": "A recuperação de tema está bloqueada. Nenhuma alteração será aplicada até que a verificação seja concluída com sucesso.",
     "themes.recovery.keptCurrent": "Não foi possível restaurar o estado anterior dos temas. O atual foi mantido.",
-    "themes.engine": "O Painel instala pacotes de tema verificados. O CSS Loader injeta e preserva as configurações ativadas e compatíveis.",
+    "themes.engine": "Temas verificados, prontos para instalar.",
     "themes.cssLoader.missing": "Você precisa do CSS Loader para instalar e usar temas. Instale na Loja Decky e depois selecione “Verificar novamente”.",
     "themes.cssLoader.disabled": "O CSS Loader está instalado, mas desativado. Ative-o no Decky e tente novamente.",
     "themes.cssLoader.error": "Não foi possível verificar o CSS Loader com segurança.",
@@ -3933,6 +3991,13 @@ const ptBR = {
     "themes.action.deactivate": "Desativar tema",
     "themes.action.deactivating": "Desativando…",
     "themes.action.install": "Instalar tema",
+    "themes.early.badge": "Early",
+    "themes.early.title": "Acesso antecipado",
+    "themes.early.version": "Versão early: {version}",
+    "themes.early.desc": "Instale o .zip da versão early que você baixou. O Panel só aceita arquivos publicados pelo autor.",
+    "themes.early.install": "Instalar de arquivo",
+    "themes.early.rejected": "Esse arquivo não é uma versão early publicada deste tema.",
+    "themes.early.unavailable": "Esta versão early precisa de uma versão mais recente do Panel.",
     "themes.action.installing": "Instalando…",
     "themes.action.delete": "Remover tema",
     "themes.action.deleting": "Removendo…",
@@ -4049,6 +4114,11 @@ const ptBR = {
     "params.advanced": "Avançado",
     "params.showCommand": "Mostrar o comando",
     "params.off": "Desligado",
+    "params.fsr4.loading": "Verificando a compatibilidade do Proton…",
+    "params.fsr4.missing": "Não foi possível identificar a instalação do Proton. Selecione uma versão compatível nas propriedades do jogo.",
+    "params.fsr4.error": "Não foi possível verificar a compatibilidade do Proton. Abra o editor novamente para tentar de novo.",
+    "params.fsr4.unsupported": "Não foi detectado suporte a FSR 4 nesta versão do Proton.",
+    "params.fsr4.unavailable": "Indisponível",
     "params.notInstalled": "Não instalado",
     "params.sub.perf": "Desempenho",
     "params.sub.lang": "Idioma",
@@ -4265,6 +4335,11 @@ const ptBR = {
     "gpu.clock.min": "Mínimo",
     "gpu.clock.max": "Máximo",
     "gpu.clock.rejected": "Não aplicado; o resumo mostra a leitura ao vivo.",
+    "gpu.clock.capped": "Limite {mhz} MHz",
+    "gpu.clock.powerLevel": "Nível de Potência",
+    "gpu.clock.powerLevel.own": "{level} · próprio",
+    "gpu.clock.powerLevel.linked": "{level} · igual à CPU",
+    "gpu.clock.managed": "Definido por Potência. Ajuste lá pela aba GPU acima do seletor.",
     "learning.title": "Aprendendo com {name}",
     "learning.active": "Aprendendo",
     "learning.tag.tdp": "TDP",
@@ -4453,6 +4528,12 @@ const ptBR = {
     "tdp.reset.default": "Redefinir para o padrão ({w} W)",
     "tdp.reset.default.level": "Redefinir para o nível padrão ({w})",
     "tdp.level.value": "Nível {level}",
+    "tdp.target.label": "O que o seletor move",
+    "tdp.target.cpu": "CPU",
+    "tdp.target.gpu": "GPU",
+    "tdp.target.link": "Unir CPU e GPU",
+    "tdp.target.unlink": "Separar CPU e GPU",
+    "tdp.split.summary": "CPU {cpu} · GPU {gpu}",
     "tdp.level.inline": "nível {level}",
     "tdp.fwmode.low-power": "Silencioso",
     "tdp.fwmode.balanced": "Equilibrado",
@@ -4786,12 +4867,1433 @@ const ptBR = {
     "report.retry": "Tentar novamente",
 };
 
+const fr = {
+    "app.title": "Centre de contrôle",
+    "load.error": "Impossible de charger l'état du plugin. Réessayez dans un instant.",
+    "load.retry": "Réessayer",
+    "device.detected": "{name}",
+    "device.experimental.badge": "Expérimental",
+    "device.generic.hint": "Appareil non reconnu : les fonctions prises en charge sont détectées et seules celles qui répondent vraiment sont activées. Tout ce qui s'affiche fonctionne.",
+    "device.desktop.name": "PC de bureau",
+    "device.desktop.hint": "PC de bureau : vous pouvez régler tout ce que permettent la carte mère, le CPU et la carte graphique, dans les limites de leur firmware.",
+    "device.experimental.hint": "Modèle reconnu, encore en cours de mise au point : seules les fonctions qui répondent vraiment sont activées.",
+    "nav.power": "Puissance",
+    "nav.power.desc": "Performances et consommation de l'appareil.",
+    "nav.system": "Système",
+    "nav.system.desc": "Commandes et état général du système.",
+    "nav.display": "Écran",
+    "nav.display.desc": "Réglages d'image et d'écran disponibles.",
+    "nav.fans": "Ventilateurs",
+    "nav.fans.desc": "État thermique et options de ventilation.",
+    "nav.audio": "Son",
+    "nav.audio.desc": "Réglages du son disponibles.",
+    "nav.mandos": "Manettes",
+    "nav.mandos.desc": "État de la manette et options disponibles.",
+    "settings.devUnlocked": "Options de développeur activées.",
+    "dev.title": "Options de développeur",
+    "dev.hide": "Masquer les options de développeur",
+    "dev.ssh": "Accès à distance (SSH)",
+    "dev.ssh.desc": "Serveur SSH (connexion par clé uniquement) sur le port {port}. Seuls les ordinateurs associés peuvent se connecter.",
+    "dev.ssh.running": "Actif : ssh -p {port} {user}@{address}",
+    "dev.ssh.starting": "Démarrage du serveur…",
+    "dev.ssh.error": "Le serveur ne démarre pas ({error}). Nouvelle tentative automatique.",
+    "dev.ssh.unsupported": "Aucun serveur SSH fourni pour cette architecture.",
+    "dev.ssh.noUser": "Le compte actuel n'a pas d'entrée dans /etc/passwd : impossible de se connecter.",
+    "dev.ssh.pair": "Associer un ordinateur",
+    "dev.ssh.pair.desc": "Attend pendant 2 minutes la clé publique de l'ordinateur.",
+    "dev.ssh.pair.waiting": "En attente de la clé ({seconds} s). Sur l'ordinateur : nc {address} {port} < ~/.ssh/id_ed25519.pub",
+    "dev.ssh.pair.request": "{peer} demande l'accès. Vérifiez que l'empreinte correspond à celle de l'ordinateur :",
+    "dev.ssh.pair.accept": "Accepter",
+    "dev.ssh.pair.reject": "Refuser",
+    "dev.ssh.pair.cancel": "Arrêter l'attente",
+    "dev.ssh.keys": "Ordinateurs associés : {count}",
+    "dev.ssh.forget": "Oublier les ordinateurs associés",
+    "dev.ssh.forget.confirm": "Appuyez à nouveau pour les oublier",
+    "settings.kiosk": "Écran inférieur",
+    "settings.kiosk.desc": "Transforme l'écran inférieur en centre de contrôle tactile pendant vos parties.",
+    "settings.kiosk.running": "Le Centre de contrôle s'affiche sur l'écran inférieur.",
+    "settings.kiosk.waiting": "Il s'affichera dès le retour en mode Jeu.",
+    "settings.kiosk.starting": "Ouverture de l'écran inférieur…",
+    "settings.kiosk.retrying": "Impossible d'ouvrir l'écran inférieur. Nouvelle tentative automatique.",
+    "settings.kiosk.noRuntime": "Il manque des composants système pour afficher l'écran inférieur.",
+    "kiosk.header.playing": "En jeu · {time}",
+    "kiosk.header.target": "fps · cible {fps}",
+    "kiosk.vitals.power": "Conso",
+    "kiosk.vitals.charging": "Charge",
+    "kiosk.header.temp": "Temp.",
+    "kiosk.perf.auto": "Auto",
+    "kiosk.perf.custom": "Personnalisé",
+    "kiosk.perf.linked": "Liées",
+    "kiosk.perf.split": "Séparées",
+    "kiosk.perf.autoNote": "La cible de FPS ajuste la puissance. Passez sur Libre pour la régler vous-même.",
+    "kiosk.unavailable": "Indisponible",
+    "kiosk.fps.target": "Cible",
+    "kiosk.fps.free": "Libre",
+    "kiosk.fps.onNote": "Le Centre de contrôle ajuste la puissance pour maintenir la cible",
+    "kiosk.fps.offNote": "Sans cible : c'est vous qui choisissez la puissance",
+    "kiosk.fan": "Ventilateur",
+    "kiosk.fan.stopped": "À l'arrêt",
+    "kiosk.brightness.top": "Haut",
+    "kiosk.brightness.bottom": "Bas",
+    "kiosk.hz.detail": "Fréquence de l'écran principal",
+    "kiosk.hz.saver": "Économie",
+    "kiosk.hz.max": "Maximale",
+    "kiosk.turbo": "Turbo",
+    "kiosk.screenshot": "Capture",
+    "kiosk.keyboard": "Clavier",
+    "kiosk.screenOff": "Éteindre",
+    "kiosk.lights": "Éclairage",
+    "kiosk.lights.off": "Éteint",
+    "kiosk.lights.turnOff": "Éteindre",
+    "kiosk.lights.detail": "Colores",
+    "kiosk.lights.install": "Installer Colores",
+    "kiosk.lights.installing": "Installation…",
+    "kiosk.lights.installTitle": "Éclairage RGB",
+    "kiosk.lights.installDetail": "Géré par Colores, le plugin compagnon du Centre de contrôle",
+    "kiosk.lights.installNote": "Effets, dégradés et couleur selon l'écran, la musique ou la batterie.",
+    "kiosk.lights.note.gradient": "Le dégradé se modifie dans Colores.",
+    "kiosk.lights.note.auto": "Dans ce mode, Colores choisit la couleur tout seul.",
+    "kiosk.lights.mode.solid": "Couleur",
+    "kiosk.lights.mode.gradient": "Dégradé",
+    "kiosk.lights.mode.effect": "Effets",
+    "kiosk.lights.mode.ambient": "Écran",
+    "kiosk.lights.mode.vu": "Musique",
+    "kiosk.lights.mode.battery": "Batterie",
+    "kiosk.lights.mode.temperature": "Température",
+    "kiosk.lights.mode.performance": "Performances",
+    "kiosk.lights.mode.clock": "Horloge",
+    "kiosk.lights.effect.breathing": "Respiration",
+    "kiosk.lights.effect.rainbow": "Arc-en-ciel",
+    "kiosk.lights.effect.wave": "Vague",
+    "kiosk.lights.effect.cycle": "Cycle",
+    "kiosk.lights.effect.spiral": "Spirale",
+    "kiosk.lights.effect.comet": "Comète",
+    "kiosk.lights.effect.sparkle": "Scintillement",
+    "kiosk.lights.effect.ripple": "Ondulation",
+    "kiosk.lights.effect.aurora": "Aurore",
+    "nav.hud": "HUD",
+    "nav.hud.desc": "Informations et disposition de l'overlay en jeu.",
+    "home.title": "Accueil",
+    "home.subtitle": "Choisissez un outil",
+    "home.tabs": "Vue en onglets",
+    "home.back": "Accueil",
+    "home.changeSection": "Changer de section",
+    "hud.title": "HUD de performances",
+    "hud.loading": "Chargement…",
+    "hud.unsupported": "MangoHud est actif, mais cette instance ne prend pas en charge la configuration gérée. Les modifications sont enregistrées, mais pas signalées comme appliquées.",
+    "hud.inactive": "Aucune instance de MangoHud n'est active. La configuration reste enregistrée et s'appliquera dès qu'une instance sera disponible.",
+    "hud.ambiguous": "Plusieurs instances de MangoHud utilisent des fichiers différents. Le Centre de contrôle n'écrira rien tant qu'il n'y aura pas un chemin unique.",
+    "hud.status.disabled": "Désactivé",
+    "hud.status.pending": "En attente",
+    "hud.status.written": "Enregistré · rechargement en attente",
+    "hud.status.reload_requested": "Rechargement demandé",
+    "hud.status.unavailable": "Indisponible",
+    "hud.status.ambiguous": "Chemin ambigu",
+    "hud.status.conflict": "Conflit externe",
+    "hud.status.failed": "Erreur",
+    "hud.conflict.title": "La configuration a été modifiée en dehors du Centre de contrôle",
+    "hud.conflict.body": "{path} n'a pas été modifié. Choisissez qui doit le gérer.",
+    "hud.conflict.keepExternal": "Garder la version externe",
+    "hud.conflict.usePdc": "Utiliser le Centre de contrôle",
+    "hud.show": "Afficher le HUD",
+    "hud.show.hint": "Le Centre de contrôle tente d'activer le niveau Steam requis quand vous affichez le HUD.",
+    "hud.steam.hidden": "Le HUD est masqué dans Steam. Activez-le pour afficher cette disposition en jeu.",
+    "hud.steam.activate": "Activer le HUD de Steam",
+    "hud.steam.unavailable": "Impossible de lire le réglage de Steam. Activez manuellement le niveau 2 ou supérieur de l'overlay de performances.",
+    "hud.experimental.badge": "Expérimental",
+    "hud.reload": "Recharger en jeu",
+    "hud.reload.busy": "Rechargement…",
+    "hud.reload.ok": "Rechargé ✓",
+    "hud.reload.pending": "Enregistré · en attente",
+    "hud.reload.error": "Impossible d'appliquer",
+    "hud.save.error": "Impossible d'enregistrer ou de vérifier la configuration.",
+    "hud.add": "Ajouter",
+    "hud.close": "Fermer",
+    "hud.preset.minimal": "Minimal",
+    "hud.preset.balanced": "Équilibré",
+    "hud.preset.full": "Complet",
+    "hud.elements": "Éléments",
+    "hud.elements.hint": "Réorganisez avec les flèches. Les éléments avec un chevron ont leurs propres réglages.",
+    "hud.order.empty": "Ajoutez des métriques ci-dessous pour commencer.",
+    "hud.move.up": "Monter",
+    "hud.move.down": "Descendre",
+    "hud.remove": "Retirer",
+    "hud.elem.label": "Étiquette",
+    "hud.elem.value.textColor": "La valeur utilise la « Couleur du texte » globale.",
+    "hud.block.hint": "Activez ou désactivez les métriques de ce bloc ; elles s'affichent sur la même ligne.",
+    "hud.block.metrics": "Métriques du groupe",
+    "hud.block.required": "Toujours",
+    "hud.block.requiredAccessible": "{metric}, toujours visible tant que le groupe existe",
+    "hud.block.base.gpu": "Charge GPU",
+    "hud.block.base.cpu": "Charge CPU",
+    "hud.block.base.battery": "Charge de la batterie",
+    "hud.elem.groupColor": "Couleur du groupe {group} · s'applique à tout le groupe",
+    "hud.elem.text.label": "Texte",
+    "hud.elem.text.empty": "(texte vide)",
+    "hud.elem.separator": "Séparateur",
+    "hud.elem.separator.hint": "Trace une ligne de séparation entre les éléments.",
+    "hud.elem.spacer": "Espace",
+    "hud.elem.spacer.hint": "Ajoute des lignes vides pour séparer les blocs.",
+    "hud.elem.addSpacer": "Espace",
+    "hud.spacer.small": "Petit",
+    "hud.spacer.medium": "Moyen",
+    "hud.spacer.large": "Grand",
+    "hud.elem.addText": "Texte",
+    "hud.elem.addSeparator": "Séparateur",
+    "hud.group.fps": "FPS",
+    "hud.group.gpu": "GPU",
+    "hud.group.cpu": "CPU",
+    "hud.group.temps": "Températures",
+    "hud.group.mem": "Mémoire",
+    "hud.group.battery": "Batterie",
+    "hud.group.system": "Système",
+    "hud.group.pdc": "Centre de contrôle",
+    "hud.metric.fps": "FPS",
+    "hud.metric.fps_metrics": "FPS moyens",
+    "hud.metric.frametime": "Temps d'image",
+    "hud.metric.frame_count": "Nombre d'images",
+    "hud.metric.show_fps_limit": "Limite de FPS",
+    "hud.metric.time": "Horloge",
+    "hud.metric.gpu": "Charge GPU",
+    "hud.metric.gpu_temp": "Température GPU",
+    "hud.metric.gpu_junction_temp": "Point chaud GPU",
+    "hud.metric.gpu_clock": "Fréquence GPU",
+    "hud.metric.gpu_mem_clock": "Fréquence VRAM",
+    "hud.metric.gpu_mem_temp": "Température VRAM",
+    "hud.metric.gpu_power": "Consommation GPU",
+    "hud.metric.gpu_voltage": "Tension GPU",
+    "hud.metric.gpu_fan": "Ventilateur GPU",
+    "hud.metric.gpu_efficiency": "Efficacité GPU",
+    "hud.metric.vram": "VRAM",
+    "hud.metric.proc_vram": "VRAM du jeu",
+    "hud.metric.gpu_name": "Nom du GPU",
+    "hud.metric.cpu": "Charge CPU",
+    "hud.metric.cpu_temp": "Température CPU",
+    "hud.metric.cpu_clock": "Fréquence CPU",
+    "hud.metric.cpu_power": "Consommation CPU",
+    "hud.metric.cpu_efficiency": "Efficacité CPU",
+    "hud.metric.cores": "Cœurs",
+    "hud.metric.ram": "RAM",
+    "hud.metric.procmem": "RAM du jeu",
+    "hud.metric.swap": "Swap",
+    "hud.metric.io_read": "Lecture E/S",
+    "hud.metric.io_write": "Écriture E/S",
+    "hud.metric.battery": "Batterie",
+    "hud.metric.battery_watt": "Consommation batterie",
+    "hud.metric.battery_time": "Autonomie",
+    "hud.metric.device_battery": "Batterie manette",
+    "hud.metric.resolution": "Résolution",
+    "hud.metric.refresh_rate": "Fréquence de l'écran",
+    "hud.metric.arch": "Architecture",
+    "hud.metric.wine": "Wine/Proton",
+    "hud.metric.winesync": "Synchro Wine",
+    "hud.metric.engine_version": "Moteur graphique",
+    "hud.metric.vulkan_driver": "Pilote Vulkan",
+    "hud.metric.present_mode": "Mode de présentation",
+    "hud.metric.display_server": "Serveur d'affichage",
+    "hud.metric.gamemode": "GameMode",
+    "hud.metric.vkbasalt": "vkBasalt",
+    "hud.metric.fsr": "FSR",
+    "hud.metric.hdr": "HDR",
+    "hud.metric.fan": "Ventilateur",
+    "hud.metric.network": "Réseau",
+    "hud.metric.media_player": "Lecteur multimédia",
+    "hud.metric.version": "Version de MangoHud",
+    "hud.metric.pdc_tdp": "TDP appliqué",
+    "hud.metric.pdc_tdp_learn": "Plage apprise",
+    "hud.metric.pdc_auto_tdp": "Auto-TDP",
+    "hud.metric.pdc_fan": "Mode du ventilateur",
+    "hud.metric.pdc_fan_rpm": "RPM du ventilateur",
+    "hud.metric.pdc_eco": "Mode téléchargement",
+    "hud.metric.pdc_profile": "Profil actif",
+    "hud.metric.pdc_power": "Consommation réelle",
+    "hud.metric.pdc_charge": "Limite de charge",
+    "hud.metric.pdc_bat_health": "Santé de la batterie",
+    "hud.metric.pdc_smt": "SMT",
+    "hud.metric.pdc_boost": "Boost CPU",
+    "hud.metric.pdc_cores": "Cœurs actifs",
+    "hud.metric.pdc_gpu_clock": "Fréquence GPU",
+    "hud.metric.pdc_model": "Appareil",
+    "hud.style": "Style général · tout le HUD",
+    "hud.style.scope": "S'applique à tout le HUD, pas à un seul élément.",
+    "hud.position": "Position",
+    "hud.size.section": "Taille du texte",
+    "hud.size.general": "Taille générale",
+    "hud.size.general.hint": "Agrandit ou réduit tout le texte. MangoHud adapte aussi la largeur nécessaire.",
+    "hud.size.uniform": "Tout à la même taille",
+    "hud.size.uniform.hint": "Uniformise les métriques, les unités, les pastilles du Centre de contrôle et le texte ajouté.",
+    "hud.colors": "Couleurs",
+    "hud.colors.summary": "Palette globale",
+    "hud.colors.hint": "MangoHud colore par catégorie : la couleur de chaque groupe s'applique à son étiquette, et la « Couleur du texte » aux valeurs, au texte libre et au séparateur.",
+    "hud.color.text": "Couleur du texte",
+    "hud.color.fps": "FPS",
+    "hud.color.gpu": "GPU",
+    "hud.color.cpu": "CPU",
+    "hud.color.vram": "VRAM",
+    "hud.color.ram": "RAM",
+    "hud.color.battery": "Batterie",
+    "hud.color.frametime": "Temps d'image",
+    "hud.color.network": "Réseau",
+    "hud.color.background": "Fond",
+    "hud.color.outline": "Contour",
+    "hud.color.r": "Rouge",
+    "hud.color.g": "Vert",
+    "hud.color.b": "Bleu",
+    "hud.color.hex": "Hex",
+    "hud.tempUnit": "Température",
+    "hud.tempUnit.c": "°C",
+    "hud.tempUnit.f": "°F",
+    "hud.locale": "Langue du HUD",
+    "hud.locale.es": "Espagnol",
+    "hud.locale.en": "Anglais",
+    "hud.locale.hint": "Enregistrée avec ce HUD, cette langue s'applique à ses étiquettes dynamiques en jeu.",
+    "hud.preview.clipped": "L'aperçu coupe une partie du HUD. En jeu, il faudra peut-être moins de lignes ou une taille plus petite.",
+    "hud.textOutline": "Contour du texte",
+    "hud.opacity": "Opacité",
+    "hud.roundCorners": "Coins arrondis",
+    "hud.layout": "Disposition",
+    "hud.layout.vertical": "Verticale",
+    "hud.layout.horizontal": "Horizontale",
+    "hud.position.top-left": "En haut à gauche",
+    "hud.position.top-right": "En haut à droite",
+    "hud.position.bottom-left": "En bas à gauche",
+    "hud.position.bottom-right": "En bas à droite",
+    "hud.style.hint": "MangoHud gère les tailles globalement par type, pas élément par élément.",
+    "hud.advanced": "Avancé",
+    "hud.advanced.summary": "Espacement et décalage",
+    "hud.advanced.hint": "Réglages fins du HUD (globaux). Le décalage déplace le HUD au pixel près.",
+    "hud.cellpaddingY": "Espacement des lignes",
+    "hud.textAlpha": "Opacité du texte",
+    "hud.outlineThickness": "Épaisseur du contour",
+    "hud.offsetX": "Décalage X",
+    "hud.offsetY": "Décalage Y",
+    "hud.compact": "Compact",
+    "hud.noMargin": "Sans marge",
+    "hud.reset": "Réinitialiser",
+    "hud.reset.confirm.title": "Réinitialiser le HUD",
+    "hud.reset.confirm.desc": "Les éléments et le style actuels seront remplacés par les valeurs par défaut.",
+    "hud.reset.cancel": "Annuler",
+    "nav.params": "Lancement",
+    "nav.params.desc": "Lancement et compatibilité des jeux.",
+    "nav.cleaner": "Nettoyage",
+    "nav.cleaner.desc": "Analysez et libérez l'espace occupé par Steam.",
+    "cleaner.title": "Nettoyage de Steam",
+    "cleaner.subtitle": "Consultez l'espace occupé par Steam et choisissez ce que vous voulez supprimer.",
+    "cleaner.categories": "Catégories de nettoyage",
+    "cleaner.tab.games": "Jeux",
+    "cleaner.tab.media": "Captures",
+    "cleaner.tab.proton": "Proton",
+    "cleaner.calculating": "Calcul en cours…",
+    "cleaner.recommended": "Recommandé",
+    "cleaner.selectRecommended": "Sélectionner les recommandations",
+    "cleaner.deselectRecommended": "Désélectionner les recommandations",
+    "cleaner.searchMedia": "Rechercher des captures et des enregistrements",
+    "cleaner.recommendation.game_not_installed": "Le jeu n'est plus installé.",
+    "cleaner.recommendation.old_capture": "Cette capture date de plus de six mois.",
+    "cleaner.recommendation.old_recording": "Cet enregistrement date de plus d'un mois.",
+    "cleaner.recommendation.temporary_clip": "Steam l'a marqué comme clip temporaire.",
+    "cleaner.recommendation.unused_proton": "Aucun jeu n'utilise cette version.",
+    "cleaner.media.loading": "Recherche des captures et des enregistrements…",
+    "cleaner.media.filter.all": "Tous",
+    "cleaner.media.filter.recommended": "Recommandés",
+    "cleaner.media.filter.selected": "Sélectionnés",
+    "cleaner.media.kind.screenshot": "Capture",
+    "cleaner.media.kind.recording": "Enregistrement",
+    "cleaner.media.kind.clip": "Clip",
+    "cleaner.media.select": "Sélectionner {name}",
+    "cleaner.media.active": "Steam enregistre en ce moment. Cet élément sera conservé.",
+    "cleaner.media.clean": "Supprimer la sélection",
+    "cleaner.media.result": "Supprimés : {deleted} · Échecs : {errors}",
+    "cleaner.media.empty": "Aucune capture ni aucun enregistrement.",
+    "cleaner.media.noMatch": "Aucun élément ne correspond à cette recherche et à ce filtre.",
+    "cleaner.media.unassociated": "Aucun jeu associé",
+    "cleaner.proton.loading": "Recherche des versions de Proton…",
+    "cleaner.proton.filter.all": "Toutes",
+    "cleaner.proton.filter.recommended": "Recommandées",
+    "cleaner.proton.filter.selected": "Sélectionnées",
+    "cleaner.proton.status.unused": "Inutilisée",
+    "cleaner.proton.status.in_use": "Utilisée",
+    "cleaner.proton.status.managed_by_steam": "Gérée par Steam",
+    "cleaner.proton.status.protected": "Protégée",
+    "cleaner.proton.select": "Sélectionner {name}",
+    "cleaner.proton.manageSteam": "Gérer dans Steam",
+    "cleaner.proton.clean": "Supprimer la sélection",
+    "cleaner.proton.result": "Supprimées : {deleted} · Conservées : {skipped} · Échecs : {errors}",
+    "cleaner.proton.empty": "Aucune version de Proton installée.",
+    "cleaner.proton.noMatch": "Aucune version ne correspond à ce filtre.",
+    "cleaner.unknownGame": "Jeu non identifié",
+    "cleaner.internalStorage": "Stockage interne",
+    "cleaner.steamIdentifier": "Identifiant Steam : {id}",
+    "cleaner.reason.active_download": "Steam a des données de téléchargement en attente pour ce jeu. Vérifiez le téléchargement dans Steam, puis relancez l'analyse.",
+    "cleaner.reason.partial_delete": "Une partie des données a été supprimée. Relancez l'analyse pour voir ce qu'il reste.",
+    "cleaner.kind.shadercache": "Cache des shaders",
+    "cleaner.kind.compatdata": "Préfixes",
+    "cleaner.summaryHint": "Le cache des shaders peut être retéléchargé ou recréé en jouant.",
+    "cleaner.notScanned": "Non analysé",
+    "cleaner.sizeUnknown": "Non calculé",
+    "cleaner.partialSize": "partiel",
+    "cleaner.loading": "Lecture des données de Steam…",
+    "cleaner.scan": "Analyser le stockage",
+    "cleaner.scanAgain": "Relancer l'analyse",
+    "cleaner.scanAfterCleanup": "Analyser pour continuer le nettoyage",
+    "cleaner.refreshState": "Vérifier l'état",
+    "cleaner.scanning": "Vérification des jeux et de l'espace occupé…",
+    "cleaner.preparing": "Préparation du nettoyage…",
+    "cleaner.cleaning": "Suppression des données sélectionnées…",
+    "cleaner.progress": "Analysés : {done} sur {total}",
+    "cleaner.cancel": "Annuler",
+    "cleaner.cancelling": "Annulation…",
+    "cleaner.cancelHint": "Annuler arrête les suppressions suivantes, mais ne restaure pas ce qui a déjà été supprimé.",
+    "cleaner.search": "Rechercher un jeu",
+    "cleaner.sortLabel": "Changer le tri",
+    "cleaner.sort.size": "Plus volumineux",
+    "cleaner.sort.name": "Nom",
+    "cleaner.filterLabel": "Changer de filtre",
+    "cleaner.filter.all": "Tous les jeux",
+    "cleaner.filter.cleanable": "Nettoyage possible",
+    "cleaner.filter.not_installed": "Recommandés",
+    "cleaner.filter.selected": "Sélectionnés",
+    "cleaner.selectCaches": "Cocher le cache des shaders",
+    "cleaner.deselectCaches": "Décocher le cache des shaders",
+    "cleaner.clearSelection": "Tout désélectionner",
+    "cleaner.selectGameCaches": "Sélectionner le cache des shaders de {name}",
+    "cleaner.chooseGameData": "Choisir les données de {name}",
+    "cleaner.gameDetails": "Données de {name}",
+    "cleaner.installation.installed": "Installé",
+    "cleaner.installation.not_installed": "Non installé",
+    "cleaner.installation.non_steam": "Jeu non-Steam",
+    "cleaner.installation.unknown": "Jeu non identifié",
+    "cleaner.prefixHint": "Préfixes : ils peuvent contenir des sauvegardes si le jeu n'utilise pas Steam Cloud.",
+    "cleaner.cacheHint": "Cache des shaders : Steam le recrée au lancement du jeu. Ce démarrage peut être plus long.",
+    "cleaner.help.dismiss": "Compris",
+    "cleaner.cleanSelection": "Nettoyer",
+    "cleaner.empty": "Aucun cache des shaders ni aucun préfixe dans les dossiers analysés.",
+    "cleaner.noCleanable": "Aucun jeu n'a de données à nettoyer pour le moment.",
+    "cleaner.noRecommendations": "Aucun nettoyage recommandé pour le moment.",
+    "cleaner.noMatch": "Aucun jeu ne correspond à cette recherche et à ce filtre.",
+    "cleaner.confirm.title": "Ce nettoyage inclut des préfixes",
+    "cleaner.confirm.prefixWarning": "Ils peuvent contenir des sauvegardes et des réglages qui seront perdus. La suppression est irréversible.",
+    "cleaner.confirm.delete": "Nettoyer la sélection",
+    "cleaner.result.title": "Résultat du nettoyage",
+    "cleaner.result.close": "Fermer le résultat",
+    "cleaner.result.cancelled": "Nettoyage annulé",
+    "cleaner.result.estimate": "Taille approximative des données supprimées.",
+    "cleaner.result.counts": "Supprimés : {deleted} · Conservés : {skipped} · Échecs : {errors}",
+    "cleaner.result.details": "Voir les résultats par jeu",
+    "cleaner.result.item": "Élément sélectionné {n}",
+    "cleaner.result.deleted": "Supprimé",
+    "cleaner.result.skipped": "Conservé",
+    "cleaner.result.error": "Suppression impossible",
+    "cleaner.reason.coverage_incomplete": "Impossible de vérifier ces données de Steam. Elles seront conservées pour éviter toute suppression par erreur.",
+    "cleaner.reason.library_unavailable": "Impossible de lire ce disque. Vérifiez qu'il est bien connecté, puis relancez l'analyse.",
+    "cleaner.reason.library_disconnected": "Disque déconnecté. Connectez-le, puis relancez l'analyse pour vérifier ses jeux.",
+    "cleaner.reason.symlink": "Ce dossier pointe vers un autre emplacement. Il sera conservé pour ne pas supprimer de données extérieures au jeu.",
+    "cleaner.reason.unsafe_path": "Impossible de confirmer que ce dossier peut être supprimé. Relancez l'analyse.",
+    "cleaner.reason.path_changed": "Les données ont changé. Relancez l'analyse avant de les sélectionner.",
+    "cleaner.reason.mount_point": "Ce dossier contient des données d'un autre disque. Il sera conservé pour ne pas y toucher.",
+    "cleaner.reason.runtime": "Ces fichiers sont des composants nécessaires à Steam. Ils seront conservés.",
+    "cleaner.reason.activity_unknown": "Impossible de vérifier si un jeu utilise ces données. Fermez vos jeux, puis relancez l'analyse.",
+    "cleaner.reason.active_game": "Fermez ce jeu, puis relancez l'analyse pour nettoyer ses données.",
+    "cleaner.reason.size_unknown": "Impossible de calculer l'espace occupé par ces données. Relancez l'analyse.",
+    "cleaner.reason.cancelled": "Opération annulée.",
+    "cleaner.reason.io_error": "Certaines données n'ont pas pu être lues ou supprimées. Relancez l'analyse pour voir ce qu'il reste.",
+    "cleaner.reason.busy": "Une autre opération est en cours. Attendez qu'elle se termine.",
+    "cleaner.reason.closed": "Le nettoyage de Steam est en cours d'arrêt. Rouvrez le Centre de contrôle.",
+    "cleaner.reason.invalid_selection": "La sélection n'est plus valide. Relancez l'analyse des données.",
+    "cleaner.reason.stale_scan": "L'analyse n'est plus à jour. Relancez-la.",
+    "cleaner.reason.invalid_plan": "La sélection n'est plus valide. Choisissez à nouveau ce qu'il faut nettoyer.",
+    "cleaner.reason.expired_plan": "Trop de temps s'est écoulé. Appuyez de nouveau sur « Nettoyer ».",
+    "cleaner.reason.prefix_confirmation_required": "Confirmez que vous acceptez de perdre les sauvegardes et les réglages contenus dans ces données.",
+    "cleaner.reason.prefix_data": "Peut contenir des sauvegardes, des réglages et des programmes installés.",
+    "cleaner.reason.unknown_identity": "Impossible de savoir à quel jeu appartiennent ces données. Elles seront conservées.",
+    "cleaner.reason.managed_by_steam": "Steam installe et met à jour cette version. Vous pouvez la gérer depuis sa page dans la bibliothèque.",
+    "cleaner.reason.protected_tool": "Cet outil est conservé, car rien ne garantit qu'il puisse être supprimé sans risque.",
+    "cleaner.reason.tool_in_use": "Un jeu utilise cette version de Proton. Elle sera conservée.",
+    "cleaner.reason.malformed_data": "Impossible de vérifier cette version de Proton. Elle sera conservée.",
+    "cleaner.reason.media_unavailable": "Steam n'a pas pu afficher vos captures et vos enregistrements pour le moment.",
+    "cleaner.reason.media_incomplete": "Steam n'a pas pu vérifier tous les types de captures. Seuls les éléments disponibles sont affichés.",
+    "cleaner.reason.media_delete_failed": "Steam n'a pas pu supprimer certains éléments. Relancez l'analyse pour voir ce qu'il reste.",
+    "cleaner.warning.unknown_identity": "Le jeu n'a pas pu être identifié. Vérifiez ces données avant de les nettoyer.",
+    "cleaner.reason.internal_error": "La demande n'a pas pu aboutir. Vérifiez l'état avant de réessayer.",
+    "cleaner.reason.unknown": "Impossible de confirmer que ces données peuvent être supprimées. Relancez l'analyse.",
+    "nav.themes": "Thèmes",
+    "nav.themes.desc": "Apparence du Centre de contrôle.",
+    "nav.ambient": "Ambiance",
+    "nav.ambient.desc": "Fond et musique de Steam.",
+    "comingSoon.badge": "Bientôt",
+    "themes.tab.system": "Système",
+    "themes.tab.keyboards": "Claviers",
+    "themes.keyboards.title": "Thèmes de clavier",
+    "themes.keyboards.body": "Des thèmes pour le clavier virtuel de Steam, avec leur propre apparence, des effets à la frappe et des sons. Disponibles dans une prochaine version.",
+    "themes.keyboards.imageAlt": "Deux thèmes de clavier, Terciopelo et Lobo Blanco",
+    "ambient.soon.title": "Fonds, musique et radio",
+    "ambient.soon.body": "Des fonds personnalisés pour l'Accueil, de la musique, la radio et des vidéos dans un mini-lecteur flottant qui continue de diffuser pendant vos parties. Disponibles dans une prochaine version.",
+    "ambient.soon.imageAlt": "Mini-lecteur flottant au-dessus d'un jeu",
+    "nav.settings": "Paramètres",
+    "nav.settings.desc": "Personnalisation, mises à jour et informations.",
+    "themes.title": "Thèmes Hooandee",
+    "themes.loading": "Vérification de CSS Loader…",
+    "themes.recovery.blocked": "La restauration des thèmes est bloquée. Aucune modification ne sera appliquée tant que la vérification n'aura pas abouti.",
+    "themes.recovery.keptCurrent": "Impossible de restaurer l'état précédent des thèmes. L'état actuel est conservé.",
+    "themes.engine": "Thèmes vérifiés, prêts à être installés.",
+    "themes.cssLoader.missing": "CSS Loader est nécessaire pour installer et utiliser des thèmes. Installez-le depuis la boutique Decky, puis appuyez sur « Vérifier à nouveau ».",
+    "themes.cssLoader.disabled": "CSS Loader est installé, mais désactivé. Activez-le dans Decky, puis réessayez.",
+    "themes.cssLoader.error": "Impossible de vérifier CSS Loader en toute sécurité.",
+    "themes.cssLoader.openStore": "Ouvrir la boutique Decky",
+    "themes.retry": "Vérifier à nouveau",
+    "themes.operation.failed": "L'opération n'a pas abouti. Réessayez ; si le problème persiste, envoyez un rapport depuis les Paramètres.",
+    "themes.operation.code": "Code : {code}",
+    "themes.health.title": "Un problème avec un thème ?",
+    "themes.health.covered.title": "Un problème avec un thème ?",
+    "themes.health.covered.body": "Un thème masque le menu d'accès rapide. Appuyez pour corriger.",
+    "themes.health.summary.checking": "Analyse des thèmes, des dossiers et de l'écran…",
+    "themes.health.summary.unavailable": "Impossible d'analyser le dossier des thèmes.",
+    "themes.health.summary.clean": "Tout est en ordre : rien ne devrait perturber les thèmes.",
+    "themes.health.summary.issues": "Causes possibles de problèmes d'affichage : {count}.",
+    "themes.health.summary.settings": "Aucun résidu de thème. Certains réglages d'écran diffèrent de ceux d'origine.",
+    "themes.health.css_loader.title": "CSS Loader n'est pas prêt",
+    "themes.health.other_active.title": "D'autres thèmes actifs en même temps",
+    "themes.health.profile_active.title": "Profils CSS Loader actifs",
+    "themes.health.ghost_styles.title": "Styles résiduels",
+    "themes.health.ghost_styles.detail": "Styles CSS Loader restés dans Steam sans thème actif : {count}.",
+    "themes.health.set_aside.title": "Dossiers en trop dans les thèmes",
+    "themes.health.kind.legacy": "ancien format",
+    "themes.health.kind.broken": "endommagé",
+    "themes.health.kind.leftover": "résidu",
+    "themes.health.kind.duplicate": "copie d'un thème Hooandee",
+    "themes.health.several_hooandee.title": "Plusieurs thèmes Hooandee actifs",
+    "themes.health.steam_scale.title": "Échelle de Steam modifiée",
+    "themes.health.steam_scale.detail": "Échelle actuelle : {scale} ; par défaut : {auto}.",
+    "themes.health.resolution.title": "Résolution différente de celle de l'écran",
+    "themes.health.resolution.detail": "Steam s'affiche en {drawn} ; l'écran est en {panel}.",
+    "themes.health.external_display.title": "Écran externe",
+    "themes.health.external_display.detail": "Un écran externe modifie l'échelle et la taille ; les thèmes sont testés sur l'écran intégré.",
+    "themes.health.steam_beta.title": "Steam en bêta",
+    "themes.health.steam_beta.detail": "Les thèmes sont testés sur la version stable de Steam ; en bêta, certains éléments peuvent mal s'afficher.",
+    "themes.health.clean": "Corriger les problèmes",
+    "themes.health.cleaning": "Correction…",
+    "themes.health.clean.ok": "Corriger",
+    "themes.health.confirm.title": "Ne garder que les thèmes Hooandee",
+    "themes.health.confirm.themesOne": "1 thème sera désactivé.",
+    "themes.health.confirm.themesMany": "{count} thèmes seront désactivés.",
+    "themes.health.confirm.foldersOne": "1 dossier sera mis de côté.",
+    "themes.health.confirm.foldersMany": "{count} dossiers seront mis de côté.",
+    "themes.health.confirm.nothingDeleted": "Rien ne sera supprimé.",
+    "themes.health.choose.title": "Quel thème Hooandee voulez-vous garder actif ?",
+    "themes.health.undo": "Annuler le nettoyage",
+    "themes.health.restoring": "Restauration…",
+    "themes.health.recheck": "Vérifier à nouveau",
+    "themes.health.report": "Envoyer un rapport",
+    "themes.health.result.cleaned": "C'est fait. Seuls les thèmes Hooandee restent actifs.",
+    "themes.health.result.restored": "Restauré. Les thèmes et dossiers mis de côté ont retrouvé leur état d'origine.",
+    "themes.health.result.cleanedPartial": "Opération partielle : certains dossiers n'ont pas pu être mis de côté et restent dans la liste.",
+    "themes.health.result.restoredPartial": "Restauration partielle : ce qui manque est encore mis de côté ou en attente de CSS Loader. Vous pouvez réessayer.",
+    "themes.health.result.cleanedWithoutLoader": "C'est fait. Les résidus de CSS Loader ont été supprimés. Tant qu'il reste désactivé, aucun thème ne s'applique.",
+    "themes.health.result.failed": "Impossible de terminer l'opération.",
+    "themes.operation.sectionHandoff": "Pour éviter les chevauchements, {others} ne s'applique plus aux sections désormais gérées par {owner}. Vous pouvez les répartir depuis les sections de chaque thème.",
+    "themes.state.active": "Actif",
+    "themes.state.installed": "Installé",
+    "themes.state.notInstalled": "Non installé",
+    "themes.version.installed": "Installée : {version}",
+    "themes.version.published": "Publiée : {version}",
+    "themes.remote.card.version": "Version : v{version}",
+    "themes.remote.card.update": "Mise à jour : v{version}",
+    "themes.remote.card.incompatible": "Version incompatible : v{version}",
+    "themes.remote.checking": "Recherche des mises à jour officielles…",
+    "themes.remote.cached": "Hors ligne. Affichage du dernier catalogue vérifié enregistré sur cet appareil.",
+    "themes.remote.retry": "Rechercher des mises à jour",
+    "themes.catalog.empty": "Aucun thème publié pour le moment.",
+    "themes.catalog.unavailable": "Impossible de charger le catalogue des thèmes, et aucune copie enregistrée n'est disponible.",
+    "themes.remote.incompatible-panel": "La version publiée nécessite une version plus récente du Centre de contrôle.",
+    "themes.remote.notes": "Nouveautés",
+    "themes.action.activate": "Activer le thème",
+    "themes.action.activating": "Activation…",
+    "themes.action.deactivate": "Désactiver le thème",
+    "themes.action.deactivating": "Désactivation…",
+    "themes.action.install": "Installer le thème",
+    "themes.early.badge": "Early",
+    "themes.early.title": "Accès anticipé",
+    "themes.early.version": "Version en accès anticipé : {version}",
+    "themes.early.desc": "Installez le .zip de la version en accès anticipé que vous avez téléchargé. Le Centre de contrôle n'accepte que les fichiers publiés par l'auteur.",
+    "themes.early.install": "Installer depuis un fichier",
+    "themes.early.rejected": "Ce fichier n'est pas une version en accès anticipé publiée pour ce thème.",
+    "themes.early.unavailable": "Cette version en accès anticipé nécessite une version plus récente du Centre de contrôle.",
+    "themes.action.installing": "Installation…",
+    "themes.action.delete": "Supprimer le thème",
+    "themes.action.deleting": "Suppression…",
+    "themes.action.update": "Mettre à jour le thème",
+    "themes.action.updating": "Mise à jour…",
+    "themes.details.unavailable": "Ce thème n'est plus disponible dans le catalogue.",
+    "themes.install.confirm.title": "Installer {name} ?",
+    "themes.install.confirm.desc": "Il sera ajouté à CSS Loader. Vous pourrez l'activer et le personnaliser ensuite.",
+    "themes.install.confirm.ok": "Installer",
+    "themes.install.confirm.cancel": "Annuler",
+    "themes.delete.confirm.title": "Supprimer {name} ?",
+    "themes.delete.confirm.desc": "Il sera retiré de CSS Loader et ses fichiers seront supprimés. Ses réglages seront perdus ; vous pourrez le réinstaller depuis le catalogue.",
+    "themes.delete.confirm.ok": "Supprimer",
+    "themes.update.ready": "Une mise à jour est disponible",
+    "themes.update.confirm.title": "Mettre à jour {name} ?",
+    "themes.update.confirm.desc": "La nouvelle version sera installée. CSS Loader conservera les réglages compatibles.",
+    "themes.update.confirm.ok": "Mettre à jour",
+    "themes.patches.empty": "Ce thème ne propose aucun réglage modifiable dans CSS Loader.",
+    "themes.group.appearance": "Apparence",
+    "themes.group.grid": "Grille",
+    "themes.group.animations": "Animations",
+    "themes.group.performance": "Performances",
+    "themes.group.compatibility": "Compatibilité",
+    "themes.group.sections": "Sections du thème",
+    "themes.group.sectionsDescription": "Choisissez les parties de Steam auxquelles le thème s'applique.",
+    "themes.group.extra": "Extras",
+    "themes.group.extraDescription": "Réglages qui s'écartent du design d'origine du thème.",
+    "audio.unsupported": "L'égaliseur n'est pas disponible sur cette version du système.",
+    "audio.inherit": "Utilise le réglage global tant que vous ne modifiez rien ici.",
+    "audio.enable": "Égaliseur",
+    "audio.enable.desc": "Ajuste le son de votre appareil. S'applique à tout ce que vous écoutez.",
+    "audio.apply.unconfirmed": "Le réglage est enregistré, mais le système n'a pas confirmé que l'égaliseur est actif.",
+    "audio.route.speaker": "Haut-parleurs intégrés",
+    "audio.route.headphone": "Casque",
+    "audio.route.auto": "AUTO",
+    "audio.tone": "Ajuster la tonalité",
+    "audio.tone.graves": "Graves",
+    "audio.tone.voces": "Voix",
+    "audio.tone.agudos": "Aigus",
+    "audio.advanced": "Égaliseur avancé",
+    "audio.fullscreen": "Modifier en plein écran",
+    "audio.axis.y": "− plus doux · + plus fort",
+    "audio.test.title": "Tester le son",
+    "audio.test.bass": "Graves",
+    "audio.test.voice": "Voix",
+    "audio.test.treble": "Aigus",
+    "audio.test.full": "Complet",
+    "audio.profile.mine": "Mes profils",
+    "audio.profile.saveCurrent": "Enregistrer",
+    "audio.profile.saveTitle": "Nom du profil",
+    "audio.profile.save": "Enregistrer le profil",
+    "audio.profile.delete": "Supprimer",
+    "audio.loudness": "Normaliser le volume",
+    "audio.loudness.desc": "Des dialogues audibles sans pics assourdissants. Idéal la nuit, tout en protégeant les haut-parleurs.",
+    "audio.balance": "Balance",
+    "audio.balance.left": "Gauche",
+    "audio.balance.right": "Droite",
+    "audio.balance.centered": "Centré",
+    "audio.balance.center": "Centrer",
+    "audio.guard": "Protéger les haut-parleurs",
+    "audio.guard.desc": "Limite l'accentuation des graves et des aigus pour ne pas forcer les haut-parleurs.",
+    "audio.guard.off": "Sans limite : trop pousser les graves ou les aigus peut endommager les haut-parleurs. La zone à risque est indiquée en rouge.",
+    "audio.guard.risk": "Zone à risque pour les haut-parleurs",
+    "audio.reset": "Remettre à plat",
+    "audio.preset.device_tuned": "{device} optimisé",
+    "audio.preset.device_tuned.base": "Point de départ : pas encore optimisé pour votre modèle.",
+    "audio.preset.custom": "Personnalisé",
+    "audio.preset.flat": "Plat",
+    "audio.preset.voices": "Voix / FPS",
+    "audio.preset.bass": "Graves",
+    "audio.preset.cinema": "Cinéma",
+    "audio.preset.music": "Musique",
+    "params.search": "Rechercher un jeu…",
+    "params.empty": "Aucun jeu installé détecté.",
+    "params.noMatch": "Aucun jeu ne correspond à votre recherche.",
+    "params.badge.steam": "Steam",
+    "params.badge.nonSteam": "Non‑Steam",
+    "params.activeCount": "Actifs : {n}",
+    "params.activeLoading": "Lecture…",
+    "params.running.now": "En cours de jeu",
+    "params.running.restart": "Relancez le jeu pour appliquer les changements",
+    "params.sort.recent": "Récents",
+    "params.sort.alpha": "Alphabétique",
+    "params.sort.played": "Les plus joués",
+    "params.hide": "Masquer",
+    "params.unhide": "Afficher",
+    "params.hiddenEmpty": "Vous n'avez masqué aucun jeu.",
+    "params.hiddenSaveError": "Impossible d'enregistrer la modification.",
+    "params.sub.custom": "Personnalisées",
+    "customVars.title": "Mes variables",
+    "customVars.intro": "Des variables que vous définissez et pouvez activer dans n'importe quel jeu. Elles ne sont pas vérifiées.",
+    "customVars.loadError": "Impossible de charger vos variables. Fermez puis rouvrez la fenêtre.",
+    "customVars.orphanNote": "Si vous supprimez ou modifiez une variable, l'ancienne option n'apparaît plus que dans les jeux où elle est encore active, pour que vous puissiez la retirer.",
+    "customVars.empty": "Vous n'en avez encore créé aucune.",
+    "customVars.new": "Nouvelle variable",
+    "customVars.editing": "Modification",
+    "customVars.name": "Nom",
+    "customVars.name.ph": "ex. Limite de FPS",
+    "customVars.kind.env": "Variable (env)",
+    "customVars.kind.arg": "Argument",
+    "customVars.env.name": "Nom (NAME)",
+    "customVars.env.value": "Valeur",
+    "customVars.arg.flag": "Argument",
+    "customVars.add": "Ajouter",
+    "customVars.save": "Enregistrer",
+    "customVars.err.name": "Donnez-lui un nom",
+    "customVars.err.envName": "Nom de variable invalide",
+    "customVars.err.arg": "Saisissez l'argument",
+    "customVars.err.duplicate": "Ce nom ou cet argument est déjà utilisé",
+    "customVars.err.unsafe": "Pas d'espaces ni de caractères spéciaux",
+    "params.contextMenu": "Options de lancement",
+    "params.reassure": "Vos options existantes restent intactes",
+    "params.frequent": "Vos favoris",
+    "params.advanced": "Avancé",
+    "params.showCommand": "Voir la commande",
+    "params.off": "Désactivé",
+    "params.fsr4.loading": "Vérification de la compatibilité de Proton…",
+    "params.fsr4.missing": "L’installation de Proton n’a pas pu être identifiée. Sélectionnez une version compatible dans les propriétés du jeu.",
+    "params.fsr4.error": "La compatibilité de Proton n’a pas pu être vérifiée. Rouvrez l’éditeur pour réessayer.",
+    "params.fsr4.unsupported": "La prise en charge de FSR 4 n’a pas été détectée dans cette version de Proton.",
+    "params.fsr4.unavailable": "Indisponible",
+    "params.notInstalled": "non installé",
+    "params.sub.perf": "Performances",
+    "params.sub.lang": "Langue",
+    "params.sub.startup": "Au lancement",
+    "params.sub.proton": "Proton (compatibilité)",
+    "params.sub.render": "Graphismes et fenêtre",
+    "params.sub.dlls": "Bibliothèques (DLL)",
+    "params.sub.gameArgs": "Options du jeu",
+    "params.pill.mangohud": "MangoHud",
+    "params.pill.mangohud.desc": "Affiche les FPS, la température et la consommation par-dessus le jeu.",
+    "params.pill.gamemode": "GameMode",
+    "params.pill.gamemode.desc": "Donne la priorité aux performances du système pendant que vous jouez.",
+    "params.pill.lsfg": "Lossless Scaling",
+    "params.pill.lsfg.desc": "Génère des images supplémentaires pour plus de fluidité. Nécessite le plugin lsfg‑vk.",
+    "params.pill.makoRun": "Mako Run",
+    "params.pill.makoRun.desc": "Génère des images intermédiaires avec Mako.",
+    "params.pill.langEs": "Forcer l'espagnol",
+    "params.pill.langEs.desc": "Passe le jeu en espagnol s'il suit la langue du système.",
+    "params.pill.novid": "Passer les intros",
+    "params.pill.novid.desc": "Passe les vidéos et logos de démarrage.",
+    "params.pill.protonLaa": "Mémoire pour vieux jeux",
+    "params.pill.protonLaa.desc": "Corrige les jeux 32 bits qui plantent par manque de mémoire.",
+    "params.pill.protonNoFsync": "Corriger les saccades (fsync)",
+    "params.pill.protonNoFsync.desc": "À essayer si le jeu saccade ou se fige par moments.",
+    "params.pill.protonNoNtsync": "Corriger les saccades (ntsync)",
+    "params.pill.protonNoNtsync.desc": "Alternative à l'option précédente sur les systèmes plus récents.",
+    "params.pill.protonWined3d": "Mode compatibilité (OpenGL)",
+    "params.pill.protonWined3d.desc": "Dernier recours si un jeu ne se lance pas. Souvent plus lent.",
+    "params.pill.protonLog": "Journal de diagnostic",
+    "params.pill.protonLog.desc": "Enregistre un journal pour analyser les plantages. À activer uniquement pour signaler un problème.",
+    "params.sub.upscaling": "Mise à l'échelle (FSR / XeSS)",
+    "params.sub.display": "Écran et HDR",
+    "params.detectedProton": "Version : {name}",
+    "params.pill.fsr4": "Passer à FSR 4",
+    "params.pill.fsr4.desc": "Remplace FSR 3.1 par FSR 4 dans les jeux compatibles.",
+    "params.pill.optiscaler": "OptiScaler",
+    "params.pill.optiscaler.desc": "Remplace DLSS par FSR/XeSS et ajoute la génération d'images. Proton‑CachyOS uniquement.",
+    "params.pill.protonHdr": "HDR",
+    "params.pill.protonHdr.desc": "Active le HDR dans les jeux compatibles. Nécessite un écran HDR et active Wayland.",
+    "params.pill.protonWayland": "Pilote Wayland",
+    "params.pill.protonWayland.desc": "Utilise le pilote Wayland (requis pour le HDR). Expérimental.",
+    "params.pill.noDxr": "Désactiver le ray tracing",
+    "params.pill.noDxr.desc": "Désactive le ray tracing pour gagner en performances sur un GPU intégré.",
+    "params.recommended": "Recommandé",
+    "params.startHere": "Pour commencer",
+    "params.pill.mangohud.help": "Affiche des données en temps réel (FPS, température, watts). Pratique pour voir comment tourne un jeu et décider s'il faut limiter les FPS ou baisser le TDP.",
+    "params.pill.gamemode.help": "Demande au système de passer en mode performances pendant que vous jouez. Sous SteamOS, l'effet est minime (il est déjà optimisé) ; c'est plus utile sur un PC de bureau.",
+    "params.pill.lsfg.help": "Insère des images intermédiaires (Lossless Scaling) pour plus de fluidité. Idéal pour les jeux à 30-40 FPS. Le multiplicateur se règle dans le plugin lsfg-vk.",
+    "params.pill.makoRun.help": "Génère des images intermédiaires avec Mako pour plus de fluidité. Utilise le wrapper ~/.local/bin/mako-run, qui doit être exécutable.",
+    "params.pill.langEs.help": "Force l'espagnol via une variable système. Fonctionne avec les jeux qui suivent la langue du système ; sous SteamOS, cela peut ne pas s'appliquer.",
+    "params.pill.novid.help": "Passe les vidéos d'intro et les logos pour arriver plus vite au menu. Surtout dans les jeux Valve/Source et bien d'autres.",
+    "params.pill.protonLaa.help": "Permet aux jeux 32 bits d'utiliser plus de mémoire. À activer si un vieux jeu se ferme tout seul ou affiche des erreurs de mémoire.",
+    "params.pill.protonNoFsync.help": "Désactive un mode de synchronisation qui provoque des saccades dans certains jeux. Essayez-le si vous remarquez des micro-saccades ; si ça ne change rien, retirez-le.",
+    "params.pill.protonNoNtsync.help": "Comme le précédent, mais pour la méthode plus récente (ntsync). Sur les kernels récents, c'est souvent le coupable : alternez entre cette option et celle de fsync.",
+    "params.pill.protonWined3d.help": "Utilise OpenGL au lieu de la traduction habituelle vers Vulkan. En dernier recours si un jeu ne démarre même pas ; c'est souvent plus lent, ne le laissez pas activé sans raison.",
+    "params.pill.protonLog.help": "Génère un journal technique du démarrage pour comprendre pourquoi un jeu plante. Activez-le uniquement pour signaler un problème, puis retirez-le.",
+    "params.pill.fsr4.help": "Remplace la mise à l'échelle du jeu (FSR 3.1) par FSR 4, pour une image plus nette. Le Centre de contrôle choisit le réglage compatible avec votre version de Proton et votre GPU. Dans le jeu, laissez la mise à l'échelle sur FSR : FSR 4 s'applique en arrière-plan.",
+    "params.pill.optiscaler.help": "Change la mise à l'échelle (DLSS→FSR/XeSS) et ajoute la génération d'images. Intégré à Proton-CachyOS, sans fichier à ajouter. Uniquement avec cette version de Proton.",
+    "params.pill.protonHdr.help": "Active la sortie HDR dans les jeux compatibles. Nécessite un écran HDR (c'est le cas du Deck OLED et du Legion Go 2) et active le pilote Wayland.",
+    "params.pill.protonWayland.help": "Utilise le pilote Wayland au lieu de X11. Nécessaire pour le HDR et certains jeux récents. Expérimental : si quelque chose cloche, retirez-le.",
+    "params.pill.noDxr.help": "Désactive le ray tracing. Sur un GPU intégré, le ray tracing fait chuter les FPS : le couper apporte souvent un gain de performances net.",
+    "params.pill.heapDelayFree": "Corriger les plantages",
+    "params.pill.heapDelayFree.desc": "Contournement pour les jeux qui se ferment tout seuls à cause d'erreurs de mémoire.",
+    "params.pill.heapDelayFree.help": "Retarde la libération de la mémoire pour éviter les bugs qui font planter le jeu (use-after-free). Essayez-le si un jeu plante sans raison apparente.",
+    "params.pill.dxvkD3d8": "Jeux DirectX 8 (rétro)",
+    "params.pill.dxvkD3d8.desc": "Fait passer les très vieux jeux DirectX 8 par DXVK.",
+    "params.pill.dxvkD3d8.help": "Traduit DirectX 8 vers Vulkan (DXVK). Utile pour les jeux rétro qui tournent mal ou plantent avec la traduction par défaut.",
+    "params.pill.preferSdl": "Compatibilité manette (SDL)",
+    "params.pill.preferSdl.desc": "Utilise SDL pour la manette ; corrige les commandes non détectées ou capricieuses.",
+    "params.pill.preferSdl.help": "Force le backend d'entrée SDL. Essayez-le si le jeu ne détecte pas votre manette ou si les boutons réagissent bizarrement.",
+    "params.pill.renderer.help": "Oblige le jeu à utiliser un moteur de rendu précis (Vulkan/DX11/DX12). À utiliser seulement si celui par défaut provoque des bugs ou des blocages. Dépend du jeu.",
+    "params.pill.windowMode.help": "Force le démarrage en mode fenêtré ou en plein écran. Utile si un jeu ignore la résolution de la console portable. Dépend du jeu.",
+    "params.pill.winedll.help": "Indique à Proton d'utiliser certaines DLL (natives ou intégrées). Utilisé par des mods comme ReShade ou OptiScaler en manuel. Format : nom=n,b (p. ex. dxgi=n,b).",
+    "params.pill.nojoy.help": "Désactive le sous-système joystick dans les jeux Source. Démarrage plus rapide, et le jeu ne détecte plus les manettes que vous n'utilisez pas.",
+    "params.pill.high.help": "Demande une priorité CPU élevée pour le jeu (moteurs Source). Effet léger ; sur une console portable, ça change rarement quelque chose.",
+    "params.pill.renderer": "Forcer le moteur de rendu",
+    "params.pill.renderer.desc": "Change de moteur de rendu si celui par défaut pose problème. Selon le jeu.",
+    "params.pill.windowMode": "Mode d'affichage",
+    "params.pill.windowMode.desc": "Force le mode fenêtré ou plein écran. Selon le jeu.",
+    "params.pill.winedll": "Remplacer des bibliothèques (DLL)",
+    "params.pill.winedll.desc": "Charge ou désactive certaines DLL : mods, ReShade ou correctifs. Format : dxgi=n,b",
+    "params.pill.winedll.placeholder": "dxgi=n,b",
+    "params.pill.nojoy": "Désactiver le joystick",
+    "params.pill.nojoy.desc": "Démarrage plus rapide, évite les conflits de manette (jeux Source).",
+    "params.pill.high": "Priorité haute",
+    "params.pill.high.desc": "Donne plus de CPU au jeu (jeux Source).",
+    "params.renderer.vulkan": "Vulkan",
+    "params.renderer.dx11": "DX11",
+    "params.renderer.dx12": "DX12",
+    "params.window.windowed": "Fenêtré",
+    "params.window.fullscreen": "Plein écran",
+    "params.caveat.locale": "Sous SteamOS d'origine, forcer la langue peut ne pas s'appliquer.",
+    "params.preview": "Votre commande finale",
+    "params.preview.empty": "Aucune option de lancement.",
+    "params.preview.preserved": "déjà présent",
+    "params.preview.added": "ajouté par le Centre de contrôle",
+    "params.malformed": "Ces options sont déjà complexes ; elles s'affichent telles quelles pour ne rien casser. Modifiez-les à la main dans Steam si besoin.",
+    "params.saving": "Enregistrement…",
+    "params.saved": "Enregistré",
+    "params.readError": "Impossible de lire les options actuelles. Fermez puis rouvrez le Centre de contrôle.",
+    "params.saveError": "Échec de l'enregistrement",
+    "mandos.title": "Manettes",
+    "mandos.manager.label": "Gestionnaire :",
+    "mandos.manager.hhd": "Handheld Daemon (HHD)",
+    "mandos.manager.ip": "InputPlumber",
+    "mandos.manager.none": "Aucun",
+    "mandos.desc.hhd": "Sur ce système, Handheld Daemon gère votre manette : il unifie les boutons et s'occupe du remappage. Le remappage fin par jeu se fait dans Steam Input.",
+    "mandos.desc.inputplumber": "Sur ce système, InputPlumber gère votre manette et la présente comme une manette unifiée. Le remappage par jeu se fait dans Steam Input.",
+    "mandos.desc.none": "Aucun gestionnaire de manette actif. Le remappage est géré par votre système ou par Steam Input.",
+    "mandos.remap.title": "Remappage des boutons",
+    "mandos.remap.note": "« Global » s'applique à tous les jeux ; choisissez un jeu pour lui donner son propre remappage.",
+    "mandos.inherit": "Ce jeu utilise la configuration globale tant que vous ne modifiez aucun bouton.",
+    "mandos.remap.reset": "Rétablir les valeurs par défaut",
+    "mandos.remap.default": "Par défaut",
+    "mandos.settings.title": "Paramètres de la manette",
+    "mandos.settings.note": "Pour remapper les boutons arrière par jeu, choisissez « Steam Input » et configurez-les dans Steam.",
+    "mandos.targets.buttons": "Boutons",
+    "mandos.targets.keys": "Touches",
+    "mandos.mode.label": "Émulation",
+    "mandos.mode.uinput": "Xbox",
+    "mandos.mode.hori_steam": "HORI (gyroscope/boutons arrière)",
+    "mandos.mode.dualsense": "DualSense",
+    "mandos.mode.hidden": "Masqué",
+    "mandos.paddles.label": "Boutons arrière",
+    "mandos.paddles.steam_input": "Steam Input",
+    "mandos.paddles.noob": "Clavier/Overlay",
+    "mandos.paddles.disabled": "Désactivé",
+    "mandos.remap.uncalibrated": "Sur ce modèle, la manette ne peut pas encore être remappée ici. Le remappage par jeu se fait dans Steam Input.",
+    "mandos.remap.nobuttons": "Aucun bouton remappable pour l'instant. Si vous venez de redémarrer, patientez quelques secondes.",
+    "mandos.remap.noextra": "Ce modèle n'a pas de boutons supplémentaires à remapper. La disposition par jeu se change dans Steam Input.",
+    "mandos.remap.dropped": "Avec l'émulation de manette actuelle, les boutons non assignés n'arrivent pas jusqu'aux jeux. Attribuez-leur un bouton ici ou utilisez l'émulation Steam Deck.",
+    "mandos.modules.title": "Magic Modules",
+    "mandos.modules.left": "Module gauche",
+    "mandos.modules.right": "Module droit",
+    "mandos.modules.state.connected": "Connecté",
+    "mandos.modules.state.disconnected": "Déconnecté",
+    "mandos.modules.state.ejecting": "Éjection…",
+    "mandos.modules.state.activating": "Activation…",
+    "mandos.modules.state.paused": "En pause",
+    "mandos.modules.state.unknown": "État inconnu",
+    "mandos.modules.source.hhd": "HHD gère l'éjection et le Centre de contrôle confirme l'état physique.",
+    "mandos.modules.unavailable": "HHD ne fournit pas l'interface requise ; aucune commande ne sera envoyée.",
+    "mandos.modules.eject.left": "Éjecter le gauche",
+    "mandos.modules.eject.right": "Éjecter le droit",
+    "mandos.modules.eject.both": "Éjecter les deux",
+    "mandos.modules.running": "Éjection…",
+    "mandos.modules.confirm.title": "Éjecter le Magic Module",
+    "mandos.modules.confirm.desc": "Tenez la console et laissez de la place aux modules. Si HHD ne peut pas couper directement l'alimentation de la manette, il peut mettre la console en veille pour terminer l'éjection.",
+    "mandos.modules.confirm.ok": "Éjecter",
+    "mandos.modules.confirm.cancel": "Annuler",
+    "mandos.modules.result.confirmed": "Éjection confirmée par l'état physique.",
+    "mandos.modules.result.unverifiable": "La commande a été acceptée, mais l'état physique n'a pas pu être confirmé. Vérifiez le module avant de réessayer.",
+    "mandos.modules.result.unavailable": "L'éjection n'est pas disponible dans l'état actuel.",
+    "mandos.modules.result.failed": "Impossible d'envoyer ou de valider la commande. Aucune nouvelle tentative n'a été faite.",
+    "mandos.modules.result.busy": "Une éjection est déjà en cours.",
+    "display.oled.title": "Rendu OLED",
+    "display.oled.desc": "Rapproche les couleurs de votre écran de celles d'un OLED (plus vives et plus profondes). L'écran ne change pas, seul le rendu des couleurs est ajusté.",
+    "display.oled.apply": "Appliquer",
+    "display.native": "Natif",
+    "display.reset": "Revenir au rendu natif",
+    "display.custom": "Personnalisé",
+    "display.unsupported": "Le réglage des couleurs n'est pas disponible avec cette version du système.",
+    "display.inherit": "Utilise le réglage global tant que vous ne modifiez rien ici.",
+    "display.general": "Général · identique pour tous les jeux",
+    "display.saturation": "Saturation",
+    "display.look": "Ambiance",
+    "display.look.native": "Natif",
+    "display.look.cine": "Cinéma",
+    "display.look.vivo": "Vif",
+    "display.look.comodo": "Confort",
+    "display.advanced": "Avancé",
+    "display.group.tone": "Lumière et tons",
+    "display.group.balance": "Balance des couleurs",
+    "display.temperature": "Température",
+    "display.temp.cool": "Froid",
+    "display.temp.warm": "Chaud",
+    "display.contrast": "Contraste",
+    "display.contrast.low": "Doux",
+    "display.contrast.high": "Intense",
+    "display.gamma": "Gamma",
+    "display.gamma.dark": "Sombre",
+    "display.gamma.bright": "Clair",
+    "display.hue": "Teinte",
+    "display.vibrance": "Vibrance",
+    "display.vibrance.low": "Douce",
+    "display.vibrance.high": "Éclatante",
+    "display.black": "Niveau de noir",
+    "display.black.deep": "Profond",
+    "display.black.lift": "Détails",
+    "display.night": "Mode nuit",
+    "display.night.desc": "Réchauffe l'écran pour reposer vos yeux le soir. S'ajoute à vos couleurs sans les modifier.",
+    "display.night.warmth": "Intensité",
+    "display.night.schedule": "Programmer",
+    "display.night.start": "Début",
+    "display.night.end": "Fin",
+    "display.night.on_now": "Actif en ce moment",
+    "display.night.off_now": "En attente (hors plage horaire)",
+    "display.hdr": "HDR",
+    "display.hdr.desc": "Plus de luminosité et de couleurs dans les jeux et vidéos compatibles. Ce mode s'applique à tout l'écran.",
+    "display.rgb": "Balance manuelle (RGB)",
+    "display.rgb.r": "Rouge",
+    "display.rgb.g": "Vert",
+    "display.rgb.b": "Bleu",
+    "display.confirm.title": "Modifications non enregistrées",
+    "display.confirm.desc": "Elles seront annulées dans {s}s si vous ne les enregistrez pas.",
+    "display.confirm.save": "Enregistrer",
+    "display.confirm.discard": "Annuler les modifications",
+    "display.confirm.saving": "Enregistrement…",
+    "display.perf_note": "Sur votre {device}, le réglage des couleurs consomme un peu plus de batterie tant qu'il est actif.",
+    "gpu.clock.title": "Fréquence du GPU",
+    "gpu.clock.auto": "Automatique",
+    "gpu.clock.manual": "Fixer la fréquence du GPU",
+    "gpu.clock.manual.desc": "Limite la fréquence du GPU. Baissez-la pour réduire la consommation et la chauffe.",
+    "gpu.clock.min": "Minimum",
+    "gpu.clock.max": "Maximum",
+    "gpu.clock.rejected": "Non appliqué ; le résumé affiche la valeur réelle.",
+    "gpu.clock.capped": "Plafonné à {mhz} MHz",
+    "gpu.clock.powerLevel": "Niveau de puissance",
+    "gpu.clock.powerLevel.own": "{level} · indépendant",
+    "gpu.clock.powerLevel.linked": "{level} · comme le CPU",
+    "gpu.clock.managed": "Défini dans Puissance : réglez-le via l'onglet GPU, au-dessus du cadran.",
+    "learning.title": "Apprentissage sur {name}",
+    "learning.active": "Apprentissage",
+    "learning.tag.tdp": "TDP",
+    "learning.tag.fans": "Ventilateurs",
+    "learning.paused": "Apprentissage en pause",
+    "learning.paused.cta": "Activer dans les Paramètres",
+    "fans.unavailable": "Aucun ventilateur détecté sur cet appareil.",
+    "fans.fan": "Ventilateur {n}",
+    "fans.temp.cpu": "Processeur",
+    "fans.temp.gpu": "GPU",
+    "fans.temp.gpuJunction": "Jonction du GPU",
+    "fans.temp.vram": "Mémoire vidéo",
+    "fans.curve.title": "Courbe de ventilation",
+    "fans.preset.auto": "Auto",
+    "fans.preset.silent": "Silencieux",
+    "fans.preset.balanced": "Équilibré",
+    "fans.preset.performance": "Performances",
+    "fans.preset.custom": "Personnalisé",
+    "fans.preset.adaptive": "Adaptatif",
+    "fans.adaptive.title": "Courbe adaptative",
+    "fans.preset.cool.hint": "À froid, tous les modes font le même bruit ; la différence se fait sentir quand ça chauffe.",
+    "fans.curve.custom.hint": "Faites glisser les points pour ajuster votre courbe.",
+    "fans.curve.expand": "Modifier en plein écran",
+    "fans.curve.saved": "Enregistré",
+    "fans.curve.auto.hint": "Géré par le firmware de l'appareil.",
+    "fans.curve.unsupported": "Votre appareil va très bien. Sous {os}, la courbe de ventilation n'est pas réglable ; le ventilateur reste en gestion automatique.",
+    "fans.curve.thisSystem": "ce système",
+    "fans.curve.governed": "Le ventilateur est en mode « {mode} » ; il se règle via le mode de performances (dans Puissance), pas manuellement ici.",
+    "fans.curve.custom_mode": "En mode personnalisé, le ventilateur ne peut pas être contrôlé d'ici. Tout va bien : le firmware s'en charge. Pour agir sur le ventilateur, choisissez un mode de TDP (Silencieux, Équilibré ou Performances) dans l'onglet Puissance.",
+    "fans.curve.kernel_pending": "Aucun pilote de ventilateur n'est disponible pour ce modèle dans le kernel actuel de SteamOS. En attendant, vous pouvez activer le contrôle expérimental ci-dessous.",
+    "fans.armadaHandoff": "Armada OS gère le ventilateur. Si vous choisissez une courbe, le Centre de contrôle prend la main ; repasser en automatique la rend à Armada.",
+    "fans.board.title": "Ventilateurs de la carte mère",
+    "fans.board.toggle": "Contrôler les ventilateurs de la carte mère",
+    "fans.board.note": "Charge le pilote des capteurs de la carte mère, s'il est fourni avec le système, pour que ses ventilateurs suivent la courbe. Désactivable à tout moment.",
+    "fans.board.active": "Ventilateurs de la carte mère pilotés : {n}. Celui de la carte graphique reste en automatique.",
+    "fans.board.noFans": "Le pilote n'a trouvé aucun ventilateur contrôlable sur cette carte mère. Un rapport envoyé depuis les Paramètres aidera à la prendre en charge.",
+    "fans.board.noDriver": "Ce système ne fournit aucun pilote compatible avec les ventilateurs de la carte mère. Un rapport envoyé depuis les Paramètres aidera à les prendre en charge.",
+    "fans.board.present": "Ventilateurs contrôlables déjà détectés sur la carte mère : {n}.",
+    "fans.experimental.title": "Contrôle expérimental",
+    "fans.experimental.note": "Contrôle non officiel du ventilateur, avec plafond de sécurité. À vos risques et périls.",
+    "fans.experimental.toggle": "Activer",
+    "fans.experimental.confirm.title": "Contrôle expérimental",
+    "fans.experimental.confirm.desc": "Contrôle non officiel du ventilateur, à vos risques et périls. Un plafond de sécurité reste actif ; si vous le désactivez, le firmware reprend la main.",
+    "fans.experimental.confirm.ok": "Activer",
+    "fans.experimental.confirm.cancel": "Annuler",
+    "fans.experimental.reset": "Relancer le contrôle du ventilateur",
+    "fans.experimental.resetNote": "À utiliser si le ventilateur reste bloqué ou ne suit plus la courbe.",
+    "fans.experimental.resetPending": "Relance…",
+    "fans.experimental.resetDone": "Contrôle relancé",
+    "fans.experimental.resetFail": "Impossible de relancer ; redémarrez l'appareil si le problème persiste.",
+    "fans.firmware.title": "Courbe du firmware",
+    "fans.firmware.note": "Voici la courbe appliquée par le firmware.",
+    "fans.firmware.wip": "Je travaille sur un contrôle sécurisé de la vitesse du ventilateur.",
+    "fans.suggest.band": "Réglée sur {lo}–{hi} °C · {min} min",
+    "fans.suggest.dial.quiet": "Plus silencieux",
+    "fans.suggest.dial.cool": "Plus frais",
+    "fans.suggest.hint.disabled": "Activez « Apprendre de mon utilisation » dans les Paramètres pour que la courbe s'adapte.",
+    "fans.suggest.hint.flat": "Il faut plus de variations de température pour suggérer une courbe.",
+    "fans.suggest.learning.title": "Apprentissage en cours sur ce jeu",
+    "fans.suggest.progress": "{min} / {target} min",
+    "fans.suggest.msg.learning": "Jouez encore environ {left} min pour débloquer la courbe. Les points verts montrent ce que j'ai déjà observé.",
+    "fans.suggest.msg.empty": "Commencez à jouer pour que j'apprenne le profil thermique de ce jeu.",
+    "fans.suggest.msg.nogame": "Lancez un jeu pour que j'apprenne son profil thermique.",
+    "fans.suggest.continuous": "J'affine la courbe toutes les 30 min environ, d'après vos dernières parties.",
+    "fans.suggest.peak.title": "Température maximale",
+    "fans.suggest.peak.value": "{peak} °C",
+    "fans.suggest.zone.cool": "Frais",
+    "fans.suggest.zone.warm": "Tiède",
+    "fans.suggest.zone.hot": "Chaud",
+    "fans.suggest.zone.limit": "À la limite",
+    "fans.suggest.tone.quiet": "Priorité au silence",
+    "fans.suggest.tone.balanced": "Frais et silencieux",
+    "fans.suggest.tone.cool": "Priorité au refroidissement",
+    "system.brightness": "Luminosité",
+    "system.volume": "Volume",
+    "system.unavailable": "Non disponible sur cet appareil.",
+    "system.on": "activé",
+    "system.off": "désactivé",
+    "system.eco.title": "Mode téléchargement",
+    "system.eco.desc": "Réduit la consommation pendant le téléchargement de vos jeux.",
+    "system.eco.countdown": "L'écran s'éteindra dans",
+    "system.eco.row.tdp": "TDP",
+    "system.eco.row.level": "Performances",
+    "system.eco.value.level": "Niveau {level}",
+    "system.eco.row.screen": "Écran",
+    "system.eco.value.screenOff": "Éteint",
+    "system.eco.value.screenBlack": "Noir",
+    "system.eco.row.turbo": "Turbo",
+    "system.eco.value.turboOff": "Désactivé",
+    "system.rgb.title": "Éclairage RGB",
+    "system.rgb.desc.installed": "Contrôlez les LED RGB de votre appareil avec Colores.",
+    "system.rgb.desc.install": "Installez Colores pour contrôler l'éclairage RGB de votre appareil.",
+    "system.rgb.open": "Ouvrir Colores",
+    "system.rgb.install": "Installer Colores",
+    "system.rgb.installing": "Installation…",
+    "system.rgb.error": "Impossible d'installer Colores. Essayez depuis la boutique Decky.",
+    "system.rgb.store": "Ouvrir la boutique Decky",
+    "system.rgb.confirm.title": "Installer Colores",
+    "system.rgb.confirm.desc": "Colores va être téléchargé depuis GitHub puis installé. Continuer ?",
+    "system.rgb.confirm.ok": "Installer",
+    "system.rgb.confirm.cancel": "Annuler",
+    "system.battery.title": "Batterie",
+    "system.battery.absent": "Aucune batterie détectée.",
+    "system.battery.charging": "En charge",
+    "system.battery.discharging": "Sur batterie",
+    "system.battery.connected": "Branché",
+    "system.battery.health": "Santé",
+    "system.battery.healthGroup": "Santé de la batterie",
+    "system.battery.cycles": "Cycles",
+    "system.battery.capacity": "Capacité",
+    "system.battery.limit": "Limiter la charge",
+    "system.battery.limit.desc": "Préserve la batterie en plafonnant la charge maximale.",
+    "system.battery.limit.fixed": "Charge limitée à {percent} % (limite fixée par le firmware).",
+    "system.battery.fullOnce.title": "Charge complète temporaire",
+    "system.battery.fullOnce.ready": "Ignore temporairement la limite de {percent} % jusqu'à la charge complète (24 h maximum).",
+    "system.battery.fullOnce.active": "Charge jusqu'à 100 %. La limite de {percent} % sera rétablie une fois la charge terminée ou dans 24 h.",
+    "system.battery.fullOnce.failed": "Impossible d'appliquer le changement. La limite de {percent} % reste enregistrée et sera réappliquée automatiquement.",
+    "system.cpu.title": "CPU",
+    "system.cpu.coresWord": "cœurs",
+    "system.cpu.turbo": "Turbo",
+    "system.cpu.threads": "{cores} cœurs · {threads} threads",
+    "system.cpu.frequency": "Fréquence max.",
+    "system.cpu.frequency.manual": "Contrôle manuel de la fréquence",
+    "system.cpu.frequency.manual.desc": "Limite la plage de fréquences que le CPU peut utiliser.",
+    "power.managedFrequency": "Définie par le niveau de Puissance. Pour la régler vous-même, désactivez le contrôle de la puissance.",
+    "system.cpu.frequency.min": "Fréquence minimale",
+    "system.cpu.frequency.max": "Fréquence maximale",
+    "system.cpu.frequency.adapted": "Adaptée par groupe de cœurs selon les limites du processeur.",
+    "system.cpu.frequency.rejected": "Impossible d'appliquer la plage : les valeurs précédentes ont été conservées.",
+    "system.cpu.smt": "Multithreading (SMT)",
+    "system.cpu.smt.desc": "Chaque cœur exécute 2 threads. Désactivez-le pour réduire la consommation et la chauffe.",
+    "system.cpu.boost": "Turbo Boost",
+    "system.cpu.boost.desc": "Augmente la fréquence lors des pics. Désactivez-le pour une température plus stable.",
+    "system.cpu.activeCores": "Cœurs actifs",
+    "settings.language": "Langue",
+    "settings.desktop": "Mode PC de bureau",
+    "settings.desktop.desc": "Active des contrôles séparés pour le CPU, la carte graphique dédiée et les ventilateurs sur ce PC Linux. Démarre en mode Libre et ne modifie rien tant que vous n'avez pas choisi de mode.",
+    "settings.desktop.auto.desc": "Activé automatiquement sur ce PC de bureau. Le mode Libre ne touche ni au matériel ni au firmware.",
+    "settings.telemetry": "Apprendre de mon utilisation",
+    "settings.tdpcontrol": "Contrôler le TDP",
+    "settings.tdpcontrol.desc": "Laissez le Centre de contrôle gérer le TDP. Désactivez cette option pour passer la main à un autre gestionnaire (SimpleDeckyTDP, par exemple) : le Centre de contrôle ne touche plus au TDP et se contente de le surveiller.",
+    "settings.battmax": "Maximum sur batterie",
+    "settings.battmax.desc": "Permet de monter le TDP jusqu'au maximum de l'appareil, même sur batterie. Plus de puissance, mais la batterie se vide bien plus vite.",
+    "settings.cooler": "Refroidisseur externe branché",
+    "settings.cooler.desc": "Uniquement avec le refroidisseur ou la batterie externe branchés : le plafond de TDP monte jusqu'à {max} W. Ne l'activez pas sans refroidisseur : l'appareil surchaufferait.",
+    "settings.cooler.charger.desc": "Uniquement avec le refroidisseur externe et le chargeur branchés : autorise jusqu'à {max} W. Les préréglages et l'Auto-TDP restent plafonnés à {safe} W. Ne l'activez pas sans refroidisseur : l'appareil surchaufferait.",
+    "settings.experimentalTdp": "Débloquer {max} W (expérimental)",
+    "settings.experimentalTdp.desc": "Sur secteur et en contrôle manuel uniquement. Le fabricant annonce jusqu'à {safe} W ; {max} W n'est pas validé officiellement et peut faire chauffer davantage.",
+    "settings.experimentalTdp.applyFailed": "Impossible de confirmer le changement de puissance. L'état précédent est conservé ; réessayez avant de débrancher le secteur.",
+    "settings.experimentalTdp.confirm.title": "Puissance hors plage officielle",
+    "settings.experimentalTdp.confirm.desc": "Vous allez autoriser jusqu'à {max} W sur secteur, au-delà des {safe} W annoncés par le fabricant. Surveillez les températures et désactivez l'option si l'appareil ne parvient pas à les contenir. L'Auto-TDP et les préréglages resteront limités à {safe} W.",
+    "settings.experimentalTdp.confirm.ok": "J'ai compris, débloquer",
+    "settings.experimentalTdp.confirm.cancel": "Annuler",
+    "settings.qamboost": "Augmenter le TDP avec le menu ouvert",
+    "settings.qamboost.desc": "Augmente le TDP tant que le menu d'accès rapide est ouvert, pour qu'il reste fluide. La valeur affichée ne vaut que pour le menu ; elle est réajustée en jeu.",
+    "settings.qamShortcut": "Configurer le QAM",
+    "settings.qamShortcut.desc": "Choisissez les entrées Steam à afficher et les vues complètes du Centre de contrôle à épingler.",
+    "settings.valueToast": "Afficher la valeur en réglant le volume ou la luminosité",
+    "settings.valueToast.desc": "Affiche la valeur à l'écran quand vous utilisez les boutons, sans ouvrir le Centre de contrôle.",
+    "valueToast.volume": "Volume",
+    "valueToast.brightness": "Luminosité",
+    "tdp.unsupported": "Le contrôle du TDP n'est pas disponible sur cet appareil.",
+    "tdp.scope.global": "Global",
+    "tdp.scope.game": "Jeu",
+    "tdp.inherit": "Hérite du réglage global",
+    "tdp.zone.save": "Repos",
+    "tdp.zone.eco": "Économie",
+    "tdp.zone.balanced": "Équilibré",
+    "tdp.zone.hot": "Élevé",
+    "tdp.zone.turbo": "Turbo",
+    "tdp.preset.save": "Économie",
+    "tdp.preset.balanced": "Équilibré",
+    "tdp.preset.turbo": "Turbo",
+    "tdp.presets.manage.title": "Préréglages de puissance",
+    "tdp.presets.edit": "Modifier",
+    "tdp.presets.doneEdit": "Terminé",
+    "tdp.presets.manage": "Ajouter / modifier",
+    "tdp.presets.add": "Ajouter un préréglage",
+    "tdp.presets.name": "Nom",
+    "tdp.presets.delete": "Supprimer",
+    "tdp.presets.delete.title": "Supprimer ce préréglage ?",
+    "tdp.presets.delete.desc": "Il sera retiré de votre liste de préréglages.",
+    "tdp.presets.delete.cancel": "Annuler",
+    "tdp.presets.hidden": "Préréglages masqués",
+    "tdp.presets.boost.none": "Sans boost",
+    "tdp.reset.default": "Revenir à la valeur par défaut ({w} W)",
+    "tdp.reset.default.level": "Revenir au niveau par défaut ({w})",
+    "tdp.level.value": "Niveau {level}",
+    "tdp.target.label": "Ce que règle le cadran",
+    "tdp.target.cpu": "CPU",
+    "tdp.target.gpu": "GPU",
+    "tdp.target.link": "Lier CPU et GPU",
+    "tdp.target.unlink": "Séparer CPU et GPU",
+    "tdp.split.summary": "CPU {cpu} · GPU {gpu}",
+    "tdp.level.inline": "niveau {level}",
+    "tdp.fwmode.low-power": "Silencieux",
+    "tdp.fwmode.balanced": "Équilibré",
+    "tdp.fwmode.performance": "Performances",
+    "tdp.fwmode.active": "Dans ce mode, le firmware gère la puissance et le ventilateur. Déplacez le curseur pour personnaliser.",
+    "tdp.fwmode.custom": "Mode personnalisé : réglez la puissance avec le curseur.",
+    "tdp.boost.title": "Boost",
+    "tdp.boost.mode.estable": "Stable",
+    "tdp.boost.mode.auto": "Auto",
+    "tdp.boost.mode.custom": "Personnalisé",
+    "tdp.boost.hint.estable": "Sans boost supplémentaire : la puissance reste aussi basse que le permet votre appareil.",
+    "tdp.boost.hint.auto": "Le système ajoute une marge de boost dans les limites du firmware.",
+    "tdp.boost.hint.custom": "Réglez manuellement les marges SPPT et FPPT.",
+    "tdp.deckPpt.title": "Boost de puissance",
+    "tdp.deckPpt.experimental": "Expérimental",
+    "tdp.deckPpt.off": "Désactivé",
+    "tdp.deckPpt.hint": "Le Steam Deck utilise ces limites de boost quand la charge de travail l'exige.",
+    "tdp.deckPpt.applied": "Appliqué : SlowPPT {slow} W · FastPPT {fast} W",
+    "tdp.deckPpt.biosRequired": "Au-delà de 15 W, un BIOS modifié est requis",
+    "tdp.level.slow": "Boost lent (SPPT)",
+    "tdp.level.fast": "Boost rapide (FPPT)",
+    "steam.performance.title": "Performances de Steam",
+    "steam.performance.group.display": "Écran",
+    "steam.performance.group.fluidity": "Fluidité",
+    "steam.performance.group.scaling": "Mise à l'échelle",
+    "steam.performance.loading": "Vérification de Steam…",
+    "steam.performance.synced": "Synchronisé avec Steam",
+    "steam.performance.partial": "Certains contrôles de Steam ne sont pas disponibles dans cette session.",
+    "steam.performance.unavailable": "Steam ne propose pas ces contrôles dans cette session.",
+    "tdp.auto.ui_floor": "TDP relevé pour un menu fluide · réajusté en jeu",
+    "tdp.lowBatteryHold.title": "Maintenir le TDP sur batterie faible",
+    "tdp.lowBatteryHold.experimental": "Expérimental",
+    "tdp.lowBatteryHold.hint": "Conserve la valeur choisie quand la batterie descend à 20 % ou moins, et même sur chargeur si le système continue de la limiter.",
+    "tdp.ceiling.battery": "Maximum sur batterie : {max} W. Branchez le chargeur pour aller plus haut.",
+    "tdp.ceiling.charger": "Maximum de l'appareil : {max} W.",
+    "tdp.extra.label": "Extra",
+    "tdp.extra.requested": "{w} W demandés",
+    "tdp.extra.high": "Au-delà de {max} W, c'est le firmware qui décide : le Centre de contrôle le demande, mais le système peut refuser.",
+    "tdp.extra.highAccessory": "Au-delà de {max} W, c'est le firmware qui décide et il peut refuser. Si votre appareil a besoin d'un refroidissement externe, branchez-le.",
+    "tdp.extra.low": "En dessous de {min} W, c'est le firmware qui décide : le Centre de contrôle le demande, mais le système peut refuser.",
+    "tdp.ownership.constrained": "L'appareil limite la puissance à {applied} W pour le moment.",
+    "tdp.ownership.powerLimited": "L'appareil limite la puissance à {applied} W avec cette alimentation.",
+    "tdp.ownership.minimum": "L'appareil ne descend pas sous {applied} W.",
+    "tdp.ownership.rejectedUnknown": "L'appareil n'accepte pas cette valeur pour le moment.",
+    "tdp.ownership.conflict": "Quelque chose modifie la limite de puissance de l'appareil.",
+    "tdp.ownership.rejected": "L'appareil n'accepte pas {target} W pour le moment. Il reste à {applied} W.",
+    "tdp.ownership.rejectedNoValue": "L'appareil n'accepte pas {target} W pour le moment.",
+    "tdp.ownership.overshootUnresolved": "L'appareil ne respecte pas la limite de {target} W.",
+    "tdp.arc.auto": "AUTO",
+    "tdp.arc.overclocked": "OVERCLOCK",
+    "tdp.arc.target": "CIBLE",
+    "tdp.arc.boostHw": "boost HW",
+    "tdp.dial.battery": "Batterie",
+    "tdp.dial.performance": "Performances",
+    "tdp.learned.band": "Appris : {lo}–{hi} W",
+    "tdp.learned.learning.title": "Apprentissage de la consommation de votre jeu…",
+    "tdp.suggest.title": "Appris : ce jeu tourne entre {lo} et {hi} W",
+    "tdp.suggest.value": "{w} W",
+    "tdp.suggest.apply": "Appliquer {w} W",
+    "tdp.monitor.notice": "Contrôle du TDP désactivé · surveillance seule",
+    "tdp.monitor.reactivate": "Réactiver le contrôle du TDP",
+    "tdp.conflict.take.title": "Prendre la main sur le TDP",
+    "tdp.conflict.take.body": "D'autres gestionnaires de TDP tournent en même temps. Pour que vos jeux fonctionnent bien, un seul doit garder la main.",
+    "tdp.conflict.take.confirm": "Les désactiver et prendre la main",
+    "tdp.conflict.take.later": "Pas maintenant",
+    "tdp.conflict.take.fine": "Réversible. Ne s'affiche qu'une fois.",
+    "tdp.charger.title": "Problème de chargeur détecté",
+    "tdp.charger.desc": "L'alimentation s'est coupée puis rétablie {n} fois en peu de temps. Le chargeur, le câble ou le port USB-C peut être en cause. Tant que cela dure, le TDP et la charge peuvent varier. Essayez un autre câble ou chargeur.",
+    "tdp.charger.dismiss": "Compris",
+    "tdp.conflict.card.title": "D'autres gestionnaires de TDP sont actifs",
+    "tdp.conflict.card.desc": "Ils se marchent dessus et le TDP fluctue. Laissez le Centre de contrôle seul aux commandes.",
+    "tdp.conflict.card.desc.powerstation": "Deux gestionnaires ne peuvent pas contrôler le TDP en même temps : chacun écrase sans cesse les réglages de l'autre.",
+    "tdp.conflict.sdtdp": "SimpleDeckyTDP",
+    "tdp.conflict.sdtdp.desc": "Autre plugin · modifie le TDP",
+    "tdp.conflict.hhd": "Handheld Daemon",
+    "tdp.conflict.hhd.desc": "Gère le TDP du système",
+    "tdp.conflict.powerstation": "PowerStation",
+    "tdp.conflict.powerstation.desc": "PowerStation et le Centre de contrôle tentent d'imposer les mêmes limites de puissance.",
+    "tdp.conflict.powerstation.disablePdc": "Désactiver le TDP du Centre de contrôle",
+    "tdp.conflict.disable": "Désactiver",
+    "tdp.conflict.cede": "Confier au Centre de contrôle",
+    "tdp.auto.title": "Auto‑TDP",
+    "tdp.auto.title.level": "Performances automatiques",
+    "tdp.auto.experimental": "Expérimental",
+    "tdp.auto.toggle": "Réglage automatique",
+    "tdp.auto.hint": "Maintient vos FPS avec juste la puissance nécessaire, sans à-coups.",
+    "tdp.auto.scope.global": "Global",
+    "tdp.auto.target.label": "FPS cible",
+    "tdp.auto.target.hint": "Réglez la même limite de FPS dans le jeu.",
+    "tdp.auto.initial.label": "TDP de départ",
+    "tdp.auto.initial.label.level": "Niveau de départ",
+    "tdp.auto.range.title": "Plage automatique",
+    "tdp.auto.range.min": "Minimum",
+    "tdp.auto.range.max": "Maximum",
+    "tdp.auto.range.constrained": "L'appareil autorise actuellement {min}–{max} W.",
+    "tdp.auto.range.constrained.level": "L'appareil autorise actuellement les niveaux {min} à {max}.",
+    "tdp.auto.initial.hint": "C'est le point de départ. La valeur enregistrée ne change pas pendant que vous jouez.",
+    "tdp.auto.status.warming": "Préparation · {watts}",
+    "tdp.auto.status.holding": "Maintien à {fps} FPS · {watts}",
+    "tdp.auto.status.optimizing": "Ajustement en douceur · {fps} FPS · {watts}",
+    "tdp.auto.status.recovering": "Retour des performances · {fps} FPS · {watts}",
+    "tdp.auto.status.waiting_game": "S'activera au lancement d'un jeu",
+    "tdp.auto.status.awaiting_gameplay": "En attente de la partie · {watts}",
+    "tdp.auto.status.load_shift": "Charge réduite · maintien à {watts}",
+    "tdp.auto.status.paused_menu": "Menu ouvert · maintien à {watts}",
+    "tdp.auto.status.paused_menu_stable": "Menu ouvert · puissance stable",
+    "tdp.auto.status.paused_signal": "En attente d'une mesure fiable des FPS · {watts}",
+    "tdp.auto.status.paused_control": "En pause jusqu'au retour du contrôle de la puissance · {watts}",
+    "tdp.auto.status.paused": "En pause · {watts}",
+    "tdp.auto.learned_start": "Point de départ appris : {watts} W pour ce jeu à {fps} FPS.",
+    "tdp.auto.learned_start.level": "Point de départ appris : niveau {watts} pour ce jeu à {fps} FPS.",
+    "tdp.autotdp.title": "Votre Auto‑TDP",
+    "tdp.autotdp.p1": "Choisissez les FPS à maintenir et réglez la même limite dans le jeu.",
+    "tdp.autotdp.p2": "Il part de votre TDP de départ ou d'une valeur fiable déjà apprise pour ce jeu.",
+    "tdp.autotdp.p3": "Il ne baisse que de 1 W à la fois quand tout est stable, et remonte aussitôt si besoin.",
+    "tdp.autotdp.p2.level": "Il part de votre niveau de départ ou d'un niveau fiable déjà appris pour ce jeu.",
+    "tdp.autotdp.p3.level": "Il ne descend que d'un niveau à la fois quand tout est stable, et remonte aussitôt si besoin.",
+    "tdp.autotdp.confirm": "Activer l'Auto‑TDP",
+    "tdp.autotdp.cancel": "Pas maintenant",
+    "tdp.autotdp.once": "Ce message ne s'affichera plus.",
+    "settings.reset": "Effacer l'apprentissage",
+    "settings.reset.confirm": "Appuyez à nouveau pour effacer",
+    "settings.reset.done": "Apprentissage effacé",
+    "settings.reset.desc": "Reprend l'apprentissage à zéro (TDP et ventilateurs). Vos profils et courbes manuelles restent intacts.",
+    "settings.madeBy": "Créé par {name}",
+    "desktop.power.title": "CPU et carte graphique",
+    "desktop.power.metrics": "Mesures de la carte graphique",
+    "desktop.power.available": "Limite GPU",
+    "desktop.power.range": "Plage confirmée : {min}–{max} W",
+    "desktop.mode.free": "Libre",
+    "desktop.mode.silent": "Silencieux",
+    "desktop.mode.balanced": "Équilibré",
+    "desktop.mode.performance": "Performances",
+    "desktop.cpu.limit": "Limite du processeur (W)",
+    "desktop.cpu.policy": "Stratégie CPU",
+    "desktop.cpu.policy.low-power": "Économie d'énergie",
+    "desktop.cpu.policy.balanced": "Équilibrée",
+    "desktop.cpu.policy.performance": "Performances",
+    "desktop.gpu.limit": "Limite GPU",
+    "desktop.cpu.draw": "Consommation CPU",
+    "desktop.gpu.draw": "Consommation GPU",
+    "desktop.gpu.clock": "Fréquence GPU",
+    "desktop.vram": "Mémoire vidéo",
+    "desktop.power.partial": "Seuls les réglages dont la lecture et l'écriture sont confirmées par le système sont affichés.",
+    "desktop.power.free.note": "Libre rend au système le contrôle du CPU et de la carte graphique.",
+    "desktop.migration.title": "Rétablissement du contrôle précédent",
+    "desktop.migration.desc": "La puissance ne sera pas modifiée tant que le CPU et la carte graphique n'auront pas retrouvé l'état qu'ils avaient avant la détection de cette machine.",
+    "desktop.unavailable.title": "Impossible de lire l'état de la puissance",
+    "desktop.unavailable.desc": "Les réglages restent masqués pour ne rien modifier sans connaître l'état réel de la machine.",
+    "desktop.recovery.retry": "Réessayer maintenant",
+    "desktop.metric.idle": "Au repos",
+    "desktop.metric.unavailable": "Indisponible",
+    "desktop.metric.noSensor": "Aucun capteur",
+    "desktop.fan.system": "Ventilateur système",
+    "desktop.fan.gpu": "Ventilateur de la carte graphique",
+    "desktop.fan.channel.system": "Système",
+    "desktop.fan.channel.gpu": "Carte graphique",
+    "desktop.fan.summary": "{rpm} · {sensor}",
+    "desktop.fan.auto.note": "Automatique rend ce ventilateur à son gestionnaire précédent ou au firmware.",
+    "desktop.fan.firmwareOnly": "Ce firmware refuse le mode manuel pour la carte graphique : le ventilateur est surveillé et reste en automatique.",
+    "desktop.fan.manual.subtitle": "Choisissez un point et réglez ses valeurs à la manette.",
+    "desktop.fan.manual.point": "Point {point}",
+    "desktop.fan.manual.temperature": "Température",
+    "desktop.fan.manual.speed": "Vitesse",
+    "desktop.fan.manual.save": "Enregistrer la courbe",
+    "desktop.fan.manual.saving": "Enregistrement…",
+    "desktop.fan.manual.saveError": "Impossible d'enregistrer la courbe. Réessayez.",
+    "desktop.fan.manual.unavailable": "Ce ventilateur n'accepte plus le réglage manuel.",
+    "glossary.button": "Glossaire",
+    "glossary.button.desc": "TDP, FSR, RDNA… Ça ne vous dit rien ? Tout est expliqué simplement ici.",
+    "glossary.title": "Glossaire",
+    "glossary.intro": "Le sens de tout ce jargon que vous croisez en jouant.",
+    "customize.button": "Personnaliser l'interface",
+    "customize.button.desc": "Réorganisez ou masquez onglets et blocs à votre guise.",
+    "gameProfiles.button": "Profils par jeu",
+    "gameProfiles.button.desc": "Voyez ce que vous avez réglé pour chaque jeu et revenez au réglage global.",
+    "gameProfiles.title": "Profils par jeu",
+    "gameProfiles.desc": "Les réglages enregistrés pour chaque jeu, par section. Vous pouvez réinitialiser un jeu pour qu'il reprenne la configuration globale.",
+    "gameProfiles.empty": "Aucun jeu configuré pour l'instant. Modifiez un réglage pendant une partie et il apparaîtra ici.",
+    "gameProfiles.uninstalled": "non installé",
+    "gameProfiles.followsGlobal": "suit le réglage global",
+    "gameProfiles.reset": "Revenir au réglage global",
+    "gameProfiles.resetConfirm": "Appuyez à nouveau pour effacer",
+    "gameProfiles.sec.tdp": "Puissance",
+    "gameProfiles.sec.fan": "Ventilateurs",
+    "gameProfiles.sec.color": "Couleur",
+    "gameProfiles.sec.cpu": "CPU",
+    "gameProfiles.sec.gpu": "GPU",
+    "gameProfiles.sec.mandos": "Manettes",
+    "gameProfiles.sec.audio": "Son",
+    "gameProfiles.audioCustom": "Courbe personnalisée",
+    "gameProfiles.auto": "auto",
+    "gameProfiles.calibrated": "calibré",
+    "gameProfiles.boost": "turbo",
+    "gameProfiles.sat": "sat. {v}",
+    "gameProfiles.cores": "Cœurs : {n}",
+    "gameProfiles.buttons": "Boutons : {n}",
+    "customize.title": "Personnaliser",
+    "customize.home": "Vue principale",
+    "customize.home.desc": "Choisissez comment naviguer dans le Centre de contrôle.",
+    "customize.home.dashboard": "Tableau de bord",
+    "customize.home.tabs": "Onglets",
+    "customize.deviceHeader": "Afficher les infos de l'appareil",
+    "customize.deviceHeader.desc": "Affiche un résumé compact de l'appareil sous le titre.",
+    "customize.qam.title": "Raccourcis du QAM",
+    "customize.qam.desc": "Combinez, réorganisez et masquez les entrées de Steam, ou épinglez des vues complètes du Centre de contrôle. Decky reste toujours disponible.",
+    "customize.qam.native": "Steam",
+    "customize.qam.native.friends": "Amis",
+    "customize.qam.native.soundtracks": "Bandes originales",
+    "customize.qam.native.help": "Aide",
+    "customize.qam.native.notifications": "Notifications",
+    "customize.qam.native.performance": "Performances",
+    "customize.qam.native.quickSettings": "Paramètres rapides",
+    "customize.qam.decky": "Decky",
+    "customize.qam.protected": "Toujours disponible",
+    "customize.qam.pin": "Épingler",
+    "customize.qam.unpin": "Désépingler",
+    "customize.qam.applied": "Appliqué instantanément",
+    "customize.qam.restart": "Rechargez Decky pour appliquer les modifications enregistrées.",
+    "customize.qam.restartButton": "Recharger Decky",
+    "customize.qam.unavailable": "Impossible de modifier le QAM. Le Centre de contrôle reste disponible dans Decky.",
+    "customize.qam.destinationUnavailable": "Cette vue n'est plus disponible avec la configuration actuelle.",
+    "customize.qam.loading": "Lecture des entrées actuelles du QAM…",
+    "customize.qam.reset": "Restaurer le QAM",
+    "customize.accent": "Couleur d'accentuation",
+    "customize.accentHint": "Par défaut, la couleur du thème actif est utilisée s'il en propose une.",
+    "accent.default": "Par défaut",
+    "accent.blue": "Bleu",
+    "accent.sky": "Ciel",
+    "accent.cyan": "Cyan",
+    "accent.teal": "Turquoise",
+    "accent.mint": "Menthe",
+    "accent.green": "Vert",
+    "accent.lime": "Vert citron",
+    "accent.yellow": "Jaune",
+    "accent.amber": "Ambre",
+    "accent.orange": "Orange",
+    "accent.red": "Rouge",
+    "accent.rose": "Framboise",
+    "accent.pink": "Rose",
+    "accent.fuchsia": "Fuchsia",
+    "accent.purple": "Violet",
+    "accent.indigo": "Indigo",
+    "customize.reset": "Rétablir les valeurs par défaut",
+    "customize.show": "Afficher",
+    "customize.hide": "Masquer",
+    "customize.moveUp": "Monter",
+    "customize.moveDown": "Descendre",
+    "customize.block.fanRpm": "Ventilateurs",
+    "customize.block.temps": "Températures",
+    "customize.block.color": "Couleur",
+    "customize.block.manager": "État de la manette",
+    "customize.appearance": "Apparence",
+    "customize.reorder": "Réorganiser",
+    "customize.reorder.done": "Terminé",
+    "customize.state.background": "En arrière-plan",
+    "customize.state.disabled": "Désactivé",
+    "customize.state.blocked": "Indisponible",
+    "customize.enable": "Activer",
+    "customize.disable": "Désactiver",
+    "customize.disable.title": "Désactiver {name} ?",
+    "customize.disable.body": "Cette fonction sera désactivée dans tout le Centre de contrôle, pas seulement ici. Elle restera inactive jusqu'à ce que vous la réactiviez.",
+    "customize.disable.chargeLimit.body": "Le Centre de contrôle cessera de gérer la limite et le système en reprendra le contrôle. Votre réglage est conservé et sera restauré à la réactivation du module.",
+    "customize.disable.hint": "Vous voulez simplement ne plus le voir ici ? Masquez-le plutôt : il continue de fonctionner, il n'apparaît juste plus à cet endroit.",
+    "customize.disable.hide": "Plutôt le masquer ici",
+    "customize.disable.cancel": "Annuler",
+    "customize.module.learning.desc": "Apprend de votre utilisation pour suggérer des courbes et un TDP.",
+    "customize.module.learning.blocked": "Activez Puissance ou Ventilateurs pour permettre l'apprentissage.",
+    "customize.views.title": "Vues personnalisées",
+    "customize.views.cardDesc": "Vue personnalisée",
+    "customize.views.new": "Nouvelle vue",
+    "customize.views.none": "Créez votre propre onglet avec les blocs de votre choix.",
+    "customize.views.reorderHint": "Réorganisez et masquez vos vues avec les autres onglets, plus haut.",
+    "customize.views.tag": "Personnalisée",
+    "customize.views.name": "Nom",
+    "customize.views.namePlaceholder": "Ma vue",
+    "customize.views.icon": "Icône",
+    "customize.views.blocks": "Blocs de la vue",
+    "customize.views.add": "Ajouter des blocs",
+    "customize.views.empty": "Aucun bloc pour l'instant. Ajoutez-en ci-dessous.",
+    "customize.views.done": "Enregistrer",
+    "customize.views.delete": "Supprimer la vue",
+    "customize.views.deleteConfirm": "Appuyez à nouveau pour supprimer",
+    "customize.block.tdp": "Contrôle du TDP",
+    "report.button": "Envoyer un rapport",
+    "report.button.desc": "Un problème, ou une fonction qui vous manque ? Dites-le-moi, j'y joindrai le contexte technique.",
+    "report.unvalidated.note": "Je n'ai pas encore cette machine entre les mains. Je fais de mon mieux pour la prendre en charge, et vos rapports m'aident énormément à l'améliorer.",
+    "report.title": "Envoyer un rapport",
+    "report.intro": "Cochez ce qui ne va pas et décrivez ce que vous voyez. Les infos techniques sont récupérées automatiquement.",
+    "report.intro.feature": "Ce n'est pas un rapport de bug. Dites-moi ce que vous aimeriez voir ajouté ou amélioré ; je récupérerai aussi le contexte technique de votre appareil.",
+    "report.section.kind": "Que voulez-vous envoyer ?",
+    "report.kind.bug": "Un problème",
+    "report.kind.feature": "Une demande ou une idée",
+    "report.kind.change": "Changer",
+    "report.section.what": "Qu'est-ce qui ne va pas ?",
+    "report.section.what.feature": "Quelle partie est concernée ?",
+    "report.cat.tdp": "Réglage du TDP",
+    "report.cat.auto_tdp": "TDP automatique",
+    "report.cat.cpu_gpu": "Contrôle CPU et GPU",
+    "report.cat.hud": "HUD de performances",
+    "report.cat.fans": "Courbe de ventilation",
+    "report.cat.display": "Couleur de l'écran",
+    "report.cat.controllers": "Manettes",
+    "report.cat.battery": "Batterie / charge",
+    "report.cat.system": "Luminosité / volume / système",
+    "report.cat.audio": "Son / égaliseur",
+    "report.cat.launch": "Options de lancement",
+    "report.cat.themes": "Thèmes",
+    "report.cat.other": "Autre",
+    "report.section.describe": "Racontez-moi ce qui s'est passé (obligatoire)",
+    "report.section.describe.feature": "Dites-moi ce que vous aimeriez (obligatoire)",
+    "report.describe.hint": "Sans description, impossible de savoir ce qui ne va pas. Dites-moi ce que vous attendiez et ce qui s'est passé.",
+    "report.describe.hint.feature": "Expliquez ce que vous voulez obtenir, en quoi ça vous aiderait et, si possible, donnez un exemple.",
+    "report.privacy.title": "Ce qui est envoyé · ce qui est public",
+    "report.privacy.public": "Public : le rapport n'affiche qu'un résumé (modèle, version, catégories et votre texte).",
+    "report.privacy.private": "Privé : les journaux et l'état complet ne sont PAS publics ; ils sont chiffrés et seul Hooandee peut les consulter.",
+    "report.privacy.nopii": "Aucune donnée personnelle · contexte technique uniquement.",
+    "report.send": "Créer et envoyer le rapport",
+    "report.sending": "Envoi…",
+    "report.done.title": "Rapport envoyé !",
+    "report.done.thanks": "Merci. J'ai tout ce qu'il faut pour enquêter.",
+    "report.done.thanks.feature": "Merci. J'ai bien reçu votre demande et le contexte technique pour l'étudier.",
+    "report.code.label": "Code de votre rapport",
+    "report.code.hint": "Conservez-le. Si vous m'écrivez à propos de ce problème, donnez-moi ce code et je le retrouverai aussitôt (aucun compte nécessaire).",
+    "report.code.hint.feature": "Conservez-le. Si vous m'écrivez à propos de cette demande, donnez-moi ce code et je la retrouverai aussitôt (aucun compte nécessaire).",
+    "report.copy": "Copier le code",
+    "report.copied": "Copié !",
+    "report.close": "Fermer",
+    "report.error.title": "Échec de l'envoi (pas de connexion ?).",
+    "report.error.saved": "J'ai enregistré le rapport dans {path}. Vous pouvez me l'envoyer vous-même.",
+    "report.retry": "Réessayer",
+};
+
 const LANGUAGE_OPTIONS = [
     { data: "es", label: "Español" },
     { data: "en", label: "English" },
     { data: "it", label: "Italiano" },
     { data: "de", label: "Deutsch" },
     { data: "pt-BR", label: "Português (Brasil)" },
+    { data: "fr", label: "Français" },
 ];
 const SUPPORTED_LANGUAGES = LANGUAGE_OPTIONS.map(({ data }) => data);
 
@@ -4854,6 +6356,8 @@ const es = {
     "kiosk.header.temp": "Temp.",
     "kiosk.perf.auto": "Auto",
     "kiosk.perf.custom": "Personalizado",
+    "kiosk.perf.linked": "Unidas",
+    "kiosk.perf.split": "Separadas",
     "kiosk.perf.autoNote": "El objetivo de FPS está ajustando la potencia. Ponlo en Libre para elegirla a mano.",
     "kiosk.unavailable": "No disponible",
     "kiosk.fps.target": "Objetivo",
@@ -5268,7 +6772,7 @@ const es = {
     "themes.loading": "Comprobando CSS Loader…",
     "themes.recovery.blocked": "La recuperación de temas está bloqueada. No se aplicarán cambios hasta que la comprobación termine correctamente.",
     "themes.recovery.keptCurrent": "No se pudo recuperar el estado anterior de los temas. Se mantiene el actual.",
-    "themes.engine": "Panel instala paquetes de tema verificados. CSS Loader los inyecta y conserva su activación y ajustes compatibles.",
+    "themes.engine": "Temas verificados, listos para instalar.",
     "themes.cssLoader.missing": "Para instalar y usar temas necesitas CSS Loader. Instálalo desde la tienda de Decky y después pulsa «Comprobar de nuevo».",
     "themes.cssLoader.disabled": "CSS Loader está instalado, pero desactivado. Actívalo desde Decky y vuelve a intentarlo.",
     "themes.cssLoader.error": "No se ha podido comprobar CSS Loader de forma segura.",
@@ -5344,6 +6848,13 @@ const es = {
     "themes.action.deactivate": "Desactivar tema",
     "themes.action.deactivating": "Desactivando…",
     "themes.action.install": "Instalar tema",
+    "themes.early.badge": "Early",
+    "themes.early.title": "Acceso anticipado",
+    "themes.early.version": "Versión early: {version}",
+    "themes.early.desc": "Instala el .zip de la versión early que hayas descargado. Panel solo acepta archivos publicados por el autor.",
+    "themes.early.install": "Instalar desde archivo",
+    "themes.early.rejected": "Ese archivo no es una versión early publicada de este tema.",
+    "themes.early.unavailable": "Esta versión early necesita una versión más reciente de Panel.",
     "themes.action.installing": "Instalando…",
     "themes.action.delete": "Eliminar tema",
     "themes.action.deleting": "Eliminando…",
@@ -5461,6 +6972,11 @@ const es = {
     "params.advanced": "Avanzado",
     "params.showCommand": "Ver el comando",
     "params.off": "Desactivado",
+    "params.fsr4.loading": "Comprobando compatibilidad de Proton…",
+    "params.fsr4.missing": "No se ha podido identificar la instalación de Proton. Selecciona una versión compatible en las propiedades del juego.",
+    "params.fsr4.error": "No se pudo comprobar la compatibilidad de Proton. Vuelve a abrir el editor para intentarlo de nuevo.",
+    "params.fsr4.unsupported": "No se ha detectado soporte para FSR 4 en esta versión de Proton.",
+    "params.fsr4.unavailable": "No disponible",
     "params.notInstalled": "no instalado",
     // Subcategorías
     "params.sub.perf": "Rendimiento",
@@ -5693,6 +7209,11 @@ const es = {
     "gpu.clock.min": "Mínimo",
     "gpu.clock.max": "Máximo",
     "gpu.clock.rejected": "No aplicado; el resumen muestra la lectura real.",
+    "gpu.clock.capped": "Tope {mhz} MHz",
+    "gpu.clock.powerLevel": "Nivel de Potencia",
+    "gpu.clock.powerLevel.own": "{level} · propio",
+    "gpu.clock.powerLevel.linked": "{level} · igual que la CPU",
+    "gpu.clock.managed": "Lo marca Potencia. Se ajusta allí con la pestaña GPU, encima del dial.",
     "learning.title": "Aprendiendo de {name}",
     "learning.active": "Aprendiendo",
     "learning.tag.tdp": "TDP",
@@ -5881,6 +7402,12 @@ const es = {
     "tdp.reset.default": "Restablecer al valor predeterminado ({w} W)",
     "tdp.reset.default.level": "Restablecer al nivel predeterminado ({w})",
     "tdp.level.value": "Nivel {level}",
+    "tdp.target.label": "Qué mueve el dial",
+    "tdp.target.cpu": "CPU",
+    "tdp.target.gpu": "GPU",
+    "tdp.target.link": "Unir CPU y GPU",
+    "tdp.target.unlink": "Separar CPU y GPU",
+    "tdp.split.summary": "CPU {cpu} · GPU {gpu}",
     "tdp.level.inline": "nivel {level}",
     "tdp.fwmode.low-power": "Silencioso",
     "tdp.fwmode.balanced": "Equilibrado",
@@ -6272,6 +7799,8 @@ const en = {
     "kiosk.header.temp": "Temp",
     "kiosk.perf.auto": "Auto",
     "kiosk.perf.custom": "Custom",
+    "kiosk.perf.linked": "Linked",
+    "kiosk.perf.split": "Split",
     "kiosk.perf.autoNote": "The FPS target is adjusting power. Set it to Free to choose it by hand.",
     "kiosk.unavailable": "Unavailable",
     "kiosk.fps.target": "Target",
@@ -6686,7 +8215,7 @@ const en = {
     "themes.loading": "Checking CSS Loader…",
     "themes.recovery.blocked": "Theme recovery is blocked. No changes will be applied until the check completes successfully.",
     "themes.recovery.keptCurrent": "The previous theme state couldn't be restored. The current one was kept.",
-    "themes.engine": "Panel installs verified theme packages. CSS Loader injects them and preserves activation and compatible settings.",
+    "themes.engine": "Verified themes, ready to install.",
     "themes.cssLoader.missing": "You need CSS Loader to install and use themes. Install it from the Decky Store, then select “Check again”.",
     "themes.cssLoader.disabled": "CSS Loader is installed but disabled. Enable it in Decky and try again.",
     "themes.cssLoader.error": "CSS Loader could not be checked safely.",
@@ -6762,6 +8291,13 @@ const en = {
     "themes.action.deactivate": "Deactivate theme",
     "themes.action.deactivating": "Deactivating…",
     "themes.action.install": "Install theme",
+    "themes.early.badge": "Early",
+    "themes.early.title": "Early access",
+    "themes.early.version": "Early version: {version}",
+    "themes.early.desc": "Install the early build .zip you downloaded. Panel only accepts files published by the author.",
+    "themes.early.install": "Install from file",
+    "themes.early.rejected": "That file is not a published early build of this theme.",
+    "themes.early.unavailable": "This early build needs a newer Panel.",
     "themes.action.installing": "Installing…",
     "themes.action.delete": "Remove theme",
     "themes.action.deleting": "Removing…",
@@ -6880,6 +8416,11 @@ const en = {
     "params.advanced": "Advanced",
     "params.showCommand": "Show the command",
     "params.off": "Off",
+    "params.fsr4.loading": "Checking Proton compatibility…",
+    "params.fsr4.missing": "The Proton installation could not be identified. Select a compatible version in the game’s properties.",
+    "params.fsr4.error": "Proton compatibility could not be checked. Reopen the editor to try again.",
+    "params.fsr4.unsupported": "FSR 4 support was not detected in this version of Proton.",
+    "params.fsr4.unavailable": "Unavailable",
     "params.notInstalled": "not installed",
     // Subgroups
     "params.sub.perf": "Performance",
@@ -7112,6 +8653,11 @@ const en = {
     "gpu.clock.min": "Minimum",
     "gpu.clock.max": "Maximum",
     "gpu.clock.rejected": "Not applied; the summary shows the live readback.",
+    "gpu.clock.capped": "Capped at {mhz} MHz",
+    "gpu.clock.powerLevel": "Power level",
+    "gpu.clock.powerLevel.own": "{level} · own",
+    "gpu.clock.powerLevel.linked": "{level} · same as CPU",
+    "gpu.clock.managed": "Set by Power. Adjust it there with the GPU tab above the dial.",
     "learning.title": "Learning from {name}",
     "learning.active": "Learning",
     "learning.tag.tdp": "TDP",
@@ -7300,6 +8846,12 @@ const en = {
     "tdp.reset.default": "Reset to default ({w} W)",
     "tdp.reset.default.level": "Reset to default level ({w})",
     "tdp.level.value": "Level {level}",
+    "tdp.target.label": "What the dial moves",
+    "tdp.target.cpu": "CPU",
+    "tdp.target.gpu": "GPU",
+    "tdp.target.link": "Link CPU and GPU",
+    "tdp.target.unlink": "Split CPU and GPU",
+    "tdp.split.summary": "CPU {cpu} · GPU {gpu}",
     "tdp.level.inline": "level {level}",
     "tdp.fwmode.low-power": "Quiet",
     "tdp.fwmode.balanced": "Balanced",
@@ -7640,7 +9192,7 @@ const themeIt = {
     "themes.loading": "Verifica di CSS Loader…",
     "themes.recovery.blocked": "Il ripristino dei temi è bloccato. Non verranno applicate modifiche finché la verifica non termina correttamente.",
     "themes.recovery.keptCurrent": "Non è stato possibile ripristinare lo stato precedente dei temi. È stato mantenuto quello attuale.",
-    "themes.engine": "Panel installa pacchetti di temi verificati. CSS Loader li applica e conserva attivazione e impostazioni compatibili.",
+    "themes.engine": "Temi verificati, pronti da installare.",
     "themes.cssLoader.missing": "Per installare e usare i temi serve CSS Loader. Installalo dallo store di Decky, poi seleziona «Verifica di nuovo».",
     "themes.cssLoader.disabled": "CSS Loader è installato ma disattivato. Attivalo da Decky e riprova.",
     "themes.cssLoader.error": "Non è stato possibile verificare CSS Loader in modo sicuro.",
@@ -7716,6 +9268,13 @@ const themeIt = {
     "themes.action.deactivate": "Disattiva tema",
     "themes.action.deactivating": "Disattivazione…",
     "themes.action.install": "Installa tema",
+    "themes.early.badge": "Early",
+    "themes.early.title": "Accesso anticipato",
+    "themes.early.version": "Versione early: {version}",
+    "themes.early.desc": "Installa il .zip della versione early che hai scaricato. Panel accetta solo file pubblicati dall'autore.",
+    "themes.early.install": "Installa da file",
+    "themes.early.rejected": "Questo file non è una versione early pubblicata di questo tema.",
+    "themes.early.unavailable": "Questa versione early richiede una versione più recente di Panel.",
     "themes.action.installing": "Installazione…",
     "themes.action.delete": "Rimuovi tema",
     "themes.action.deleting": "Rimozione…",
@@ -7750,6 +9309,7 @@ const DICTS = {
     it: { ...it, ...themeIt },
     de,
     "pt-BR": ptBR,
+    fr,
 };
 function initialLang() {
     const stored = readString(STORAGE_KEY);
@@ -8028,24 +9588,24 @@ function hexToRgbTriplet(hex) {
 // re-parse; recomputed only on change. Seeded from persistence by ./useAccent.
 let selection = THEME_ACCENT_ID;
 let themeRgb = null;
-let current$2 = DEFAULT_ACCENT;
-let currentRgb = hexToRgbTriplet(current$2.hex);
-const listeners$f = new Set();
+let current$3 = DEFAULT_ACCENT;
+let currentRgb = hexToRgbTriplet(current$3.hex);
+const listeners$g = new Set();
 function recompute() {
     const next = selection !== THEME_ACCENT_ID
         ? resolveAccent(selection)
         : { id: THEME_ACCENT_ID, hex: themeRgb ? rgbTripletToHex(themeRgb) : DEFAULT_ACCENT.hex };
-    if (next.id === current$2.id && next.hex === current$2.hex)
+    if (next.id === current$3.id && next.hex === current$3.hex)
         return;
-    current$2 = next;
+    current$3 = next;
     currentRgb = hexToRgbTriplet(next.hex);
-    listeners$f.forEach((l) => l());
+    listeners$g.forEach((l) => l());
 }
 function getAccentId() {
-    return `${current$2.id}:${current$2.hex}`;
+    return `${current$3.id}:${current$3.hex}`;
 }
 function getAccent() {
-    return current$2;
+    return current$3;
 }
 function applyAccentId(id) {
     selection = resolveAccentSelection(id);
@@ -8059,16 +9619,109 @@ function themeAccentHex() {
     return themeRgb ? rgbTripletToHex(themeRgb) : null;
 }
 function subscribeAccent(cb) {
+    listeners$g.add(cb);
+    return () => {
+        listeners$g.delete(cb);
+    };
+}
+function currentAccentHex() {
+    return current$3.hex;
+}
+function currentAccentRgb() {
+    return currentRgb;
+}
+
+// A CSS Loader theme can restyle Panel de Control by publishing these custom properties on
+// :root. Each one is read as a real value (not var()) so it also reaches SVG attributes and
+// react-icons; anything missing or malformed keeps Panel's own look.
+const THEME_COLOR_TOKENS = {
+    surface: "--pdc-theme-surface",
+    surfaceRaised: "--pdc-theme-surface-raised",
+    hairline: "--pdc-theme-hairline",
+    outline: "--pdc-theme-outline",
+    textPrimary: "--pdc-theme-text",
+    textMuted: "--pdc-theme-text-muted",
+    onAccent: "--pdc-theme-on-accent",
+    selectedFill: "--pdc-theme-selected-fill",
+    selectedText: "--pdc-theme-selected-text",
+};
+const THEME_RADIUS_TOKENS = {
+    sm: "--pdc-theme-radius-sm",
+    md: "--pdc-theme-radius-md",
+    lg: "--pdc-theme-radius-lg",
+};
+const THEME_SIZE_TOKENS = {
+    stroke: "--pdc-theme-stroke",
+};
+const THEME_LABEL_TRANSFORM = "--pdc-theme-label-transform";
+const LABEL_TRANSFORMS = ["none", "uppercase", "capitalize", "lowercase"];
+const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const FUNCTIONAL = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+)\s*)?\)$/i;
+function parseThemeColor(value) {
+    const v = (value ?? "").trim();
+    return HEX.test(v) || FUNCTIONAL.test(v) ? v : null;
+}
+function parseThemeRadius(value) {
+    const m = /^(\d{1,2}(?:\.\d+)?)(?:px)?$/.exec((value ?? "").trim());
+    return m ? Number(m[1]) : null;
+}
+function readThemeTokens(doc) {
+    const tokens = { color: {}, radius: {}, size: {} };
+    const root = doc.documentElement;
+    const view = doc.defaultView;
+    if (!root || !view)
+        return tokens;
+    const style = view.getComputedStyle(root);
+    for (const [name, property] of Object.entries(THEME_COLOR_TOKENS)) {
+        const color = parseThemeColor(style.getPropertyValue(property));
+        if (color)
+            tokens.color[name] = color;
+    }
+    for (const [name, property] of Object.entries(THEME_RADIUS_TOKENS)) {
+        const radius = parseThemeRadius(style.getPropertyValue(property));
+        if (radius !== null)
+            tokens.radius[name] = radius;
+    }
+    const transform = style.getPropertyValue(THEME_LABEL_TRANSFORM).trim();
+    if (LABEL_TRANSFORMS.includes(transform))
+        tokens.labelTransform = transform;
+    for (const [name, property] of Object.entries(THEME_SIZE_TOKENS)) {
+        const size = parseThemeRadius(style.getPropertyValue(property));
+        if (size !== null)
+            tokens.size[name] = size;
+    }
+    return tokens;
+}
+let current$2 = { color: {}, radius: {} };
+let version$2 = 0;
+const listeners$f = new Set();
+function applyThemeTokens(next) {
+    if (JSON.stringify(next) === JSON.stringify(current$2))
+        return;
+    current$2 = next;
+    version$2++;
+    listeners$f.forEach((l) => l());
+}
+function themeColorOverride(name) {
+    return current$2.color[name];
+}
+function themeRadiusOverride(name) {
+    return current$2.radius[name];
+}
+function themeSizeOverride(name) {
+    return current$2.size?.[name];
+}
+function themeLabelTransform() {
+    return current$2.labelTransform;
+}
+function getThemeTokensVersion() {
+    return version$2;
+}
+function subscribeThemeTokens(cb) {
     listeners$f.add(cb);
     return () => {
         listeners$f.delete(cb);
     };
-}
-function currentAccentHex() {
-    return current$2.hex;
-}
-function currentAccentRgb() {
-    return currentRgb;
 }
 
 // PdC UI design tokens - the shared visual language for every Panel de Control screen.
@@ -8105,6 +9758,27 @@ const color = {
     brightness: "#f5c542",
 };
 const radius = { sm: 8, md: 14};
+// Surfaces, text, radii and selection can be restyled by the active CSS Loader theme
+// (./system/themeTokens); the values above stay Panel's own look.
+const themedColor = Object.create(color, {
+    surface: { enumerable: true, get: () => themeColorOverride("surface") ?? color.surface },
+    surfaceRaised: { enumerable: true, get: () => themeColorOverride("surfaceRaised") ?? color.surfaceRaised },
+    hairline: { enumerable: true, get: () => themeColorOverride("hairline") ?? color.hairline },
+    // The edge of a card, tile or idle chip; dividers and gauge tracks keep `hairline`.
+    outline: { enumerable: true, get: () => themeColorOverride("outline") ?? themedColor.hairline },
+    textPrimary: { enumerable: true, get: () => themeColorOverride("textPrimary") ?? color.textPrimary },
+    textMuted: { enumerable: true, get: () => themeColorOverride("textMuted") ?? color.textMuted },
+    onAccent: { enumerable: true, get: () => themeColorOverride("onAccent") ?? color.onAccent },
+    selectedFill: { enumerable: true, get: () => themeColorOverride("selectedFill") ?? color.accent },
+    selectedText: { enumerable: true, get: () => themeColorOverride("selectedText") ?? themedColor.textPrimary },
+});
+const themedRadius = {
+    get sm() {
+        return themeRadiusOverride("sm") ?? radius.sm;
+    },
+    get md() {
+        return themeRadiusOverride("md") ?? radius.md;
+    }};
 // `section` = the breathing gap BETWEEN stacked cards laid out in a flex column
 // (shell chrome, settings rows). A touch more than `md` so containers read as
 // separate, not glued. `card` = the bottom margin of a card that sits in its own
@@ -8113,15 +9787,24 @@ const radius = { sm: 8, md: 14};
 const space = { xs: 4, sm: 8, md: 12, lg: 18, section: 14, card: 6 };
 const font = { caption: 11, body: 13, value: 28 };
 const theme = {
-    color,
-    radius,
+    color: themedColor,
+    radius: themedRadius,
     space,
     font,
+    get stroke() {
+        return themeSizeOverride("stroke") ?? 1.5;
+    },
     // Signature raised-surface style (bg + radius + hairline). Add padding per use.
     card: {
-        borderRadius: radius.md,
-        background: color.surfaceRaised,
-        boxShadow: `inset 0 0 0 1px ${color.hairline}`,
+        get borderRadius() {
+            return themedRadius.md;
+        },
+        get background() {
+            return themedColor.surfaceRaised;
+        },
+        get boxShadow() {
+            return `inset 0 0 0 1px ${themedColor.outline}`;
+        },
     },
     // Equal-width tile inside a card (fan chip, temp stat) — hairline-outlined,
     // shares one definition so side-by-side tiles can't drift apart.
@@ -8129,18 +9812,47 @@ const theme = {
         flex: "1 1 0",
         minWidth: 0,
         padding: space.sm,
-        borderRadius: radius.sm,
-        boxShadow: `inset 0 0 0 1px ${color.hairline}`,
+        get borderRadius() {
+            return themedRadius.sm;
+        },
+        get boxShadow() {
+            return `inset 0 0 0 1px ${themedColor.outline}`;
+        },
     },
     // Muted uppercase caption used as a section heading inside the full-screen
     // modals (Customize, Glossary). Shared so the treatment stays consistent.
     sectionLabel: {
         fontSize: font.caption,
-        color: color.textMuted,
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
+        get color() {
+            return themedColor.textMuted;
+        },
+        get textTransform() {
+            return themeLabelTransform() ?? "uppercase";
+        },
+        get letterSpacing() {
+            return (themeLabelTransform() ?? "uppercase") === "uppercase" ? 0.5 : 0;
+        },
     },
 };
+/** A module-level style object that follows the live accent and theme tokens: rebuilt when
+ *  either changes. Its keys are fixed by the first build; each one reads the live value. */
+function themed(build) {
+    let key = "";
+    let value = build();
+    const live = () => {
+        const next = `${getAccentId()}|${getThemeTokensVersion()}`;
+        if (next !== key) {
+            key = next;
+            value = build();
+        }
+        return value;
+    };
+    const object = {};
+    for (const prop of Reflect.ownKeys(value)) {
+        Object.defineProperty(object, prop, { enumerable: true, get: () => Reflect.get(live(), prop) });
+    }
+    return object;
+}
 
 const SET_ASIDE_KINDS = new Set(["legacy", "broken", "leftover", "duplicate"]);
 const KINDS = new Set([
@@ -8549,13 +10261,36 @@ function usableThemes(publication) {
         ? publication.themes
         : [];
 }
+function earlyThemes(publication) {
+    return publication.status === "published" || publication.status === "cached"
+        ? publication.early ?? []
+        : [];
+}
+function earlyOnlyThemes(publication) {
+    const stable = usableThemes(publication);
+    const stableIds = new Set(stable.map((release) => release.catalogId));
+    const early = new Map(earlyThemes(publication).map((theme) => [theme.catalogId, theme]));
+    return [...early.values()].filter((theme) => !stableIds.has(theme.catalogId)
+        && !stable.some((release) => release.cssLoaderName === theme.release.cssLoaderName));
+}
+/** Every Hooandee theme Panel manages: the stable catalog plus themes published only as early access. */
+function managedThemeReleases(publication) {
+    return [...usableThemes(publication), ...earlyOnlyThemes(publication).map((theme) => theme.release)];
+}
 function deriveThemeCards(publication, snapshot) {
     const installed = snapshot.status === "ready"
         ? new Map(snapshot.themes.map((theme) => [theme.name, theme]))
         : new Map();
-    return usableThemes(publication).map((release) => {
+    const early = new Map(earlyThemes(publication).map((theme) => [theme.catalogId, theme]));
+    const stable = usableThemes(publication);
+    const earlyOnly = earlyOnlyThemes(publication);
+    return [
+        ...stable.map((release) => ({ release, earlyOnly: false })),
+        ...earlyOnly.map((theme) => ({ release: theme.release, earlyOnly: true })),
+    ].map(({ release, earlyOnly: onlyEarly }) => {
         const cssLoaderTheme = installed.get(release.cssLoaderName);
-        const installable = release.compatibility === "compatible";
+        const earlyTheme = early.get(release.catalogId);
+        const installable = !onlyEarly && release.compatibility === "compatible";
         const targetVersion = installable ? release.publishedVersion : undefined;
         const comparison = cssLoaderTheme && targetVersion
             ? compareVersions(cssLoaderTheme.version, targetVersion)
@@ -8579,6 +10314,8 @@ function deriveThemeCards(publication, snapshot) {
             updateAvailable: versionRelation === "update-available",
             ...(cssLoaderTheme ? { installedVersion: cssLoaderTheme.version, cssLoaderTheme } : {}),
             ...(targetVersion ? { targetVersion } : {}),
+            ...(earlyTheme ? { early: { version: earlyTheme.earlyVersion, installable: earlyTheme.release.compatibility === "compatible" } } : {}),
+            earlyOnly: onlyEarly,
         };
     });
 }
@@ -10547,12 +12284,21 @@ class PanelThemeInstaller {
         if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(catalogId)) {
             throw new ThemeInstallError("unsupported_source", "Theme install source is not permitted");
         }
-        if (source.kind !== "official-remote"
-            || source.channelId !== "panel-pages-v1"
-            || !/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(source.expectedVersion)) {
-            throw new ThemeInstallError("unsupported_source", "Theme install source is not permitted");
+        let response;
+        if (source.kind === "early-archive") {
+            if (typeof source.archivePath !== "string" || !source.archivePath.startsWith("/")) {
+                throw new ThemeInstallError("unsupported_source", "Theme install source is not permitted");
+            }
+            response = await this.host.prepareEarly(source.archivePath);
         }
-        const response = await this.host.prepareRemote(source.catalogId, source.expectedVersion);
+        else {
+            if (source.kind !== "official-remote"
+                || source.channelId !== "panel-pages-v1"
+                || !/^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(source.expectedVersion)) {
+                throw new ThemeInstallError("unsupported_source", "Theme install source is not permitted");
+            }
+            response = await this.host.prepareRemote(source.catalogId, source.expectedVersion);
+        }
         if (!isRecord$2(response) || typeof response.ok !== "boolean" || !nonEmptyString$1(response.code)) {
             throw new ThemeInstallError("malformed_response", "Panel returned an invalid theme install result");
         }
@@ -10644,6 +12390,17 @@ class PanelThemeInstaller {
 
 let configuredHost$2;
 let configuredLease$3 = null;
+const packageChangeListeners = new Set();
+function onThemePackagesChanged(listener) {
+    packageChangeListeners.add(listener);
+    return () => {
+        packageChangeListeners.delete(listener);
+    };
+}
+function notifyPackagesChanged() {
+    for (const listener of packageChangeListeners)
+        listener();
+}
 function requireConfiguredHost$1() {
     if (!configuredLease$3 || !configuredHost$2) {
         throw new ThemeInstallError("backend_unavailable", "Panel theme installer is unavailable");
@@ -10662,9 +12419,16 @@ function configurePanelThemeInstallHost(host) {
     };
 }
 function createPanelThemeInstaller() {
-    const call = (operation, value) => requireConfiguredHost$1()[operation](value);
+    const call = (operation, value) => {
+        const result = requireConfiguredHost$1()[operation](value);
+        if (operation === "commit" || operation === "rollback") {
+            void result.then(notifyPackagesChanged, notifyPackagesChanged);
+        }
+        return result;
+    };
     return new PanelThemeInstaller({
         prepareRemote: (themeId, expectedVersion) => requireConfiguredHost$1().prepareRemote(themeId, expectedVersion),
+        prepareEarly: (archivePath) => requireConfiguredHost$1().prepareEarly(archivePath),
         commit: (transaction) => call("commit", transaction),
         discard: (catalogId) => call("discard", catalogId),
         rollback: (transaction) => call("rollback", transaction),
@@ -11002,9 +12766,40 @@ function localizePublishedText(text, locale) {
     return [text[locale], text.en, text.es, text.it]
         .find((value) => typeof value === "string" && value.trim().length > 0) ?? "";
 }
+/** The early list never blocks the catalog: anything unreadable is simply no early builds. */
+function parseEarlyPublication(value) {
+    try {
+        const publication = record$1(value);
+        if (publication.status !== "published")
+            return [];
+        exact$1(publication, ["status", "themes"]);
+        if (!Array.isArray(publication.themes) || publication.themes.length > 32)
+            return [];
+        const themes = publication.themes.map((entry) => {
+            const { earlyVersion, ...fields } = record$1(entry);
+            if (typeof earlyVersion !== "string" || !STABLE_VERSION$1.test(earlyVersion)) {
+                throw new Error("Early theme version is invalid");
+            }
+            const release = publicationTheme({ ...fields, publishedVersion: earlyVersion });
+            return { catalogId: release.catalogId, earlyVersion, release };
+        });
+        return new Set(themes.map((theme) => theme.catalogId)).size === themes.length ? themes : [];
+    }
+    catch {
+        return [];
+    }
+}
 
 let configuredCheck;
 let configuredLease$1 = null;
+let configuredEarlyCheck;
+function configureThemeEarlyCheckHost(check) {
+    configuredEarlyCheck = check;
+    return () => {
+        if (configuredEarlyCheck === check)
+            configuredEarlyCheck = undefined;
+    };
+}
 function configureThemePublicationCheckHost(check) {
     const lease = Symbol("theme-publication-check-host");
     configuredCheck = check;
@@ -11016,14 +12811,23 @@ function configureThemePublicationCheckHost(check) {
         configuredLease$1 = null;
     };
 }
-function createRemotePublicationClient(check) {
+function createRemotePublicationClient(check, earlyCheck) {
     return {
         async check(force) {
             try {
                 const selectedCheck = configuredCheck;
                 if (!selectedCheck)
                     throw new Error("Theme publication backend is unavailable");
-                return parseThemePublication(await selectedCheck(force));
+                const selectedEarly = configuredEarlyCheck;
+                const [raw, rawEarly] = await Promise.all([
+                    selectedCheck(force),
+                    selectedEarly ? selectedEarly(force).catch(() => null) : Promise.resolve(null),
+                ]);
+                const publication = parseThemePublication(raw);
+                if (publication.status !== "published" && publication.status !== "cached")
+                    return publication;
+                const early = parseEarlyPublication(rawEarly);
+                return early.length ? { ...publication, early } : publication;
             }
             catch {
                 return {
@@ -11127,6 +12931,14 @@ const MAX_INSTALL_RECONCILE_FAILURES = 3;
 let productionDependencies;
 let failureReporter;
 let sectionHandoffStore;
+let earlyArchivePicker;
+function configureEarlyArchivePicker(picker) {
+    earlyArchivePicker = picker;
+    return () => {
+        if (earlyArchivePicker === picker)
+            earlyArchivePicker = undefined;
+    };
+}
 function configureThemeFailureReporter(reporter) {
     failureReporter = reporter;
     return () => {
@@ -11150,6 +12962,7 @@ function createProductionThemesDependencies() {
         installer: createPanelThemeInstaller(),
         activator: new ThemeActivator(adapter, createPanelThemeActivationJournal()),
         publication: createRemotePublicationClient(),
+        pickEarlyArchive: () => earlyArchivePicker?.() ?? Promise.resolve(null),
         reportFailure: (failure) => {
             void Promise.resolve(failureReporter?.(failure)).catch(() => undefined);
         },
@@ -11320,7 +13133,7 @@ class ThemesClient {
             }
         };
         this.activate = (themeId) => {
-            const themes = this.currentPublicationThemes();
+            const themes = this.managedThemes();
             const target = themes.find((theme) => theme.catalogId === themeId);
             if (this.current.snapshot.status !== "ready" || target?.compatibility !== "compatible") {
                 return Promise.resolve(false);
@@ -11328,10 +13141,11 @@ class ThemesClient {
             return this.mutate({ kind: "activating", themeId }, async () => this.handOffSections(await this.reclaimSections(await this.dependencies.activator.activate(themeId, themes), target.cssLoaderName), target.cssLoaderName));
         };
         this.deactivate = (themeId) => {
-            const themes = this.currentPublicationThemes();
-            if (this.current.snapshot.status !== "ready" || !themes.some((theme) => theme.catalogId === themeId)) {
+            const themes = this.managedThemes();
+            if (this.current.snapshot.status !== "ready")
                 return Promise.resolve(false);
-            }
+            if (!themes.some((theme) => theme.catalogId === themeId))
+                return this.rejectUnknownTheme("deactivating", themeId);
             const leaving = themes.find((theme) => theme.catalogId === themeId).cssLoaderName;
             return this.mutate({ kind: "deactivating", themeId }, async () => this.restoreSections(await this.dependencies.activator.deactivate(themeId, themes), leaving));
         };
@@ -11349,41 +13163,19 @@ class ThemesClient {
                 catalogId: card.release.catalogId,
                 expectedVersion: card.targetVersion,
             };
-            const expectedVersion = card.targetVersion;
-            return this.mutate({ kind: "installing", themeId }, async () => {
-                const before = await this.dependencies.adapter.requireReady();
-                this.recoveryChecked = false;
-                const installed = await this.dependencies.installer.prepare(source);
-                try {
-                    if (installed.themeId !== card.release.catalogId
-                        || installed.themeName !== card.release.cssLoaderName
-                        || installed.version !== expectedVersion) {
-                        throw new ThemeInstallError("identity_mismatch", "Installed theme package does not match the catalog");
-                    }
-                    const verified = await this.dependencies.adapter.reloadTheme(card.release.cssLoaderName, expectedVersion, before);
-                    await this.dependencies.installer.commit(installed.transaction);
-                    this.recoveryChecked = true;
-                    return verified;
-                }
-                catch (installError) {
-                    this.recoveryChecked = false;
-                    try {
-                        await this.dependencies.installer.rollback(installed.transaction);
-                    }
-                    catch (rollbackError) {
-                        throw new ThemeInstallError("rollback_failed", `Theme installation rollback failed: ${errorMessage(rollbackError)}`);
-                    }
-                    try {
-                        await this.dependencies.adapter.restoreThemeSnapshot(before, [card.release.cssLoaderName]);
-                    }
-                    catch (restoreError) {
-                        throw new ThemeInstallError("rollback_verification_failed", `Theme rollback could not be verified: ${errorMessage(restoreError)}`);
-                    }
-                    await this.dependencies.installer.acknowledgeRollback(installed.transaction);
-                    this.recoveryChecked = true;
-                    throw installError;
-                }
-            });
+            return this.runInstall(themeId, card, source, card.targetVersion);
+        };
+        /** Installs an early access zip the user picks; the backend accepts only a published early build. */
+        this.installEarly = async (themeId) => {
+            const card = deriveThemeCards(this.current.publication, this.current.snapshot)
+                .find((candidate) => candidate.id === themeId);
+            if (this.current.snapshot.status !== "ready" || !card?.early?.installable || !this.dependencies.pickEarlyArchive) {
+                return false;
+            }
+            const archivePath = await this.dependencies.pickEarlyArchive();
+            if (!archivePath)
+                return false;
+            return this.runInstall(themeId, card, { kind: "early-archive", catalogId: card.release.catalogId, archivePath }, null);
         };
         this.uninstall = (themeId) => {
             const card = deriveThemeCards(this.current.publication, this.current.snapshot)
@@ -11408,9 +13200,9 @@ class ThemesClient {
             return this.startPublicationCheck(force);
         };
         this.setPatch = (themeId, patchName, value) => {
-            const entry = this.currentPublicationThemes().find((theme) => theme.catalogId === themeId);
+            const entry = this.managedThemes().find((theme) => theme.catalogId === themeId);
             if (!entry)
-                return Promise.resolve(false);
+                return this.rejectUnknownTheme("saving", themeId);
             return this.mutate({ kind: "saving", themeId, patchName }, async () => {
                 const after = await this.dependencies.adapter.setPatchValue(entry.cssLoaderName, patchName, value);
                 if (sectionKeyOf(patchName) === null)
@@ -11461,6 +13253,42 @@ class ThemesClient {
             return after;
         });
     }
+    runInstall(themeId, card, source, expectedVersion) {
+        return this.mutate({ kind: "installing", themeId }, async () => {
+            const before = await this.dependencies.adapter.requireReady();
+            this.recoveryChecked = false;
+            const installed = await this.dependencies.installer.prepare(source);
+            try {
+                if (installed.themeId !== card.release.catalogId
+                    || installed.themeName !== card.release.cssLoaderName
+                    || (expectedVersion !== null && installed.version !== expectedVersion)) {
+                    throw new ThemeInstallError("identity_mismatch", "Installed theme package does not match the catalog");
+                }
+                const verified = await this.dependencies.adapter.reloadTheme(card.release.cssLoaderName, installed.version, before);
+                await this.dependencies.installer.commit(installed.transaction);
+                this.recoveryChecked = true;
+                return verified;
+            }
+            catch (installError) {
+                this.recoveryChecked = false;
+                try {
+                    await this.dependencies.installer.rollback(installed.transaction);
+                }
+                catch (rollbackError) {
+                    throw new ThemeInstallError("rollback_failed", `Theme installation rollback failed: ${errorMessage(rollbackError)}`);
+                }
+                try {
+                    await this.dependencies.adapter.restoreThemeSnapshot(before, [card.release.cssLoaderName]);
+                }
+                catch (restoreError) {
+                    throw new ThemeInstallError("rollback_verification_failed", `Theme rollback could not be verified: ${errorMessage(restoreError)}`);
+                }
+                await this.dependencies.installer.acknowledgeRollback(installed.transaction);
+                this.recoveryChecked = true;
+                throw installError;
+            }
+        });
+    }
     startPublicationCheck(force) {
         if (!this.dependencies.publication)
             return Promise.resolve();
@@ -11508,7 +13336,7 @@ class ThemesClient {
         if (!snapshot.themes.some((theme) => theme.name === keepActive && theme.enabled)) {
             throw new CssLoaderOperationError("verification_failed", "The theme chosen to stay active is no longer active");
         }
-        const catalog = this.currentPublicationThemes();
+        const catalog = this.managedThemes();
         for (const theme of snapshot.themes) {
             if (!theme.enabled || theme.name === keepActive)
                 continue;
@@ -11519,7 +13347,7 @@ class ThemesClient {
         }
     }
     hooandeeThemeNames() {
-        return new Set(this.currentPublicationThemes().map((theme) => theme.cssLoaderName));
+        return new Set(this.managedThemes().map((theme) => theme.cssLoaderName));
     }
     readHandoffs() {
         return this.dependencies.sectionHandoffs?.read() ?? {};
@@ -11590,10 +13418,8 @@ class ThemesClient {
         this.writeHandoffs(remaining);
         return after;
     }
-    currentPublicationThemes() {
-        return this.current.publication.status === "published" || this.current.publication.status === "cached"
-            ? this.current.publication.themes
-            : [];
+    managedThemes() {
+        return managedThemeReleases(this.current.publication);
     }
     publishSnapshot(request, snapshot) {
         if (request !== this.requestSequence)
@@ -11714,6 +13540,10 @@ class ThemesClient {
         this.report(operation, error);
         return { error: errorMessage(error), errorCode: errorCode(error) };
     }
+    rejectUnknownTheme(operation, themeId) {
+        this.report(operation, new Error(`Theme ${themeId} is not in the catalog`), "unknown_theme");
+        return Promise.resolve(false);
+    }
     report(operation, error, code = errorCode(error)) {
         const failure = {
             operation,
@@ -11755,6 +13585,7 @@ function useThemes(dependencies) {
         refresh: client.refresh,
         refreshPublication: client.refreshPublication,
         install: client.install,
+        installEarly: client.installEarly,
         uninstall: client.uninstall,
         activate: client.activate,
         deactivate: client.deactivate,
@@ -11944,6 +13775,7 @@ function watchThemeAccent(doc) {
     const sync = () => {
         frame = 0;
         applyThemeAccent(readThemeAccent(doc));
+        applyThemeTokens(readThemeTokens(doc));
     };
     sync();
     const observer = new view.MutationObserver(() => {
@@ -11963,6 +13795,7 @@ function watchThemeAccent(doc) {
 // plugin's `document` global is neither.
 const FocusRoot = ({ children, style, publishDocument }) => {
     useAccent(); // recolour when the accent changes
+    const tokens = SP_REACT.useSyncExternalStore(subscribeThemeTokens, getThemeTokensVersion, getThemeTokensVersion);
     const [panelDocument, setPanelDocument] = SP_REACT.useState(null);
     const ref = SP_REACT.useCallback((el) => {
         if (!el)
@@ -11974,6 +13807,10 @@ const FocusRoot = ({ children, style, publishDocument }) => {
         }
     }, [publishDocument]);
     SP_REACT.useEffect(() => (panelDocument ? watchThemeAccent(panelDocument) : undefined), [panelDocument]);
+    SP_REACT.useEffect(() => {
+        if (panelDocument)
+            ensureFocusStyles(panelDocument);
+    }, [panelDocument, tokens]);
     const vars = { [`--pdc-accent-rgb`]: currentAccentRgb() };
     return (SP_JSX.jsx("div", { className: PDC_ROOT, ref: ref, style: { ...vars, ...style }, children: children }));
 };
@@ -13505,7 +15342,7 @@ function openReportModal(initialCategories) {
 const gamepadNavigation$4 = createThemeNavigationAccess();
 const NAME_PREVIEW = 4;
 // Third-party CSS Loader themes restyle Steam's dialogs too; the helper must stay legible under them.
-const HEALTH_RESET = `
+const HEALTH_RESET = () => `
 [data-pdc-theme-health] { color: ${theme.color.textPrimary} !important; }
 [data-pdc-theme-health] [data-pdc-muted] { color: ${theme.color.textMuted} !important; }
 [data-pdc-theme-health] [data-pdc-warn] { color: ${theme.color.warn} !important; }
@@ -13628,7 +15465,7 @@ function HealthBody({ controller, health, confirming, setConfirming, closeModal 
         const outcome = await action();
         setResult(outcome === "done" ? done : outcome === "partial" ? partial : "failed");
     };
-    return (SP_JSX.jsxs("div", { "data-pdc-theme-health": true, style: { display: "flex", flexDirection: "column", gap: theme.space.md, maxWidth: 640, margin: "0 auto", padding: "4px 8px 18px" }, children: [SP_JSX.jsx("style", { children: HEALTH_RESET }), SP_JSX.jsxs("header", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsx("span", { "aria-hidden": true, style: { color: issues ? theme.color.warn : theme.color.accent }, children: issues ? SP_JSX.jsx(LuShieldAlert, { size: 26 }) : SP_JSX.jsx(LuShieldCheck, { size: 26 }) }), SP_JSX.jsxs("div", { style: { minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: 20, fontWeight: 780 }, children: t("themes.health.title") }), SP_JSX.jsx("div", { role: "status", "aria-live": "polite", "data-pdc-muted": true, style: { marginTop: 3 }, children: result ? (SP_JSX.jsxs("span", { "data-pdc-warn": result === "failed" ? true : undefined, children: [t(`themes.health.result.${result}`), result === "failed" && controller.errorCode ? ` ${t("themes.operation.code", { code: controller.errorCode })}` : ""] })) : t(summaryKey(health), { count: issues }) })] })] }), health.findings.length ? (SP_JSX.jsx("ul", { style: { listStyle: "none", margin: 0, padding: 0, borderTop: `1px solid ${theme.color.hairline}`, borderBottom: `1px solid ${theme.color.hairline}` }, children: health.findings.map((finding) => SP_JSX.jsx(FindingRow, { finding: finding }, finding.id)) })) : null, confirming && plan ? (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "column", role: "group", "aria-label": t("themes.health.confirm.title"), style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [mustChoose ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { fontWeight: 720 }, children: t("themes.health.choose.title") }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: plan.chooseOne.map((option, index) => {
+    return (SP_JSX.jsxs("div", { "data-pdc-theme-health": true, style: { display: "flex", flexDirection: "column", gap: theme.space.md, maxWidth: 640, margin: "0 auto", padding: "4px 8px 18px" }, children: [SP_JSX.jsx("style", { children: HEALTH_RESET() }), SP_JSX.jsxs("header", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsx("span", { "aria-hidden": true, style: { color: issues ? theme.color.warn : theme.color.accent }, children: issues ? SP_JSX.jsx(LuShieldAlert, { size: 26 }) : SP_JSX.jsx(LuShieldCheck, { size: 26 }) }), SP_JSX.jsxs("div", { style: { minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: 20, fontWeight: 780 }, children: t("themes.health.title") }), SP_JSX.jsx("div", { role: "status", "aria-live": "polite", "data-pdc-muted": true, style: { marginTop: 3 }, children: result ? (SP_JSX.jsxs("span", { "data-pdc-warn": result === "failed" ? true : undefined, children: [t(`themes.health.result.${result}`), result === "failed" && controller.errorCode ? ` ${t("themes.operation.code", { code: controller.errorCode })}` : ""] })) : t(summaryKey(health), { count: issues }) })] })] }), health.findings.length ? (SP_JSX.jsx("ul", { style: { listStyle: "none", margin: 0, padding: 0, borderTop: `1px solid ${theme.color.hairline}`, borderBottom: `1px solid ${theme.color.hairline}` }, children: health.findings.map((finding) => SP_JSX.jsx(FindingRow, { finding: finding }, finding.id)) })) : null, confirming && plan ? (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "column", role: "group", "aria-label": t("themes.health.confirm.title"), style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [mustChoose ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("div", { style: { fontWeight: 720 }, children: t("themes.health.choose.title") }), SP_JSX.jsx(DFL.Focusable, { "flow-children": "row", style: { display: "flex", flexWrap: "wrap", gap: theme.space.sm }, children: plan.chooseOne.map((option, index) => {
                                     const selected = option.name === chosen;
                                     return (SP_JSX.jsx(DFL.DialogButton, { ref: index === 0 ? firstAction : undefined, style: selected ? CHOICE_SELECTED_STYLE : CHOICE_STYLE, onClick: () => setKeepActive(option.name), children: SP_JSX.jsx(IconLabel, { icon: selected ? SP_JSX.jsx(LuCheck, { size: 14, "aria-hidden": true }) : null, children: option.label }) }, option.name));
                                 }) })] })) : null, SP_JSX.jsx("div", { "data-pdc-muted": true, style: { fontSize: theme.font.caption, lineHeight: 1.45 }, children: planSummary(t, plan, chosen) }), SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.DialogButton, { style: BUTTON_STYLE, onClick: () => setConfirming(false), children: t("themes.install.confirm.cancel") }), SP_JSX.jsx(DFL.DialogButton, { ref: mustChoose ? undefined : firstAction, style: PRIMARY_STYLE, disabled: busy || (mustChoose && !chosen), onClick: () => void runAction(() => health.cleanUp(chosen ?? undefined), cssLoaderGone ? "cleanedWithoutLoader" : "cleaned", "cleanedPartial"), children: SP_JSX.jsx(IconLabel, { icon: SP_JSX.jsx(LuSparkles, { size: 15, "aria-hidden": true }), children: t("themes.health.clean.ok") }) })] })] })) : (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "column", style: { display: "flex", flexDirection: "column", gap: theme.space.sm }, children: [health.needsCleanup ? (SP_JSX.jsx(DFL.DialogButton, { ref: firstAction, style: PRIMARY_STYLE, disabled: busy || !canAct, onClick: () => setConfirming(true), children: SP_JSX.jsx(IconLabel, { icon: SP_JSX.jsx(LuSparkles, { size: 15, "aria-hidden": true }), children: t(controller.operation?.kind === "cleaning" ? "themes.health.cleaning" : "themes.health.clean") }) })) : null, health.undo?.available ? (SP_JSX.jsx(DFL.DialogButton, { style: BUTTON_STYLE, disabled: busy || !canAct, onClick: () => void runAction(health.undoCleanup, "restored", "restoredPartial"), children: SP_JSX.jsx(IconLabel, { icon: SP_JSX.jsx(LuUndo2, { size: 15, "aria-hidden": true }), children: t(controller.operation?.kind === "restoring" ? "themes.health.restoring" : "themes.health.undo") }) })) : null, SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm }, children: [SP_JSX.jsx(DFL.DialogButton, { ref: health.needsCleanup ? undefined : firstAction, style: BUTTON_STYLE, disabled: busy, onClick: () => { setResult(null); void controller.refresh().then(health.recheck); }, children: SP_JSX.jsx(IconLabel, { icon: SP_JSX.jsx(LuRefreshCw, { size: 14, "aria-hidden": true }), children: t("themes.health.recheck") }) }), SP_JSX.jsx(DFL.DialogButton, { style: BUTTON_STYLE, onClick: () => { closeModal?.(); openReportModal(["themes"]); }, children: SP_JSX.jsx(IconLabel, { icon: SP_JSX.jsx(LuSend, { size: 14, "aria-hidden": true }), children: t("themes.health.report") }) })] })] }))] }));
@@ -14431,6 +16268,29 @@ const STRINGS = {
         },
         availableTitle: "Atualização disponível",
     },
+    fr: {
+        floating: { title: "Nouvelle version disponible", update: "Mettre à jour", later: "Plus tard" },
+        panel: {
+            version: "Version",
+            latest: "(à jour)",
+            newPrefix: "nouvelle",
+            checking: "recherche…",
+            check: "Rechercher des mises à jour",
+            update: "Voir les nouveautés et installer",
+            error: "La recherche a échoué. Vérifiez votre connexion.",
+        },
+        modal: {
+            title: "Nouveautés",
+            noNotes: "Aucune note pour cette version.",
+            install: "Installer la mise à jour",
+            installing: "Installation…",
+            installed: "Mise à jour installée.",
+            restartNote: "Redémarrez Decky pour appliquer la mise à jour.",
+            restart: "Redémarrer Decky",
+            failed: "L'installation a échoué. Réessayez.",
+        },
+        availableTitle: "Mise à jour disponible",
+    },
 };
 function getUpdaterStrings(lang) {
     return STRINGS[lang];
@@ -14510,6 +16370,7 @@ const LANGUAGE_HEADINGS = {
     Novità: "it",
     Neuigkeiten: "de",
     "Novidades em português (Brasil)": "pt-BR",
+    Nouveautés: "fr",
 };
 const VERSION_HEADING = /^##\s+v\d+\.\d+\.\d+\s*$/m;
 const LANGUAGE_HEADING = /^###\s+(.+?)\s*$/;
@@ -14796,7 +16657,7 @@ const hintKey = (device) => {
 };
 const DeviceHeader = ({ device, presentation = "full", fullWidth = false }) => {
     const { t } = useI18n();
-    return (SP_JSX.jsxs("div", { "data-testid": "device-pill", style: {
+    return (SP_JSX.jsxs("div", { "data-testid": "device-pill", "data-pdc-part": "device-pill", style: {
             display: "inline-flex",
             alignItems: "center",
             alignSelf: "flex-start",
@@ -14807,7 +16668,7 @@ const DeviceHeader = ({ device, presentation = "full", fullWidth = false }) => {
             padding: "3px 8px",
             borderRadius: 999,
             background: "rgba(255,255,255,0.04)",
-            boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
+            boxShadow: `inset 0 0 0 1px ${theme.color.outline}`,
             boxSizing: "border-box",
         }, children: [SP_JSX.jsx("span", { style: {
                     minWidth: 0,
@@ -15153,7 +17014,7 @@ function CompactBackAction({ onBack, label }) {
             queueMicrotask(() => { locked.current = false; });
         }
     };
-    return (SP_JSX.jsxs(DFL.Focusable, { role: "button", "aria-label": text, onActivate: goBack, onClick: goBack, style: {
+    return (SP_JSX.jsxs(DFL.Focusable, { role: "button", "data-pdc-part": "back", "aria-label": text, onActivate: goBack, onClick: goBack, style: {
             minHeight: 28,
             display: "inline-flex",
             alignItems: "center",
@@ -16495,11 +18356,15 @@ function openAutoTdpNoticeModal(opts) {
 
 const isLevelUnit = (unit) => unit === "level";
 const ghz = (khz) => (khz / 1000000).toFixed(1);
-function levelFrequencySummary(entry) {
+function levelFrequencySummary(entry, gpuEntry = entry, gpuFirst = false) {
     if (!entry || entry.cpu_khz.length === 0)
         return null;
     const cpu = `CPU ${entry.cpu_khz.map(ghz).join(" · ")} GHz`;
-    return entry.gpu_mhz === null ? cpu : `${cpu}  ·  GPU ${entry.gpu_mhz} MHz`;
+    const gpuMhz = gpuEntry?.gpu_mhz ?? null;
+    if (gpuMhz === null)
+        return cpu;
+    const gpu = `GPU ${gpuMhz} MHz`;
+    return gpuFirst ? `${gpu}  ·  ${cpu}` : `${cpu}  ·  ${gpu}`;
 }
 
 const listeners$5 = new Set();
@@ -16522,6 +18387,11 @@ function effectiveAutoRange(config, limits, onAc) {
         min: Math.max(limits.min, Math.min(config.min_tdp ?? limits.min, maximum)),
         max: Math.max(limits.min, Math.min(config.max_tdp ?? maximum, maximum)),
     };
+}
+/** ARM: the GPU level Auto applies, keeping the player's distance inside the Auto range. */
+function autoGpuLevel(stored, manualCpu, autoCpu, config, limits, onAc) {
+    const range = effectiveAutoRange(config, limits, onAc);
+    return Math.max(range.min, Math.min(range.max, Math.round(autoCpu + stored - manualCpu)));
 }
 function resolveAutoView(tdp, power, scope, hasGame) {
     const config = scope === "global" ? tdp.global_auto_config : tdp.auto_config;
@@ -16580,6 +18450,7 @@ function useTdp() {
     const [presets, setPresets] = SP_REACT.useState(null);
     const commitTimerWatts = SP_REACT.useRef(null);
     const commitTimerLevels = SP_REACT.useRef(null);
+    const commitTimerGpu = SP_REACT.useRef(null);
     const autoDrafts = SP_REACT.useRef({});
     const followEpoch = SP_REACT.useRef(0);
     const reconcileAutoState = SP_REACT.useCallback((next, confirmed) => {
@@ -16677,12 +18548,15 @@ function useTdp() {
             clearTimeout(commitTimerWatts.current);
         if (commitTimerLevels.current)
             clearTimeout(commitTimerLevels.current);
+        if (commitTimerGpu.current)
+            clearTimeout(commitTimerGpu.current);
         for (const draft of Object.values(autoDrafts.current)) {
             if (draft.timer)
                 clearTimeout(draft.timer);
         }
         commitTimerWatts.current = null;
         commitTimerLevels.current = null;
+        commitTimerGpu.current = null;
         autoDrafts.current = {};
         followEpoch.current += 1;
     }, [appid]);
@@ -16701,7 +18575,15 @@ function useTdp() {
         })
             .catch(() => false);
     }, [reconcileAutoState, tdp]);
-    const { scope, onScope } = useScopeSync(appid, tdp?.follows_global, applyFollow);
+    const { scope, onScope: switchScope } = useScopeSync(appid, tdp?.follows_global, applyFollow);
+    // A debounced write still aimed at the old scope would detach the game from global again.
+    const onScope = SP_REACT.useCallback((next) => {
+        if (next !== scope && commitTimerGpu.current) {
+            clearTimeout(commitTimerGpu.current);
+            commitTimerGpu.current = null;
+        }
+        switchScope(next);
+    }, [scope, switchScope]);
     const resolveTarget = SP_REACT.useCallback(() => {
         const target = scope === "game" && game ? game.appid : null;
         return {
@@ -16735,6 +18617,24 @@ function useTdp() {
         commitTimerWatts.current = setTimeout(() => {
             setTdpWatts(w, sc, target, context).then(() => refresh()).catch(() => { });
         }, 200);
+    }, [resolveTarget, refresh]);
+    const onGpuLevel = SP_REACT.useCallback((level) => {
+        const { target, sc, context } = resolveTarget();
+        setTdp((cur) => {
+            if (!cur)
+                return cur;
+            return sc === "global" ? { ...cur, global_gpu_level: level } : { ...cur, gpu_level: level };
+        });
+        if (commitTimerGpu.current)
+            clearTimeout(commitTimerGpu.current);
+        const commit = () => {
+            commitTimerGpu.current = null;
+            setGpuLevel(level, sc, target, context).then(refresh, refresh);
+        };
+        if (level === null)
+            commit();
+        else
+            commitTimerGpu.current = setTimeout(commit, 200);
     }, [resolveTarget, refresh]);
     const onSetLevels = SP_REACT.useCallback((off2, off3) => {
         const { target, sc, context } = resolveTarget();
@@ -16880,6 +18780,7 @@ function useTdp() {
         refresh,
         onScope,
         onWatts,
+        onGpuLevel,
         onSetLevels,
         onSetMode,
         onAutoTdpToggle,
@@ -17170,12 +19071,12 @@ const ColorPreviewConfirm = ({ seconds, saving, onSave, onDiscard }) => {
 // group holding equal pills, the active one filled with the accent. Used by both
 // the TabBar (control-center navigator) and the TDP ProfileSelector so the look
 // is defined once and can't drift.
-const segmentGroupStyle = {
+const segmentGroupStyle = themed(() => ({
     display: "flex",
     gap: 4,
     padding: 4,
     ...theme.card,
-};
+}));
 function segmentItemStyle(active) {
     return {
         display: "flex",
@@ -17185,8 +19086,8 @@ function segmentItemStyle(active) {
         borderRadius: theme.radius.sm,
         fontSize: theme.font.body,
         fontWeight: active ? 600 : 400,
-        color: active ? theme.color.textPrimary : theme.color.textMuted,
-        background: active ? theme.color.accent : "transparent",
+        color: active ? theme.color.selectedText : theme.color.textMuted,
+        background: active ? theme.color.selectedFill : "transparent",
         cursor: "pointer",
         whiteSpace: "nowrap",
         overflow: "hidden",
@@ -17727,7 +19628,7 @@ const Collapsible = ({ id, icon, title, summary, action, defaultOpen = true, chi
         setCollapsed(id, !next); // persist outside the updater (no side-effect in setState)
     };
     const Chevron = open ? LuChevronDown : LuChevronRight;
-    return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { style: { flex: 1, display: "flex", alignItems: "center", gap: theme.space.sm, cursor: "pointer" }, onActivate: toggle, onClick: toggle, children: [SP_JSX.jsx("span", { style: { display: "inline-flex", color: theme.color.accent }, children: icon }), SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: SP_JSX.jsx(MarqueeText, { text: title }, open ? "open" : "closed") }), !open && (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, whiteSpace: "nowrap" }, children: summary })), SP_JSX.jsx(Chevron, { size: 16, color: theme.color.textMuted })] }), action] }), open && SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: children })] }) }));
+    return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden" }, children: [SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", alignItems: "center", gap: theme.space.sm }, children: [SP_JSX.jsxs(DFL.Focusable, { "data-pdc-part": "card-title", style: { flex: 1, display: "flex", alignItems: "center", gap: theme.space.sm, cursor: "pointer" }, onActivate: toggle, onClick: toggle, children: [SP_JSX.jsx("span", { style: { display: "inline-flex", color: theme.color.accent }, children: icon }), SP_JSX.jsx("div", { style: { flex: 1, minWidth: 0, fontSize: theme.font.body, fontWeight: 700, color: theme.color.textPrimary }, children: SP_JSX.jsx(MarqueeText, { text: title }, open ? "open" : "closed") }), !open && (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, whiteSpace: "nowrap" }, children: summary })), SP_JSX.jsx(Chevron, { size: 16, color: theme.color.textMuted })] }), action] }), open && SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: children })] }) }));
 };
 
 // Inner plot size; margins leave room for the dB labels (left, + Y caption) and the freq
@@ -18978,7 +20879,7 @@ const ExperimentalLabel = ({ badge, title }) => (SP_JSX.jsxs("span", { style: {
         gap: 4,
     }, children: [SP_JSX.jsx(ExperimentalBadge, { children: badge }), SP_JSX.jsx("span", { children: title })] }));
 
-const card$1 = { ...theme.card, minWidth: 0, padding: theme.space.md, overflow: "hidden" };
+const card$1 = themed(() => ({ ...theme.card, minWidth: 0, padding: theme.space.md, overflow: "hidden" }));
 const POSITIONS = [
     { id: "top-left", Icon: LuArrowUpLeft }, { id: "top-right", Icon: LuArrowUpRight },
     { id: "bottom-left", Icon: LuArrowDownLeft }, { id: "bottom-right", Icon: LuArrowDownRight },
@@ -19050,10 +20951,10 @@ const BlockMetricOption = ({ label, checked, onToggle, required = false }) => {
 };
 const SectionLabel = ({ children }) => (SP_JSX.jsx("span", { style: { ...theme.sectionLabel }, children: children }));
 const Note = ({ children }) => (SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: children }));
-const controlLabel = {
+const controlLabel = themed(() => ({
     fontSize: theme.font.caption,
     color: theme.color.textMuted,
-};
+}));
 const HudLivePreview = ({ model }) => {
     const values = useHudValues();
     return SP_JSX.jsx(HudPreview, { model: model, values: values });
@@ -19305,7 +21206,7 @@ const HudSection = () => {
 };
 
 // Accent-tinted gradient behind the portrait; also the fallback tile when no art.
-const GRADIENT = `linear-gradient(155deg, ${theme.color.accent}55, ${theme.color.surface} 88%)`;
+const gradient = () => `linear-gradient(155deg, ${theme.color.accent}55, ${theme.color.surface} 88%)`;
 function initials(name) {
     const words = name.trim().split(/\s+/).filter(Boolean);
     if (words.length === 0)
@@ -19331,7 +21232,7 @@ const GameCover = ({ urls, name, width = 46, }) => {
             flexShrink: 0,
             borderRadius: theme.radius.sm,
             overflow: "hidden",
-            background: GRADIENT,
+            background: gradient(),
             boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
             display: "flex",
             alignItems: "center",
@@ -19347,7 +21248,7 @@ const GameCover = ({ urls, name, width = 46, }) => {
 
 // Steam's default ring is too subtle on our custom-styled cards, so we draw an
 // explicit accent ring on gamepad focus (accent token → follows the accent).
-const FOCUS_RING = `inset 0 0 0 1px ${theme.color.accent}, 0 0 0 2px ${theme.color.accent}`;
+const focusRing = () => `inset 0 0 0 1px ${theme.color.accent}, 0 0 0 2px ${theme.color.accent}`;
 /** Card-styled Focusable with a clear focus ring. `emphasized` gives a resting
  *  accent-tinted outline (the "jugando ahora" card). */
 const FocusableCard = ({ onActivate, emphasized, style, children }) => {
@@ -19361,7 +21262,7 @@ const FocusableCard = ({ onActivate, emphasized, style, children }) => {
             padding: `${theme.space.sm}px ${theme.space.md}px`,
             cursor: "pointer",
             transition: "box-shadow 120ms ease, transform 120ms ease",
-            boxShadow: focused ? FOCUS_RING : resting,
+            boxShadow: focused ? focusRing() : resting,
             transform: focused ? "scale(1.01)" : "scale(1)",
             ...style,
         }, children: children }));
@@ -19578,6 +21479,10 @@ const LaunchRow = ({ pill, ed, tools, gpu, supportedEnvs, catalog, caveat }) => 
                     // @ts-expect-error Decky TextField forwards input attrs; placeholder is valid.
                     placeholder: pill.placeholderKey ? t(pill.placeholderKey) : "" }) })), caveat && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, display: "flex", gap: 6, alignItems: "flex-start", marginTop: theme.space.xs, marginLeft: 20 }, children: SP_JSX.jsx("span", { children: caveat }) }))] }));
 };
+const UnavailableFsrRow = ({ reason }) => {
+    const { t } = useI18n();
+    return (SP_JSX.jsx("div", { style: { ...theme.card, padding: "10px 11px", marginBottom: theme.space.sm }, children: SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsxs("div", { style: { flex: 1 }, children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.body, color: theme.color.textPrimary }, children: [t("params.pill.fsr4"), " ", SP_JSX.jsx(Badge, { text: t("params.fsr4.unavailable") })] }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.4 }, children: reason })] }), SP_JSX.jsx("div", { role: "switch", "aria-checked": false, "aria-disabled": "true", "aria-label": t("params.pill.fsr4"), children: SP_JSX.jsx(RowSwitch, { label: t("params.pill.fsr4"), active: false, disabled: true, onToggle: () => { } }) })] }) }));
+};
 
 /**
  * The composed launch-options string, monospace. Our active tokens show in the
@@ -19765,6 +21670,37 @@ function useCustomVars() {
     return { vars, error, pills, save, newId: makeId };
 }
 
+function useProtonCapabilities(compatName, loading) {
+    const [snapshot, setSnapshot] = SP_REACT.useState(null);
+    SP_REACT.useEffect(() => {
+        if (loading)
+            return;
+        let cancelled = false;
+        setSnapshot(null);
+        getProtonCaps(compatName)
+            .then((caps) => {
+            if (!cancelled)
+                setSnapshot({ name: compatName, status: caps.found ? "ready" : "missing", envs: caps.found ? caps.envs : [] });
+        }, () => {
+            if (!cancelled)
+                setSnapshot({ name: compatName, status: "error", envs: [] });
+        });
+        return () => { cancelled = true; };
+    }, [compatName, loading]);
+    // A new tool must never inherit capabilities from the previous render.
+    return !loading && snapshot?.name === compatName ? snapshot : { status: "loading", envs: [] };
+}
+
+function fsrUnavailableReason(gpu, capabilities) {
+    if (gpu !== "rdna3" && gpu !== "rdna4")
+        return undefined;
+    if (capabilities.status !== "ready")
+        return `params.fsr4.${capabilities.status}`;
+    if (CATALOG.some((pill) => pill.exclusiveGroup === "fsr4-upgrade" && pillVisible(pill, capabilities.envs, gpu)))
+        return undefined;
+    return "params.fsr4.unsupported";
+}
+
 // Icon per sub-group heading so each group is scannable at a glance.
 const SUBGROUP_ICONS = {
     "params.sub.perf": SP_JSX.jsx(LuGauge, { size: 13 }),
@@ -19791,15 +21727,16 @@ const Fold = ({ title, summary, defaultOpen, children }) => {
 };
 /** Rows for a subgroup within a section, filtered to what the game's Proton build
  *  supports + GPU. */
-const Subgroup = ({ section, subgroup, ed, tools, envs, gpu, catalog }) => {
+const Subgroup = ({ section, subgroup, ed, tools, envs, gpu, catalog, fsrReason }) => {
     const { t } = useI18n();
     const pills = catalog.filter((p) => p.section === section &&
         p.subgroup === subgroup &&
         pillVisible(p, envs, gpu) &&
         customPillVisible(p, ed.selections[p.id]));
-    if (pills.length === 0)
+    const unavailableFsr = section === "advanced" && subgroup === "params.sub.upscaling" ? fsrReason : undefined;
+    if (pills.length === 0 && !unavailableFsr)
         return null;
-    return (SP_JSX.jsxs("div", { children: [SP_JSX.jsx(Heading, { icon: SUBGROUP_ICONS[subgroup], children: t(subgroup) }), pills.map((p) => (SP_JSX.jsx(LaunchRow, { pill: p, ed: ed, tools: tools, gpu: gpu, supportedEnvs: envs, catalog: catalog, caveat: p.id === "langEs" && tools.locale_reliable === false ? t("params.caveat.locale") : undefined }, p.id)))] }));
+    return (SP_JSX.jsxs("div", { children: [SP_JSX.jsx(Heading, { icon: SUBGROUP_ICONS[subgroup], children: t(subgroup) }), unavailableFsr && SP_JSX.jsx(UnavailableFsrRow, { reason: t(unavailableFsr) }), pills.map((p) => (SP_JSX.jsx(LaunchRow, { pill: p, ed: ed, tools: tools, gpu: gpu, supportedEnvs: envs, catalog: catalog, caveat: p.id === "langEs" && tools.locale_reliable === false ? t("params.caveat.locale") : undefined }, p.id)))] }));
 };
 const LaunchEditorBody = ({ game }) => {
     const { t } = useI18n();
@@ -19818,9 +21755,8 @@ const LaunchEditorBody = ({ game }) => {
     const ed = useLaunchEditor(game, catalog);
     const [tools, setTools] = SP_REACT.useState(null);
     const [gpu, setGpu] = SP_REACT.useState("unknown");
-    // Launch-option vars the game's Proton build actually supports (null until loaded).
-    const [envs, setEnvs] = SP_REACT.useState(null);
-    const [versionLabel, setVersionLabel] = SP_REACT.useState("");
+    const capabilities = useProtonCapabilities(ed.compatName, ed.loading);
+    const versionLabel = ed.compatDisplay || ed.compatName;
     SP_REACT.useEffect(() => {
         let cancelled = false;
         getLaunchTools()
@@ -19833,27 +21769,14 @@ const LaunchEditorBody = ({ game }) => {
             cancelled = true;
         };
     }, []);
-    // Read the game's Proton capabilities from the compat tool the editor resolved
-    // (via the details callback). Empty/native → no Proton caps → only base pills show.
-    SP_REACT.useEffect(() => {
-        if (ed.loading)
-            return;
-        let cancelled = false;
-        setVersionLabel(ed.compatDisplay || ed.compatName);
-        getProtonCaps(ed.compatName)
-            .then((c) => !cancelled && setEnvs(c.envs))
-            .catch(() => !cancelled && setEnvs([]));
-        return () => {
-            cancelled = true;
-        };
-    }, [ed.loading, ed.compatName, ed.compatDisplay]);
-    const supportedEnvs = envs ?? [];
+    const supportedEnvs = capabilities.envs;
+    const fsrReason = fsrUnavailableReason(gpu, capabilities);
     const advancedCount = catalog.filter((p) => p.section === "advanced" && !!selectionForPill(p, ed.selections, gpu, supportedEnvs, catalog) && pillVisible(p, supportedEnvs, gpu)).length;
     const owned = ownedTokens(ed.selections, catalog);
     const frequents = tools ? frequentPills(ed.usage, tools).filter((p) => pillVisible(p, supportedEnvs, gpu)) : [];
     // No usage yet → offer a "Start here" set of safe recommended picks instead.
     const starters = tools && frequents.length === 0 ? recommendedPills(tools, supportedEnvs, gpu) : [];
-    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md, padding: theme.space.sm, maxWidth: 760, width: "100%", margin: "0 auto" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsx(GameCover, { urls: game.coverUrls, name: game.name, width: 52 }), SP_JSX.jsxs("div", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.value, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: game.name }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: game.isNonSteam ? t("params.badge.nonSteam") : t("params.badge.steam") })] }), SP_JSX.jsxs(FocusableCard, { onActivate: () => void toggleHidden(), emphasized: gameHidden, style: { flexShrink: 0, padding: 8, gap: 6 }, children: [gameHidden ? SP_JSX.jsx(LuEye, { size: 18, color: theme.color.accent }) : SP_JSX.jsx(LuEyeOff, { size: 18, color: theme.color.textMuted }), SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: gameHidden ? theme.color.accent : theme.color.textMuted }, children: t(gameHidden ? "params.unhide" : "params.hide") })] })] }), isRunning && (SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, display: "flex", alignItems: "center", gap: 6 }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 13, style: { flexShrink: 0 } }), " ", t("params.running.restart")] })), ed.error ? (SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, display: "flex", gap: 6, alignItems: "flex-start" }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 14, style: { marginTop: 1, flexShrink: 0 } }), SP_JSX.jsx("span", { children: t("params.readError") })] })) : ed.loading || tools === null || envs === null || (custom.vars === null && !custom.error) ? (SP_JSX.jsx(Loading, {})) : ed.malformed ? (SP_JSX.jsxs("div", { children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, display: "flex", gap: 6, alignItems: "flex-start", marginBottom: theme.space.sm }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 14, style: { marginTop: 1, flexShrink: 0 } }), SP_JSX.jsx("span", { children: t("params.malformed") })] }), SP_JSX.jsx("div", { style: { ...theme.card, padding: theme.space.md, fontFamily: "monospace", fontSize: theme.font.caption, lineHeight: 1.7, wordBreak: "break-all", color: theme.color.textMuted }, children: ed.raw })] })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.ok, display: "flex", alignItems: "center", gap: 6 }, children: [SP_JSX.jsx(LuShieldCheck, { size: 14 }), " ", t("params.reassure")] }), versionLabel && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("params.detectedProton", { name: versionLabel }) }))] }), frequents.length > 0 && (SP_JSX.jsxs("div", { children: [SP_JSX.jsx(Heading, { icon: SP_JSX.jsx(LuStar, { size: 13 }), children: t("params.frequent") }), frequents.map((p) => (SP_JSX.jsx(LaunchRow, { pill: p, ed: ed, tools: tools, gpu: gpu, supportedEnvs: supportedEnvs, catalog: catalog }, `fav-${p.id}`)))] })), starters.length > 0 && (SP_JSX.jsxs("div", { children: [SP_JSX.jsx(Heading, { icon: SP_JSX.jsx(LuSparkles, { size: 13 }), children: t("params.startHere") }), starters.map((p) => (SP_JSX.jsx(LaunchRow, { pill: p, ed: ed, tools: tools, gpu: gpu, supportedEnvs: supportedEnvs, catalog: catalog }, `start-${p.id}`)))] })), SUBGROUP_ORDER.common.map((sg) => (SP_JSX.jsx(Subgroup, { section: "common", subgroup: sg, ed: ed, tools: tools, envs: supportedEnvs, gpu: gpu, catalog: catalog }, sg))), SP_JSX.jsx(Fold, { title: t("params.advanced"), summary: advancedCount > 0 ? `${advancedCount}` : "", children: SUBGROUP_ORDER.advanced.map((sg) => (SP_JSX.jsx(Subgroup, { section: "advanced", subgroup: sg, ed: ed, tools: tools, envs: supportedEnvs, gpu: gpu, catalog: catalog }, sg))) }), SP_JSX.jsx(Fold, { title: t("params.showCommand"), children: SP_JSX.jsx(LaunchPreview, { preview: ed.preview, owned: owned }) }), SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 18, fontSize: theme.font.caption, color: theme.color.textMuted }, children: [ed.status === "saving" && SP_JSX.jsx("span", { children: t("params.saving") }), ed.status === "saved" && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(LuCheck, { size: 14, color: theme.color.ok }), SP_JSX.jsx("span", { style: { color: theme.color.ok }, children: t("params.saved") })] })), ed.status === "error" && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(LuTriangleAlert, { size: 14, color: theme.color.warn }), SP_JSX.jsx("span", { style: { color: theme.color.warn }, children: t("params.saveError") })] }))] })] }))] }));
+    return (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.md, padding: theme.space.sm, maxWidth: 760, width: "100%", margin: "0 auto" }, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.md }, children: [SP_JSX.jsx(GameCover, { urls: game.coverUrls, name: game.name, width: 52 }), SP_JSX.jsxs("div", { style: { flex: 1, minWidth: 0 }, children: [SP_JSX.jsx("div", { style: { fontSize: theme.font.value, color: theme.color.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, children: game.name }), SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: game.isNonSteam ? t("params.badge.nonSteam") : t("params.badge.steam") })] }), SP_JSX.jsxs(FocusableCard, { onActivate: () => void toggleHidden(), emphasized: gameHidden, style: { flexShrink: 0, padding: 8, gap: 6 }, children: [gameHidden ? SP_JSX.jsx(LuEye, { size: 18, color: theme.color.accent }) : SP_JSX.jsx(LuEyeOff, { size: 18, color: theme.color.textMuted }), SP_JSX.jsx("span", { style: { fontSize: theme.font.caption, color: gameHidden ? theme.color.accent : theme.color.textMuted }, children: t(gameHidden ? "params.unhide" : "params.hide") })] })] }), isRunning && (SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, display: "flex", alignItems: "center", gap: 6 }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 13, style: { flexShrink: 0 } }), " ", t("params.running.restart")] })), ed.error ? (SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, display: "flex", gap: 6, alignItems: "flex-start" }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 14, style: { marginTop: 1, flexShrink: 0 } }), SP_JSX.jsx("span", { children: t("params.readError") })] })) : ed.loading || tools === null || (custom.vars === null && !custom.error) ? (SP_JSX.jsx(Loading, {})) : ed.malformed ? (SP_JSX.jsxs("div", { children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.warn, display: "flex", gap: 6, alignItems: "flex-start", marginBottom: theme.space.sm }, children: [SP_JSX.jsx(LuTriangleAlert, { size: 14, style: { marginTop: 1, flexShrink: 0 } }), SP_JSX.jsx("span", { children: t("params.malformed") })] }), SP_JSX.jsx("div", { style: { ...theme.card, padding: theme.space.md, fontFamily: "monospace", fontSize: theme.font.caption, lineHeight: 1.7, wordBreak: "break-all", color: theme.color.textMuted }, children: ed.raw })] })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: 4 }, children: [SP_JSX.jsxs("div", { style: { fontSize: theme.font.caption, color: theme.color.ok, display: "flex", alignItems: "center", gap: 6 }, children: [SP_JSX.jsx(LuShieldCheck, { size: 14 }), " ", t("params.reassure")] }), versionLabel && (SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted }, children: t("params.detectedProton", { name: versionLabel }) }))] }), frequents.length > 0 && (SP_JSX.jsxs("div", { children: [SP_JSX.jsx(Heading, { icon: SP_JSX.jsx(LuStar, { size: 13 }), children: t("params.frequent") }), frequents.map((p) => (SP_JSX.jsx(LaunchRow, { pill: p, ed: ed, tools: tools, gpu: gpu, supportedEnvs: supportedEnvs, catalog: catalog }, `fav-${p.id}`)))] })), starters.length > 0 && (SP_JSX.jsxs("div", { children: [SP_JSX.jsx(Heading, { icon: SP_JSX.jsx(LuSparkles, { size: 13 }), children: t("params.startHere") }), starters.map((p) => (SP_JSX.jsx(LaunchRow, { pill: p, ed: ed, tools: tools, gpu: gpu, supportedEnvs: supportedEnvs, catalog: catalog }, `start-${p.id}`)))] })), SUBGROUP_ORDER.common.map((sg) => (SP_JSX.jsx(Subgroup, { section: "common", subgroup: sg, ed: ed, tools: tools, envs: supportedEnvs, gpu: gpu, catalog: catalog }, sg))), SP_JSX.jsx(Fold, { title: t("params.advanced"), summary: advancedCount > 0 ? `${advancedCount}` : "", children: SUBGROUP_ORDER.advanced.map((sg) => (SP_JSX.jsx(Subgroup, { section: "advanced", subgroup: sg, fsrReason: fsrReason, ed: ed, tools: tools, envs: supportedEnvs, gpu: gpu, catalog: catalog }, sg))) }), SP_JSX.jsx(Fold, { title: t("params.showCommand"), children: SP_JSX.jsx(LaunchPreview, { preview: ed.preview, owned: owned }) }), SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, minHeight: 18, fontSize: theme.font.caption, color: theme.color.textMuted }, children: [ed.status === "saving" && SP_JSX.jsx("span", { children: t("params.saving") }), ed.status === "saved" && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(LuCheck, { size: 14, color: theme.color.ok }), SP_JSX.jsx("span", { style: { color: theme.color.ok }, children: t("params.saved") })] })), ed.status === "error" && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(LuTriangleAlert, { size: 14, color: theme.color.warn }), SP_JSX.jsx("span", { style: { color: theme.color.warn }, children: t("params.saveError") })] }))] })] }))] }));
 };
 const LaunchEditorModal = ({ game, closeModal }) => (SP_JSX.jsx(DFL.ModalRoot, { closeModal: closeModal, bAllowFullSize: true, children: SP_JSX.jsx(LaunchEditorBody, { game: game }) }));
 /** Open the full-screen launch-options editor for a game. `onClosed` re-syncs the list. */
@@ -19973,7 +21896,7 @@ const ParametrosSection = () => {
 };
 
 const cleanerColumn = { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 };
-const cleanerCaption = { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.5 };
+const cleanerCaption = themed(() => ({ fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.5 }));
 const CleanerButton = ({ label, children, onActivate, disabled, checked, selected, primary, danger, style, role }) => {
     const ref = SP_REACT.useRef(null);
     useRefocusWhenRemoved(ref);
@@ -20271,7 +22194,7 @@ const ProtonCleanerView = ({ controller }) => {
 };
 
 const column = { display: "flex", flexDirection: "column", gap: theme.space.sm, minWidth: 0 };
-const caption = { fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.5 };
+const caption = themed(() => ({ fontSize: theme.font.caption, color: theme.color.textMuted, lineHeight: 1.5 }));
 const FILTERS = ["all", "cleanable", "not_installed", "selected"];
 const HELP_DISMISSED_KEY = "pdc:cleanerHelpDismissed";
 function libraryLabel(entry, internalStorage) {
@@ -21270,6 +23193,8 @@ function SegmentedTabs({ label, tabs, value, onChange }) {
         }) }));
 }
 
+var duoCover = 'http://127.0.0.1:1337/plugins/Panel de Control/assets/duo-cover-4c35c6fc.jpg';
+
 var eclipseCover = 'http://127.0.0.1:1337/plugins/Panel de Control/assets/eclipse-cover-eaf87841.jpg';
 
 var hooandeeCover = 'http://127.0.0.1:1337/plugins/Panel de Control/assets/hooandee-cover-1a2d0b2b.jpg';
@@ -21277,28 +23202,72 @@ var hooandeeCover = 'http://127.0.0.1:1337/plugins/Panel de Control/assets/hooan
 var luminousAtlasCover = 'http://127.0.0.1:1337/plugins/Panel de Control/assets/luminous-atlas-cover-dcd98708.jpg';
 
 const PRESENTATIONS = {
+    "hooandee-duo": {
+        cssLoaderName: "Hooandee Duo",
+        cover: duoCover,
+        tagline: {
+            es: "Tu Inicio de consola, con dock y sonidos",
+            en: "A console home with a dock and sounds",
+            it: "Una home da console, con dock e suoni",
+            de: "Konsolen-Startseite mit Dock und Sounds",
+            "pt-BR": "Início de console, com dock e sons",
+            fr: "Un accueil façon console, avec dock et sons",
+        },
+        description: {
+            de: "Duo ist ein Theme, inspiriert von einer der beliebtesten Konsolen, mit direktem Zugriff auf deine Spiele, eigenen Sounds und einem richtig unterhaltsamen Erlebnis.",
+            "pt-BR": "Duo é um tema inspirado em um dos consoles mais queridos, com acesso direto aos seus jogos, sons próprios e uma experiência muito divertida.",
+            fr: "Duo est un thème inspiré de l'une des consoles les plus appréciées, avec un accès direct à vos jeux, des sons bien à lui et une expérience vraiment amusante.",
+        },
+    },
     "hooandee-gallery": {
         cssLoaderName: "Hooandee Gallery",
         cover: hooandeeCover,
+        tagline: {
+            es: "Steam en cristal, claro u oscuro",
+            en: "Steam in glass, light or dark",
+            it: "Steam in vetro, chiaro o scuro",
+            de: "Steam aus Glas, hell oder dunkel",
+            "pt-BR": "Steam em vidro, claro ou escuro",
+            fr: "Steam en verre, clair ou sombre",
+        },
         description: {
             de: "Mein erstes Theme. Eine elegantere Version von Steam, inspiriert von Glas und Transparenz, mit durchscheinenden Ebenen und dezenten Details, die Tiefe geben, ohne an Klarheit zu verlieren.",
             "pt-BR": "Meu primeiro tema. Uma versão mais elegante do Steam inspirada no vidro e nas transparências, com camadas translúcidas e detalhes sutis que dão profundidade sem perder a clareza.",
+            fr: "Mon premier thème. Une version plus élégante de Steam, inspirée du verre et de la transparence, avec des couches translucides et des détails discrets qui apportent de la profondeur sans rien perdre en lisibilité.",
         },
     },
     "hooandee-luminous-atlas": {
         cssLoaderName: "Hooandee Luminous Atlas",
         cover: luminousAtlasCover,
+        tagline: {
+            es: "Los menús de mapa de un RPG táctico",
+            en: "The map menus of a tactics RPG",
+            it: "I menu mappa di un GDR tattico",
+            de: "Die Kartenmenüs eines Taktik-RPGs",
+            "pt-BR": "Os menus de mapa de um RPG tático",
+            fr: "Les menus de carte d'un RPG tactique",
+        },
         description: {
             de: "Ein taktisches Theme, inspiriert von den Atlas- und Kartenmenüs strategischer Rollenspiele. Dunkelgrünes Pergament, elfenbeinfarbene Tinte und Messingrahmen, mit anpassbaren Covern, einem Schnellzugriffsmenü und dynamischen Elementen.",
             "pt-BR": "Um tema tático inspirado nos menus de atlas e mapas dos RPGs de estratégia. Pergaminho verde-escuro, tinta marfim e molduras de latão, com capas personalizáveis, menu de acesso rápido e elementos dinâmicos.",
+            fr: "Un thème tactique inspiré des menus d'atlas et de cartes des RPG de stratégie. Parchemin vert foncé, encre ivoire et cadres en laiton, avec des jaquettes personnalisables, un menu d'accès rapide et des éléments dynamiques.",
         },
     },
     "hooandee-eclipse": {
         cssLoaderName: "Hooandee Eclipse",
         cover: eclipseCover,
+        tagline: {
+            es: "Tus juegos como planetas, pensado para OLED",
+            en: "Your games as planets, made for OLED",
+            it: "I tuoi giochi come pianeti, pensato per OLED",
+            de: "Deine Spiele als Planeten, für OLED gemacht",
+            "pt-BR": "Seus jogos como planetas, feito para OLED",
+            fr: "Vos jeux en planètes, pensé pour l'OLED",
+        },
         description: {
             de: "Ein Theme, inspiriert vom Weltall und von Sonnenfinsternissen. Deine Spiele werden zu Planeten auf einem wirklich schwarzen Hintergrund, mit Sternen und einem sanften Leuchten auf dem, was du gerade ausgewählt hast. Gemacht für OLED-Bildschirme, denn dort kommt es am besten zur Geltung.",
             "pt-BR": "Um tema inspirado no espaço e nos eclipses. Seus jogos viram planetas sobre um fundo preto de verdade, com estrelas e um brilho suave no que você tem selecionado. Feito para telas OLED, que é onde ele fica mais bonito.",
+            fr: "Un thème inspiré de l'espace et des éclipses. Vos jeux deviennent des planètes sur un fond vraiment noir, avec des étoiles et une douce lueur sur ce que vous avez sélectionné. Pensé pour les écrans OLED, car c'est là qu'il rend le mieux.",
         },
     },
 };
@@ -21310,18 +23279,21 @@ function themeCoverFor(release) {
     return presentationFor(release)?.cover;
 }
 function themeDescriptionFor(release, lang) {
-    const local = lang === "de" || lang === "pt-BR" ? presentationFor(release)?.description[lang] : undefined;
+    const local = lang === "de" || lang === "pt-BR" || lang === "fr" ? presentationFor(release)?.description[lang] : undefined;
     return local ?? localizePublishedText(release.description, lang);
 }
+function themeTaglineFor(release, lang) {
+    return presentationFor(release)?.tagline[lang] ?? themeDescriptionFor(release, lang);
+}
 
-const PREVIEW_STYLE = {
+const PREVIEW_STYLE = themed(() => ({
     height: 96,
     position: "relative",
     overflow: "hidden",
     borderRadius: theme.radius.sm,
     background: `linear-gradient(145deg, ${theme.color.surfaceRaised}, ${theme.color.surface})`,
     boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
-};
+}));
 const PREVIEW_LAYERS = [
     { left: "9%", top: 12, width: "19%", height: 52 },
     { left: "32%", top: 20, width: "19%", height: 44 },
@@ -21337,6 +23309,19 @@ function ThemePreview({ card }) {
                     background: `linear-gradient(160deg, rgba(${theme.color.accentRgb}, 0.34), ${theme.color.surfaceRaised})`,
                     boxShadow: "0 5px 14px rgba(0,0,0,0.35)",
                 } }, layer.left))), SP_JSX.jsx("div", { style: { position: "absolute", right: "8%", top: 15, width: "12%", height: 4, borderRadius: 4, background: theme.color.accent } }), cover && cover !== failedCover ? (SP_JSX.jsx("img", { "data-testid": "theme-preview-image", src: cover, alt: "", "aria-hidden": true, draggable: false, width: 960, height: 240, onError: () => setFailedCover(cover), style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" } })) : null] }));
+}
+function EarlyBadge() {
+    const { t } = useI18n();
+    return (SP_JSX.jsx("span", { "data-pdc-early-badge": "true", style: {
+            fontSize: 9,
+            lineHeight: 1.2,
+            padding: "2px 6px",
+            borderRadius: 999,
+            color: theme.color.accent,
+            boxShadow: `inset 0 0 0 1px ${theme.color.accent}`,
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+        }, children: t("themes.early.badge") }));
 }
 function StatePill({ card, id }) {
     const { t } = useI18n();
@@ -21355,15 +23340,17 @@ function ThemeCard({ card, operation, onOpen }) {
     const activating = SP_REACT.useRef(false);
     const busy = operation !== null;
     const name = localizePublishedText(card.release.displayName, lang);
-    const description = themeDescriptionFor(card.release, lang);
+    const tagline = themeTaglineFor(card.release, lang);
     const nameId = `theme-card-${card.id}-name`;
     const statusId = `theme-card-${card.id}-status`;
     const descriptionId = `theme-card-${card.id}-description`;
-    const versionLabel = !card.installable
-        ? "themes.remote.card.incompatible"
-        : card.updateAvailable
-            ? "themes.remote.card.update"
-            : "themes.remote.card.version";
+    const versionLabel = card.earlyOnly
+        ? "themes.early.version"
+        : !card.installable
+            ? "themes.remote.card.incompatible"
+            : card.updateAvailable
+                ? "themes.remote.card.update"
+                : "themes.remote.card.version";
     const activate = () => {
         if (busy || activating.current)
             return;
@@ -21377,7 +23364,7 @@ function ThemeCard({ card, operation, onOpen }) {
             minWidth: 0,
             cursor: busy ? "default" : "pointer",
             "--pdc-focus-radius": `${theme.radius.md}px`,
-        }, children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.sm, opacity: busy ? 0.62 : 1, overflow: "hidden" }, children: [SP_JSX.jsx(ThemePreview, { card: card }), SP_JSX.jsxs("div", { style: { padding: `${theme.space.sm}px ${theme.space.xs}px ${theme.space.xs}px` }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: theme.space.sm }, children: [SP_JSX.jsx("span", { id: nameId, style: { color: theme.color.textPrimary, fontSize: theme.font.body, fontWeight: 750, minWidth: 0, overflowWrap: "anywhere" }, children: name }), SP_JSX.jsx(StatePill, { card: card, id: statusId })] }), SP_JSX.jsx("div", { id: descriptionId, style: { marginTop: 5, color: theme.color.textMuted, fontSize: theme.font.caption, lineHeight: 1.35 }, children: description }), SP_JSX.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 5, color: card.installable ? theme.color.accent : theme.color.warn, fontSize: theme.font.caption, fontWeight: 700 }, children: SP_JSX.jsx("span", { children: t(versionLabel, { version: card.release.publishedVersion }) }) })] })] }) }));
+        }, children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.sm, opacity: busy ? 0.62 : 1, overflow: "hidden" }, children: [SP_JSX.jsx(ThemePreview, { card: card }), SP_JSX.jsxs("div", { style: { padding: `${theme.space.sm}px ${theme.space.xs}px ${theme.space.xs}px` }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: theme.space.sm }, children: [SP_JSX.jsxs("span", { id: nameId, style: { color: theme.color.textPrimary, fontSize: theme.font.body, fontWeight: 750, minWidth: 0, overflowWrap: "anywhere", display: "inline-flex", alignItems: "center", gap: 6 }, children: [name, card.early ? SP_JSX.jsx(EarlyBadge, {}) : null] }), SP_JSX.jsx(StatePill, { card: card, id: statusId })] }), SP_JSX.jsx("div", { id: descriptionId, style: { marginTop: 5, color: theme.color.textMuted, fontSize: theme.font.caption, lineHeight: 1.35, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }, children: tagline }), SP_JSX.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 5, color: card.installable || card.earlyOnly ? theme.color.accent : theme.color.warn, fontSize: theme.font.caption, fontWeight: 700 }, children: SP_JSX.jsx("span", { children: t(versionLabel, { version: card.release.publishedVersion }) }) })] })] }) }));
 }
 
 const MAX_LABEL_CHARS = 120;
@@ -21486,7 +23473,7 @@ function useThemePatchLabels(catalogId, cssLoaderName, version) {
     return labels;
 }
 
-const patchSurfaceStyle = {
+const patchSurfaceStyle = themed(() => ({
     ...theme.card,
     color: theme.color.textPrimary,
     minWidth: 0,
@@ -21496,7 +23483,7 @@ const patchSurfaceStyle = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-};
+}));
 const readOnlyStyle = {
     minHeight: 34,
     display: "flex",
@@ -21554,7 +23541,7 @@ function ThemePatchControl({ patch, labels, disabled = false, onChange }) {
 }
 
 const gamepadNavigation = createThemeNavigationAccess();
-const THEME_CONTROL_RESET = `
+const THEME_CONTROL_RESET = () => `
 [data-pdc-theme-settings] { color: ${theme.color.textPrimary} !important; }
 [data-pdc-theme-settings] [data-pdc-theme-muted] { color: ${theme.color.textMuted} !important; }
 [data-pdc-theme-settings] [data-pdc-theme-cover-header] { color: rgba(255,255,255,0.99) !important; }
@@ -21580,12 +23567,12 @@ const THEME_CONTROL_RESET = `
   outline-color: ${theme.color.accent} !important;
 }
 `;
-const STATUS_SURFACE = {
+const STATUS_SURFACE = themed(() => ({
     borderRadius: theme.radius.md,
     minWidth: 0,
     padding: theme.space.md,
     marginBottom: theme.space.section,
-};
+}));
 const COVER_IMAGE_STYLE = {
     position: "absolute",
     inset: -2,
@@ -21601,14 +23588,14 @@ const COVER_GRADIENT_STYLE = {
     zIndex: -1,
     background: "linear-gradient(0deg, rgba(0,0,0,1) 0, rgba(0,0,0,0.96) 4px, rgba(0,0,0,0) 14px), linear-gradient(90deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.66) 54%, rgba(0,0,0,0.38) 100%), linear-gradient(0deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.58) 58%, rgba(0,0,0,0.12) 100%)",
 };
-const CONFIRMATION_SURFACE_STYLE = {
+const CONFIRMATION_SURFACE_STYLE = themed(() => ({
     ...theme.card,
     padding: theme.space.md,
     marginBottom: theme.space.section,
     background: `linear-gradient(135deg, rgba(${theme.color.accentRgb},0.15), rgba(${theme.color.accentRgb},0.035) 48%, ${theme.color.surfaceRaised})`,
     boxShadow: `inset 0 0 0 1px rgba(${theme.color.accentRgb},0.25), 0 14px 32px rgba(0,0,0,0.2)`,
-};
-const CONFIRMATION_ICON_STYLE = {
+}));
+const CONFIRMATION_ICON_STYLE = themed(() => ({
     width: 42,
     height: 42,
     borderRadius: theme.radius.sm,
@@ -21618,8 +23605,8 @@ const CONFIRMATION_ICON_STYLE = {
     color: theme.color.accent,
     background: `rgba(${theme.color.accentRgb},0.16)`,
     boxShadow: `inset 0 0 0 1px rgba(${theme.color.accentRgb},0.22)`,
-};
-const VERSION_PILL_STYLE = {
+}));
+const VERSION_PILL_STYLE = themed(() => ({
     alignSelf: "start",
     padding: "4px 9px",
     borderRadius: 999,
@@ -21628,47 +23615,47 @@ const VERSION_PILL_STYLE = {
     whiteSpace: "nowrap",
     background: "rgba(255,255,255,0.055)",
     boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
-};
-const SECONDARY_CONFIRM_STYLE = {
+}));
+const SECONDARY_CONFIRM_STYLE = themed(() => ({
     minWidth: 120,
     borderRadius: theme.radius.sm,
     background: "rgba(255,255,255,0.028)",
     color: theme.color.textMuted,
     boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
-};
-const PRIMARY_CONFIRM_STYLE = {
+}));
+const PRIMARY_CONFIRM_STYLE = themed(() => ({
     minWidth: 142,
     borderRadius: theme.radius.sm,
     background: `linear-gradient(180deg, rgba(${theme.color.accentRgb},0.18), rgba(${theme.color.accentRgb},0.08))`,
     color: theme.color.textPrimary,
     fontWeight: 780,
     boxShadow: `inset 0 0 0 1px rgba(${theme.color.accentRgb},0.42), 0 7px 20px rgba(${theme.color.accentRgb},0.12)`,
-};
-const DESTRUCTIVE_CONFIRMATION_SURFACE_STYLE = {
+}));
+const DESTRUCTIVE_CONFIRMATION_SURFACE_STYLE = themed(() => ({
     ...CONFIRMATION_SURFACE_STYLE,
     background: theme.color.surfaceRaised,
     boxShadow: `inset 0 0 0 1px ${theme.color.warn}, 0 14px 32px rgba(0,0,0,0.2)`,
-};
-const DESTRUCTIVE_CONFIRM_STYLE = {
+}));
+const DESTRUCTIVE_CONFIRM_STYLE = themed(() => ({
     ...PRIMARY_CONFIRM_STYLE,
     background: theme.color.warn,
     color: theme.color.surface,
     boxShadow: `inset 0 0 0 1px ${theme.color.warn}`,
-};
+}));
 const HEADER_ACTION_STYLE = {
     position: "relative",
     flexShrink: 0,
     minWidth: 240,
     whiteSpace: "nowrap",
 };
-const DELETE_ACTION_STYLE = {
+const DELETE_ACTION_STYLE = themed(() => ({
     width: "100%",
     minWidth: 0,
     borderRadius: theme.radius.sm,
     background: theme.color.surfaceRaised,
     color: theme.color.textMuted,
     boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
-};
+}));
 function formatVersion(value) {
     return value.toLowerCase().startsWith("v") ? value : `v${value}`;
 }
@@ -21758,7 +23745,7 @@ function ThemeDetailsModal({ themeId, closeModal }) {
         : null;
     const activeConfirmation = activeOfferConfirmation ?? activeUninstallConfirmation;
     const cancelOrClose = activeConfirmation ? () => switchConfirmation(null) : closeModal;
-    return (SP_JSX.jsx(DFL.ModalRoot, { bAllowFullSize: fullSizeLayout, onCancel: cancelOrClose, onEscKeypress: cancelOrClose, children: SP_JSX.jsx(FocusRoot, { style: fullSizeLayout ? { minHeight: "100%" } : undefined, children: SP_JSX.jsx(DFL.Focusable, { ref: bodyRef, style: fullSizeLayout ? { minHeight: "100%" } : undefined, children: SP_JSX.jsxs("div", { "data-testid": "theme-settings-content", "data-pdc-theme-settings": "true", style: { maxWidth: fullSizeLayout ? 760 : 620, margin: "0 auto", padding: fullSizeLayout ? "8px 8px 54px" : "4px 8px 18px", color: theme.color.textPrimary }, children: [SP_JSX.jsx("style", { children: THEME_CONTROL_RESET }), SP_JSX.jsxs("header", { "data-pdc-theme-cover-header": cover ? "true" : undefined, style: {
+    return (SP_JSX.jsx(DFL.ModalRoot, { bAllowFullSize: fullSizeLayout, onCancel: cancelOrClose, onEscKeypress: cancelOrClose, children: SP_JSX.jsx(FocusRoot, { style: fullSizeLayout ? { minHeight: "100%" } : undefined, children: SP_JSX.jsx(DFL.Focusable, { ref: bodyRef, style: fullSizeLayout ? { minHeight: "100%" } : undefined, children: SP_JSX.jsxs("div", { "data-testid": "theme-settings-content", "data-pdc-theme-settings": "true", style: { maxWidth: fullSizeLayout ? 760 : 620, margin: "0 auto", padding: fullSizeLayout ? "8px 8px 54px" : "4px 8px 18px", color: theme.color.textPrimary }, children: [SP_JSX.jsx("style", { children: THEME_CONTROL_RESET() }), SP_JSX.jsxs("header", { "data-pdc-theme-cover-header": cover ? "true" : undefined, style: {
                                 ...theme.card,
                                 position: "relative",
                                 isolation: "isolate",
@@ -21784,10 +23771,12 @@ function ThemeDetailsModal({ themeId, closeModal }) {
                                                 boxShadow: cover ? "inset 0 0 0 1px rgba(255,255,255,0.18)" : `inset 0 0 0 1px rgba(${theme.color.accentRgb},0.24)`,
                                             }, children: SP_JSX.jsx(LuPaintbrush, { size: 20 }) }), SP_JSX.jsx("h2", { ref: headingRef, tabIndex: -1, style: { flex: 1, minWidth: 0, fontSize: fullSizeLayout ? 32 : 28, lineHeight: 1.05, margin: 0, letterSpacing: -0.8 }, children: displayName }), card.installed ? (SP_JSX.jsx("div", { "data-pdc-theme-action": "true", style: HEADER_ACTION_STYLE, children: SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: activationBlocked, onClick: () => void (card.active ? controller.deactivate(card.id) : controller.activate(card.id)), children: [card.active ? SP_JSX.jsx(LuPower, { size: 14, "aria-hidden": true }) : SP_JSX.jsx(LuSparkles, { size: 14, "aria-hidden": true }), " ", t(card.active
                                                         ? deactivating ? "themes.action.deactivating" : "themes.action.deactivate"
-                                                        : activating ? "themes.action.activating" : "themes.action.activate")] }) })) : offer && !activeOfferConfirmation ? (SP_JSX.jsx("div", { ref: installOfferRef, "data-pdc-theme-action": "true", style: HEADER_ACTION_STYLE, children: SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: actionsBlocked, onClick: () => switchConfirmation(offer), children: [SP_JSX.jsx(LuDownload, { size: 14, "aria-hidden": true }), " ", t(installing ? "themes.action.installing" : "themes.action.install")] }) })) : null] }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { position: "relative", fontSize: 14, lineHeight: 1.45 }, children: description }), SP_JSX.jsxs("div", { "data-pdc-theme-muted": true, style: { position: "relative", display: "flex", flexWrap: "wrap", gap: 7, fontSize: theme.font.caption }, children: [card.installed && card.installedVersion ? SP_JSX.jsx("span", { children: t("themes.version.installed", { version: formatVersion(card.installedVersion) }) }) : null, SP_JSX.jsx("span", { children: t("themes.version.published", { version: formatVersion(card.release.publishedVersion) }) })] })] }), !fullSizeLayout ? SP_JSX.jsx("div", { "aria-hidden": true, style: { height: 1, margin: `0 ${theme.space.xs}px ${theme.space.md}px`, background: theme.color.hairline } }) : null, !cssReady ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { role: "status", "aria-live": "polite", children: t(`themes.cssLoader.${controller.snapshot.status}`) }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, marginTop: theme.space.md }, children: [controller.snapshot.status === "missing" ? (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => DFL.Navigation.Navigate("/decky/store"), children: t("themes.cssLoader.openStore") })) : null, SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: controller.refreshing, onClick: () => void controller.refresh(), children: [SP_JSX.jsx(LuRefreshCw, { size: 14, "aria-hidden": true }), " ", t(controller.refreshing ? "themes.loading" : "themes.retry")] })] })] })) : null, controller.publication.status === "cached" ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { role: "status", "data-pdc-theme-warning": true, children: t("themes.remote.cached") }), SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: operationBusy, onClick: () => void controller.refreshPublication(), children: t("themes.remote.retry") }) })] })) : null, controller.sectionHandoff && !controller.error ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", role: "status", style: STATUS_SURFACE, children: SP_JSX.jsx("div", { "data-pdc-theme-muted": true, children: t("themes.operation.sectionHandoff", {
+                                                        : activating ? "themes.action.activating" : "themes.action.activate")] }) })) : offer && !activeOfferConfirmation ? (SP_JSX.jsx("div", { ref: installOfferRef, "data-pdc-theme-action": "true", style: HEADER_ACTION_STYLE, children: SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: actionsBlocked, onClick: () => switchConfirmation(offer), children: [SP_JSX.jsx(LuDownload, { size: 14, "aria-hidden": true }), " ", t(installing ? "themes.action.installing" : "themes.action.install")] }) })) : null] }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { position: "relative", fontSize: 14, lineHeight: 1.45 }, children: description }), SP_JSX.jsxs("div", { "data-pdc-theme-muted": true, style: { position: "relative", display: "flex", flexWrap: "wrap", gap: 7, fontSize: theme.font.caption }, children: [card.installed && card.installedVersion ? SP_JSX.jsx("span", { children: t("themes.version.installed", { version: formatVersion(card.installedVersion) }) }) : null, SP_JSX.jsx("span", { children: t(card.earlyOnly ? "themes.early.version" : "themes.version.published", { version: formatVersion(card.release.publishedVersion) }) })] })] }), card.early && cssReady ? (SP_JSX.jsxs("section", { "data-pdc-theme-early": "true", "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", gap: theme.space.sm, fontWeight: 700 }, children: [SP_JSX.jsx(EarlyBadge, {}), " ", t("themes.early.title")] }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, fontSize: theme.font.caption }, children: t("themes.early.version", { version: formatVersion(card.early.version) }) }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, fontSize: theme.font.caption, lineHeight: 1.45 }, children: t(card.early.installable ? "themes.early.desc" : "themes.early.unavailable") }), SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: actionsBlocked || !card.early.installable, onClick: () => void controller.installEarly(card.id), children: [SP_JSX.jsx(LuFileArchive, { size: 14, "aria-hidden": true }), " ", t(installing ? "themes.action.installing" : "themes.early.install")] }) })] })) : null, !fullSizeLayout ? SP_JSX.jsx("div", { "aria-hidden": true, style: { height: 1, margin: `0 ${theme.space.xs}px ${theme.space.md}px`, background: theme.color.hairline } }) : null, !cssReady ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { role: "status", "aria-live": "polite", children: t(`themes.cssLoader.${controller.snapshot.status}`) }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.sm, marginTop: theme.space.md }, children: [controller.snapshot.status === "missing" ? (SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: () => DFL.Navigation.Navigate("/decky/store"), children: t("themes.cssLoader.openStore") })) : null, SP_JSX.jsxs(DFL.ButtonItem, { layout: "below", disabled: controller.refreshing, onClick: () => void controller.refresh(), children: [SP_JSX.jsx(LuRefreshCw, { size: 14, "aria-hidden": true }), " ", t(controller.refreshing ? "themes.loading" : "themes.retry")] })] })] })) : null, controller.publication.status === "cached" ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { role: "status", "data-pdc-theme-warning": true, children: t("themes.remote.cached") }), SP_JSX.jsx("div", { style: { marginTop: theme.space.sm }, children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: operationBusy, onClick: () => void controller.refreshPublication(), children: t("themes.remote.retry") }) })] })) : null, controller.sectionHandoff && !controller.error ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", role: "status", style: STATUS_SURFACE, children: SP_JSX.jsx("div", { "data-pdc-theme-muted": true, children: t("themes.operation.sectionHandoff", {
                                     owner: controller.sectionHandoff.owner,
                                     others: controller.sectionHandoff.others.join(", "),
-                                }) }) })) : null, controller.error ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", role: "alert", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { "data-pdc-theme-warning": true, children: t(controller.recoveryBlocked ? "themes.recovery.blocked" : "themes.operation.failed") }), controller.errorCode ? (SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, fontSize: theme.font.caption }, children: t("themes.operation.code", { code: controller.errorCode }) })) : null] })) : null, card.release.compatibility !== "compatible" ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: SP_JSX.jsx("div", { "data-pdc-theme-warning": true, children: t(`themes.remote.${card.release.compatibility}`) }) })) : null, releaseNote ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { style: { fontWeight: 750 }, children: t("themes.remote.notes") }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, lineHeight: 1.45 }, children: releaseNote })] })) : null, offer && activeOfferConfirmation ? (SP_JSX.jsx(ThemeConfirmation, { confirmation: activeOfferConfirmation, displayName: displayName, actionsBlocked: actionsBlocked, onCancel: () => switchConfirmation(null), onConfirm: () => {
+                                }) }) })) : null, controller.error ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", role: "alert", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { "data-pdc-theme-warning": true, children: t(controller.recoveryBlocked
+                                        ? "themes.recovery.blocked"
+                                        : controller.errorCode === "unknown_archive" ? "themes.early.rejected" : "themes.operation.failed") }), controller.errorCode ? (SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, fontSize: theme.font.caption }, children: t("themes.operation.code", { code: controller.errorCode }) })) : null] })) : null, card.release.compatibility !== "compatible" ? (SP_JSX.jsx("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: SP_JSX.jsx("div", { "data-pdc-theme-warning": true, children: t(`themes.remote.${card.release.compatibility}`) }) })) : null, releaseNote ? (SP_JSX.jsxs("div", { "data-pdc-theme-status-surface": "true", style: STATUS_SURFACE, children: [SP_JSX.jsx("div", { style: { fontWeight: 750 }, children: t("themes.remote.notes") }), SP_JSX.jsx("div", { "data-pdc-theme-muted": true, style: { marginTop: theme.space.xs, lineHeight: 1.45 }, children: releaseNote })] })) : null, offer && activeOfferConfirmation ? (SP_JSX.jsx(ThemeConfirmation, { confirmation: activeOfferConfirmation, displayName: displayName, actionsBlocked: actionsBlocked, onCancel: () => switchConfirmation(null), onConfirm: () => {
                                 switchConfirmation(null);
                                 void controller.install(card.id, { version: activeOfferConfirmation.version });
                             } })) : null, offer && card.installed && !activeOfferConfirmation ? (SP_JSX.jsxs("div", { role: "group", "aria-labelledby": "theme-update-ready-label", style: {
@@ -21836,6 +23825,7 @@ const FLAG_SVGS = {
     it: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16"><path fill="#009246" d="M0 0h8v16H0z"/><path fill="#fff" d="M8 0h8v16H8z"/><path fill="#ce2b37" d="M16 0h8v16h-8z"/></svg>',
     de: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16"><path d="M0 0h24v5.33H0z"/><path fill="#d00" d="M0 5.33h24v5.34H0z"/><path fill="#ffce00" d="M0 10.67h24V16H0z"/></svg>',
     "pt-BR": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16"><path fill="#009739" d="M0 0h24v16H0z"/><path fill="#fedd00" d="m12 2 9 6-9 6-9-6z"/><circle cx="12" cy="8" r="3.5" fill="#012169"/><path fill="none" stroke="#fff" stroke-width=".7" d="M8.8 7.2c2.2-.7 4.4-.3 6.5 1"/></svg>',
+    fr: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 16"><path fill="#002395" d="M0 0h8v16H0z"/><path fill="#fff" d="M8 0h8v16H8z"/><path fill="#ed2939" d="M16 0h8v16h-8z"/></svg>',
 };
 const LanguageFlag = ({ lang }) => (SP_JSX.jsx("img", { src: `data:image/svg+xml,${encodeURIComponent(FLAG_SVGS[lang])}`, width: 24, height: 16, alt: "", "aria-hidden": "true", "data-language-flag": lang, style: { flexShrink: 0, display: "block", borderRadius: 2, boxShadow: "0 0 0 1px rgba(255,255,255,0.22)" } }));
 const LanguageOptionLabel = ({ lang, label }) => (SP_JSX.jsxs("span", { style: { display: "flex", alignItems: "center", gap: 10, minWidth: 0 }, children: [SP_JSX.jsx(LanguageFlag, { lang: lang }), SP_JSX.jsx("span", { children: label })] }));
@@ -21848,10 +23838,10 @@ const LanguageSelector = () => {
     return (SP_JSX.jsx("div", { style: { width: 190, minWidth: 0 }, children: SP_JSX.jsx(DFL.Dropdown, { rgOptions: DROPDOWN_OPTIONS, selectedOption: lang, menuLabel: t("settings.language"), onChange: (option) => setLang(option.data) }) }));
 };
 
-const iconBtn = {
+const iconBtn = themed(() => ({
     display: "flex", alignItems: "center", justifyContent: "center",
     padding: 6, borderRadius: theme.radius.sm, cursor: "pointer",
-};
+}));
 const IconAction = ({ label, color, disabled, onTap, children }) => (SP_JSX.jsx(QamAction, { noFocusRing: true, onPress: onTap, disabled: disabled, style: { ...iconBtn, color, opacity: disabled ? 0.3 : 1, cursor: disabled ? "default" : "pointer" }, label: label, children: children }));
 
 function updateShowHome(layout, showHome) {
@@ -22421,13 +24411,18 @@ function sectionLine(section, row, t) {
     if (section === "tdp" && row.tdp) {
         if (!row.tdp.auto) {
             const text = row.tdp.unit === "level"
-                ? t("tdp.level.value", { level: row.tdp.pl1 })
+                ? (row.tdp.gpu_level != null
+                    ? t("tdp.split.summary", { cpu: row.tdp.pl1, gpu: row.tdp.gpu_level })
+                    : t("tdp.level.value", { level: row.tdp.pl1 }))
                 : `${row.tdp.pl1} W`;
             return { label: t("gameProfiles.sec.tdp"), text, dim: row.tdp.follows_global };
         }
         const details = [
             t("gameProfiles.auto"),
             `${row.tdp.target_fps} FPS`,
+            ...(row.tdp.unit === "level" && row.tdp.gpu_level != null
+                ? [t("tdp.split.summary", { cpu: row.tdp.pl1, gpu: row.tdp.gpu_level })]
+                : []),
             `${t("tdp.auto.initial.label")} ${row.tdp.initial_tdp} W`,
         ];
         if (row.tdp.min_tdp != null && row.tdp.max_tdp != null) {
@@ -22553,6 +24548,8 @@ function pickTerm(entry, lang) {
         return entry.termDe;
     if (lang === "pt-BR")
         return entry.termPtBR;
+    if (lang === "fr")
+        return entry.termFr;
     return entry.term;
 }
 const CATEGORIES = [
@@ -22563,6 +24560,7 @@ const CATEGORIES = [
         it: "Potenza e batteria",
         de: "Leistung und Akku",
         ptBR: "Potência e bateria",
+        fr: "Puissance et batterie",
         terms: [
             {
                 id: "tdp",
@@ -22570,11 +24568,13 @@ const CATEGORIES = [
                 termIt: "TDP",
                 termDe: "TDP",
                 termPtBR: "TDP",
+                termFr: "TDP",
                 es: "Es cuánta energía dejas que gaste el chip mientras juegas, medida en vatios. Si le das más, los juegos van más finos pero la consola calienta y la batería vuela. Si le das menos, aguantas más rato de partida y todo va más fresquito aunque pierdas algo de rendimiento. Es la palanca que más vas a tocar en este panel.",
                 en: "It's how much energy you let the chip spend while you play, measured in watts. Give it more and games run smoother, but the console heats up and the battery flies. Give it less and you get more play time with everything cooler, even if you lose a bit of performance. It's the lever you'll reach for most in this panel.",
                 it: "Indica quanta energia permetti al chip di consumare mentre giochi, misurata in watt. Se lo aumenti, i giochi girano meglio, ma il dispositivo si scalda e la batteria si scarica rapidamente. Se lo riduci, puoi giocare più a lungo e mantenere temperature più basse, rinunciando a un po' di prestazioni. È il controllo che userai più spesso in questo pannello.",
                 de: "Gibt an, wie viel Energie der Chip beim Spielen verbrauchen darf, gemessen in Watt. Mit mehr TDP laufen Spiele flüssiger, das Gerät wird aber wärmer und der Akku leert sich schneller. Mit weniger TDP kannst du länger und kühler spielen, verlierst jedoch etwas Leistung. Diese Einstellung wirst du im Panel am häufigsten verwenden.",
                 ptBR: "É a potência que o chip pode consumir enquanto você joga, medida em watts. Com um TDP maior, os jogos podem rodar melhor, mas o dispositivo esquenta e gasta mais bateria. Com um TDP menor, você ganha autonomia e reduz a temperatura, mesmo que perca um pouco de desempenho. É um dos controles que você mais usará neste painel.",
+                fr: "C'est la quantité d'énergie que vous laissez la puce consommer pendant que vous jouez, mesurée en watts. Plus vous lui en donnez, plus les jeux tournent bien, mais la console chauffe et la batterie fond à vue d'œil. Moins vous lui en donnez, plus vos sessions durent et plus tout reste au frais, au prix d'un peu de performances. C'est le réglage que vous toucherez le plus dans le Centre de contrôle.",
             },
             {
                 id: "watts",
@@ -22582,11 +24582,13 @@ const CATEGORIES = [
                 termIt: "Watt (W)",
                 termDe: "Watt (W)",
                 termPtBR: "Watts (W)",
+                termFr: "Watts (W)",
                 es: "Es la unidad con la que se mide la potencia. Cuando ves un «17 W» es la energía que está tragando el chip en ese momento de la partida. Cuantos más vatios, más chicha y más calor.",
                 en: "It's the unit power is measured in. When you see \"17 W\", that's the energy the chip is gulping down right then in your session. The more watts, the more muscle and the more heat.",
                 it: "È l'unità con cui si misura la potenza. Quando leggi «17 W», indica quanta energia sta consumando il chip in quel momento. In generale, più watt significano più potenza e più calore.",
                 de: "Watt ist die Einheit für Leistung. Wenn du 17 W siehst, verbraucht der Chip in diesem Moment so viel Energie. Mehr Watt bedeuten in der Regel mehr Leistung, aber auch mehr Wärme.",
                 ptBR: "É a unidade usada para medir potência. Quando aparece 17 W, essa é a potência consumida pelo chip naquele momento. Em geral, mais watts significam mais desempenho e também mais calor.",
+                fr: "C'est l'unité qui sert à mesurer la puissance. Quand vous voyez « 17 W », c'est l'énergie que la puce engloutit à ce moment précis de la partie. Plus il y a de watts, plus ça envoie, et plus ça chauffe.",
             },
             {
                 id: "auto-tdp",
@@ -22594,11 +24596,13 @@ const CATEGORIES = [
                 termIt: "Auto-TDP",
                 termDe: "Auto-TDP",
                 termPtBR: "Auto-TDP",
+                termFr: "Auto-TDP",
                 es: "En vez de fijar tú los vatios, la consola los sube y baja sola según lo que pida cada juego. En una pelea intensa te da caña y en un menú tranquilo afloja, para que no gastes batería de más sin enterarte.",
                 en: "Instead of setting the watts yourself, the console raises and lowers them on its own based on what each game asks for. It pushes hard in a hectic fight and eases off in a quiet menu, so you don't burn extra battery without realising.",
                 it: "Invece di impostare un valore fisso, il dispositivo aumenta e riduce da solo i watt in base alle richieste del gioco. Offre più potenza durante uno scontro intenso e la riduce in un menu tranquillo, evitando consumi inutili.",
                 de: "Statt einen festen Wattwert einzustellen, erhöht oder senkt das Gerät die Leistung passend zum Bedarf des Spiels. In einem intensiven Kampf gibt es mehr Leistung, in einem ruhigen Menü weniger. So wird der Akku nicht unnötig belastet.",
                 ptBR: "Em vez de usar um valor fixo, o dispositivo aumenta ou reduz os watts conforme a necessidade do jogo. Ele entrega mais potência em uma batalha intensa e economiza em um menu parado, evitando gastar bateria sem necessidade.",
+                fr: "Au lieu de fixer les watts vous-même, vous laissez la console les augmenter et les baisser toute seule selon ce que demande chaque jeu. En plein combat, elle met le paquet ; dans un menu calme, elle lève le pied. Résultat : pas de batterie gaspillée sans que vous le remarquiez.",
             },
             {
                 id: "boost",
@@ -22606,11 +24610,13 @@ const CATEGORIES = [
                 termIt: "Boost",
                 termDe: "Boost",
                 termPtBR: "Boost",
+                termFr: "Boost",
                 es: "Un chute de potencia de unos segundos cuando el juego lo pide de golpe, como al entrar a una zona nueva o cargar una partida. Te da ese empujón puntual sin dejar el consumo alto todo el rato.",
                 en: "A few-second shot of power when the game suddenly needs it, like walking into a new area or loading a save. It gives you that quick push without keeping your power draw high the whole time.",
                 it: "Un breve aumento di potenza quando il gioco ne ha improvvisamente bisogno, ad esempio entrando in una nuova area o caricando una partita. Offre una spinta momentanea senza mantenere sempre elevato il consumo.",
                 de: "Ein kurzer Leistungsschub, wenn ein Spiel plötzlich mehr benötigt, etwa beim Betreten eines neuen Gebiets oder beim Laden eines Spielstands. So steht vorübergehend mehr Leistung bereit, ohne den Verbrauch dauerhaft hoch zu halten.",
                 ptBR: "É um aumento de potência por alguns segundos quando o jogo precisa de mais desempenho de repente, como ao entrar em uma nova área ou carregar uma partida. Assim, você ganha um impulso rápido sem manter o consumo alto o tempo todo.",
+                fr: "Un coup de fouet de quelques secondes quand le jeu a soudain besoin de puissance, par exemple en arrivant dans une nouvelle zone ou en chargeant une partie. Vous profitez de ce petit surplus au bon moment, sans que la consommation reste élevée en permanence.",
             },
             {
                 id: "charge-limit",
@@ -22618,11 +24624,13 @@ const CATEGORIES = [
                 termIt: "Limite di carica",
                 termDe: "Ladelimit",
                 termPtBR: "Limite de carga",
+                termFr: "Limite de charge",
                 es: "Le dices a la consola que no llene la batería hasta arriba y se quede en un tope, por ejemplo el 80%. A las baterías les sienta mal vivir siempre llenas, así que si sueles jugar enchufado esto hace que te dure sana muchos más años.",
                 en: "You tell the console to stop short of a full battery and hold at a cap, say 80%. Batteries hate sitting full all the time, so if you usually play plugged in this keeps yours healthy for many more years.",
                 it: "Impedisce alla batteria di caricarsi completamente e la mantiene a una soglia, ad esempio l'80%. Restare sempre al 100% accelera l'usura, quindi questa opzione aiuta a conservarla più a lungo se giochi spesso con il caricatore collegato.",
                 de: "Begrenzt den Akkustand auf einen Wert wie 80 Prozent, statt den Akku vollständig zu laden. Ein dauerhaft voller Akku altert schneller. Wenn du häufig am Netzteil spielst, kann ein Ladelimit seine Lebensdauer verlängern.",
                 ptBR: "Faz a bateria parar de carregar antes de chegar a 100%, por exemplo em 80%. Manter a bateria sempre totalmente carregada acelera o desgaste, então esse limite ajuda a preservá-la se você costuma jogar com o carregador conectado.",
+                fr: "Vous demandez à la console de ne pas charger la batterie à fond et de s'arrêter à un seuil, par exemple 80 %. Les batteries n'aiment pas rester pleines en permanence : si vous jouez souvent branché, la vôtre restera en forme bien plus longtemps.",
             },
             {
                 id: "battery-health",
@@ -22630,11 +24638,13 @@ const CATEGORIES = [
                 termIt: "Stato di salute della batteria",
                 termDe: "Akkuzustand",
                 termPtBR: "Saúde da bateria",
+                termFr: "Santé de la batterie",
                 es: "Es cuánta batería le queda a tu consola comparada con el día que la estrenaste. Con el uso todas se van gastando, así que si marca 90% quiere decir que ahora aguanta un 90% de las partidas que aguantaba nueva.",
                 en: "It's how much battery your console has left compared to the day it was new. They all wear down with use, so if it reads 90% it means it now lasts for 90% of the play it managed when new.",
                 it: "Indica quanta capacità conserva la batteria rispetto a quando era nuova. Tutte le batterie si usurano nel tempo: un valore del 90% significa che oggi offre circa il 90% dell'autonomia iniziale.",
                 de: "Zeigt, wie viel Kapazität der Akku im Vergleich zum Neuzustand noch besitzt. Jeder Akku nutzt sich mit der Zeit ab. Ein Wert von 90 Prozent bedeutet, dass heute noch ungefähr 90 Prozent der ursprünglichen Laufzeit verfügbar sind.",
                 ptBR: "Mostra quanta capacidade a bateria ainda conserva em comparação com quando era nova. Toda bateria se desgasta com o uso: se a saúde estiver em 90%, ela armazena cerca de 90% da energia que armazenava originalmente.",
+                fr: "C'est ce qu'il reste de la capacité de votre batterie par rapport au jour où vous avez déballé la console. Toutes les batteries s'usent avec le temps : si elle affiche 90 %, elle tient aujourd'hui 90 % de ce qu'elle tenait neuve.",
             },
         ],
     },
@@ -22645,6 +24655,7 @@ const CATEGORIES = [
         it: "Immagine e fluidità",
         de: "Bild und flüssige Darstellung",
         ptBR: "Imagem e fluidez",
+        fr: "Image et fluidité",
         terms: [
             {
                 id: "fps",
@@ -22652,11 +24663,13 @@ const CATEGORIES = [
                 termIt: "FPS",
                 termDe: "FPS",
                 termPtBR: "FPS",
+                termFr: "FPS",
                 es: "Son los fotogramas por segundo, o sea cuántas imágenes te dibuja el juego cada segundo. Cuantos más, más suave se mueve todo. A 60 se siente mantequilla y por debajo de 30 empieza a dar tirones molestos.",
                 en: "Frames per second, meaning how many images the game draws you each second. The more, the smoother everything moves. At 60 it feels like butter, and below 30 it starts to stutter and get annoying.",
                 it: "Sono i fotogrammi al secondo, cioè quante immagini il gioco disegna ogni secondo. Più sono, più il movimento appare fluido. A 60 FPS l'immagine è molto scorrevole, mentre sotto i 30 gli scatti iniziano a farsi notare.",
                 de: "Frames pro Sekunde, also die Anzahl der Bilder, die ein Spiel pro Sekunde zeichnet. Je höher der Wert, desto flüssiger wirken Bewegungen. 60 FPS fühlen sich sehr geschmeidig an, unter 30 werden Ruckler deutlich spürbar.",
                 ptBR: "São os quadros por segundo, ou seja, quantas imagens o jogo desenha a cada segundo. Quanto maior o número, mais fluido fica o movimento. A 60 FPS tudo costuma parecer bem suave; abaixo de 30, as travadas começam a incomodar.",
+                fr: "Ce sont les images par seconde, autrement dit le nombre d'images que le jeu affiche chaque seconde. Plus il y en a, plus tout est fluide. À 60, ça glisse tout seul ; en dessous de 30, les saccades commencent à devenir pénibles.",
             },
             {
                 id: "fsr",
@@ -22664,11 +24677,13 @@ const CATEGORIES = [
                 termIt: "FSR",
                 termDe: "FSR",
                 termPtBR: "FSR",
+                termFr: "FSR",
                 es: "Un truco de AMD que hace que el juego se vea casi igual de bien pero pidiéndole menos a la consola, así ganas fluidez y batería sin apenas notar la diferencia. Se activa dentro del juego o en Steam, no desde aquí.",
                 en: "An AMD trick that keeps a game looking nearly as good while asking less of the console, so you gain smoothness and battery with barely any difference. You switch it on inside the game or in Steam, not from here.",
                 it: "Una tecnologia AMD che riduce il lavoro richiesto al dispositivo mantenendo una buona qualità dell'immagine. In questo modo puoi guadagnare fluidità e autonomia con differenze visive minime. Si attiva nel gioco o in Steam, non da questo pannello.",
                 de: "Eine AMD-Technik, die ein Spiel mit weniger Rechenaufwand fast genauso gut aussehen lässt. Dadurch gewinnst du Leistung und Akkulaufzeit bei meist kleinen sichtbaren Unterschieden. Aktiviert wird sie im Spiel oder in Steam, nicht in diesem Panel.",
                 ptBR: "É uma tecnologia da AMD que reduz o trabalho exigido do dispositivo sem perder muita qualidade de imagem. Assim, você pode ganhar fluidez e autonomia com pouca diferença visual. A ativação é feita no jogo ou no Steam, não neste painel.",
+                fr: "Une astuce d'AMD qui garde une image presque aussi belle tout en demandant moins d'effort à la console : vous gagnez en fluidité et en autonomie sans vraiment voir la différence. Ça s'active dans le jeu ou dans Steam, pas ici.",
             },
             {
                 id: "dlss",
@@ -22676,11 +24691,13 @@ const CATEGORIES = [
                 termIt: "DLSS",
                 termDe: "DLSS",
                 termPtBR: "DLSS",
+                termFr: "DLSS",
                 es: "La misma idea que FSR pero de NVIDIA. Sube la fluidez y la imagen queda casi igual de nítida, aunque solo va en equipos con gráfica NVIDIA, que no suelen ser las portátiles (casi todas montan AMD).",
                 en: "The same idea as FSR but from NVIDIA. It bumps up smoothness and the image stays nearly as sharp, though it only runs on machines with NVIDIA graphics, which handhelds usually aren't (nearly all use AMD).",
                 it: "La tecnologia NVIDIA basata sulla stessa idea di FSR. Aumenta la fluidità mantenendo l'immagine quasi altrettanto nitida, ma funziona solo con GPU NVIDIA, poco comuni sui dispositivi portatili che usano quasi tutti AMD.",
                 de: "NVIDIAs Variante derselben Grundidee wie FSR. Sie verbessert die Leistung, während das Bild fast genauso scharf bleibt. DLSS funktioniert jedoch nur mit NVIDIA-GPUs, die in Handhelds selten sind, weil dort meistens AMD-Hardware steckt.",
                 ptBR: "É a tecnologia da NVIDIA baseada na mesma ideia do FSR. Ela melhora a fluidez e mantém a imagem quase tão nítida, mas só funciona em equipamentos com GPU NVIDIA, algo pouco comum em consoles portáteis.",
+                fr: "Le même principe que le FSR, mais chez NVIDIA. La fluidité grimpe et l'image reste presque aussi nette, mais ça ne fonctionne qu'avec une carte graphique NVIDIA, ce qui est rare sur les consoles portables (presque toutes tournent sur de l'AMD).",
             },
             {
                 id: "xess",
@@ -22688,11 +24705,13 @@ const CATEGORIES = [
                 termIt: "XeSS",
                 termDe: "XeSS",
                 termPtBR: "XeSS",
+                termFr: "XeSS",
                 es: "La versión de Intel del mismo truco que FSR y DLSS. Sirve para que el juego corra más suave sin que pierdas una nitidez que se note.",
                 en: "Intel's take on the same trick as FSR and DLSS. It helps a game run smoother without a drop in sharpness you'd actually notice.",
                 it: "La versione Intel della stessa tecnologia usata da FSR e DLSS. Aiuta il gioco a essere più fluido senza una perdita di nitidezza evidente.",
                 de: "Intels Variante derselben Technik wie FSR und DLSS. Sie lässt ein Spiel flüssiger laufen, ohne dass die Bildschärfe sichtbar stark nachlässt.",
                 ptBR: "É a versão da Intel da mesma ideia usada pelo FSR e pelo DLSS. Ajuda o jogo a rodar com mais fluidez sem uma perda de nitidez fácil de perceber.",
+                fr: "La version d'Intel de la même astuce que le FSR et le DLSS. Le jeu gagne en fluidité, sans perte de netteté visible.",
             },
             {
                 id: "frame-gen",
@@ -22700,11 +24719,13 @@ const CATEGORIES = [
                 termIt: "Generazione di fotogrammi",
                 termDe: "Frame-Generierung",
                 termPtBR: "Geração de quadros",
+                termFr: "Génération d'images",
                 es: "La consola calcula fotogramas de relleno y los cuela entre los reales para que el movimiento se vea más suave. Ayuda a que todo fluya, pero tiene truco: gasta algo de gráfica y a veces los controles responden un pelín más tarde.",
                 en: "The console works out filler frames and slips them between the real ones so motion looks smoother. It helps everything flow, but there's a catch: it uses some graphics power and the controls can feel a touch slower to respond.",
                 it: "Il dispositivo calcola fotogrammi aggiuntivi e li inserisce tra quelli reali per rendere il movimento più fluido. Il risultato può essere ottimo, ma richiede parte della potenza grafica e può aggiungere un lieve ritardo ai comandi.",
                 de: "Das Gerät berechnet zusätzliche Bilder und fügt sie zwischen den echten Frames ein, damit Bewegungen flüssiger wirken. Das Ergebnis kann sehr gut aussehen, benötigt aber einen Teil der Grafikleistung und kann die Eingabeverzögerung leicht erhöhen.",
                 ptBR: "O dispositivo calcula quadros extras e os insere entre os quadros reais para deixar o movimento mais fluido. O resultado pode ficar excelente, mas usa parte do desempenho gráfico e pode aumentar um pouco a latência dos controles.",
+                fr: "La console calcule des images intermédiaires et les glisse entre les vraies pour rendre le mouvement plus fluide. Ça aide bien, mais il y a un hic : ça mobilise un peu de puissance graphique et les commandes répondent parfois un poil plus tard.",
             },
             {
                 id: "optiscaler",
@@ -22712,11 +24733,13 @@ const CATEGORIES = [
                 termIt: "OptiScaler",
                 termDe: "OptiScaler",
                 termPtBR: "OptiScaler",
+                termFr: "OptiScaler",
                 es: "Una herramienta de la comunidad que te deja meter estos trucos de fluidez, como FSR, en juegos que no los traían de fábrica. Es un extra que instalas aparte y no tiene que ver con este panel.",
                 en: "A community tool that lets you drop these smoothness tricks, like FSR, into games that didn't ship with them. It's an extra you install separately and has nothing to do with this panel.",
                 it: "Uno strumento della community che permette di aggiungere tecnologie come FSR ai giochi che non le includevano. Si installa separatamente e non fa parte di questo pannello.",
                 de: "Ein Community-Werkzeug, das Techniken wie FSR in Spiele einbindet, die sie ursprünglich nicht unterstützen. Es wird separat installiert und gehört nicht zu diesem Panel.",
                 ptBR: "É uma ferramenta da comunidade que permite adicionar tecnologias como o FSR a jogos que não ofereciam esse recurso. Ela é instalada separadamente e não faz parte deste painel.",
+                fr: "Un outil de la communauté qui permet d'ajouter ces astuces de fluidité, comme le FSR, à des jeux qui ne les proposent pas d'origine. C'est un bonus à installer à part, sans rapport avec le Centre de contrôle.",
             },
             {
                 id: "vrr",
@@ -22724,11 +24747,13 @@ const CATEGORIES = [
                 termIt: "VRR",
                 termDe: "VRR",
                 termPtBR: "VRR",
+                termFr: "VRR",
                 es: "La pantalla acompasa su ritmo al del juego para que no veas cortes raros en la imagen cuando los FPS bailan arriba y abajo. No sube los FPS, pero deja el movimiento más limpio y agradable.",
                 en: "The screen paces itself to the game so you don't get those ugly torn frames when the FPS bounces up and down. It won't raise your FPS, but it keeps the motion cleaner and nicer to play on.",
                 it: "Sincronizza la frequenza dello schermo con il ritmo del gioco per evitare tagli nell'immagine quando gli FPS cambiano. Non aumenta gli FPS, ma rende il movimento più pulito e piacevole.",
                 de: "Passt die Bildwiederholrate des Displays an die Bildrate des Spiels an. So entstehen bei schwankenden FPS keine störenden Bildrisse. VRR erhöht die FPS nicht, lässt Bewegungen aber sauberer und angenehmer wirken.",
                 ptBR: "Sincroniza a taxa de atualização da tela com o ritmo do jogo para evitar cortes na imagem quando o FPS varia. O VRR não aumenta o FPS, mas deixa o movimento mais limpo e agradável.",
+                fr: "L'écran cale son rythme sur celui du jeu pour vous éviter les déchirures dans l'image quand les FPS font le yoyo. Ça n'augmente pas les FPS, mais le mouvement est plus propre et plus agréable.",
             },
             {
                 id: "refresh",
@@ -22736,11 +24761,13 @@ const CATEGORIES = [
                 termIt: "Frequenza di aggiornamento (Hz)",
                 termDe: "Bildwiederholrate (Hz)",
                 termPtBR: "Taxa de atualização (Hz)",
+                termFr: "Fréquence de rafraîchissement (Hz)",
                 es: "Cuántas veces por segundo se refresca la pantalla. Una de 90 Hz puede enseñarte hasta 90 imágenes por segundo, y cuanto más alta sea, más fluido puedes llegar a ver el juego.",
                 en: "How many times per second the screen refreshes. A 90 Hz one can show you up to 90 images per second, and the higher it goes, the smoother the game can look.",
                 it: "Indica quante volte al secondo si aggiorna lo schermo. Un pannello a 90 Hz può mostrare fino a 90 immagini al secondo e, in generale, una frequenza più alta permette un movimento più fluido.",
                 de: "Gibt an, wie oft sich das Display pro Sekunde aktualisiert. Ein 90-Hz-Display kann bis zu 90 Bilder pro Sekunde zeigen. Je höher die Bildwiederholrate, desto flüssiger können Bewegungen aussehen.",
                 ptBR: "Indica quantas vezes a tela se atualiza por segundo. Uma tela de 90 Hz pode mostrar até 90 quadros por segundo. Quanto maior a taxa, mais fluido o jogo pode parecer.",
+                fr: "Le nombre de fois par seconde où l'écran se met à jour. Un écran à 90 Hz peut afficher jusqu'à 90 images par seconde : plus la fréquence est élevée, plus le jeu peut paraître fluide.",
             },
         ],
     },
@@ -22751,6 +24778,7 @@ const CATEGORIES = [
         it: "Dentro il chip",
         de: "Im Inneren des Chips",
         ptBR: "Por dentro do chip",
+        fr: "Sous le capot",
         terms: [
             {
                 id: "apu",
@@ -22758,11 +24786,13 @@ const CATEGORIES = [
                 termIt: "APU",
                 termDe: "APU",
                 termPtBR: "APU",
+                termFr: "APU",
                 es: "Es el chip principal de la consola. Tiene la gracia de juntar en una sola pieza el cerebro (el procesador) y la parte que dibuja los gráficos, lo que ahorra sitio y batería, algo que le viene de perlas a una portátil.",
                 en: "It's the console's main chip. Its neat trick is packing the brain (the processor) and the graphics into one piece, which saves space and battery, something a handheld really appreciates.",
                 it: "È il chip principale del dispositivo. Riunisce in un solo componente il processore e la parte grafica, risparmiando spazio ed energia, due vantaggi importanti per un dispositivo portatile.",
                 de: "Der Hauptchip des Geräts. Er vereint Prozessor und Grafik in einem einzigen Bauteil. Das spart Platz und Energie, was bei einem Handheld besonders wichtig ist.",
                 ptBR: "É o chip principal do dispositivo. Ele reúne o processador e a parte gráfica em um único componente, economizando espaço e energia, duas vantagens importantes em um console portátil.",
+                fr: "C'est la puce principale de la console. Son atout : elle réunit en une seule pièce le cerveau (le processeur) et la partie qui dessine les graphismes, ce qui économise de la place et de la batterie. Parfait pour une console portable.",
             },
             {
                 id: "cpu",
@@ -22770,11 +24800,13 @@ const CATEGORIES = [
                 termIt: "CPU (processore)",
                 termDe: "CPU (Prozessor)",
                 termPtBR: "CPU (processador)",
+                termFr: "CPU (processeur)",
                 es: "El cerebro de la consola. Se encarga de la lógica del juego, la física, lo que hacen los enemigos y todo lo que no sea pintar la imagen en pantalla.",
                 en: "The console's brain. It handles the game logic, the physics, what the enemies do and everything that isn't painting the picture on screen.",
                 it: "È il cervello del dispositivo. Gestisce la logica del gioco, la fisica, il comportamento dei nemici e tutto ciò che non riguarda direttamente la creazione dell'immagine sullo schermo.",
                 de: "Das Gehirn des Geräts. Die CPU verarbeitet Spiellogik, Physik, das Verhalten von Gegnern und alles, was nicht direkt das Bild auf dem Bildschirm zeichnet.",
                 ptBR: "É o cérebro do dispositivo. Cuida da lógica do jogo, da física, do comportamento dos inimigos e de tudo o que não seja desenhar a imagem na tela.",
+                fr: "Le cerveau de la console. Il gère la logique du jeu, la physique, le comportement des ennemis et tout ce qui ne sert pas à dessiner l'image à l'écran.",
             },
             {
                 id: "gpu",
@@ -22782,11 +24814,13 @@ const CATEGORIES = [
                 termIt: "GPU",
                 termDe: "GPU (Grafik)",
                 termPtBR: "GPU (processador gráfico)",
+                termFr: "GPU (processeur graphique)",
                 es: "La parte del chip que dibuja todo lo que ves en pantalla. En los juegos suele ser la que más suda, y por eso el panel se fija sobre todo en ella para saber cuánta potencia hace falta.",
                 en: "The part of the chip that draws everything you see. In games it's usually the one sweating hardest, which is why the panel watches it most to gauge how much power you need.",
                 it: "È la parte del chip che disegna tutto ciò che vedi sullo schermo. Nei giochi è spesso il componente più impegnato, quindi il pannello la osserva soprattutto per capire quanta potenza serve.",
                 de: "Der Teil des Chips, der alles auf dem Bildschirm zeichnet. In Spielen ist die GPU meist am stärksten ausgelastet. Deshalb beobachtet das Panel vor allem sie, um den benötigten Leistungswert zu bestimmen.",
                 ptBR: "É a parte do chip que desenha tudo o que aparece na tela. Nos jogos, costuma ser o componente mais exigido, por isso o painel observa principalmente a GPU para calcular quanta potência é necessária.",
+                fr: "La partie de la puce qui dessine tout ce que vous voyez à l'écran. En jeu, c'est souvent elle qui transpire le plus, et c'est surtout elle que le Centre de contrôle surveille pour estimer la puissance nécessaire.",
             },
             {
                 id: "cores-threads",
@@ -22794,11 +24828,13 @@ const CATEGORIES = [
                 termIt: "Core e thread",
                 termDe: "Kerne und Threads",
                 termPtBR: "Núcleos e threads",
+                termFr: "Cœurs et threads",
                 es: "Los núcleos son como las manos del procesador: cuantas más tenga, más cosas puede hacer a la vez. Los hilos son los carriles de trabajo de cada mano, y algunos chips le dan dos carriles a cada núcleo para exprimirlo mejor.",
                 en: "Cores are like the processor's hands: the more it has, the more it can do at once. Threads are each hand's work lanes, and some chips give every core two lanes to squeeze more out of it.",
                 it: "I core sono come le mani del processore: più ne ha, più attività può svolgere contemporaneamente. I thread sono i flussi di lavoro di ogni core e alcuni chip ne assegnano due a ciascun core per sfruttarlo meglio.",
                 de: "Kerne sind wie die Hände des Prozessors: Je mehr er besitzt, desto mehr Aufgaben kann er gleichzeitig erledigen. Threads sind die Arbeitsbahnen jedes Kerns. Manche Chips geben jedem Kern zwei davon, um ihn besser auszulasten.",
                 ptBR: "Os núcleos são como as mãos do processador: quanto mais ele tem, mais tarefas pode executar ao mesmo tempo. As threads são as linhas de trabalho de cada núcleo, e alguns chips oferecem duas por núcleo para aproveitar melhor o processador.",
+                fr: "Les cœurs, ce sont un peu les mains du processeur : plus il en a, plus il peut faire de choses en même temps. Les threads sont les files de travail de chaque main, et certaines puces donnent deux files à chaque cœur pour en tirer le maximum.",
             },
             {
                 id: "smt",
@@ -22806,11 +24842,13 @@ const CATEGORIES = [
                 termIt: "Multithreading (SMT)",
                 termDe: "Simultanes Multithreading (SMT)",
                 termPtBR: "Multithreading (SMT)",
+                termFr: "Multithreading (SMT)",
                 es: "Deja que cada núcleo del procesador lleve dos tareas a la vez en lugar de una. Encendido rinde algo más y apagado gasta y calienta un poco menos. Jugando la diferencia es mínima.",
                 en: "Lets each processor core juggle two tasks at once instead of one. On, it performs a bit more; off, it uses and heats a little less. While gaming the difference is tiny.",
                 it: "Permette a ogni core del processore di gestire due attività alla volta invece di una. Quando è attivo offre un po' più di prestazioni, mentre da disattivato riduce leggermente consumi e calore. Nei giochi la differenza è minima.",
                 de: "Erlaubt jedem Prozessorkern, zwei Aufgaben gleichzeitig statt nur einer zu bearbeiten. Aktiviert bringt SMT etwas mehr Leistung, deaktiviert etwas weniger Verbrauch und Wärme. Beim Spielen ist der Unterschied meist gering.",
                 ptBR: "Permite que cada núcleo do processador cuide de duas tarefas ao mesmo tempo em vez de uma. Ativado, oferece um pouco mais de desempenho; desativado, reduz um pouco o consumo e o calor. Nos jogos, a diferença costuma ser pequena.",
+                fr: "Permet à chaque cœur du processeur de mener deux tâches de front au lieu d'une. Activé, il offre un peu plus de performances ; désactivé, le processeur consomme et chauffe un peu moins. En jeu, la différence est minime.",
             },
             {
                 id: "rdna",
@@ -22818,11 +24856,13 @@ const CATEGORIES = [
                 termIt: "RDNA",
                 termDe: "RDNA",
                 termPtBR: "RDNA",
+                termFr: "RDNA",
                 es: "Es el nombre de la tecnología gráfica de AMD que llevan casi todas estas consolas. Cada generación (RDNA 2, RDNA 3 y demás) es más nueva y potente. Vamos, que es el apellido de la parte que mueve los gráficos.",
                 en: "It's the name of AMD's graphics tech inside almost all these consoles. Each generation (RDNA 2, RDNA 3 and so on) is newer and stronger. In short, it's the surname of the bit that pushes the graphics.",
                 it: "È il nome della tecnologia grafica AMD usata da quasi tutti questi dispositivi. Ogni generazione, come RDNA 2 o RDNA 3, è più recente e potente. In pratica identifica l'architettura della parte che gestisce la grafica.",
                 de: "Der Name der AMD-Grafikarchitektur, die in fast allen diesen Geräten steckt. Jede Generation, etwa RDNA 2 oder RDNA 3, ist neuer und leistungsfähiger. RDNA bezeichnet also die technische Familie der integrierten Grafik.",
                 ptBR: "É o nome da arquitetura gráfica da AMD usada em quase todos esses dispositivos. Cada geração, como RDNA 2 ou RDNA 3, é mais nova e potente. Em resumo, é a família tecnológica da parte que cuida dos gráficos.",
+                fr: "C'est le nom de la technologie graphique d'AMD présente dans presque toutes ces consoles. Chaque génération (RDNA 2, RDNA 3, etc.) est plus récente et plus puissante que la précédente. En gros, c'est le nom de famille de la partie qui fait tourner les graphismes.",
             },
         ],
     },
@@ -22833,6 +24873,7 @@ const CATEGORIES = [
         it: "Ventole e temperatura",
         de: "Lüfter und Temperatur",
         ptBR: "Ventoinhas e temperatura",
+        fr: "Ventilateurs et température",
         terms: [
             {
                 id: "fan-curve",
@@ -22840,11 +24881,13 @@ const CATEGORIES = [
                 termIt: "Curva della ventola",
                 termDe: "Lüfterkurve",
                 termPtBR: "Curva da ventoinha",
+                termFr: "Courbe de ventilation",
                 es: "Es la norma que decide a qué velocidad giran los ventiladores según lo caliente que vaya la consola. Puedes ponerla más silenciosa para no oír ruido o más marchosa para jugar fresco, y el panel también puede aprenderla por ti a base de ver cómo juegas.",
                 en: "It's the rule that decides how fast the fans spin based on how hot the console runs. You can set it quieter to keep the noise down or more aggressive to play cool, and the panel can also learn it for you by watching how you play.",
                 it: "È la regola che decide la velocità delle ventole in base alla temperatura del dispositivo. Puoi renderla più silenziosa per ridurre il rumore o più aggressiva per mantenere temperature basse. Il pannello può anche imparare una curva adatta osservando come giochi.",
                 de: "Legt fest, wie schnell sich die Lüfter bei einer bestimmten Gerätetemperatur drehen. Du kannst sie leiser einstellen oder für niedrigere Temperaturen stärker kühlen lassen. Das Panel kann auch aus deiner Nutzung eine passende Kurve lernen.",
                 ptBR: "É a regra que define a velocidade das ventoinhas de acordo com a temperatura do dispositivo. Você pode deixá-la mais silenciosa para reduzir o ruído ou mais agressiva para manter tudo mais frio. O painel também pode aprender uma curva adequada conforme você joga.",
+                fr: "C'est la règle qui décide à quelle vitesse tournent les ventilateurs selon la chaleur de la console. Vous pouvez la rendre plus discrète pour limiter le bruit, ou plus musclée pour jouer au frais, et le Centre de contrôle peut aussi l'ajuster pour vous en observant votre façon de jouer.",
             },
             {
                 id: "rpm",
@@ -22852,11 +24895,13 @@ const CATEGORIES = [
                 termIt: "RPM",
                 termDe: "RPM",
                 termPtBR: "RPM",
+                termFr: "RPM",
                 es: "Son las vueltas por minuto del ventilador, o sea lo rápido que está girando. A más RPM, mejor enfría pero más se le oye.",
                 en: "The fan's revolutions per minute, meaning how fast it's spinning. Higher RPM cools better but you hear it more.",
                 it: "Sono i giri al minuto della ventola e indicano quanto velocemente sta ruotando. Più RPM migliorano il raffreddamento, ma aumentano anche il rumore.",
                 de: "Die Umdrehungen des Lüfters pro Minute, also seine Drehzahl. Mehr RPM sorgen für bessere Kühlung, sind aber auch deutlicher hörbar.",
                 ptBR: "São as rotações por minuto da ventoinha, ou seja, a velocidade com que ela gira. Quanto maior o RPM, melhor a refrigeração e maior o ruído.",
+                fr: "Ce sont les tours par minute du ventilateur, autrement dit sa vitesse de rotation. Plus les RPM grimpent, mieux il refroidit, mais plus il se fait entendre.",
             },
             {
                 id: "temp",
@@ -22864,11 +24909,13 @@ const CATEGORIES = [
                 termIt: "Temperatura",
                 termDe: "Temperatur",
                 termPtBR: "Temperatura",
+                termFr: "Température",
                 es: "Lo caliente que va el chip, en grados. Que suba mientras juegas es de lo más normal, y para eso están los ventiladores y el TDP, para mantenerla a raya y que la consola no sufra.",
                 en: "How hot the chip runs, in degrees. It's perfectly normal for it to climb while you play, and that's what the fans and TDP are for, keeping it in check so the console doesn't suffer.",
                 it: "Indica in gradi quanto è caldo il chip. È del tutto normale che aumenti mentre giochi: ventole e TDP servono proprio a tenerla sotto controllo e proteggere il dispositivo.",
                 de: "Zeigt in Grad an, wie warm der Chip ist. Dass die Temperatur beim Spielen steigt, ist völlig normal. Lüfter und TDP halten sie im sicheren Bereich und schützen das Gerät.",
                 ptBR: "Indica a temperatura do chip em graus. É normal ela subir durante o jogo. As ventoinhas e o TDP ajudam a mantê-la sob controle e a proteger o dispositivo.",
+                fr: "La chaleur de la puce, en degrés. Qu'elle grimpe pendant que vous jouez, c'est tout à fait normal : les ventilateurs et le TDP sont là pour la garder sous contrôle et ménager la console.",
             },
         ],
     },
@@ -22879,6 +24926,7 @@ const CATEGORIES = [
         it: "Il mondo dei dispositivi portatili",
         de: "Die Welt der Handhelds",
         ptBR: "O mundo dos consoles portáteis",
+        fr: "L'univers des consoles portables",
         terms: [
             {
                 id: "handheld",
@@ -22886,11 +24934,13 @@ const CATEGORIES = [
                 termIt: "Console portatile (handheld)",
                 termDe: "Handheld-Gaming-PC",
                 termPtBR: "Console portátil (handheld)",
+                termFr: "Console portable",
                 es: "Un PC con pinta de consola que juegas con las manos, como la Steam Deck, la ROG Ally o la Legion Go. Mueven juegos de PC de verdad pero con batería y allá donde te los lleves.",
                 en: "A PC shaped like a console that you play holding in your hands, like the Steam Deck, ROG Ally or Legion Go. They run real PC games but on battery and wherever you take them.",
                 it: "Un PC con la forma e i comandi di una console, come Steam Deck, ROG Ally o Legion Go. Esegue veri giochi per PC, ma funziona anche a batteria e puoi portarlo ovunque.",
                 de: "Ein PC im Format einer tragbaren Konsole, den du in den Händen hältst, etwa Steam Deck, ROG Ally oder Legion Go. Er führt echte PC-Spiele aus, besitzt aber einen Akku und lässt sich überallhin mitnehmen.",
                 ptBR: "É um PC com formato e controles de console que você segura nas mãos, como o Steam Deck, o ROG Ally ou o Legion Go. Ele roda jogos de PC, funciona com bateria e pode acompanhar você a qualquer lugar.",
+                fr: "Un PC déguisé en console, que vous tenez à deux mains, comme le Steam Deck, la ROG Ally ou la Legion Go. Il fait tourner de vrais jeux PC, mais sur batterie et partout où vous l'emmenez.",
             },
             {
                 id: "decky",
@@ -22898,11 +24948,13 @@ const CATEGORIES = [
                 termIt: "Decky Loader",
                 termDe: "Decky Loader",
                 termPtBR: "Decky Loader",
+                termFr: "Decky Loader",
                 es: "Es el programa que te permite instalar complementos como este panel en la consola. Piénsalo como una tienda de apps que le añade funciones nuevas al menú de Steam.",
                 en: "It's the program that lets you install add-ons like this panel on your console. Think of it as an app store that adds new features to the Steam menu.",
                 it: "È il programma che permette di installare plugin come questo pannello sul dispositivo. Puoi considerarlo uno store di app che aggiunge nuove funzioni al menu di Steam.",
                 de: "Das Programm, mit dem du Plugins wie dieses Panel auf deinem Gerät installierst. Du kannst es dir wie einen App-Store vorstellen, der dem Steam-Menü neue Funktionen hinzufügt.",
                 ptBR: "É o programa que permite instalar plugins como este painel no dispositivo. Pense nele como uma loja de aplicativos que adiciona novas funções ao menu do Steam.",
+                fr: "C'est le programme qui vous permet d'installer sur la console des plugins comme le Centre de contrôle. Voyez-le comme une boutique d'applis qui ajoute de nouvelles fonctions au menu de Steam.",
             },
             {
                 id: "qam",
@@ -22910,11 +24962,13 @@ const CATEGORIES = [
                 termIt: "Menu di accesso rapido (QAM)",
                 termDe: "Schnellzugriffsmenü (QAM)",
                 termPtBR: "Menu de acesso rápido (QAM)",
+                termFr: "Menu d'accès rapide (QAM)",
                 es: "Es ese menú lateral que abres con un botón sin salir del juego, donde tocas brillo, volumen y complementos como este. Es la casa de este panel.",
                 en: "It's that side menu you pop open with a button without leaving the game, where you tweak brightness, volume and add-ons like this one. It's this panel's home.",
                 it: "È il menu laterale che apri con un pulsante senza uscire dal gioco. Da qui regoli luminosità, volume e plugin come questo. È la schermata in cui vive il pannello.",
                 de: "Das Seitenmenü, das du per Taste öffnest, ohne das Spiel zu verlassen. Dort stellst du Helligkeit und Lautstärke ein und erreichst Plugins wie dieses. Hier ist das Kontrollzentrum zu Hause.",
                 ptBR: "É o menu lateral que você abre com um botão sem sair do jogo. Nele, você ajusta brilho, volume e plugins como este. É onde o Painel de Controle fica.",
+                fr: "C'est le menu latéral que vous ouvrez d'un bouton sans quitter le jeu, pour régler la luminosité, le volume ou des plugins comme celui-ci. C'est là que vit le Centre de contrôle.",
             },
             {
                 id: "telemetry",
@@ -22922,11 +24976,13 @@ const CATEGORIES = [
                 termIt: "Apprendimento / telemetria",
                 termDe: "Lernen / Telemetrie",
                 termPtBR: "Aprendizado / telemetria",
+                termFr: "Apprentissage / télémétrie",
                 es: "El panel va apuntando cómo se porta cada juego (temperatura, potencia, ventilador) para poder recomendarte los mejores ajustes. Todo se queda dentro de tu consola y no sale de ahí jamás, y lo puedes apagar cuando te apetezca.",
                 en: "The panel keeps notes on how each game behaves (temperature, power, fan) so it can recommend the best settings for you. It all stays inside your console and never leaves, and you can turn it off whenever you like.",
                 it: "Il pannello registra come si comporta ogni gioco, ad esempio temperatura, potenza e ventola, per consigliarti le impostazioni più adatte. Tutti i dati restano sul dispositivo e non vengono mai inviati altrove. Puoi disattivare questa funzione in qualsiasi momento.",
                 de: "Das Panel merkt sich, wie sich einzelne Spiele bei Temperatur, Leistung und Lüfter verhalten, um passende Einstellungen vorzuschlagen. Alle Daten bleiben auf deinem Gerät und werden niemals übertragen. Du kannst die Funktion jederzeit deaktivieren.",
                 ptBR: "O painel registra como cada jogo se comporta, incluindo temperatura, potência e ventoinha, para recomendar os melhores ajustes. Todos os dados ficam no seu dispositivo e nunca são enviados. Você pode desativar esse recurso quando quiser.",
+                fr: "Le Centre de contrôle note comment se comporte chaque jeu (température, puissance, ventilateur) pour vous recommander les meilleurs réglages. Tout reste sur votre console, rien n'en sort jamais, et vous pouvez désactiver cette fonction quand vous voulez.",
             },
         ],
     },
@@ -23674,14 +25730,14 @@ function nativeQamLabelKey(key) {
         return "customize.qam.native.quickSettings";
     return null;
 }
-const rowStyle = {
+const rowStyle = themed(() => ({
     ...theme.card,
     display: "flex",
     alignItems: "center",
     gap: theme.space.sm,
     padding: `${theme.space.sm + 2}px ${theme.space.md}px`,
-};
-const rowIconStyle = {
+}));
+const rowIconStyle = themed(() => ({
     width: 30,
     height: 30,
     flexShrink: 0,
@@ -23691,15 +25747,15 @@ const rowIconStyle = {
     justifyContent: "center",
     color: theme.color.accent,
     background: `rgba(${theme.color.accentRgb},0.14)`,
-};
-const rowLabelStyle = {
+}));
+const rowLabelStyle = themed(() => ({
     flex: 1,
     minWidth: 0,
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
     color: theme.color.textPrimary,
-};
+}));
 function toggleToken(tokens, token) {
     return tokens.includes(token)
         ? tokens.filter((entry) => entry !== token)
@@ -24383,12 +26439,18 @@ const GpuClockCard = () => {
     const loIndex = levels ? nearestLevelIndex(levels, lo) : 0;
     const hiIndex = levels ? nearestLevelIndex(levels, hi) : 0;
     const shown = gpuClockPresentation(state);
+    const powerCap = state.managed_by_power ? state.applied_max : null;
     const summary = state.managed_by_power
-        ? t("gpu.clock.auto")
+        ? (powerCap !== null ? t("gpu.clock.capped", { mhz: powerCap }) : t("gpu.clock.auto"))
         : state.manual
             ? `${shown.minimum}–${shown.maximum} MHz`
             : t("gpu.clock.auto");
-    return (SP_JSX.jsxs(Collapsible, { id: "gpu-clock", icon: SP_JSX.jsx(LuMemoryStick, { size: 16 }), title: t("gpu.clock.title"), summary: summary, children: [game && (SP_JSX.jsx(ProfileSelector, { scope: scope, gameName: game.name, hasGameProfile: state.has_game_profile, globalLabel: t("tdp.scope.global"), inheritHint: t("tdp.inherit"), onScope: onScope })), state.managed_by_power ? (SP_JSX.jsx("div", { style: { color: theme.color.textMuted, fontSize: theme.font.caption }, children: t("power.managedFrequency") })) : (SP_JSX.jsx(DFL.ToggleField, { label: t("gpu.clock.manual"), description: t("gpu.clock.manual.desc"), checked: state.manual, onChange: setManual, bottomSeparator: "none" })), shown.rejected && (SP_JSX.jsx("div", { style: { color: theme.color.danger, fontSize: theme.font.caption }, children: t("gpu.clock.rejected") })), state.manual && !state.managed_by_power && (SP_JSX.jsxs("div", { style: { marginTop: theme.space.sm }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsx("span", { children: t("gpu.clock.min") }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700 }, children: [levels ? levels[loIndex] : lo, " MHz"] })] }), levels ? (SP_JSX.jsx(ContainedSlider, { value: loIndex, min: 0, max: levels.length - 1, step: 1, onChange: (i) => setWindow(levels[Math.min(i, hiIndex)], levels[hiIndex]) })) : (SP_JSX.jsx(ContainedSlider, { value: lo, min: state.range_min, max: state.range_max, step: 50, onChange: (v) => setWindow(Math.min(v, hi), hi) })), SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsx("span", { children: t("gpu.clock.max") }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700 }, children: [levels ? levels[hiIndex] : hi, " MHz"] })] }), levels ? (SP_JSX.jsx(ContainedSlider, { value: hiIndex, min: 0, max: levels.length - 1, step: 1, onChange: (i) => setWindow(levels[loIndex], levels[Math.max(i, loIndex)]) })) : (SP_JSX.jsx(ContainedSlider, { value: hi, min: state.range_min, max: state.range_max, step: 50, onChange: (v) => setWindow(lo, clamp(v, lo, state.range_max ?? v)) }))] }))] }));
+    return (SP_JSX.jsxs(Collapsible, { id: "gpu-clock", icon: SP_JSX.jsx(LuMemoryStick, { size: 16 }), title: t("gpu.clock.title"), summary: summary, children: [game && (SP_JSX.jsx(ProfileSelector, { scope: scope, gameName: game.name, hasGameProfile: state.has_game_profile, globalLabel: t("tdp.scope.global"), inheritHint: t("tdp.inherit"), onScope: onScope })), state.managed_by_power ? (SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.xs }, children: [powerCap !== null && (SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsx("span", { children: t("gpu.clock.max") }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700, fontVariantNumeric: "tabular-nums" }, children: [powerCap, " MHz"] })] })), levels && powerCap !== null && (SP_JSX.jsx("div", { "aria-hidden": true, style: { display: "flex", gap: 3 }, children: levels.map((mhz) => (SP_JSX.jsx("div", { style: {
+                                flex: "1 1 0",
+                                height: 5,
+                                borderRadius: 3,
+                                background: mhz <= powerCap ? theme.color.accent : "rgba(255,255,255,0.08)",
+                            } }, mhz))) })), typeof state.power_level === "number" && (SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsx("span", { children: t("gpu.clock.powerLevel") }), SP_JSX.jsx("span", { style: { color: theme.color.textPrimary, fontWeight: 700 }, children: t(state.power_level_split ? "gpu.clock.powerLevel.own" : "gpu.clock.powerLevel.linked", { level: state.power_level }) })] })), SP_JSX.jsx("div", { style: { color: theme.color.textMuted, fontSize: theme.font.caption }, children: t(typeof state.power_level === "number" ? "gpu.clock.managed" : "power.managedFrequency") })] })) : (SP_JSX.jsx(DFL.ToggleField, { label: t("gpu.clock.manual"), description: t("gpu.clock.manual.desc"), checked: state.manual, onChange: setManual, bottomSeparator: "none" })), shown.rejected && (SP_JSX.jsx("div", { style: { color: theme.color.danger, fontSize: theme.font.caption }, children: t("gpu.clock.rejected") })), state.manual && !state.managed_by_power && (SP_JSX.jsxs("div", { style: { marginTop: theme.space.sm }, children: [SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsx("span", { children: t("gpu.clock.min") }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700 }, children: [levels ? levels[loIndex] : lo, " MHz"] })] }), levels ? (SP_JSX.jsx(ContainedSlider, { value: loIndex, min: 0, max: levels.length - 1, step: 1, onChange: (i) => setWindow(levels[Math.min(i, hiIndex)], levels[hiIndex]) })) : (SP_JSX.jsx(ContainedSlider, { value: lo, min: state.range_min, max: state.range_max, step: 50, onChange: (v) => setWindow(Math.min(v, hi), hi) })), SP_JSX.jsxs("div", { style: { display: "flex", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsx("span", { children: t("gpu.clock.max") }), SP_JSX.jsxs("span", { style: { color: theme.color.textPrimary, fontWeight: 700 }, children: [levels ? levels[hiIndex] : hi, " MHz"] })] }), levels ? (SP_JSX.jsx(ContainedSlider, { value: hiIndex, min: 0, max: levels.length - 1, step: 1, onChange: (i) => setWindow(levels[loIndex], levels[Math.max(i, loIndex)]) })) : (SP_JSX.jsx(ContainedSlider, { value: hi, min: state.range_min, max: state.range_max, step: 50, onChange: (v) => setWindow(lo, clamp(v, lo, state.range_max ?? v)) }))] }))] }));
 };
 
 const Effect = ({ icon, label, value, active }) => (SP_JSX.jsxs("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: theme.font.caption, color: theme.color.textMuted }, children: [SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: theme.space.xs }, children: [icon, " ", label] }), SP_JSX.jsx("span", { style: { color: active ? theme.color.ok : theme.color.textMuted, fontWeight: 700, fontVariantNumeric: "tabular-nums" }, children: value })] }));
@@ -24401,13 +26463,13 @@ const EcoCard = ({ state, onToggle }) => {
     return (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsxs("div", { style: { ...theme.card, padding: theme.space.md, overflow: "hidden", boxShadow: on ? `inset 0 0 0 1px ${theme.color.ok}` : theme.card.boxShadow }, children: [SP_JSX.jsx(DFL.ToggleField, { label: SP_JSX.jsxs("span", { style: { display: "inline-flex", alignItems: "center", gap: theme.space.xs }, children: [SP_JSX.jsx(LuLeaf, { size: 16, color: theme.color.ok }), " ", t("system.eco.title")] }), description: t("system.eco.desc"), checked: on, onChange: onToggle, bottomSeparator: "none" }), SP_JSX.jsxs("div", { style: { display: "flex", flexDirection: "column", gap: theme.space.xs, marginTop: theme.space.sm, paddingTop: theme.space.sm, borderTop: `1px solid ${theme.color.hairline}` }, children: [SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuZap, { size: 12 }), label: t(level ? "system.eco.row.level" : "system.eco.row.tdp"), value: level ? t("system.eco.value.level", { level: state.tdp_min_w }) : `${state.tdp_min_w} W`, active: on }), SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuMonitorOff, { size: 12 }), label: t("system.eco.row.screen"), value: t(state.screen_off ? "system.eco.value.screenOff" : "system.eco.value.screenBlack"), active: on }), state.affects_boost && (SP_JSX.jsx(Effect, { icon: SP_JSX.jsx(LuRocket, { size: 12 }), label: t("system.eco.row.turbo"), value: t("system.eco.value.turboOff"), active: on }))] })] }) }));
 };
 
-const actionFrameStyle = {
+const actionFrameStyle = themed(() => ({
     width: "100%",
     minWidth: 0,
     borderRadius: theme.radius.sm,
     boxSizing: "border-box",
-};
-const actionSurfaceStyle = {
+}));
+const actionSurfaceStyle = themed(() => ({
     width: "100%",
     minWidth: 0,
     minHeight: 44,
@@ -24423,7 +26485,7 @@ const actionSurfaceStyle = {
     color: theme.color.textPrimary,
     fontSize: theme.font.body,
     fontWeight: 650,
-};
+}));
 const RgbAction = ({ label, onTap, children }) => {
     const activating = SP_REACT.useRef(false);
     const surface = (SP_JSX.jsx("div", { "data-testid": "system-rgb-action-surface", style: { ...actionSurfaceStyle, opacity: onTap ? 1 : 0.5 }, children: children }));
@@ -26254,7 +28316,7 @@ const DesktopFanCurves = ({ initial }) => {
             .map((channel) => SP_JSX.jsx(ChannelCard, { channel: channel, state: state, refresh: refresh }, channel.key)) });
 };
 
-const card = { ...theme.card, padding: theme.space.md };
+const card = themed(() => ({ ...theme.card, padding: theme.space.md }));
 const tempLabel = (t, sensor) => sensor === "CPU" ? t("fans.temp.cpu")
     : sensor === "GPU" ? t("fans.temp.gpu")
         : sensor === "GPU junction" ? t("fans.temp.gpuJunction")
@@ -26934,6 +28996,8 @@ const SW = 14;
 const START = 135;
 const SWEEP = 270;
 const MIN_AUTO_GAUGE_FRACTION = 0.055;
+const GHOST_R = 60;
+const GHOST_SW = 5;
 function autoArcColor(progress) {
     const hue = Math.round(210 + progress * 60);
     return `hsl(${hue}, 82%, 62%)`;
@@ -26951,7 +29015,7 @@ function arcPath(startDeg, endDeg, r = R) {
     const large = endDeg - startDeg > 180 ? 1 : 0;
     return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
 }
-const PowerArc = ({ watts, limits, onAc, actualWatts = null, auto = false, setpoint = null, appliedWatts = null, visualMax = null, baseMarkerWatts = null, slowMarkerWatts = null, fastMarkerWatts = null, overclocked = false, unit = "W", safeMin = null, safeMax = null, manualMax = null, }) => {
+const PowerArc = ({ watts, limits, onAc, actualWatts = null, auto = false, setpoint = null, appliedWatts = null, visualMax = null, baseMarkerWatts = null, slowMarkerWatts = null, fastMarkerWatts = null, overclocked = false, unit = "W", safeMin = null, safeMax = null, manualMax = null, heroLabel = null, ghost = null, }) => {
     const { t } = useI18n();
     const levels = isLevelUnit(unit);
     const suffix = levels ? "" : "W";
@@ -27032,7 +29096,10 @@ const PowerArc = ({ watts, limits, onAc, actualWatts = null, auto = false, setpo
     const [fx1, fy1] = fastDeg === null ? [0, 0] : polarAt(fastDeg, R - SW / 2 - 1);
     const [fx2, fy2] = fastDeg === null ? [0, 0] : polarAt(fastDeg, R + SW / 2 + 1);
     const [flx, fly] = fastDeg === null ? [0, 0] : polarAt(fastDeg, R - SW / 2 - 12);
-    return (SP_JSX.jsxs("div", { style: { position: "relative", width: "100%", maxWidth: 240, margin: "2px auto 0" }, children: [SP_JSX.jsxs("svg", { viewBox: "0 0 200 180", style: { width: "100%", display: "block", overflow: "visible" }, children: [auto && (SP_JSX.jsx("path", { "data-testid": "auto-tdp-halo", "aria-hidden": "true", d: fullArc, fill: "none", stroke: color, strokeOpacity: 0.28, strokeWidth: SW + 5, strokeLinecap: "round", pathLength: 1000, strokeDasharray: `${1000 * gaugeFraction} 1000`, style: { filter: `drop-shadow(0 0 9px ${color})` } })), SP_JSX.jsx("path", { d: fullArc, fill: "none", stroke: "rgba(255,255,255,0.08)", strokeWidth: SW, strokeLinecap: "round" }), chargerHeadroom && (SP_JSX.jsx("path", { d: arcPath(START + fMax * SWEEP, START + fMaxAc * SWEEP), fill: "none", stroke: onAc ? "rgba(255,180,84,0.55)" : "rgba(255,180,84,0.14)", strokeWidth: SW, strokeLinecap: "round", style: { transition: "stroke 220ms ease" } })), baseFraction > 0 && (SP_JSX.jsx("path", { "data-testid": auto ? "auto-tdp-gauge" : "tdp-gauge", d: fullArc, fill: "none", stroke: baseColor, strokeWidth: SW, strokeLinecap: "round", pathLength: 1000, strokeDasharray: `${1000 * baseFraction} 1000`, style: { transition: "stroke-dasharray 240ms ease, stroke 240ms ease", filter: `drop-shadow(0 0 6px ${baseColor})` } })), realAboveSafe && (SP_JSX.jsx("path", { "data-testid": "tdp-extra-fill", d: arcPath(START + fSafeTop * SWEEP, START + f * SWEEP), fill: "none", stroke: theme.color.extra, strokeWidth: SW, strokeLinecap: "round", style: { filter: `drop-shadow(0 0 7px ${theme.color.extra})` } })), extra !== null && targetDiverged && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("path", { "data-testid": "tdp-extra-trail", d: arcPath(START + Math.min(f, fTarget) * SWEEP, START + Math.max(f, fTarget) * SWEEP, trailRadius), fill: "none", stroke: extraColor, strokeWidth: 2.5, strokeDasharray: "2.5 3", strokeLinecap: "round" }), SP_JSX.jsx("circle", { cx: dotX, cy: dotY, r: 3, fill: extraColor })] })), [lowBound, highBound].map((bound, i) => bound && (SP_JSX.jsxs("g", { "data-testid": i === 0 ? "tdp-safe-min" : "tdp-safe-max", children: [SP_JSX.jsx("line", { x1: bound.x1, y1: bound.y1, x2: bound.x2, y2: bound.y2, stroke: "rgba(255,255,255,0.35)", strokeWidth: 1.2 }), SP_JSX.jsx("text", { x: bound.lx, y: bound.ly + 3, fill: theme.color.textMuted, fontSize: "8", textAnchor: "middle", children: i === 0 ? safeMin : safeScaleMax })] }, i))), boostEnd !== null && (SP_JSX.jsx("path", { d: arcPath(START + f * SWEEP, START + boostEnd * SWEEP), fill: "none", stroke: theme.color.boost, strokeWidth: SW, strokeLinecap: "round", style: { filter: `drop-shadow(0 0 7px ${theme.color.boost})` } })), !auto && (SP_JSX.jsx("line", { x1: tx1, y1: ty1, x2: tx2, y2: ty2, stroke: "rgba(255,255,255,0.90)", strokeWidth: 2.5, strokeLinecap: "round" })), showTargetLabel && (SP_JSX.jsxs("text", { x: lx, y: ly + 3, fill: "rgba(255,255,255,0.90)", fontSize: "9", fontWeight: 700, textAnchor: "middle", children: [Math.round(markerWatts), suffix] })), !auto && slowMarkerWatts !== null && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("line", { x1: slx1, y1: sly1, x2: slx2, y2: sly2, stroke: theme.color.accent, strokeWidth: 2.5, strokeLinecap: "round" }), SP_JSX.jsxs("text", { x: sllx, y: slly + 3, fill: theme.color.accent, fontSize: "9", fontWeight: 700, textAnchor: "middle", children: ["Slow \u2264 ", Math.round(slowMarkerWatts), " W"] })] })), !auto && fastMarkerWatts !== null && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("line", { x1: fx1, y1: fy1, x2: fx2, y2: fy2, stroke: theme.color.boost, strokeWidth: 2.5, strokeLinecap: "round" }), SP_JSX.jsxs("text", { x: flx, y: fly + 3, fill: theme.color.boost, fontSize: "9", fontWeight: 700, textAnchor: "middle", children: ["Fast \u2264 ", Math.round(fastMarkerWatts), " W"] })] })), !targetLabelAtMinimum && (SP_JSX.jsxs("text", { x: sx, y: sy + 16, fill: theme.color.textMuted, fontSize: "10", textAnchor: "middle", children: [limits.min, suffix] })), SP_JSX.jsxs("text", { x: ex, y: ey + 16, fill: theme.color.textMuted, fontSize: "10", textAnchor: "middle", children: [scaleMax, suffix, chargerHeadroom ? " ⚡" : ""] })] }), SP_JSX.jsxs("div", { style: { position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }, children: [!auto && SP_JSX.jsx("div", { style: { lineHeight: 0 }, children: SP_JSX.jsx(ZoneIcon, { size: 26, color: extra === null ? color : extraColor }) }), SP_JSX.jsxs("div", { style: { fontSize: 32, fontWeight: 700, color: theme.color.textPrimary, lineHeight: 1.15 }, children: [Math.round(heroWatts), SP_JSX.jsx("span", { style: { fontSize: 16, color: theme.color.textMuted }, children: levels ? `/${limits.max}` : " W" })] }), extra !== null && targetDiverged && (SP_JSX.jsx("div", { style: { fontSize: 10, color: extraColor, marginTop: 1 }, children: t("tdp.extra.requested", { w: Math.round(markerWatts) }) })), targetOnly && (SP_JSX.jsx("div", { style: { fontSize: 9, color: theme.color.textMuted, marginTop: 1, letterSpacing: "0.08em" }, children: t("tdp.arc.target") })), hasBoost && (SP_JSX.jsxs("div", { style: { fontSize: 10, color: theme.color.boost, marginTop: 2, letterSpacing: "0.02em", fontWeight: 700 }, children: ["+", boost, " W \u00B7 ", t("tdp.arc.boostHw")] })), overclocked && (SP_JSX.jsx("div", { style: {
+    const ghostFraction = ghost === null ? null : fraction$1(ghost.value, limits.min, safeScaleMax);
+    const ghostColor = ghostFraction === null ? null : arcColor(ghostFraction);
+    const [gx, gy] = ghostFraction === null ? [0, 0] : polarAt(START + ghostFraction * SWEEP, GHOST_R);
+    return (SP_JSX.jsxs("div", { style: { position: "relative", width: "100%", maxWidth: 240, margin: "2px auto 0" }, children: [SP_JSX.jsxs("svg", { viewBox: "0 0 200 180", style: { width: "100%", display: "block", overflow: "visible" }, children: [auto && (SP_JSX.jsx("path", { "data-testid": "auto-tdp-halo", "aria-hidden": "true", d: fullArc, fill: "none", stroke: color, strokeOpacity: 0.28, strokeWidth: SW + 5, strokeLinecap: "round", pathLength: 1000, strokeDasharray: `${1000 * gaugeFraction} 1000`, style: { filter: `drop-shadow(0 0 9px ${color})` } })), SP_JSX.jsx("path", { d: fullArc, fill: "none", stroke: "rgba(255,255,255,0.08)", strokeWidth: SW, strokeLinecap: "round" }), chargerHeadroom && (SP_JSX.jsx("path", { d: arcPath(START + fMax * SWEEP, START + fMaxAc * SWEEP), fill: "none", stroke: onAc ? "rgba(255,180,84,0.55)" : "rgba(255,180,84,0.14)", strokeWidth: SW, strokeLinecap: "round", style: { transition: "stroke 220ms ease" } })), baseFraction > 0 && (SP_JSX.jsx("path", { "data-testid": auto ? "auto-tdp-gauge" : "tdp-gauge", d: fullArc, fill: "none", stroke: baseColor, strokeWidth: SW, strokeLinecap: "round", pathLength: 1000, strokeDasharray: `${1000 * baseFraction} 1000`, style: { transition: "stroke-dasharray 240ms ease, stroke 240ms ease", filter: `drop-shadow(0 0 6px ${baseColor})` } })), realAboveSafe && (SP_JSX.jsx("path", { "data-testid": "tdp-extra-fill", d: arcPath(START + fSafeTop * SWEEP, START + f * SWEEP), fill: "none", stroke: theme.color.extra, strokeWidth: SW, strokeLinecap: "round", style: { filter: `drop-shadow(0 0 7px ${theme.color.extra})` } })), extra !== null && targetDiverged && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("path", { "data-testid": "tdp-extra-trail", d: arcPath(START + Math.min(f, fTarget) * SWEEP, START + Math.max(f, fTarget) * SWEEP, trailRadius), fill: "none", stroke: extraColor, strokeWidth: 2.5, strokeDasharray: "2.5 3", strokeLinecap: "round" }), SP_JSX.jsx("circle", { cx: dotX, cy: dotY, r: 3, fill: extraColor })] })), [lowBound, highBound].map((bound, i) => bound && (SP_JSX.jsxs("g", { "data-testid": i === 0 ? "tdp-safe-min" : "tdp-safe-max", children: [SP_JSX.jsx("line", { x1: bound.x1, y1: bound.y1, x2: bound.x2, y2: bound.y2, stroke: "rgba(255,255,255,0.35)", strokeWidth: 1.2 }), SP_JSX.jsx("text", { x: bound.lx, y: bound.ly + 3, fill: theme.color.textMuted, fontSize: "8", textAnchor: "middle", children: i === 0 ? safeMin : safeScaleMax })] }, i))), boostEnd !== null && (SP_JSX.jsx("path", { d: arcPath(START + f * SWEEP, START + boostEnd * SWEEP), fill: "none", stroke: theme.color.boost, strokeWidth: SW, strokeLinecap: "round", style: { filter: `drop-shadow(0 0 7px ${theme.color.boost})` } })), !auto && (SP_JSX.jsx("line", { x1: tx1, y1: ty1, x2: tx2, y2: ty2, stroke: "rgba(255,255,255,0.90)", strokeWidth: 2.5, strokeLinecap: "round" })), showTargetLabel && (SP_JSX.jsxs("text", { x: lx, y: ly + 3, fill: "rgba(255,255,255,0.90)", fontSize: "9", fontWeight: 700, textAnchor: "middle", children: [Math.round(markerWatts), suffix] })), !auto && slowMarkerWatts !== null && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("line", { x1: slx1, y1: sly1, x2: slx2, y2: sly2, stroke: theme.color.accent, strokeWidth: 2.5, strokeLinecap: "round" }), SP_JSX.jsxs("text", { x: sllx, y: slly + 3, fill: theme.color.accent, fontSize: "9", fontWeight: 700, textAnchor: "middle", children: ["Slow \u2264 ", Math.round(slowMarkerWatts), " W"] })] })), !auto && fastMarkerWatts !== null && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx("line", { x1: fx1, y1: fy1, x2: fx2, y2: fy2, stroke: theme.color.boost, strokeWidth: 2.5, strokeLinecap: "round" }), SP_JSX.jsxs("text", { x: flx, y: fly + 3, fill: theme.color.boost, fontSize: "9", fontWeight: 700, textAnchor: "middle", children: ["Fast \u2264 ", Math.round(fastMarkerWatts), " W"] })] })), !targetLabelAtMinimum && (SP_JSX.jsxs("text", { x: sx, y: sy + 16, fill: theme.color.textMuted, fontSize: "10", textAnchor: "middle", children: [limits.min, suffix] })), ghostFraction !== null && ghostColor !== null && (SP_JSX.jsxs("g", { "data-testid": "power-arc-ghost", children: [SP_JSX.jsx("path", { d: arcPath(START, end, GHOST_R), fill: "none", stroke: "rgba(255,255,255,0.06)", strokeWidth: GHOST_SW, strokeLinecap: "round" }), ghostFraction > 0 && (SP_JSX.jsx("path", { d: arcPath(START, end, GHOST_R), fill: "none", stroke: ghostColor, strokeOpacity: 0.55, strokeWidth: GHOST_SW, strokeLinecap: "round", pathLength: 1000, strokeDasharray: `${1000 * ghostFraction} 1000`, style: { transition: "stroke-dasharray 240ms ease, stroke 240ms ease" } })), SP_JSX.jsx("circle", { cx: gx, cy: gy, r: 4.2, fill: theme.color.surfaceRaised, stroke: ghostColor, strokeWidth: 2 })] })), SP_JSX.jsxs("text", { x: ex, y: ey + 16, fill: theme.color.textMuted, fontSize: "10", textAnchor: "middle", children: [scaleMax, suffix, chargerHeadroom ? " ⚡" : ""] })] }), SP_JSX.jsxs("div", { style: { position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }, children: [heroLabel ? (SP_JSX.jsx("div", { style: { fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: auto ? theme.color.accent : color }, children: heroLabel })) : !auto && SP_JSX.jsx("div", { style: { lineHeight: 0 }, children: SP_JSX.jsx(ZoneIcon, { size: 26, color: extra === null ? color : extraColor }) }), SP_JSX.jsxs("div", { style: { fontSize: 32, fontWeight: 700, color: theme.color.textPrimary, lineHeight: 1.15 }, children: [Math.round(heroWatts), SP_JSX.jsx("span", { style: { fontSize: 16, color: theme.color.textMuted }, children: levels ? `/${limits.max}` : " W" })] }), extra !== null && targetDiverged && (SP_JSX.jsx("div", { style: { fontSize: 10, color: extraColor, marginTop: 1 }, children: t("tdp.extra.requested", { w: Math.round(markerWatts) }) })), targetOnly && (SP_JSX.jsx("div", { style: { fontSize: 9, color: theme.color.textMuted, marginTop: 1, letterSpacing: "0.08em" }, children: t("tdp.arc.target") })), hasBoost && (SP_JSX.jsxs("div", { style: { fontSize: 10, color: theme.color.boost, marginTop: 2, letterSpacing: "0.02em", fontWeight: 700 }, children: ["+", boost, " W \u00B7 ", t("tdp.arc.boostHw")] })), overclocked && (SP_JSX.jsx("div", { style: {
                             fontSize: 8,
                             fontWeight: 700,
                             lineHeight: 1.4,
@@ -27052,14 +29119,60 @@ const PowerArc = ({ watts, limits, onAc, actualWatts = null, auto = false, setpo
                             borderRadius: 4,
                             padding: "1px 5px",
                             marginTop: 2,
-                        }, children: t("tdp.arc.auto") })) : (SP_JSX.jsx("div", { style: { fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: extra === null ? color : extraColor, marginTop: overclocked ? 3 : undefined }, children: extra === null ? t(`tdp.zone.${zone.key}`) : t("tdp.extra.label") }))] })] }));
+                        }, children: t("tdp.arc.auto") })) : (SP_JSX.jsx("div", { style: { fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: extra === null ? color : extraColor, marginTop: overclocked ? 3 : undefined }, children: extra === null ? t(`tdp.zone.${zone.key}`) : t("tdp.extra.label") })), ghost !== null && ghostColor !== null && (SP_JSX.jsxs("div", { style: { fontSize: 10, color: theme.color.textMuted, marginTop: 3, fontVariantNumeric: "tabular-nums" }, children: [ghost.label, " ", SP_JSX.jsx("b", { style: { color: ghostColor }, children: Math.round(ghost.value) })] }))] })] }));
+};
+
+const HEIGHT = 32;
+const PowerTargetTabs = ({ target, cpuLevel, gpuLevel, linked, onTarget, onLinked, }) => {
+    const { t } = useI18n();
+    const tab = (value, Icon, label, level) => {
+        const active = value === target;
+        return (SP_JSX.jsxs(DFL.Focusable, { role: "tab", "aria-selected": active, onActivate: () => onTarget(value), onClick: () => onTarget(value), style: {
+                flex: "1 1 0",
+                minWidth: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 5,
+                borderRadius: 999,
+                fontSize: theme.font.caption,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                cursor: "pointer",
+                color: active ? theme.color.accent : theme.color.textMuted,
+                background: active ? `rgba(${theme.color.accentRgb},0.16)` : "transparent",
+                boxShadow: active ? `inset 0 0 0 1px rgba(${theme.color.accentRgb},0.55)` : "none",
+                transition: "background 140ms ease, color 140ms ease",
+            }, children: [SP_JSX.jsx(Icon, { size: 13 }), SP_JSX.jsx("span", { children: label }), SP_JSX.jsx("span", { style: { fontWeight: 600, opacity: 0.75, fontVariantNumeric: "tabular-nums" }, children: level })] }, value));
+    };
+    return (SP_JSX.jsxs(DFL.Focusable, { "flow-children": "row", style: { display: "flex", gap: theme.space.sm, alignItems: "stretch" }, children: [SP_JSX.jsxs(DFL.Focusable, { role: "tablist", "aria-label": t("tdp.target.label"), "flow-children": "row", style: {
+                    flex: 1,
+                    display: "flex",
+                    height: HEIGHT,
+                    padding: 3,
+                    borderRadius: 999,
+                    background: theme.color.surfaceRaised,
+                    boxShadow: `inset 0 0 0 1px ${theme.color.hairline}`,
+                }, children: [tab("cpu", LuCpu, t("tdp.target.cpu"), cpuLevel), tab("gpu", LuMemoryStick, t("tdp.target.gpu"), gpuLevel)] }), SP_JSX.jsx(DFL.Focusable, { role: "switch", "aria-checked": linked, "aria-label": linked ? t("tdp.target.unlink") : t("tdp.target.link"), onActivate: () => onLinked(!linked), onClick: () => onLinked(!linked), style: {
+                    width: HEIGHT + 6,
+                    height: HEIGHT,
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: 999,
+                    cursor: "pointer",
+                    background: theme.color.surfaceRaised,
+                    color: linked ? theme.color.accent : theme.color.textMuted,
+                    boxShadow: `inset 0 0 0 1px ${linked ? `rgba(${theme.color.accentRgb},0.6)` : theme.color.hairline}`,
+                }, children: linked ? SP_JSX.jsx(LuLink2, { size: 15 }) : SP_JSX.jsx(LuUnlink2, { size: 15 }) })] }));
 };
 
 /** Shared accent/hairline chip visual (active vs idle). Layout is added per use. */
 const chipVisual = (active) => ({
     borderRadius: theme.radius.sm,
     background: active ? `rgba(${theme.color.accentRgb},0.18)` : theme.color.surfaceRaised,
-    boxShadow: `inset 0 0 0 ${active ? 1.5 : 1}px ${active ? theme.color.accent : theme.color.hairline}`,
+    boxShadow: `inset 0 0 0 ${active ? theme.stroke : 1}px ${active ? theme.color.accent : theme.color.outline}`,
     color: active ? theme.color.accent : theme.color.textPrimary,
     fontSize: theme.font.caption,
     cursor: "pointer",
@@ -27332,11 +29445,21 @@ const TdpOwnershipStatus = ({ ownership, onAc, physicalMin }) => {
 };
 
 const STEAM_DECK_NOMINAL_MAX_W = 15;
-const TdpSection = ({ tdp, scope, power, onWatts, onSetLevels, onSetMode, onApplySuggestion, onFirmwareMode, onLowBatteryHold, monitorOnly, onReactivate, presets, refreshPresets, onApplyPreset }) => {
+const TdpSection = ({ tdp, scope, power, onWatts, onGpuLevel, onSetLevels, onSetMode, onApplySuggestion, onFirmwareMode, onLowBatteryHold, monitorOnly, onReactivate, presets, refreshPresets, onApplyPreset }) => {
     const { t } = useI18n();
+    const [target, setTarget] = SP_REACT.useState("cpu");
+    const targetContext = `${scope}:${tdp?.appid ?? ""}`;
+    SP_REACT.useEffect(() => setTarget("cpu"), [targetContext]);
     // Memoized (and above the early returns) so re-renders don't rebuild the chip list.
     // Falls back to a builtins-only library if the custom library hasn't loaded.
     const resolved = SP_REACT.useMemo(() => (tdp ? resolveLivePresets(tdp, presets, scope, t) : null), [tdp, presets, scope, t]);
+    const storedGpu = tdp ? (scope === "global" ? tdp.global_gpu_level : tdp.gpu_level) ?? null : null;
+    const gpuResolved = SP_REACT.useMemo(() => {
+        if (!tdp || storedGpu === null)
+            return null;
+        const asGpu = { ...tdp, watts: storedGpu, global_watts: storedGpu };
+        return resolveLivePresets(asGpu, presets, scope, t);
+    }, [tdp, storedGpu, presets, scope, t]);
     // Stable identity so the memoized chip row doesn't re-render on every tick. Edit range is
     // the charger ceiling so a charger-made preset isn't clipped when edited on battery.
     const onEditPresets = SP_REACT.useCallback(() => {
@@ -27345,7 +29468,9 @@ const TdpSection = ({ tdp, scope, power, onWatts, onSetLevels, onSetMode, onAppl
         openPowerPresetsModal({
             builtinWatts: tdp.presets,
             onAc: tdp.on_ac,
-            currentWatts: scope === "global" ? tdp.global_watts : tdp.watts,
+            currentWatts: target === "gpu" && storedGpu !== null
+                ? storedGpu
+                : (scope === "global" ? tdp.global_watts : tdp.watts),
             min: tdp.request_min ?? tdp.limits.min,
             max: tdp.limits.max_ac,
             supportsAdvanced: tdp.supports_advanced,
@@ -27356,7 +29481,7 @@ const TdpSection = ({ tdp, scope, power, onWatts, onSetLevels, onSetMode, onAppl
             onClose: refreshPresets,
             formatValue: isLevelUnit(tdp.unit) ? (level) => t("tdp.level.value", { level }) : undefined,
         });
-    }, [tdp, scope, refreshPresets, t]);
+    }, [tdp, scope, refreshPresets, t, target, storedGpu]);
     if (!tdp)
         return SP_JSX.jsx(Loading, {});
     if (!tdp.supported) {
@@ -27375,7 +29500,6 @@ const TdpSection = ({ tdp, scope, power, onWatts, onSetLevels, onSetMode, onAppl
     // Reference watts clamped to the active ceiling; the reset link shows only when
     // the current value differs from it.
     const resetTarget = resetWatts(tdp.limits.default, tdp.limits.min, activeMax);
-    const showReset = Math.round(view.watts) !== resetTarget;
     // Firmware modes replace the watt presets. In a named mode the firmware owns
     // power+fan, so the arc/slider show its applied watts; the slider drops to custom.
     const fwModes = tdp.firmware_modes ?? [];
@@ -27404,14 +29528,40 @@ const TdpSection = ({ tdp, scope, power, onWatts, onSetLevels, onSetMode, onAppl
     const pptVisualMax = deckPptActive ? Math.max(activeMax, slowPpt ?? 0, fastPpt ?? 0) : null;
     const biosNoticeAbove = tdp.ppt?.supported && !tdp.overclock?.detected ? STEAM_DECK_NOMINAL_MAX_W : null;
     const levelUnit = isLevelUnit(tdp.unit);
-    const levelSummary = levelUnit
-        ? levelFrequencySummary(tdp.level_frequencies?.[String(Math.round(Math.min(shownWatts, activeMax)))])
+    const split = levelUnit && Boolean(tdp.gpu_level_supported) && !inFwMode;
+    const linked = storedGpu === null;
+    const editingGpu = split && target === "gpu" && !linked;
+    const autoSetpoint = isAutoOn ? (power?.setpoint ?? null) : null;
+    const cpuShown = isAutoOn && autoSetpoint !== null ? autoSetpoint : shownWatts;
+    const autoConfig = scope === "global" ? tdp.global_auto_config : tdp.auto_config;
+    const gpuShown = linked
+        ? cpuShown
+        : isAutoOn && autoConfig
+            ? autoGpuLevel(storedGpu, view.watts, cpuShown, autoConfig, tdp.auto_limits ?? tdp.limits, tdp.on_ac)
+            : Math.max(tdp.limits.min, Math.min(activeMax, storedGpu));
+    const frequenciesAt = (level) => tdp.level_frequencies?.[String(Math.round(Math.min(level, activeMax)))];
+    const levelSummary = !levelUnit
+        ? null
+        : split && !linked
+            ? levelFrequencySummary(frequenciesAt(cpuShown), frequenciesAt(gpuShown), target === "gpu")
+            : levelFrequencySummary(frequenciesAt(shownWatts));
+    const ghost = split && !linked
+        ? (target === "gpu"
+            ? { value: cpuShown, label: t("tdp.target.cpu") }
+            : { value: gpuShown, label: t("tdp.target.gpu") })
         : null;
+    const heroLabel = split ? t(target === "gpu" ? "tdp.target.gpu" : "tdp.target.cpu") : null;
+    const dialValue = editingGpu ? gpuShown : shownWatts;
+    // On the GPU tab the way back to default is linking the GPU to the CPU level again.
+    const showReset = editingGpu || Math.round(view.watts) !== resetTarget;
+    const onDial = editingGpu ? (level) => onGpuLevel?.(level) : onWatts;
+    const onLinked = (next) => onGpuLevel?.(next ? null : Math.round(view.watts));
+    const targetTabs = split ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(PowerTargetTabs, { target: target, cpuLevel: Math.round(cpuShown), gpuLevel: Math.round(gpuShown), linked: linked, onTarget: setTarget, onLinked: onLinked }) })) : null;
     // Master switch off: keep the live arc, drop every write control.
     if (monitorOnly) {
         return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(TdpMonitorNotice, { onReactivate: onReactivate }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(PowerArc, { watts: arcTarget, limits: visualLimits, onAc: tdp.on_ac, actualWatts: power?.watts ?? null, auto: isAutoOn, setpoint: power?.setpoint ?? null, appliedWatts: arcApplied, visualMax: pptVisualMax, baseMarkerWatts: basePpt, slowMarkerWatts: slowPpt, fastMarkerWatts: fastPpt, overclocked: tdp.overclock?.detected ?? false, unit: tdp.unit }) })] }));
     }
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(PowerArc, { watts: arcTarget, limits: visualLimits, onAc: tdp.on_ac, actualWatts: power?.watts ?? null, auto: isAutoOn, setpoint: power?.setpoint ?? null, appliedWatts: arcApplied, visualMax: pptVisualMax, baseMarkerWatts: basePpt, slowMarkerWatts: slowPpt, fastMarkerWatts: fastPpt, overclocked: tdp.overclock?.detected ?? false, unit: tdp.unit, safeMin: deckPptActive ? null : tdp.limits.min, safeMax: deckPptActive ? null : activeMax, manualMax: deckPptActive ? null : (tdp.manual_max_ac ?? null) }) }), showOwnership && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(TdpOwnershipStatus, { ownership: tdp.ownership, onAc: tdp.on_ac, physicalMin: tdp.limits.min }) })), !isAutoOn && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.SliderField, { value: Math.min(shownWatts, sliderMax), min: requestMin, max: sliderMax, step: 1, showValue: true, onChange: onWatts }) }), levelSummary && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: {
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [targetTabs, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(PowerArc, { watts: editingGpu ? gpuShown : arcTarget, limits: visualLimits, onAc: tdp.on_ac, actualWatts: power?.watts ?? null, auto: isAutoOn, setpoint: isAutoOn && editingGpu ? gpuShown : (power?.setpoint ?? null), appliedWatts: editingGpu ? null : arcApplied, visualMax: pptVisualMax, baseMarkerWatts: basePpt, slowMarkerWatts: slowPpt, fastMarkerWatts: fastPpt, overclocked: tdp.overclock?.detected ?? false, unit: tdp.unit, heroLabel: heroLabel, ghost: ghost, safeMin: deckPptActive ? null : tdp.limits.min, safeMax: deckPptActive ? null : activeMax, manualMax: deckPptActive ? null : (tdp.manual_max_ac ?? null) }) }), showOwnership && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(TdpOwnershipStatus, { ownership: tdp.ownership, onAc: tdp.on_ac, physicalMin: tdp.limits.min }) })), !isAutoOn && (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.SliderField, { value: Math.min(dialValue, sliderMax), min: requestMin, max: sliderMax, step: 1, showValue: true, onChange: onDial }) }), levelSummary && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: {
                                 textAlign: "center",
                                 color: theme.color.textMuted,
                                 fontSize: theme.font.caption,
@@ -27435,7 +29585,7 @@ const TdpSection = ({ tdp, scope, power, onWatts, onSetLevels, onSetMode, onAppl
                                         "low-power": t("tdp.fwmode.low-power"),
                                         balanced: t("tdp.fwmode.balanced"),
                                         performance: t("tdp.fwmode.performance"),
-                                    }, onPick: onFirmwareMode }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: 8 }, children: inFwMode ? t("tdp.fwmode.active") : t("tdp.fwmode.custom") }) })] })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [resolved && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(Presets, { resolved: resolved, manageLabel: t("tdp.presets.manage"), hiddenLabel: t("tdp.presets.hidden"), onPick: onApplyPreset, onEdit: onEditPresets }) })), showReset && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Focusable, { style: {
+                                    }, onPick: onFirmwareMode }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx("div", { style: { fontSize: theme.font.caption, color: theme.color.textMuted, marginTop: 8 }, children: inFwMode ? t("tdp.fwmode.active") : t("tdp.fwmode.custom") }) })] })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [editingGpu && gpuResolved ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(Presets, { resolved: gpuResolved, manageLabel: t("tdp.presets.manage"), hiddenLabel: t("tdp.presets.hidden"), onPick: (item) => onGpuLevel?.(item.watts), onEdit: onEditPresets }) })) : resolved && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(Presets, { resolved: resolved, manageLabel: t("tdp.presets.manage"), hiddenLabel: t("tdp.presets.hidden"), onPick: onApplyPreset, onEdit: onEditPresets }) })), showReset && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Focusable, { style: {
                                         display: "flex",
                                         justifyContent: "center",
                                         padding: "4px 0",
@@ -27443,9 +29593,11 @@ const TdpSection = ({ tdp, scope, power, onWatts, onSetLevels, onSetMode, onAppl
                                         color: theme.color.textMuted,
                                         fontSize: theme.font.caption,
                                         cursor: "pointer",
-                                    }, onActivate: () => onWatts(resetTarget), onClick: () => onWatts(resetTarget), children: levelUnit
-                                        ? t("tdp.reset.default.level", { w: resetTarget })
-                                        : t("tdp.reset.default", { w: resetTarget }) }) }))] })), !inFwMode && tdp.supports_advanced && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(AdvancedBoost, { levels: view.levels, mode: view.mode, bounds: { pl2: tdp.level_limits.pl2, pl3: tdp.level_limits.pl3 }, ppt: tdp.ppt, biosNoticeAbove: biosNoticeAbove, onSetLevels: onSetLevels, onSetMode: onSetMode }) })), !inFwMode && tdp.learned.enough && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(TdpSuggestionCard, { learned: tdp.learned, onApply: onApplySuggestion }) }))] }))] }));
+                                    }, onActivate: () => (editingGpu ? onGpuLevel?.(null) : onWatts(resetTarget)), onClick: () => (editingGpu ? onGpuLevel?.(null) : onWatts(resetTarget)), children: editingGpu
+                                        ? t("tdp.target.link")
+                                        : levelUnit
+                                            ? t("tdp.reset.default.level", { w: resetTarget })
+                                            : t("tdp.reset.default", { w: resetTarget }) }) }))] })), !inFwMode && tdp.supports_advanced && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(AdvancedBoost, { levels: view.levels, mode: view.mode, bounds: { pl2: tdp.level_limits.pl2, pl3: tdp.level_limits.pl3 }, ppt: tdp.ppt, biosNoticeAbove: biosNoticeAbove, onSetLevels: onSetLevels, onSetMode: onSetMode }) })), !inFwMode && tdp.learned.enough && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(TdpSuggestionCard, { learned: tdp.learned, onApply: onApplySuggestion }) }))] }))] }));
 };
 
 const MIN_TARGET_FPS = 20;
@@ -28461,7 +30613,7 @@ const TdpCoreBlock = () => {
     const tdp = c.tdp && c.autoTdpEnabled && autoView?.hideManualSuggestion
         ? { ...c.tdp, learned: { ...c.tdp.learned, enough: false } }
         : c.tdp;
-    return (SP_JSX.jsx(TdpSection, { tdp: tdp, scope: c.scope, power: power, onWatts: c.onWatts, onSetLevels: c.onSetLevels, onSetMode: c.onSetMode, onApplySuggestion: c.onApplySuggestion, onFirmwareMode: c.onFirmwareMode, onLowBatteryHold: c.onLowBatteryHold, monitorOnly: c.monitorOnly, onReactivate: c.onReactivate, presets: c.presets, refreshPresets: c.refreshPresets, onApplyPreset: c.onApplyPreset }));
+    return (SP_JSX.jsx(TdpSection, { tdp: tdp, scope: c.scope, power: power, onWatts: c.onWatts, onGpuLevel: c.onGpuLevel, onSetLevels: c.onSetLevels, onSetMode: c.onSetMode, onApplySuggestion: c.onApplySuggestion, onFirmwareMode: c.onFirmwareMode, onLowBatteryHold: c.onLowBatteryHold, monitorOnly: c.monitorOnly, onReactivate: c.onReactivate, presets: c.presets, refreshPresets: c.refreshPresets, onApplyPreset: c.onApplyPreset }));
 };
 const AutoTdpBlock = () => {
     const { tdp, power, scope, game, onAutoTdpToggle, onAutoTargetFps, onAutoInitialTdp, onAutoMinTdp, onAutoMaxTdp, autoTdpEnabled, monitorOnly, } = usePotencia();
@@ -29086,6 +31238,14 @@ function createDeckPerf(deps) {
         const autoOn = autoReady && Boolean(autoView.config.enabled);
         const value = Math.round(scope === "global" ? tdp.global_watts : tdp.watts);
         const max = tdp.on_ac ? Math.max(tdp.limits.max, tdp.limits.max_ac) : tdp.limits.max;
+        const shown = autoOn && power?.auto?.setpoint != null ? Math.round(power.auto.setpoint) : value;
+        const split = tdp.unit === "level" && Boolean(tdp.gpu_level_supported);
+        const stored = split ? (scope === "global" ? tdp.global_gpu_level : tdp.gpu_level) ?? null : null;
+        const gpuShown = !split ? null : stored === null
+            ? shown
+            : autoOn
+                ? autoGpuLevel(stored, value, shown, autoView.config, tdp.auto_limits ?? tdp.limits, tdp.on_ac)
+                : Math.max(tdp.limits.min, Math.min(max, stored));
         return {
             tdp,
             items,
@@ -29097,7 +31257,7 @@ function createDeckPerf(deps) {
                 unit: tdp.unit ?? null,
                 levels: tdp.unit === "level",
                 value,
-                shown: autoOn && power?.auto?.setpoint != null ? Math.round(power.auto.setpoint) : value,
+                shown,
                 min: tdp.limits.min,
                 max: Math.max(tdp.limits.min + 1, max),
                 autoReady,
@@ -29105,11 +31265,15 @@ function createDeckPerf(deps) {
                 target: autoOn ? autoView.config.target_fps ?? null : null,
                 maxFps: tdp.auto_target_max_fps ?? null,
                 frequencies: tdp.level_frequencies ?? null,
+                split,
+                gpuLevel: stored,
+                gpuShown,
                 presets: items.map((item) => ({
                     id: item.id,
                     title: presetTitle(item, deps.t),
                     icon: item.icon,
                     active: item.active && !autoOn,
+                    level: item.watts,
                 })),
             },
         };
@@ -29143,6 +31307,21 @@ function createDeckPerf(deps) {
             await deps.call.setWatts(Math.max(s.view.min, Math.min(s.view.max, value)), s.scope, s.target, s.context);
             return (await snapshot()).view;
         },
+        "perf.gpu": async ([level]) => {
+            const s = await snapshot();
+            if (!s.view.ready || !s.view.split)
+                throw new Error("unsupported");
+            if (level == null) {
+                await deps.call.setGpu(null, s.scope, s.target, s.context);
+                return (await snapshot()).view;
+            }
+            const value = Math.round(Number(level));
+            // Under Auto only unlinking is allowed; the level itself follows Auto.
+            if ((s.view.autoOn && s.view.gpuLevel !== null) || !Number.isFinite(value))
+                throw new Error("unsupported");
+            await deps.call.setGpu(Math.max(s.view.min, Math.min(s.view.max, value)), s.scope, s.target, s.context);
+            return (await snapshot()).view;
+        },
         "perf.target": async ([fps]) => {
             const s = await snapshot();
             if (!s.view.autoReady)
@@ -29172,6 +31351,7 @@ function steamDeckPerf() {
         call: {
             applyPreset: applyPowerPreset,
             setWatts: setTdpWatts,
+            setGpu: setGpuLevel,
             setAuto: setAutoTdp,
             setAutoConfig: setAutoTdpConfig,
             seenNotice: setSeenAutotdpNotice,
@@ -30350,10 +32530,13 @@ function createSteamRuntimeBridge(getSteamDocument, createManager = (doc) => new
             if (inventoryChanged)
                 void manager?.refreshDescriptors?.();
         },
+        refreshDescriptors() {
+            void manager?.refreshDescriptors?.();
+        },
         dispose: release,
     };
 }
-function startThemesRuntime({ client, getSteamDocument, getQamDocument, subscribeQamDocument, library = createThemeLibraryAccess(), navigation = createThemeNavigationAccess(), createManager, }) {
+function startThemesRuntime({ client, getSteamDocument, getQamDocument, subscribeQamDocument, subscribePackageChanges, library = createThemeLibraryAccess(), navigation = createThemeNavigationAccess(), evaluate, log, createManager, }) {
     const qam = getQamDocument && subscribeQamDocument
         ? Object.freeze({
             getDocument: getQamDocument,
@@ -30366,9 +32549,12 @@ function startThemesRuntime({ client, getSteamDocument, getQamDocument, subscrib
         qam,
         library,
         navigation,
+        evaluate,
+        log,
     }), () => { void client.refresh(); });
     const reconcile = () => bridge.reconcile(client.getSnapshot().snapshot);
     const unsubscribe = client.subscribe(reconcile, 30000);
+    const stopPackageWatch = subscribePackageChanges?.(() => bridge.refreshDescriptors());
     let stopped = false;
     reconcile();
     return () => {
@@ -30376,6 +32562,7 @@ function startThemesRuntime({ client, getSteamDocument, getQamDocument, subscrib
             return;
         stopped = true;
         unsubscribe();
+        stopPackageWatch?.();
         bridge.dispose();
     };
 }
@@ -30451,6 +32638,7 @@ var index = definePlugin(() => {
     const releaseCssLoaderHost = configureDeckyCssLoaderHost(deckyHost);
     const releaseThemeInstallHost = configurePanelThemeInstallHost({
         prepareRemote: prepareRemoteThemeInstall,
+        prepareEarly: prepareEarlyThemeInstall,
         commit: commitThemeInstall,
         discard: discardThemeExtensionReceipt,
         rollback: rollbackThemeInstall,
@@ -30464,6 +32652,16 @@ var index = definePlugin(() => {
         acknowledge: acknowledgeThemeActivation,
     });
     const releaseThemePublicationHost = configureThemePublicationCheckHost(checkThemeReleases);
+    const releaseThemeEarlyHost = configureThemeEarlyCheckHost(checkThemeEarly);
+    const releaseEarlyArchivePicker = configureEarlyArchivePicker(async () => {
+        try {
+            const picked = await openFilePicker(0 /* FileSelectionType.FILE */, await earlyThemeArchiveFolder(), true, true, undefined, ["zip"]);
+            return picked.realpath || picked.path || null;
+        }
+        catch {
+            return null;
+        }
+    });
     const releaseThemeHealthHost = configureThemeHealthHost({
         health: getThemeHealth,
         setAside: setAsideThemeLeftovers,
@@ -30547,6 +32745,7 @@ var index = definePlugin(() => {
         getSteamDocument: () => DFL.findSP()?.document ?? null,
         getQamDocument,
         subscribeQamDocument: onQamDocument,
+        subscribePackageChanges: onThemePackagesChanged,
     });
     return {
         name: "Panel de Control",
@@ -30575,6 +32774,8 @@ var index = definePlugin(() => {
             releaseThemeInstallHost();
             releaseThemeActivationJournalHost();
             releaseThemePublicationHost();
+            releaseThemeEarlyHost();
+            releaseEarlyArchivePicker();
             releaseThemeHealthHost();
             releaseThemeExtensionHost();
             releaseThemeFailureReporter();

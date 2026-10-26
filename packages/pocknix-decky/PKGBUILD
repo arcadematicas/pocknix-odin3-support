@@ -23,6 +23,8 @@ pkgver=0.1.0
 #     pocknix-decky-sync copies by basename, so the old name created a duplicate CSSLoader dir
 #     and never updated the real SDH-CssLoader. Ship it as /usr/share/decky-plugins/SDH-CssLoader.
 # 52: (previous) Panel de Control v0.66.0.
+# 57: re-vendor Hooandee's 'Panel de Control' to v0.76.0 (25/10). Sin delta propio: el
+#     hdr=True del perfil ayn_odin3 entro en upstream (PR #947, mergeado 17/10).
 # 53: (previous) re-vendor Hooandee's "Panel de Control" to v0.70.1 (release panel-de-control-v0.70.1,
 #     2026-10-14): brings the AYN Odin 3 device profile (upstream b0b7d612) plus remote_access
 #     (dropbear) and display input_wake/screen_sleep. LOCAL PATCH (pocknix, TEMPORARY): add
@@ -39,7 +41,7 @@ pkgver=0.1.0
 #     Why: the new Decky QAM update button is broken on ARM, so on the Odin there was no way to
 #     update Decky by hand. The frontend is NOT patched locally (upstream will fix it). See
 #     docs/DECKY-AUTOUPDATE.md. To revert, `pacman -S pocknix-decky` re-seeds the bundled build.
-pkgrel=56
+pkgrel=57
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"

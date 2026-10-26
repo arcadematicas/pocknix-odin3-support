@@ -26,7 +26,7 @@ If your device doesn't let it read or change something, it just doesn't show up,
 see are the real ones.
 
 It runs on [Decky Loader](https://decky.xyz/) and is available in English, Spanish, Italian,
-German and Brazilian Portuguese.
+German, Brazilian Portuguese and French.
 
 ## 🎬 Video guides
 
@@ -65,7 +65,7 @@ FSR4, HDR, scaling and more, but only what your Proton version supports.
 a moment.
 
 ✨ **Themes.** Change how Steam looks from top to bottom with themes you install and update right
-from Panel.
+from Panel. Themes in early access show an Early label and install from their zip.
 
 🎮 **Controllers.** Button remapping that works with Handheld Daemon and InputPlumber. Still
 in beta.
@@ -79,8 +79,18 @@ Panel isn't just for PCs. With Armada it also runs on ARM consoles, recognizes t
 and only shows what that hardware lets it control. The [video](https://youtu.be/1BHufGK6nbo) goes
 through the setup step by step.
 
+The Power dial moves the CPU and GPU together or apart: if a game leans on graphics, you can lower
+the CPU and keep the GPU high.
+
 And if you have an AYN Thor, Panel can use the bottom screen as a touch panel while you play on the
 top one.
+
+## 🪟 Also on Windows
+
+Panel is coming to Windows in early access, as an Xbox Game Bar widget and as an app. Themes already
+work in Steam Big Picture just like on Linux, with no CSS Loader: install, enable and tweak them from
+Panel itself. The other sections show what your device reports and will open up over time. If
+something doesn't work as you expected, you can send me a report from Settings.
 
 ## 🕹️ Devices
 

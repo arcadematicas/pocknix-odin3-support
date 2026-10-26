@@ -1,6 +1,6 @@
 {
   "name": "panel-de-control",
-  "version": "0.70.1",
+  "version": "0.76.0",
   "description": "Panel de control definitivo para PCs portátiles: TDP, ventiladores y más.",
   "type": "module",
   "scripts": {
@@ -8,7 +8,8 @@
     "watch": "rollup -c -w",
     "typecheck": "tsc --noEmit",
     "test:fe": "vitest run",
-    "test:i18n": "vitest run src/i18n/catalog.test.ts src/i18n/detect.test.ts src/glossary/data.test.ts src/updater/editorial.test.ts src/updater/releaseNotes.test.ts src/updater/italian.test.ts src/updater/german.test.ts src/updater/brazilianPortuguese.test.ts"
+    "test:i18n": "vitest run src/i18n/catalog.test.ts src/i18n/detect.test.ts src/glossary/data.test.ts src/updater/editorial.test.ts src/updater/releaseNotes.test.ts src/updater/italian.test.ts src/updater/german.test.ts src/updater/brazilianPortuguese.test.ts src/updater/french.test.ts",
+    "build:windows-theme-host": "rollup -c windows/theme-host/rollup.config.mjs"
   },
   "author": "Hooandee",
   "license": "GPL-3.0-only",
@@ -20,7 +21,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@types/webpack": "^5.28.5",
-    "happy-dom": "^20.14.6",
+    "happy-dom": "^21.0.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0",

@@ -56,7 +56,7 @@ _MAX_REMOTE_PATCHES = 64
 _MAX_REMOTE_PATCH_VALUES = 64
 _MAX_REMOTE_TARGETS = 8
 _MAX_REMOTE_TEXT_BYTES = 4096
-_PATCH_LABEL_LOCALES = frozenset({"es", "en", "it", "de", "pt-BR"})
+_PATCH_LABEL_LOCALES = frozenset({"es", "en", "it", "de", "pt-BR", "fr"})
 _MAX_PATCH_LABEL_CHARS = 120
 _PATCH_LABEL_GROUPS = frozenset({"extra"})
 _REMOTE_MANIFEST_VERSION = 9
@@ -77,6 +77,8 @@ _REMOTE_TARGET_NAMES = frozenset({
     "QuickAccess",
     "MainMenu",
     "notificationtoasts.*",
+    # Steam's controller configurator opens as its own window, matched by its createflags URL.
+    "~createflags=18&~",
 })
 _CSS_LOADER_STATE_FILES = {"config_ROOT.json", "config_USER.json"}
 _TRANSACTION_PREFIX = ".panel-theme-transaction-"
