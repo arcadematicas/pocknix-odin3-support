@@ -115,6 +115,8 @@ DESCARTADO, ESPERANDO.
 - [PENDIENTE] **2º — `fex-emu` 2610.20261012** (tenemos 20261007). pocknix lo pasó a paquete
   compartido el 23/10. Impacto directo en juegos x86. Comprobar que no llevamos delta del PKGBUILD;
   build + `stage-shared`/`publish`. Probar un juego WProton/FEX después.
+- [HECHO 26/10] **`inputplumber` 0.83.0** — compilado y **publicado** (`r2:pocknix/shared`).
+  Sin delta en el paquete (el mapa del mando vive en la BSP). Rollback: `~/rollback/inputplumber-0.82.0`.
 - [PENDIENTE] **3º — `inputplumber` 0.83.0** (tenemos 0.82.0 y llevamos DELTA del mapa del mando).
   Re-aplicar el delta sobre la versión nueva y probar el pad (incluido el virtual event10).
 - [ESPERANDO] **`gamescope` 3.17.0-ogc1** (armada, 25/10). Supone rebasear nuestros 19 parches de
