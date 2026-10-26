@@ -25,6 +25,7 @@ const definePlugin = (fn) => {
 };
 
 const getConfig = () => call("get_config");
+const sendReport = (text) => call("send_report", text);
 const setScxScheduler = (scheduler) => call("set_scx_scheduler", scheduler);
 const setScxMode = (mode) => call("set_scx_mode", mode);
 const saveTweaks = (data) => call("save_tweaks", data);
@@ -331,6 +332,9 @@ const amperios = (ua) => (ua == null ? null : `${(ua / 1000000).toFixed(2)} A`);
 function System() {
     const [status, setStatus] = SP_REACT.useState(null);
     const [error, setError] = SP_REACT.useState("");
+    const [texto, setTexto] = SP_REACT.useState("");
+    const [enviando, setEnviando] = SP_REACT.useState(false);
+    const [informe, setInforme] = SP_REACT.useState(null);
     SP_REACT.useEffect(() => {
         systemStatus()
             .then(setStatus)
@@ -342,7 +346,20 @@ function System() {
             .filter(Boolean)
             .join(" · ")
         : "no disponible en este equipo";
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }));
+    const enviarInforme = async () => {
+        setEnviando(true);
+        setInforme(null);
+        try {
+            setInforme(await sendReport(texto));
+        }
+        catch (err) {
+            setInforme({ ok: false, error: String(err) });
+        }
+        finally {
+            setEnviando(false);
+        }
+    };
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null, SP_JSX.jsxs(DFL.PanelSection, { title: "INFORME", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Descripcion (opcional)", value: texto, onChange: (e) => setTexto(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: enviarInforme, disabled: enviando, children: enviando ? "Enviando..." : "Enviar informe" }) }), informe ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: informe.ok ? "Informe enviado" : "No se pudo enviar", description: informe.ok ? (informe.issue || "") : (informe.error || "") }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "Se envia a nuestro GitHub (arcadematicas/calvOS-reports). El informe se redacta antes de salir: sin rutas de usuario, hostname, IP, MAC ni claves." }) })] })] }));
 }
 
 // Drives the same state as Steam's own per-game compatibility dropdown (SpecifyCompatTool +

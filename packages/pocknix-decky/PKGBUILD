@@ -41,7 +41,7 @@ pkgver=0.1.0
 #     Why: the new Decky QAM update button is broken on ARM, so on the Odin there was no way to
 #     update Decky by hand. The frontend is NOT patched locally (upstream will fix it). See
 #     docs/DECKY-AUTOUPDATE.md. To revert, `pacman -S pocknix-decky` re-seeds the bundled build.
-pkgrel=57
+pkgrel=58
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
