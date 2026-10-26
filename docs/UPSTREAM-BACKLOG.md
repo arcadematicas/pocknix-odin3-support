@@ -129,8 +129,10 @@ DESCARTADO, ESPERANDO.
 
 ## Correcciones pendientes de compilar (mañana)
 
-- [PENDIENTE] **`msm-firmware-loader 1.8.0-4`** — el `package()` ya reapunta las unidades a
-  `/usr/bin` (`dac51b5`), pero **falta compilar/publicar/instalar**. La `1.8.0-3` falla en cada
+- [HECHO 26/10] **`msm-firmware-loader 1.8.0-4`** — compilado y **publicado** (`r2:pocknix/shared`,
+  unidades ya con `ExecStart=/usr/bin/...`, verificado dentro del paquete). **Falta instalar en la
+  Odin** y comprobar `systemctl --failed`. Aviso publicado a Davidusky en el commit `66c2857`.
+  (El `package()` reapunta las unidades con `sed`, commit `dac51b5`.) La `1.8.0-3` falla en cada
   arranque con `203/EXEC` (`/usr/sbin/msm-firmware-loader.sh` no existe: en esta imagen `/usr/sbin`
   **no** es symlink a `bin`). Impacto bajo (el firmware va como ficheros; WiFi/audio OK).
   **Avisar a Davidusky**: su Odin tiene la `-3`, así que su cargador también está roto.
