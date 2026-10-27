@@ -42,7 +42,7 @@ def run(cmd, timeout=10, root=False):
         if root:
             cmd = ["sh", "-c", " ".join(cmd)]
         out = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
+            cmd, capture_output=True, text=True, errors="replace", timeout=timeout,
             env={**os.environ, "LC_ALL": "C"},
         )
         return (out.stdout or "") + (out.stderr or "")
