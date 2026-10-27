@@ -17,7 +17,7 @@ import subprocess
 _ISSUE = re.compile(r"issue:\s*(\S+)")
 
 
-def send_report(text: str = "", timeout: int = 180) -> dict:
+def send_report(text: str = "", kind: str = "bug", areas=None, timeout: int = 180) -> dict:
     """Lanza `calvos-doctor --send --yes` y devuelve `{ok, issue}` o `{ok: False, error, detail}`.
 
     Bloqueante (subprocess): el llamador debe usar `asyncio.to_thread`.
@@ -38,7 +38,9 @@ def send_report(text: str = "", timeout: int = 180) -> dict:
     # ejecuta EMULADO y el informe sale con kernel/arch falsos (6.11.0 / x86_64). Por eso el
     # doctor se lanza a traves de systemd (PID 1), que lo ejecuta en el host con el python
     # nativo y un entorno limpio. Si systemd-run no esta, se cae al lanzamiento directo.
-    base = ["/usr/bin/python3", exe, "--send", "--yes", "--no-qr"]
+    base = ["/usr/bin/python3", exe, "--send", "--yes", "--no-qr", "--kind", kind if kind in ("bug", "idea") else "bug"]
+    if areas:
+        base += ["--areas", ",".join(a for a in areas if isinstance(a, str))]
     t = (text or "").strip()
     if t:
         base += ["--text", t[:1000]]

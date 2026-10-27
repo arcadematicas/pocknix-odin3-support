@@ -99,9 +99,9 @@ class Plugin:
     async def system_status(self):
         return await asyncio.to_thread(system_status)
 
-    async def send_report(self, text: str = ""):
+    async def send_report(self, text: str = "", kind: str = "bug", areas=None):
         # Recoge + redacta + envia al colector propio (calvos-doctor); bloqueante -> hilo.
-        return await asyncio.to_thread(_send_report, text)
+        return await asyncio.to_thread(_send_report, text, kind, areas)
 
     async def cleanup_scan(self):
         return await asyncio.to_thread(scan)

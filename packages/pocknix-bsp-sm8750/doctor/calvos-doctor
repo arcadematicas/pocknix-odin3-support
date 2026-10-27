@@ -31,6 +31,10 @@ import urllib.request
 
 DEFAULT_URL = "https://calvos-reports.calvos-reports.workers.dev/api/report"
 VERSION = "0.1.0"
+
+# Areas del informe: el panel deja elegir cuales mandar. La CLI, sin --areas, manda todas
+# (comportamiento historico). "logs" es la pesada y el panel la deja apagada por defecto.
+AREAS = ("sistema", "energia", "audio", "mando", "fex", "wproton", "emulacion", "qam", "red", "logs")
 HOME = os.path.expanduser("~")
 MAX_LOG_LINES = 400
 
@@ -119,7 +123,7 @@ def ctl(numid):
     return m.group(1) if m else "n/d"
 
 
-def collect():
+def collect(keep_logs=True):
     model = first_line(read("/proc/device-tree/model", "desconocido")).strip("\x00")
     dmi = first_line(read("/sys/class/dmi/id/product_name", ""))
 
@@ -187,6 +191,9 @@ def collect():
         ]).strip().splitlines(),
     }
 
+    if not keep_logs:
+        logs = {}
+
     return {
         "app": "calvos-doctor",
         "version": VERSION,
@@ -210,20 +217,30 @@ def redact_bundle(bundle):
 
 
 def summarise(bundle):
-    env = bundle.get("environment", {})
-    audio = bundle.get("state", {}).get("audio", {})
-    system = bundle.get("state", {}).get("system", {})
-    print("  modelo     :", env.get("modelo"))
-    print("  kernel     :", env.get("kernel"))
-    print("  paquetes   :", ", ".join(f"{k} {v}" for k, v in (env.get("paquetes") or {}).items()))
-    print("  audio      : jack=%s  sink=%s  amps=%s/%s  compander=%s/%s  xruns=%s" % (
-        audio.get("jack_valor"), audio.get("sink_defecto"),
-        (audio.get("amps_spk") or {}).get("L"), (audio.get("amps_spk") or {}).get("R"),
-        (audio.get("compander") or {}).get("L"), (audio.get("compander") or {}).get("R"),
-        audio.get("xruns_sesion"),
-    ))
-    print("  fallidas   :", len(system.get("unidades_fallidas") or []))
-    print("  bateria    :", (env.get("bateria") or {}).get("estado"), (env.get("bateria") or {}).get("capacidad") + "%")
+    """Resumen por consola. Defensivo: con --areas puede faltar casi todo."""
+    env = bundle.get("environment") or {}
+    st = bundle.get("state") or {}
+    audio = st.get("audio") or {}
+    system = st.get("system") or {}
+    if env:
+        print("  modelo     :", env.get("modelo"))
+        print("  kernel     :", env.get("kernel"), "| arch:", env.get("arch"))
+        print("  paquetes   :", ", ".join(f"{k} {v}" for k, v in (env.get("paquetes") or {}).items()))
+        bat = env.get("bateria") or {}
+        cap = bat.get("capacidad")
+        print("  bateria    :", bat.get("estado"), (str(cap) + "%") if cap is not None else "n/d")
+    if audio:
+        print("  audio      : jack=%s  sink=%s  amps=%s/%s  compander=%s/%s  xruns=%s" % (
+            audio.get("jack_valor"), audio.get("sink_defecto"),
+            (audio.get("amps_spk") or {}).get("L"), (audio.get("amps_spk") or {}).get("R"),
+            (audio.get("compander") or {}).get("L"), (audio.get("compander") or {}).get("R"),
+            audio.get("xruns_sesion"),
+        ))
+    if system:
+        print("  fallidas   :", len(system.get("unidades_fallidas") or []))
+    for name in [k for k in st if k not in ("audio", "system")]:
+        print("  %-10s : %s" % (name, st[name]))
+    print("  areas      :", ", ".join(bundle.get("areas") or []))
 
 
 def save(bundle, path=None):
@@ -235,6 +252,72 @@ def save(bundle, path=None):
         tar.add(tmp, arcname=os.path.basename(tmp))
     os.unlink(tmp)
     return path
+
+
+
+# --------------------------------------------------------------------------- areas
+def area_mando():
+    return {
+        "inputplumber": run(["sh", "-c", "inputplumber --version 2>/dev/null | head -1"]).strip(),
+        "compuesto": str(len([l for l in run(["inputplumber", "devices", "list"]).splitlines() if "│" in l])),
+        "activo": run(["systemctl", "is-active", "inputplumber"]).strip(),
+        "calibracion": first_line(read("/etc/pocknix/panel-calibration.conf", "n/d")),
+        "device_conf": first_line(read("/etc/pocknix/device.conf", "n/d")),
+    }
+
+
+def area_fex():
+    return {
+        "paquete": run(["pacman", "-Q", "fex-emu"]).strip(),
+        "version": run(["sh", "-c", "FEXInterpreter --version 2>/dev/null | head -1 || fex-emu --version 2>/dev/null | head -1"]).strip(),
+        "binfmt": first_line(read("/proc/sys/fs/binfmt_misc/FEX-x86_64", "n/d")),
+        "rootfs": run(["sh", "-c", "ls /usr/share/fex-emu 2>/dev/null | head -5"]).strip().splitlines(),
+    }
+
+
+def area_wproton():
+    return {
+        "wproton": run(["sh", "-c", "ls -d /opt/wproton 2>/dev/null || echo no"]).strip(),
+        "prefijos": run(["sh", "-c", "ls /home/deck/.local/share/Steam/steamapps/compatdata 2>/dev/null | wc -l"]).strip(),
+        "tools": run(["sh", "-c", "ls /home/deck/.local/share/Steam/compatibilitytools.d 2>/dev/null | head -5"]).strip().splitlines(),
+        "proton_paq": run(["sh", "-c", "pacman -Q 2>/dev/null | grep -iE 'proton|wine' | head -5"]).strip().splitlines(),
+    }
+
+
+def area_emulacion():
+    return {
+        "deckstation": run(["sh", "-c", "pacman -Q deckstation-arm 2>/dev/null || echo no"]).strip(),
+        "retroarch": run(["sh", "-c", "pacman -Q retroarch 2>/dev/null || echo no"]).strip(),
+        "apps": run(["sh", "-c", "ls -d /home/deck/Applications/* 2>/dev/null | head -8"]).strip().splitlines(),
+    }
+
+
+def area_qam():
+    return {
+        "decky": run(["pacman", "-Q", "pocknix-decky"]).strip(),
+        "loader": run(["systemctl", "is-active", "pocknix-decky-loader"]).strip(),
+        "plugins": run(["sh", "-c", "ls /home/deck/homebrew/plugins 2>/dev/null"]).strip().splitlines(),
+        "errores": run(["sh", "-c", "journalctl -u pocknix-decky-loader -b -p warning --no-pager 2>/dev/null | tail -12"]).strip().splitlines(),
+    }
+
+
+def area_red():
+    return {
+        "wifi": run(["sh", "-c", "nmcli -t -f DEVICE,STATE device 2>/dev/null | head -4"]).strip().splitlines(),
+        "addrs": run(["sh", "-c", "ip -brief addr show 2>/dev/null | head -4"]).strip().splitlines(),
+        "dns": run(["sh", "-c", "resolvectl status 2>/dev/null | grep -E 'DNS Servers|Current DNS' | head -4"]).strip().splitlines(),
+        "mtu": run(["sh", "-c", "ip link show wlan0 2>/dev/null | grep -o 'mtu [0-9]*'"]).strip(),
+    }
+
+
+AREA_COLLECTORS = {
+    "mando": area_mando,
+    "fex": area_fex,
+    "wproton": area_wproton,
+    "emulacion": area_emulacion,
+    "qam": area_qam,
+    "red": area_red,
+}
 
 
 def send(bundle, url):
@@ -269,10 +352,35 @@ def main():
     ap.add_argument("--out", default=None, help="ruta del tar.gz")
     ap.add_argument("--keep-logs", action="store_true", help="no recortar los logs")
     ap.add_argument("--no-qr", action="store_true", help="no imprimir el QR del issue (panel/UI)")
+    ap.add_argument("--kind", choices=("bug", "idea"), default="bug", help="tipo de informe")
+    ap.add_argument("--areas", default="", help="areas separadas por comas; sin esto, todas")
+    ap.add_argument("--list-areas", action="store_true", help="lista las areas disponibles y sale")
     args = ap.parse_args()
 
+    if args.list_areas:
+        print("\n".join(AREAS))
+        return 0
+
+    areas = [a.strip() for a in args.areas.split(",") if a.strip()] or list(AREAS)
+    desconocidas = [a for a in areas if a not in AREAS]
+    if desconocidas:
+        print("  area desconocida:", ", ".join(desconocidas), "- usa --list-areas")
+        return 2
+
     print("calvOS-doctor: recogiendo informe...")
-    bundle = collect()
+    bundle = collect(keep_logs=("logs" in areas))
+    _st = bundle.get("state", {})
+    _sel = set(areas)
+    if not ({"sistema", "energia"} & _sel):
+        bundle.pop("environment", None)
+        _st.pop("system", None)
+    if "audio" not in _sel:
+        _st.pop("audio", None)
+    for _name, _fn in AREA_COLLECTORS.items():
+        if _name in _sel:
+            _st[_name] = _fn()
+    bundle["kind"] = args.kind
+    bundle["areas"] = areas
     if args.text:
         bundle["text"] = args.text
     else:

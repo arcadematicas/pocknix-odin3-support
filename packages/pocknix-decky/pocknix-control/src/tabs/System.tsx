@@ -1,7 +1,21 @@
-import { Button, Field, PanelSection, PanelSectionRow, TextField } from "@decky/ui";
+import { Button, Field, PanelSection, PanelSectionRow, TextField, ToggleField } from "@decky/ui";
 import { useEffect, useState } from "react";
 import { sendReport, systemStatus } from "../backend";
 import type { SystemStatus } from "../backend";
+
+// Areas del informe. "logs" es la pesada: apagada por defecto para que enviar sea rapido.
+const AREAS: [string, string, string][] = [
+  ["sistema", "Sistema", "kernel, BSP, versiones, bateria, termicas"],
+  ["energia", "Energia y ventilador", "perfil, governor, limites, curva"],
+  ["audio", "Audio", "sinks, UCM, amplificadores, jack"],
+  ["mando", "Mando", "inputplumber, compuesto, calibracion"],
+  ["fex", "FEX", "version, binfmt, rootfs"],
+  ["wproton", "wproton / Proton", "version, prefijos, herramientas"],
+  ["emulacion", "Emulacion", "DeckStation, RetroArch, apps"],
+  ["qam", "QAM / Decky", "plugins, loader, errores"],
+  ["red", "Red", "wifi, direcciones, DNS, MTU"],
+  ["logs", "Logs largos", "journal y dmesg completos (pesa)"],
+];
 
 const voltios = (uv: number | null | undefined) => (uv == null ? null : `${(uv / 1_000_000).toFixed(2)} V`);
 const amperios = (ua: number | null | undefined) => (ua == null ? null : `${(ua / 1_000_000).toFixed(2)} A`);
@@ -22,6 +36,12 @@ export function System() {
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [informe, setInforme] = useState<{ ok: boolean; issue?: string; error?: string; detail?: string } | null>(null);
+  const [kind, setKind] = useState<"bug" | "idea">("bug");
+  const [areas, setAreas] = useState<Record<string, boolean>>(() => {
+    const on: Record<string, boolean> = {};
+    for (const [id] of AREAS) on[id] = id !== "logs";
+    return on;
+  });
 
   useEffect(() => {
     systemStatus()
@@ -40,7 +60,7 @@ export function System() {
     setEnviando(true);
     setInforme(null);
     try {
-      setInforme(await sendReport(texto));
+      setInforme(await sendReport(texto, kind, Object.keys(areas).filter((k) => areas[k])));
     } catch (err) {
       setInforme({ ok: false, error: String(err) });
     } finally {
@@ -73,6 +93,32 @@ export function System() {
 
       <PanelSection title="INFORME">
         <PanelSectionRow>
+          <Field description="Que quieres mandar:" />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <Button onClick={() => setKind("bug")}>
+            {(kind === "bug" ? "● " : "○ ") + "Reportar un problema"}
+          </Button>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <Button onClick={() => setKind("idea")}>
+            {(kind === "idea" ? "● " : "○ ") + "Sugerir una mejora"}
+          </Button>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <Field description="Que incluyo:" />
+        </PanelSectionRow>
+        {AREAS.map(([id, label, desc]) => (
+          <PanelSectionRow key={id}>
+            <ToggleField
+              label={label}
+              description={desc}
+              checked={!!areas[id]}
+              onChange={(v: boolean) => setAreas({ ...areas, [id]: v })}
+            />
+          </PanelSectionRow>
+        ))}
+        <PanelSectionRow>
           <TextField
             label="Descripcion (opcional)"
             value={texto}
@@ -80,7 +126,7 @@ export function System() {
           />
         </PanelSectionRow>
         <PanelSectionRow>
-          <Button onClick={enviarInforme} disabled={enviando}>
+          <Button onClick={enviarInforme} disabled={enviando || !Object.values(areas).some(Boolean)}>
             {enviando ? "Enviando..." : "Enviar informe"}
           </Button>
         </PanelSectionRow>

@@ -2,8 +2,9 @@ import { call } from "@decky/api";
 import type { Config, ConfigExportResult, ConfigImportResult, ConfigPreview, HdrStatus, LedConfig, LedSideKey, MakoStatus, OledCareStatus, SdcardInfo, ShareStatus, SnapshotStatus, Tweaks, UpdateInfo, UpdateStatus } from "./types";
 
 export const getConfig = () => call<[], Config>("get_config");
-export const sendReport = (text: string) =>
-  call<[string], { ok: boolean; issue?: string; error?: string; detail?: string }>("send_report", text);
+export const sendReport = (text: string, kind: "bug" | "idea", areas: string[]) =>
+  call<[string, string, string[]], { ok: boolean; issue?: string; error?: string; detail?: string }>(
+    "send_report", text, kind, areas);
 export const setFanMode = (mode: string) => call<[string], Config>("set_fan_mode", mode);
 export const setLavdMode = (mode: string) => call<[string], Config>("set_lavd_mode", mode);
 export const setScxScheduler = (scheduler: string) => call<[string], Config>("set_scx_scheduler", scheduler);
