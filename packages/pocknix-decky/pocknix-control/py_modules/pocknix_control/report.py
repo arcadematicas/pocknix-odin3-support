@@ -22,8 +22,14 @@ def send_report(text: str = "", timeout: int = 180) -> dict:
 
     Bloqueante (subprocess): el llamador debe usar `asyncio.to_thread`.
     """
-    exe = "/usr/bin/calvos-doctor"
-    if not os.path.exists(exe):
+    # El BSP lo instala en /usr/local/bin (no en /usr/bin). Probamos las rutas reales antes
+    # de fiarnos de PATH: el backend de Decky corre como root con un PATH propio.
+    exe = ""
+    for cand in ("/usr/local/bin/calvos-doctor", "/usr/bin/calvos-doctor"):
+        if os.path.exists(cand):
+            exe = cand
+            break
+    if not exe:
         exe = shutil.which("calvos-doctor") or ""
     if not exe:
         return {"ok": False, "error": "calvos-doctor no esta instalado"}
@@ -37,7 +43,10 @@ def send_report(text: str = "", timeout: int = 180) -> dict:
         # Sin text=True: el diagnostico incluye dmesg/journal y puede traer bytes que no son
         # UTF-8 valido. Con text=True el decode estricto lanzaba UnicodeDecodeError y el panel
         # mostraba "fallo" aunque el informe se hubiera enviado. Decodificamos con replace.
-        proc = subprocess.run(cmd, capture_output=True, timeout=timeout)
+        # PATH explicito: el doctor llama a amixer/journalctl/dmesg por nombre.
+        env = {**os.environ,
+               "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+        proc = subprocess.run(cmd, capture_output=True, timeout=timeout, env=env)
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "timeout ({}s): el informe tarda mas de lo normal".format(timeout)}
     except Exception as exc:  # noqa: BLE001 - se devuelve al panel, no se propaga

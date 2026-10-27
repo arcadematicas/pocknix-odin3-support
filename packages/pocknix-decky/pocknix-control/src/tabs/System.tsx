@@ -21,7 +21,7 @@ export function System() {
   const [error, setError] = useState("");
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [informe, setInforme] = useState<{ ok: boolean; issue?: string; error?: string } | null>(null);
+  const [informe, setInforme] = useState<{ ok: boolean; issue?: string; error?: string; detail?: string } | null>(null);
 
   useEffect(() => {
     systemStatus()
@@ -88,7 +88,7 @@ export function System() {
           <PanelSectionRow>
             <Field
               label={informe.ok ? "Informe enviado" : "No se pudo enviar"}
-              description={informe.ok ? (informe.issue || "") : (informe.error || "")}
+              description={informe.ok ? (informe.issue || "") : [informe.error, informe.detail].filter(Boolean).join(" — ")}
             />
           </PanelSectionRow>
         ) : null}
