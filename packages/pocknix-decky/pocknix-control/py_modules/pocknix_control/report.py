@@ -34,7 +34,7 @@ def send_report(text: str = "", timeout: int = 180) -> dict:
     if not exe:
         return {"ok": False, "error": "calvos-doctor no esta instalado"}
 
-    cmd = [exe, "--send", "--yes"]
+    cmd = [exe, "--send", "--yes", "--no-qr"]
     t = (text or "").strip()
     if t:
         cmd += ["--text", t[:1000]]
@@ -43,9 +43,17 @@ def send_report(text: str = "", timeout: int = 180) -> dict:
         # Sin text=True: el diagnostico incluye dmesg/journal y puede traer bytes que no son
         # UTF-8 valido. Con text=True el decode estricto lanzaba UnicodeDecodeError y el panel
         # mostraba "fallo" aunque el informe se hubiera enviado. Decodificamos con replace.
-        # PATH explicito: el doctor llama a amixer/journalctl/dmesg por nombre.
-        env = {**os.environ,
-               "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+        # Entorno LIMPIO a proposito. Decky corre bajo PyInstaller/FEX y hereda
+        # LD_LIBRARY_PATH apuntando a su /tmp: el python nativo del doctor cargaba sus
+        # libssl/libcrypto y fallaba con errores de certificados. Solo pasamos lo basico.
+        env = {
+            "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "HOME": os.environ.get("HOME", "/root"),
+            "USER": os.environ.get("USER", "root"),
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "TERM": "dumb",
+        }
         proc = subprocess.run(cmd, capture_output=True, timeout=timeout, env=env)
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "timeout ({}s): el informe tarda mas de lo normal".format(timeout)}

@@ -268,6 +268,7 @@ def main():
     ap.add_argument("--url", default=os.environ.get("CALVOS_REPORT_URL", DEFAULT_URL))
     ap.add_argument("--out", default=None, help="ruta del tar.gz")
     ap.add_argument("--keep-logs", action="store_true", help="no recortar los logs")
+    ap.add_argument("--no-qr", action="store_true", help="no imprimir el QR del issue (panel/UI)")
     args = ap.parse_args()
 
     print("calvOS-doctor: recogiendo informe...")
@@ -303,7 +304,8 @@ def main():
     if res.get("ok"):
         print("ok")
         print("  issue:", res.get("issueUrl"))
-        show_qr(res.get("issueUrl") or "")
+        if not getattr(args, "no_qr", False):
+            show_qr(res.get("issueUrl") or "")
     else:
         print("fallo")
         print("  error:", res.get("error"), res.get("detail", ""))
