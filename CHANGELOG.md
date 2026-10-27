@@ -17,6 +17,22 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ## 📅 26 de octubre 2026 — la regresión del cargador de firmware y el panel de Hooandee al día
 
+### 🧹 Dos arreglos de upstream adoptados (27/10)
+- **`pocknix-bsp-common 0.1.0-23`**: coredumps limitados a **1 GB** (`coredump.conf.d`). systemd
+  guardaba hasta el 10 % del sistema de ficheros: en una consola con raíz única son decenas de GB
+  de volcados que nadie lee.
+- **`pocknix-desktop-kde 0.1.0-3`**: **baloo** (indexador de KDE) apagado por defecto vía
+  `/etc/xdg/baloofilerc`; `~/.config` sigue mandando, así que activarlo en Ajustes funciona.
+  *Solo afecta al sabor KDE, que no publicamos* — se mantiene por paridad con upstream.
+- Ambos portados de `shuuri-labs/pocknix-os` (`fa778ceb`, `bd074e65`) sobre nuestras versiones.
+
+### ⏸️ Pendiente: formateo de SD desde Steam (upstream 56ba06b8)
+Upstream movió el formateo de la microSD a *Ajustes → Almacenamiento* de Steam y **quitó** la
+sección del plugin. **No es un cherry-pick para nosotros**: su `pocknix-steam` es Python con
+CDP/WebSocket y el nuestro es bash; haría falta habilitar CEF-debugging en el launcher, portar
+`pocknix-steam-storage` + `pocknix_cdp.py` y probarlo con tarjeta. Mientras tanto **mantenemos
+nuestra sección** (`SdCard.tsx` + `sdcard.py`): quitarla sin sustituto sería perder función.
+
 ### 🧩 `linux-pocknix-sm8750 7.2.12-17` — el parche del panel, ahora en paquete
 - El paquete **-16 no incluía módulos** (0 entradas bajo `usr/lib/modules`): por eso un `KERNEL`
   copiado a mano podía convivir con módulos viejos sin que nada avisara. El **-17 sí los trae**
