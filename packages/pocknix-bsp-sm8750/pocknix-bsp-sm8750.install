@@ -1,0 +1,15 @@
+# pocknix-bsp-sm8750 — al cambiar el cmdline del kernel hay que reensamblar /flash/KERNEL.
+#
+# El hook 90-linux-pocknix solo dispara con boot/Image, boot/dtbs/* y usr/lib/modules/*;
+# kernel-cmdline vive en /usr/lib/pocknix y NO lo toca. Sin esto, subir la CMA (o cualquier
+# cambio de cmdline) se quedaria en el fichero y no llegaria al kernel que arranca.
+_rebuild_bootimg() {
+    [ -x /usr/bin/pocknix-build-bootimg ] || return 0
+    mountpoint -q /flash 2>/dev/null || return 0
+    /usr/bin/pocknix-build-bootimg || true
+    # mantener sincronizado el par reparador del guardia (md5 + tar de modulos)
+    [ -x /usr/local/bin/pocknix-kernel-pair ] && /usr/local/bin/pocknix-kernel-pair || true
+}
+
+post_install() { _rebuild_bootimg; }
+post_upgrade() { _rebuild_bootimg; }
