@@ -4,7 +4,7 @@
 # reads as one surface instead of three unrelated screens).
 pkgname=pocknix-branding
 pkgver=0.1.0
-pkgrel=4
+pkgrel=5
 pkgdesc="Pocknix OS branding: plymouth boot theme, Plasma splash, wallpaper"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -31,6 +31,8 @@ package() {
   mv "${theme}/spinner.plymouth" "${theme}/pocknix.plymouth"
   # our wordmark replaces the Arch watermark; authored at 2x for DeviceScale=2
   install -Dm644 "${srcdir}/watermark.png" "${theme}/watermark.png"
+  # Splash a pantalla completa que usa pocknix-steam-splash mientras arranca Steam.
+  install -Dm644 "${srcdir}/splash-1920x1080.png" "${theme}/steam-splash.png"
 
   # Name/Description/ImageDir must point at OUR dir, and the field matches the wallpaper
   # so plymouth does not flash black before handing over.

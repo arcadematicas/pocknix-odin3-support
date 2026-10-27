@@ -1,0 +1,90 @@
+#!/bin/bash
+# pocknix-steam-splash <WxH> -- <steam command...>: gamescope's child for game mode. Maps the
+# wordmark until Big Picture is up, then execs Steam so gamescope's child pid is still Steam.
+#
+# Under gamescope -e only windows with a Steam app id can take focus, and nothing is focused until
+# GAMESCOPECTRL_BASELAYER_APPID names one. So the window is tagged STEAM_GAME=769 (Steam's own id)
+# and the base layer claimed if free; Big Picture is also 769 and maps later, so it outranks the
+# splash by map order and the watcher reaps ffplay once another 769 window exists.
+set -u
+
+TAG=pocknix-steam-splash
+THEME=/usr/share/plymouth/themes/pocknix
+WATERMARK="${THEME}/watermark.png"
+# Splash a pantalla completa de calvOS (branding). Si falta, se cae al watermark de siempre.
+SPLASH_IMAGE="${THEME}/steam-splash.png"
+# Ground + wordmark placement match the plymouth theme (alignment .5/.96): boot -> game mode is one screen.
+BG=0x202126
+WINDOW_NAME=pocknix-steam-splash
+STEAM_APPID=769
+
+SIZE="${1:-}"; shift || true
+[ "${1:-}" = "--" ] && shift
+if [ -z "${SIZE}" ] || [ $# -eq 0 ]; then
+  echo "usage: ${TAG} <WxH> -- <command...>" >&2
+  exit 2
+fi
+
+T0="${POCKNIX_STEAM_T0:-$(date +%s)}"
+mark() {
+  local msg="+$(( $(date +%s) - T0 ))s: $*"
+  echo "[${TAG}] ${msg}" >&2
+  logger -t "${TAG}" -- "${msg}" 2>/dev/null || true
+}
+
+# GAMESCOPE_FOCUSABLE_WINDOWS is [window, appid, pid] triplets; 2 = the X connection is gone.
+another_steam_window() {
+  local list
+  list="$(xprop -root -notype GAMESCOPE_FOCUSABLE_WINDOWS 2>/dev/null)" || return 2
+  printf '%s\n' "${list}" | awk -F'[=,]' -v app="${STEAM_APPID}" -v me="$1" \
+    '{ for (i = 3; i + 1 <= NF; i += 3) if ($i + 0 == app && $(i + 1) + 0 != me) { found = 1; exit } }
+     END { exit !found }'
+}
+
+if { [ -r "${SPLASH_IMAGE}" ] || [ -r "${WATERMARK}" ]; } && command -v ffplay >/dev/null 2>&1 && command -v xprop >/dev/null 2>&1; then
+  # The still ends after one frame; overlay's default eof_action=repeat keeps it on screen.
+  # SDL_VIDEODRIVER=x11: the app-id tag is an X property. -fs, not -x/-y: gamescope fits it.
+  if [ -r "${SPLASH_IMAGE}" ]; then
+    # Arte 1920x1080 a sangre: se escala al tamano pedido y se superpone en 0:0. El overlay
+    # repite el ultimo frame (eof_action=repeat), asi que la imagen se queda fija.
+    _w="${SIZE%x*}"; _h="${SIZE#*x}"
+    graph="color=c=${BG}:s=${SIZE}:r=1[bg];movie=${SPLASH_IMAGE},scale=${_w}:${_h}[art];[bg][art]overlay=0:0"
+  else
+    graph="color=c=${BG}:s=${SIZE}:r=1[bg];movie=${WATERMARK}[wm];[bg][wm]overlay=(W-w)/2:(H-h)*0.96"
+  fi
+
+  # Double fork: Steam (exec'd below) never reaps inherited children, so orphan these to
+  # gamescopereaper rather than leave zombies under Steam.
+  ( (
+    SDL_VIDEODRIVER=x11 ffplay -hide_banner -loglevel error -nostats \
+      -fs -noborder -an -sn -window_title "${WINDOW_NAME}" -f lavfi -i "${graph}" \
+      >/dev/null 2>&1 &
+    splash_pid=$!
+
+    for _ in $(seq 1 50); do
+      kill -0 "${splash_pid}" 2>/dev/null || exit 0
+      xprop -name "${WINDOW_NAME}" -f STEAM_GAME 32c -set STEAM_GAME "${STEAM_APPID}" 2>/dev/null && break
+      sleep 0.2
+    done
+    # A Steam that is already up owns the base layer.
+    if ! xprop -root GAMESCOPECTRL_BASELAYER_APPID 2>/dev/null | grep -q '= [0-9]'; then
+      xprop -root -f GAMESCOPECTRL_BASELAYER_APPID 32c -set GAMESCOPECTRL_BASELAYER_APPID "${STEAM_APPID}" 2>/dev/null || true
+    fi
+    mark "splash up (pid ${splash_pid})"
+
+    # No timeout on purpose: a stuck Steam update should keep the splash, not go black.
+    while kill -0 "${splash_pid}" 2>/dev/null; do
+      another_steam_window "${splash_pid}"
+      case $? in
+        0) mark "Steam window mapped; dropping the splash"; kill "${splash_pid}" 2>/dev/null || true; break ;;
+        2) break ;;
+      esac
+      sleep 0.5
+    done
+    wait "${splash_pid}" 2>/dev/null
+  ) & )
+else
+  mark "splash skipped (need ${SPLASH_IMAGE} or ${WATERMARK}, ffplay, xprop)"
+fi
+
+exec "$@"
