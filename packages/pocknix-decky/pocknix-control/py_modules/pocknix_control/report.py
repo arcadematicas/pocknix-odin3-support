@@ -34,31 +34,43 @@ def send_report(text: str = "", timeout: int = 180) -> dict:
     if not exe:
         return {"ok": False, "error": "calvos-doctor no esta instalado"}
 
-    cmd = [exe, "--send", "--yes", "--no-qr"]
+    # OJO: Decky corre bajo FEX (python x86 de PyInstaller). Un hijo lanzado desde ahi se
+    # ejecuta EMULADO y el informe sale con kernel/arch falsos (6.11.0 / x86_64). Por eso el
+    # doctor se lanza a traves de systemd (PID 1), que lo ejecuta en el host con el python
+    # nativo y un entorno limpio. Si systemd-run no esta, se cae al lanzamiento directo.
+    base = ["/usr/bin/python3", exe, "--send", "--yes", "--no-qr"]
     t = (text or "").strip()
     if t:
-        cmd += ["--text", t[:1000]]
+        base += ["--text", t[:1000]]
 
+    env = {
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "HOME": os.environ.get("HOME", "/root"),
+        "USER": os.environ.get("USER", "root"),
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "TERM": "dumb",
+    }
+    unit = "pocknix-report-{}".format(os.getpid())
+    runner = ["systemd-run", "--quiet", "--collect", "--wait", "--pipe", "--unit", unit]
+
+    proc = None
     try:
-        # Sin text=True: el diagnostico incluye dmesg/journal y puede traer bytes que no son
-        # UTF-8 valido. Con text=True el decode estricto lanzaba UnicodeDecodeError y el panel
-        # mostraba "fallo" aunque el informe se hubiera enviado. Decodificamos con replace.
-        # Entorno LIMPIO a proposito. Decky corre bajo PyInstaller/FEX y hereda
-        # LD_LIBRARY_PATH apuntando a su /tmp: el python nativo del doctor cargaba sus
-        # libssl/libcrypto y fallaba con errores de certificados. Solo pasamos lo basico.
-        env = {
-            "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-            "HOME": os.environ.get("HOME", "/root"),
-            "USER": os.environ.get("USER", "root"),
-            "LANG": "C.UTF-8",
-            "LC_ALL": "C.UTF-8",
-            "TERM": "dumb",
-        }
-        proc = subprocess.run(cmd, capture_output=True, timeout=timeout, env=env)
+        proc = subprocess.run(runner + base, capture_output=True, timeout=timeout, env=env)
+    except FileNotFoundError:
+        proc = None
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": "timeout ({}s): el informe tarda mas de lo normal".format(timeout)}
-    except Exception as exc:  # noqa: BLE001 - se devuelve al panel, no se propaga
-        return {"ok": False, "error": str(exc)}
+
+    # Si systemd no pudo (no es root, no hay dbus...), intento directo como red de seguridad.
+    if proc is None or (proc.returncode != 0 and b"issue:" not in (proc.stdout or b"") + (proc.stderr or b"")):
+        try:
+            proc = subprocess.run(base, capture_output=True, timeout=timeout, env=env)
+        except subprocess.TimeoutExpired:
+            return {"ok": False, "error": "timeout ({}s): el informe tarda mas de lo normal".format(timeout)}
+        except Exception as exc:  # noqa: BLE001
+            if proc is None:
+                return {"ok": False, "error": str(exc)}
 
     out = ((proc.stdout or b"") + (proc.stderr or b"")).decode("utf-8", "replace")
     match = _ISSUE.search(out)
