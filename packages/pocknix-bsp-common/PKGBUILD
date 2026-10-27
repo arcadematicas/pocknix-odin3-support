@@ -6,7 +6,7 @@ pkgver=0.1.0
 # 22 (16/10): pocknix-desktop (>=0.1.0-22) exige pocknix-bsp-common>=0.1.0-22; sin este bump
 # la dep no resuelve y pocknix-desktop-0.1.0-31 queda sin poder publicarse. Va junto con el
 # resto del cierre de publicacion del 16/10 (ver docs/CIERRE-20261016-PUBLICACION.md §4).
-pkgrel=22
+pkgrel=23
 pkgdesc="pocknix shared board support: sleep.d dispatcher, suspend hooks, power-key policy, session udev rules, wheel sudo, fan/scheduler daemons, ABL updater, second-screen touch policy, suspend display hook"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -21,7 +21,7 @@ source=('pocknix-sleep' 'sdam-debug-pre' 'sdam-debug-post'
         'drain-log-pre' 'drain-log-post'
         'inputplumber-sleep-pre' 'inputplumber-sleep-post'
         'usb-role-sleep-pre' 'usb-role-sleep-post' 'display-sleep-post'
-        '20-pocknix-powerkey.conf'
+        '20-pocknix-powerkey.conf' '50-pocknix-coredump.conf'
         '90-pocknix-backlight.rules' '60-pocknix-controllers.rules'
         '60-pocknix-io-scheduler.rules'
         '10-pocknix-wheel'
@@ -33,9 +33,7 @@ source=('pocknix-sleep' 'sdam-debug-pre' 'sdam-debug-post'
         'pocknix-gamepad-target' 'pocknix-gamepad-target.service'
         'pocknix-second-screen' 'pocknix-second-screen.service'
         'iwd-wait-wlan0.conf')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   install -Dm755 "${srcdir}/pocknix-sleep" \
@@ -65,6 +63,9 @@ package() {
 
   install -Dm644 "${srcdir}/20-pocknix-powerkey.conf" \
     "${pkgdir}/usr/lib/systemd/logind.conf.d/20-pocknix-powerkey.conf"
+
+  install -Dm644 "${srcdir}/50-pocknix-coredump.conf" \
+    "${pkgdir}/usr/lib/systemd/coredump.conf.d/50-pocknix-coredump.conf"
 
   install -Dm644 "${srcdir}/90-pocknix-backlight.rules" \
     "${pkgdir}/usr/lib/udev/rules.d/90-pocknix-backlight.rules"
