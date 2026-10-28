@@ -141,3 +141,15 @@ DESCARTADO, ESPERANDO.
 - [PENDIENTE] **Kernel con `1034`** (panel ICNA35xx: asentar 120 ms + 3 reintentos). El parche ya
   compila bien tras regenerarlo (`3414049`); falta build + instalar en la Odin + probar el cambio
   a escritorio 2-3 veces (con `/flash/KERNEL.bak`).
+
+## Pendiente declarado (28/10/2026)
+
+### Para el próximo build del kernel
+- **`kernel/common/patches/1082-power-supply-qcom-battmgr-fix-charge-full-on-sm8350-class-firmware.patch`**
+  (de `shuuri-labs/pocknix-os`, commit `1205868f`). En el Odin:
+  - `charge_full` y `charge_now` **sí funcionan** → el tiempo restante ya va con nuestro `2108`
+    (`power_now = V×I`); medido: 4,87 W frente a los ~51 W falsos del firmware.
+  - `charge_full_design` devuelve **ENODATA** → la "salud" de upower (100 %) es un número inventado.
+  - El 1082 lo expone; comprobar al aplicarlo si la salud sale coherente (batería 8.000 mAh ≈ 30 Wh;
+    hoy `energy_full_design` dice 18,5 Wh, que no cuadra).
+  - El 1083 (charge_now) **no hace falta**: ya funciona.
