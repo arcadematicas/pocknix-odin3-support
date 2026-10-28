@@ -1,0 +1,55 @@
+From: Jan-Michael Brummer <jan.brummer@xxxxxxxxx>
+Subject: [PATCH 1/2] power: supply: qcom_battmgr: fix CHARGE_FULL* on SM8350-class firmware
+
+battmgr->unit is only ever assigned in the BATTMGR_BAT_INFO handler of
+the SC8280XP callback. The SM8350-class firmware does not implement that
+request - every property is fetched individually via
+BATTMGR_BAT_PROPERTY_GET - so unit keeps its zero-initialised value,
+QCOM_BATTMGR_UNIT_mWh.
+
+POWER_SUPPLY_PROP_CHARGE_FULL and POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN
+are guarded by 'if (unit != QCOM_BATTMGR_UNIT_mAh) return -ENODATA;',
+hence both properties always fail on these platforms, even though the
+values are requested from the firmware and stored in
+info.last_full_capacity and info.design_capacity on every access:
+
+$ cat /sys/class/power_supply/qcom-battmgr-bat/charge_full
+cat: read error: No data available
+
+Without a full charge value userspace cannot derive an absolute energy
+level, so UPower reports a zero energy level and never computes a
+time-to-empty/time-to-full estimate:
+
+energy: 0 Wh
+energy-full: 0 Wh
+energy-rate: 12.4713 W
+percentage: 59%
+
+The firmware of this class reports charge domain values, so set the unit
+statically when registering the SM8350/SM8550 power supplies. With this
+patch the properties read back consistently on a Fairphone 5:
+
+charge_full 4116000
+charge_full_design 4260000
+capacity 85
+
+Fixes: 29e8142b5623 ("power: supply: Introduce Qualcomm PMIC GLINK power supply")
+Signed-off-by: Jan-Michael Brummer <jan.brummer@xxxxxxxxx>
+---
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -1690,6 +1690,14 @@ static int qcom_battmgr_probe(struct auxiliary_device *adev,
+ 			return dev_err_probe(dev, PTR_ERR(battmgr->wls_psy),
+ 					     "failed to register wireless charing power supply\n");
+ 	} else {
++		/*
++		 * The SM8350-class firmware has no BATTMGR_BAT_INFO request, so
++		 * @unit is never populated from the firmware. It reports charge
++		 * domain values, so set it statically here - otherwise the
++		 * CHARGE_* properties are rejected with -ENODATA.
++		 */
++		battmgr->unit = QCOM_BATTMGR_UNIT_mAh;
++
+ 		if (battmgr->variant == QCOM_BATTMGR_SM8550)
+ 			psy_desc = &sm8550_bat_psy_desc;
+ 		else

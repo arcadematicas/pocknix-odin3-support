@@ -18,7 +18,7 @@ pkgname=linux-pocknix-sm8750
 # Odin 3 (2107-input-haptics-stop-zero-amplitude-immediately-armada); se recompila el
 # kernel con el parche aplicado y se republica como -2. Ver §3 del CIERRE.
 pkgver=7.2.12
-pkgrel=17
+pkgrel=18
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"
