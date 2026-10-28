@@ -144,7 +144,16 @@ DESCARTADO, ESPERANDO.
 
 ## Pendiente declarado (28/10/2026)
 
-### Para el próximo build del kernel
+### Hecho el 28/10 (kernel 7.2.12-18, instalado; pendiente de publicar)
+- ✅ `0014 HID: uhid: read the output queue under qlock` (armada): `uhid_char_read()` sin `qlock`
+  podía pasar un NULL a `copy_to_user` y dejar el mando/Steam colgados. Aplicado y compilado.
+- ✅ `1082 battmgr charge_full_design` (shuuri): **verificado en la consola** — salud 98,6 %, tiempo
+  restante y de carga correctos. El `1083` no hacía falta.
+- ✅ Sensores: isla SSC apagada en el Odin 3 (`msm-firmware-loader`), `hexagonrpc` 0008 (`apps_std`
+  para que el ADSP duerma) y `libssc` 0002. Giros: el transporte SSC funciona, pero **el giroscopio
+  no está cableado en inputplumber** (función pendiente, no regresión).
+
+### Histórico: para el próximo build del kernel
 - **`kernel/common/patches/1082-power-supply-qcom-battmgr-fix-charge-full-on-sm8350-class-firmware.patch`**
   (de `shuuri-labs/pocknix-os`, commit `1205868f`). En el Odin:
   - `charge_full` y `charge_now` **sí funcionan** → el tiempo restante ya va con nuestro `2108`
@@ -153,6 +162,11 @@ DESCARTADO, ESPERANDO.
   - El 1082 lo expone; comprobar al aplicarlo si la salud sale coherente (batería 8.000 mAh ≈ 30 Wh;
     hoy `energy_full_design` dice 18,5 Wh, que no cuadra).
   - El 1083 (charge_now) **no hace falta**: ya funciona.
+
+## Moonlight / Sunshine (28/10/2026)
+- Emparejado y funcionando; host con `encoder = vaapi` y `av1_mode = 0` (la 6750 XT no hace AV1).
+- **HDR reportado**: `moonlight-stream/moonlight-qt#2081` (Iris ofrece `P010`, el cliente pide NV12).
+- Doc: `docs/MOONLIGHT-20261028.md`.
 
 ## Distribución de la próxima build (28/10/2026)
 Decidido: **torrent sembrado desde el portátil** + R2 como espejo si hay espacio. Sin MEGA/Drive.

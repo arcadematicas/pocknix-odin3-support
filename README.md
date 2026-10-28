@@ -9,7 +9,7 @@
 
 [![Release](https://img.shields.io/github/v/release/arcadematicas/pocknix-odin3-support?label=CalvOS&color=2f81f7)](https://github.com/arcadematicas/pocknix-odin3-support/releases/latest)
 [![Arch](https://img.shields.io/badge/arch-aarch64-orange)]()
-[![Kernel](https://img.shields.io/badge/kernel-7.2.12--16-informational)]()
+[![Kernel](https://img.shields.io/badge/kernel-7.2.12--18-informational)]()
 [![License](https://img.shields.io/badge/license-GPL--2.0-green)]()
 [![Upstream](https://img.shields.io/badge/upstream-pocknix--os-8957e5)](https://github.com/shuuri-labs/pocknix-os)
 
@@ -40,7 +40,7 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 | 🔋 **Energía** | Suspensión **s2idle real** (~0,37 W), carga con autenticación de batería y % estimado. |
 | 🔊 **Audio y mandos** | Stack LPASS + UCM (`SM8750AYN`) y **InputPlumber** (gamepad UART + paddles). |
 | 📦 **Actualizaciones** | **Repo pacman propio en Cloudflare R2**, firmado y **sin `[aur]`** → `pacman -Syu` trae todo (kernel, Mesa, Steam, Decky…). |
-| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.12-16`** (parches de aceleración, GPU Adreno 830, WiFi `ath12k` WCN7860, batería, audio WCD939x) + parche **anti‑bucle** en ath12k. |
+| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.12-18`** (parches de aceleración, GPU Adreno 830, WiFi `ath12k` WCN7860, batería, audio WCD939x) + parche **anti‑bucle** en ath12k. |
 
 ## 📥 Instalar
 
@@ -88,11 +88,11 @@ sudo pacman -Syu      # o desde el QAM / PocknixControl
   <img src="docs/screenshots/12-menu-inicio-plasma.jpg" width="49%">
 </p>
 
-## 📊 Estado actual (22/10/2026)
+## 📊 Estado actual (28/10/2026)
 
 | Área | Estado |
 |---|---|
-| **Arranque** | ✅ Kernel **7.2.12-16** + DTS del Odin 3 |
+| **Arranque** | ✅ Kernel **7.2.12-18** + DTS del Odin 3 · **red de seguridad** (guardia + par en `/flash`) |
 | **Rotación** | ✅ **Por hardware** (DPU en scanout) |
 | **Steam** | ✅ Sesión gamescope + Steam gamepadui, UI a escala correcta. Atajos no‑Steam estables (VDF en mayúsculas) |
 | **HDR** | ⚠️ **OFF por defecto** (a propósito: con HDR global el QAM/MangoHUD caían detrás). Toggle manual en PocknixControl |
@@ -101,10 +101,12 @@ sudo pacman -Syu      # o desde el QAM / PocknixControl
 | **Emulación** | ✅ **DeckStation**: instalación inicial completa (**31/31**) con la API de GitHub agotada. Mandos de RetroArch por el pad virtual |
 | **WProton** | ✅ **1.72** (`arm-2026-10-11a`) — runners por descargar en su menú |
 | **WiFi / BT** | ✅ `ath12k` WCN7860 + **parche anti‑bucle** (`0041b`) |
-| **Audio** | ✅ LPASS + UCM · **auriculares** con volumen real (`2109`) y conmutación automática altavoz↔cascos · ⚠️ **micrófono** pendiente de plataforma (`armada#766`) |
+| **Audio** | ✅ LPASS + UCM · **auriculares** con volumen real (`2109`), conmutación automática altavoz↔cascos y **micrófono** (`Mic` DMIC2/3 + `Headset` wcd939x en el UCM) |
 | **Mandos / batería** | ✅ InputPlumber (gamepad UART + paddles) · carga autenticada |
 | **Suspensión** | ✅ s2idle real **≈0,26 W** (63–70 mA medidos en batería) |
-| **Informes** | 🚀 **`calvOS-reports`** (repo público) + `calvOS-doctor` en preparación |
+| **Informes** | 🚀 **`calvOS-reports`** (repo público) + botón **"Enviar informe"** en PocknixControl (tipo problema/sugerencia y áreas elegibles) |
+| **Streaming** | ✅ **Moonlight + Sunshine** probado contra el PC (VAAPI). ⚠️ **HDR** no disponible: el cliente no acepta el decodificador (Iris/P010) — [moonlight-qt#2081](https://github.com/moonlight-stream/moonlight-qt/issues/2081) |
+| **Batería** | ✅ % + **tiempo restante** (power_now = V×I) y **salud 98,6 %** tras el parche `battmgr` |
 
 ## 🎯 El hito: rotación por hardware
 

@@ -15,7 +15,60 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
-## 📅 26 de octubre 2026 — la regresión del cargador de firmware y el panel de Hooandee al día
+## 📅 28 de octubre 2026 — sensores, `uhid` y la salud de la batería
+
+### ✅ Batería: `charge_full_design` (salud real)
+- **`linux-pocknix-sm8750 7.2.12-18`** aplica el parche `1082` de upstream (battmgr, firmware
+  SM8350-class). En la Odin, `charge_full_design` devolvía **ENODATA**, así que la "salud" que
+  enseñaba upower (100 %) era inventada.
+- Verificado tras el arranque: `charge_full_design` = **7.838.000 µAh**, upower da
+  **salud 98,6 %**, `energy-full-design` 35,11 Wh y **"time to full"**. El tiempo restante que ya
+  funcionaba (nuestro `2108`, `power_now = V×I`) sigue bien: 4,87 W frente a los ~51 W falsos del
+  firmware. El `1083` (charge_now) **no hacía falta**.
+
+### 🐛 `uhid`: carrera en la cola de salida (parche `0014`)
+- En 7.2.12, `uhid_char_read()` leía `outq[tail]` **sin `qlock`**: en CPU débilmente ordenada puede
+  pasar un NULL a `copy_to_user()` y **matar el dispositivo uhid con `devlock` tomado**. Steam se
+  queda esperando *feature reports* y **el mando se congela hasta reiniciar**.
+- Es exactamente el escenario de armada (InputPlumber sirviendo un mando virtual en un AYN), así que
+  entra en el mismo kernel. Sin forma directa de "verlo": se valida por ausencia de oops.
+
+### 🌡️ Sensores: isla SSC apagada en el Odin 3
+- **`msm-firmware-loader 1.8.0-5/-6`**: helper *fail-open* que copia `sensors/config` y `registry`
+  (eran enlaces a particiones de solo lectura), pone `enable_island=0` y deja las copias en su sitio.
+  Con la isla activa, **un s2idle justo después de cerrar un sensor cuelga el SoC** (armada `623e96d3`).
+  - Dos tropiezos por el camino, ya corregidos: la comprobación de modelo usaba DMI, que en la Odin
+    viene **vacío** (hay que leer `/proc/device-tree/model`), y el JSON real anida la isla en
+    `power..island`, no en `.island` de primer nivel.
+- **`hexagonrpc 0.5.0-3`**: parche `0008` contesta la petición `apps_std` que el ADSP hace al
+  arrancar; sin respuesta **el ADSP de sensores no duerme** (y el SoC no colapsa CX/DDR).
+- **`libssc 0.4.4-2`**: parche `0002`, registra el error antes de entregarlo (leía memoria liberada
+  al cerrar un sensor).
+- Estado: instalado y aplicado en la consola (log `/run/pocknix-island-off.log`). **Pendiente de
+  publicar** hasta validar suspensión.
+
+### ⚙️ CMA a 256 MB
+- **`pocknix-bsp-sm8750 0.2.0-38`**: `cma=256M` en el cmdline (antes 44 MiB por defecto, con solo
+  ~2,5 MiB libres en juego). El paquete **reensambla `/flash/KERNEL`** al instalarse, porque el hook
+  90 no dispara con `kernel-cmdline`.
+- **No arregló** el SEGV de Turnip al suspender con el ambilight de Colores: ese es del cliente de
+  captura (ver issue de Hooandee). Sí se dejó de reproducir el cuelgue al abrir juegos.
+
+### 🎮 Moonlight + Sunshine (streaming desde el PC)
+- `moonlight-qt 6.2.0` en la Odin, emparejado con Sunshine del PC (VAAPI). Ajustes en el host:
+  `encoder = vaapi` y **`av1_mode = 0`** — la RX 6750 XT no codifica AV1 y Sunshine entraba en bucle
+  creando `av1_vulkan` ("no se ha recibido vídeo").
+- **HDR no es posible hoy**: el decodificador Iris **sí** ofrece `P010` (10 bits), pero Moonlight
+  negocia `NV12` y avisa de GPU no compatible. Reportado en **moonlight-stream/moonlight-qt#2081**.
+  Doc: `docs/MOONLIGHT-20261028.md`.
+- Atajo no-Steam añadido a `shortcuts.vdf` **con Steam cerrado** (round-trip verificado) y limpieza de
+  los **dos atajos huérfanos** que quedaron de una edición anterior.
+
+### 📝 Documentación
+- `docs/PRUEBAS-2026-10-28.md` (plan y resultados), `docs/MOONLIGHT-20261028.md`, plan de distribución
+  de la próxima build (`docs/PLAN-DISTRIBUCION-BUILD-20261028.md`).
+
+## 📅 26–27 de octubre 2026 — firmware, red de seguridad del kernel, branding e informes
 
 ### 🧹 Dos arreglos de upstream adoptados (27/10)
 - **`pocknix-bsp-common 0.1.0-23`**: coredumps limitados a **1 GB** (`coredump.conf.d`). systemd
@@ -79,11 +132,9 @@ upstream seguían apuntando a `/usr/sbin/*.sh` y **fallaban en cada arranque**:
 - `tools/check-hooandee.sh` (en el chequeo diario) avisa cuando se queda atrás.
 
 ### 🧪 Compilado y pendiente de probar (no publicado a propósito)
-- **`fex-emu 2610.20261012.896a8691`**: adoptado el PKGBUILD de pocknix; el commit nuevo hace
-  **innecesarios nuestros 4 parches** (upstream ya no llama a `clearStatCache`, que clang 23 quitó).
-  Se publica **después** de probar un juego x86 (lo usan todos).
-- **Kernel 7.2.12 con el parche `1034`** (panel ICNA35xx: asentamiento de 120 ms + 3 reintentos tras
-  el reset). Es el candidato para el cuelgue al cambiar a escritorio / volver de suspender.
+- ~~**`fex-emu 2610.20261012.896a8691`**~~ → **probado** con juegos x86 y **publicado** el 26/10.
+- ~~**Kernel 7.2.12 con el parche `1034`**~~ → validado y **publicado como `7.2.12-17`**; el `-18`
+  añade `uhid` y `battmgr` (ver entrada del 28/10).
 
 ## 📅 25 de octubre 2026 — el micrófono del Odin 3 vuelve a la vida
 
