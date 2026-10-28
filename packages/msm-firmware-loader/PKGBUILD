@@ -23,7 +23,8 @@ arch=('any')
 url="https://gitlab.postmarketos.org/postmarketOS/msm-firmware-loader"
 license=('GPL-3.0-only')
 source=("$url/-/archive/$pkgver/msm-firmware-loader-$pkgver.tar.gz"
-        '0001-load-hexagonrpcd-firmware.patch')
+        '0001-load-hexagonrpcd-firmware.patch'
+        'hexagonfs-island-off.py' '50-island-off.conf')
 sha256sums=('8ce01de08a789b573c79c0c4a5499157e3cb1c617718aa16902a5784815564cc' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
