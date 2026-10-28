@@ -153,3 +153,7 @@ DESCARTADO, ESPERANDO.
   - El 1082 lo expone; comprobar al aplicarlo si la salud sale coherente (batería 8.000 mAh ≈ 30 Wh;
     hoy `energy_full_design` dice 18,5 Wh, que no cuadra).
   - El 1083 (charge_now) **no hace falta**: ya funciona.
+
+## Distribución de la próxima build (28/10/2026)
+Decidido: **torrent sembrado desde el portátil** + R2 como espejo si hay espacio. Sin MEGA/Drive.
+No se publica nada hasta compilarla. Detalle y verificaciones: `docs/PLAN-DISTRIBUCION-BUILD-20261028.md`.
