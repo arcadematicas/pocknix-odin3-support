@@ -2,12 +2,13 @@
 """Apaga el modo "island" del SSC en el AYN Odin 3 (pakala).
 
 Con la isla activada, un s2idle entrado justo despues de cerrar un sensor cuelga el SoC
-(armada-os/armada 623e96d3). El config y el registro de sensores viven en particiones de
-solo lectura y msm-firmware-loader los ENLAZA; aqui se copian a /run, se pone
-enable_island=0 y se deja el enlace apuntando a la copia.
+(armada-os/armada 623e96d3). El config y el registro de sensores se enlazan desde el firmware,
+que es de solo lectura; aqui se copian a /run, se pone enable_island=0 y se deja el enlace
+apuntando a la copia.
 
-Fail-open: ante cualquier problema deja el arbol original y sale en silencio (log en
-/run/pocknix-island-off.log)."""
+El modelo se lee de /proc/device-tree/model: en la Odin 3 el DMI viene vacio.
+Fail-open: ante cualquier problema deja el arbol original y sale en silencio
+(log en /run/pocknix-island-off.log)."""
 from __future__ import annotations
 
 import json
@@ -17,7 +18,6 @@ import sys
 
 BASE = "/run/msm-firmware-loader/hexagonrpc/sensors"
 LOG = "/run/pocknix-island-off.log"
-TARGETS = ("pakala_power_0.json",)
 
 
 def log(msg: str) -> None:
@@ -28,24 +28,44 @@ def log(msg: str) -> None:
         pass
 
 
+def _model() -> str:
+    for path in ("/proc/device-tree/model", "/sys/class/dmi/id/product_name"):
+        try:
+            with open(path, "rb") as fh:
+                text = fh.read().replace(b"\x00", b"").decode("utf-8", "replace").strip()
+            if text:
+                return text
+        except OSError:
+            continue
+    return ""
+
+
+def _island_off(node, depth: int = 0) -> bool:
+    """Recorre el JSON entero y apaga cualquier enable_island que encuentre."""
+    changed = False
+    if isinstance(node, dict):
+        en = node.get("enable_island")
+        if isinstance(en, dict) and en.get("data") != "0":
+            en["data"] = "0"
+            changed = True
+        for value in node.values():
+            if depth < 12:
+                changed |= _island_off(value, depth + 1)
+    elif isinstance(node, list):
+        for value in node:
+            if depth < 12:
+                changed |= _island_off(value, depth + 1)
+    return changed
+
+
 def patch_island(path: str) -> bool:
-    """Pone enable_island.data a "0" conservando el resto del JSON."""
     try:
         with open(path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
     except (OSError, ValueError) as exc:
         log(f"skip {path}: {exc}")
         return False
-
-    changed = False
-    for node in (data, data.get(".island") or {}, data.get("power.island") or {}):
-        if not isinstance(node, dict):
-            continue
-        en = node.get("enable_island")
-        if isinstance(en, dict) and en.get("data") != "0":
-            en["data"] = "0"
-            changed = True
-    if not changed:
+    if not _island_off(data):
         return False
     try:
         with open(path, "w", encoding="utf-8") as fh:
@@ -78,12 +98,7 @@ def copy_over_symlink(name: str) -> str | None:
 
 
 def main() -> int:
-    model = ""
-    try:
-        with open("/sys/class/dmi/id/product_name", "r", encoding="utf-8") as fh:
-            model = fh.read().strip()
-    except OSError:
-        pass
+    model = _model()
     if "odin 3" not in model.lower().replace("odin3", "odin 3"):
         return 0
     if not os.path.isdir(BASE):
@@ -93,8 +108,9 @@ def main() -> int:
     ok = False
     cfg = copy_over_symlink("config")
     if cfg:
-        for name in TARGETS:
-            ok |= patch_island(os.path.join(cfg, name))
+        for name in os.listdir(cfg):
+            if name.startswith("pakala") and name.endswith("_power_0.json"):
+                ok |= patch_island(os.path.join(cfg, name))
     reg = copy_over_symlink("registry")
     if reg:
         for root, _dirs, files in os.walk(reg):
