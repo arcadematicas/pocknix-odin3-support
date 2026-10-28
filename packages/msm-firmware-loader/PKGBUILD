@@ -17,14 +17,14 @@
 # `command -v`); de momento NO se anade a ninguna lista de paquetes (decision pendiente).
 pkgname=msm-firmware-loader
 pkgver=1.8.0
-pkgrel=4
+pkgrel=5
 pkgdesc="Load the ADSP firmware from the Android partitions for hexagonrpcd"
 arch=('any')
 url="https://gitlab.postmarketos.org/postmarketOS/msm-firmware-loader"
 license=('GPL-3.0-only')
 source=("$url/-/archive/$pkgver/msm-firmware-loader-$pkgver.tar.gz"
         '0001-load-hexagonrpcd-firmware.patch')
-sha256sums=('8ce01de08a789b573c79c0c4a5499157e3cb1c617718aa16902a5784815564cc' 'SKIP')
+sha256sums=('8ce01de08a789b573c79c0c4a5499157e3cb1c617718aa16902a5784815564cc' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   cd msm-firmware-loader-$pkgver
@@ -59,6 +59,12 @@ package() {
   install -d "${unit}/sysinit.target.wants"
   ln -sf "../msm-firmware-loader.service" \
     "${unit}/sysinit.target.wants/msm-firmware-loader.service"
+  # Isla SSC off en el Odin 3 (sensores): helper fail-open + drop-in del servicio.
+  install -Dm755 "${srcdir}/hexagonfs-island-off.py" \
+    "${pkgdir}/usr/lib/pocknix/hexagonfs-island-off.py"
+  install -Dm644 "${srcdir}/50-island-off.conf" \
+    "${pkgdir}/usr/lib/systemd/system/msm-firmware-loader.service.d/50-island-off.conf"
+
   install -d "${unit}/multi-user.target.wants"
   ln -sf "../msm-firmware-loader-unpack.service" \
     "${unit}/multi-user.target.wants/msm-firmware-loader-unpack.service"

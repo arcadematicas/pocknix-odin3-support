@@ -2,7 +2,7 @@
 # Traido de Terra (terrapkg/packages, anda/lib/libssc) para el bring-up de sensores del Odin 3.
 pkgname=libssc
 pkgver=0.4.4
-pkgrel=1
+pkgrel=2
 pkgdesc="Qualcomm Snapdragon Sensor Core (SSC) client library"
 arch=('aarch64')
 url="https://codeberg.org/DylanVanAssche/libssc"
@@ -10,8 +10,9 @@ license=('GPL-3.0-or-later')
 depends=('glib2' 'libqmi' 'protobuf-c')
 makedepends=('meson' 'ninja' 'glib2' 'libqmi' 'protobuf-c')
 source=("$url/archive/v$pkgver.tar.gz"
-        '0001-meson-drop-the-mocking-and-tests-subdirs.patch')
-sha256sums=('716d6bd6b34d2d753060c6b54c9a87e34fae75b724c763bf9ef487efa3621587' 'SKIP')
+        '0001-meson-drop-the-mocking-and-tests-subdirs.patch'
+        '0002-sensor-log-a-failed-disable.patch')
+sha256sums=('716d6bd6b34d2d753060c6b54c9a87e34fae75b724c763bf9ef487efa3621587' 'SKIP' 'SKIP')
 
 prepare() {
   cd libssc
