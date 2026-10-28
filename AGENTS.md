@@ -1312,3 +1312,14 @@ El kernel y sus módulos entran **siempre** con el paquete `linux-pocknix-sm8750
 kernel/módulos deja la consola sin mando, wifi ni audio, y al vivir el sistema en la memoria
 interna no hay teclado ni red para arreglarlo. Red de seguridad: `pocknix-kernel-guard`
 (+ `pocknix-kernel-pair`, ver `docs/RED-SEGURIDAD-KERNEL-20261026.md`).
+
+## 9) `shortcuts.vdf`: solo con Steam cerrado y round-trip (28/10/2026)
+Nunca con Steam en marcha: reescribe desde su copia en memoria y corrompe el fichero. Procedimiento:
+cerrar Steam → copia de seguridad → parsear el VDF binario → **verificar round-trip** (leer y
+reserializar byte a byte idéntico) → aplicar el cambio → volver a parsear para comprobar. Si el
+round-trip no da idéntico, no se escribe nada.
+
+## 10) Publicar solo lo validado (28/10/2026)
+Los paquetes se compilan y se **instalan primero en la consola**; a R2 se suben **después** de pasar
+las pruebas del documento correspondiente (`docs/PRUEBAS-*.md`). Lo que quede sin validar se anota
+como tal en el CHANGELOG y en el backlog.
