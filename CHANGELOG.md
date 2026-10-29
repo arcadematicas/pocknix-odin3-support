@@ -17,6 +17,14 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ## 📅 29 de octubre 2026 — publicado el lote de sensores y adoptado iris low-latency
 
+### ✅ Publicado (19:46): `linux-pocknix-sm8750 7.2.12-22` — SoCCP y deep sleep (D3)
+- El driver `qcom_q6v5_pas` **ya soporta** `sm8750-soccp` en 7.2.12, el dtsi **ya define**
+  `remoteproc_soccp` y el firmware ya estaba en `qcom/sm8750/ayn/odin3/soccp.mbn`. Solo faltaba
+  `firmware-name` en el DTS: sin él el driver busca `soccp.mbn` en la raíz de `/lib/firmware`,
+  falla con `-2` y el coprocesador queda `offline`.
+- Verificado tras reiniciar (sin symlinks): `remoteproc0` = **running**, firmware correcto y
+  `qcom_q6v5_pas: in D3, boot bus vote dropped`. 0 servicios fallidos.
+
 ### ✅ Publicado (18:23): `linux-pocknix-sm8750 7.2.12-21` + `msm-firmware-loader 1.8.0-6`
 - Kernel 21 (iris completo de armada + smp2p + pm-clock + audio HPH/decimadores + micrófono y
   dither en el DTS) y `msm 6` en el repo firmado. Verificado desde la Odin con `pacman -Sy`.
