@@ -171,3 +171,46 @@ DESCARTADO, ESPERANDO.
 ## Distribución de la próxima build (28/10/2026)
 Decidido: **torrent sembrado desde el portátil** + R2 como espejo si hay espacio. Sin MEGA/Drive.
 No se publica nada hasta compilarla. Detalle y verificaciones: `docs/PLAN-DISTRIBUCION-BUILD-20261028.md`.
+
+## 29/10/2026 — barrido de upstream (tarde del 28/10)
+
+Revisados los commits de `shuuri-labs/pocknix-os` del 28/10 por la tarde-noche (hasta `8c9a151f`).
+
+### Adoptado: iris low-latency (PR #157, commit `6cc5ce61`)
+
+Cuatro parches de `media/iris` que aceleran el **decode de Remote Play**:
+
+| Nuestro | Original upstream | Qué hace |
+|---|---|---|
+| `10-mainline/0016-media-iris-cache-work-mode…` | `1029` | Cachea el work mode tras calcularlo en `iris_set_stage` |
+| `10-mainline/0017-media-iris-count-CABAC-cost…` | `1032` | Cuenta el coste CABAC en el reloj del decoder VSP |
+| `10-mainline/0018-media-iris-add-decoder-display-delay-controls` | `1033` | Añade controles de delay decoder/display |
+| `10-mainline/0019-media-iris-decode-in-stage-1…` | `1034` | Decodifica en stage 1 para respetar el decode order |
+
+- **Renumerados a 0016-0019** (convención de `10-mainline/`, que usa 00XX) para no colisionar con
+  nuestro `20-sm8750/1034-drm-panel-icna35xx…`, que es otro parche distinto.
+- Verificados con `git apply --check` sobre `build/kernel/sm8750/linux-7.2.9`: los 4 aplican limpios.
+- **`kernel pkgrel 18 → 19`** en `packages/linux-pocknix-sm8750` (misma pkgver 7.2.12).
+- Motivación directa: es el decoder V4L2 que usa Moonlight/Remote Play en la Odin.
+
+### No aplica
+
+- **RP5 iris gen1** (`1087`/`1088`, commit `e4967f97`): toca `kernel/sm8250` y `kernel/sm8550`, no sm8750.
+- **`pocknix-emulation-common`: roms-init ya no lo mata el login** (`aa39b12b`): ese paquete **no existe
+  en nuestro centro** (la capa de emulación la trae el build), así que no hay nada que parchear aquí.
+
+### Pendiente de evaluar (no meter a ciegas)
+
+- **`steam-vpower`: ETA de carga en Game Mode** (`c6c2675d`). Añade un paquete nuevo `pocknix-vpower` y
+  toca `pocknix-session`, `pocknix-steam` y `config/packages/base.list`. En nuestro árbol
+  `pocknix-steam` es **overlay del upstream** (`packages/shared/`, no vive en el centro), así que hay que
+  decidir si se adopta entero o solo el binario. Encaja con nuestro `2108` (power_now = V×I).
+- **`pocknix-branding` quita el wallpaper por defecto** (`91f12a2a`) + `pocknix-homescreen` quita su seed
+  (`bdc7c981`). Nosotros llevamos **splash propio a pantalla completa** (`brandingSteamOS.png`): revisar
+  antes de adoptar, no vaya a pisar el branding de calvOS.
+
+### Cerrado: HDR en Moonlight (`moonlight-qt#2081`)
+
+`cgutman` respondió (29/10 04:54): es **limitación de FFmpeg**, su implementación `v4l2m2m` no soporta
+`P010` (la tabla de `libavcodec/v4l2_fmt.c`). La implementación "V4L2 requests" sí lo soporta, pero no
+está en FFmpeg. **No hay nada que podamos arreglar de nuestro lado**; se queda como SDR + "Low Res Desktop".

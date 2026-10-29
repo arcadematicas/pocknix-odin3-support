@@ -17,8 +17,11 @@ pkgname=linux-pocknix-sm8750
 # pkgrel 2 (16/10): la 7.2.10-1 publicada NO llevaba el parche de rumble/haptics del
 # Odin 3 (2107-input-haptics-stop-zero-amplitude-immediately-armada); se recompila el
 # kernel con el parche aplicado y se republica como -2. Ver §3 del CIERRE.
+# pkgrel 19 (29/10): + 0016-0019 de iris low-latency (shuuri-labs 6cc5ce61, PR #157):
+# Remote Play/decoder iris mas rapido (work-mode cacheado, coste CABAC en el reloj VSP,
+# delays de display y decode en stage 1). El 1034 de 20-sm8750 (panel icna35xx) NO se toca.
 pkgver=7.2.12
-pkgrel=18
+pkgrel=19
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"

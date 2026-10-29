@@ -15,6 +15,32 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 29 de octubre 2026 — publicado el lote de sensores y adoptado iris low-latency
+
+### ✅ Publicado el lote del 28/10 (repo `sm8750`)
+- **`linux-pocknix-sm8750 7.2.12-18`**, **`hexagonrpc 0.5.0-3`** y **`libssc 0.4.4-2`** ya están
+  en `r2:pocknix/sm8750`, firmados (3 paquetes, delta +3 −1 frente a la `7.2.12-17`).
+- **Validación de suspensión**: la consola estuvo **suspendida 9 h** (28/10 22:14 → 29/10 07:09) y
+  despertó limpia; además dos ciclos de 64 s y 49 s. Sin firmas de panel ni GPU, sin módulos
+  rechazados por la guardia. `stage-check` pasado con `POCKNIX_STAGE_CHECK_SOCS=sm8750`.
+- Trampa aprendida: **`rtcwake` se salta los hooks de `systemd-sleep`** y por eso el mando virtual
+  de inputplumber (`vhci_hcd`) aborta la suspensión con `-16`. Con `systemctl suspend` el hook
+  `zz-inputplumber` suelta el `vhci` y duerme bien. Para probar con alarma RTC: armar
+  `rtcwake -m no -s N` y **luego** `systemctl suspend`.
+
+### ⚠️ `msm-firmware-loader 1.8.0-6`: instalado, sin publicar
+- Compilado y **instalado en la Odin** (el helper queda en `/usr/lib/pocknix/hexagonfs-island-off.py`,
+  con el drop-in `50-island-off.conf`). No se ejecuta hasta el próximo arranque, así que **no se
+  publica todavía**: primero un reinicio y comprobar que la isla SSC sigue apagada.
+
+### 🚀 Adoptado: iris low-latency (kernel `pkgrel 19`, sin compilar aún)
+- Los 4 parches de `shuuri-labs/pocknix-os` (`6cc5ce61`, PR #157) están en
+  `kernel/patches/10-mainline/0016-0019` y `git apply --check` da limpio. **Remote Play/decoder iris
+  más rápido**: es el decoder que usa Moonlight. Renumerados para no chocar con nuestro `1034` del
+  panel. Pendiente: compilar, probar streaming y publicar.
+
+---
+
 ## 📅 28 de octubre 2026 — sensores, `uhid` y la salud de la batería
 
 ### ✅ Batería: `charge_full_design` (salud real)
