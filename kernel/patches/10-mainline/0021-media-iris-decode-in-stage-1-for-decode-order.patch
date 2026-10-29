@@ -1,6 +1,4 @@
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: virtudude <virtudude@protonmail.com>
-Date: Sun, 18 Oct 2026 22:11:04 +0000
+From: Armada <noreply@armada.local>
 Subject: [PATCH] media: iris: decode in stage 1 when decode order is requested
 
 Stage 2 pipelines bitstream parsing and pixel decode across frames, so

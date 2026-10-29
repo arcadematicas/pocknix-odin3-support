@@ -1,6 +1,4 @@
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: virtudude <virtudude@protonmail.com>
-Date: Sun, 18 Oct 2026 22:11:04 +0000
+From: Armada <noreply@armada.local>
 Subject: [PATCH] media: iris: add decoder display delay controls on HFI gen2
 
 Add V4L2_CID_MPEG_VIDEO_DEC_DISPLAY_DELAY_ENABLE and

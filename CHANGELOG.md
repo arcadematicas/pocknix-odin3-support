@@ -33,11 +33,23 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
   con el drop-in `50-island-off.conf`). No se ejecuta hasta el próximo arranque, así que **no se
   publica todavía**: primero un reinicio y comprobar que la isla SSC sigue apagada.
 
-### 🚀 Adoptado: iris low-latency (kernel `pkgrel 19`, sin compilar aún)
-- Los 4 parches de `shuuri-labs/pocknix-os` (`6cc5ce61`, PR #157) están en
-  `kernel/patches/10-mainline/0016-0019` y `git apply --check` da limpio. **Remote Play/decoder iris
-  más rápido**: es el decoder que usa Moonlight. Renumerados para no chocar con nuestro `1034` del
-  panel. Pendiente: compilar, probar streaming y publicar.
+### 🚀 Adoptado: iris low-latency + smp2p + pm-clock (kernel `pkgrel 20`, compilado)
+- Los **10 parches de iris** de `armada-os/armada` (`0016-0025` en `10-mainline`), que son superset del
+  PR #157 de shuuri: POC type, AV1 tier, CABAC, delays, stage 1, **sesiones al reloj máximo** y
+  **stage 1 al reloj máximo por defecto** (`1037`), más el fix del buffer de cambio de resolución.
+  Ojo: el `1034` de armada **no es** el de shuuri — mezclarlos rompe (`1037` no aplica).
+- `2110` soc/qcom: smp2p resetea el estado inbound solo en restart.
+- `2111-2114` ASoC lpass: macros a pm-clock y runtime suspend forzado en system sleep (que el audio
+  no impida el suspend profundo).
+- Verificado aplicando la secuencia entera sobre un `linux-7.2.12` limpio y compilado: **290 módulos**,
+  2 dtbs, cero errores.
+- Pendiente de probar (con Fransis): streaming en Moonlight y que el audio siga bien.
+
+### 📝 Pendiente de una sesión con pruebas: DTS + giroscopio
+- El DTS de armada activa **LED de carga**, **micrófono interno**, **SoCCP** (deep sleep) y reguladores
+  del códec en LPM. Nuestro DTS es propio y no tiene `pm8550_pwm`, `remoteproc_soccp` ni `/sound`;
+  hay que portar antes `0556/0556a` y probar arranque.
+- El **giroscopio** se arregla en paquetes (`inputplumber 0005-0008`, `libssc 0005`), no en el kernel.
 
 ---
 

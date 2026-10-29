@@ -214,3 +214,61 @@ Cuatro parches de `media/iris` que aceleran el **decode de Remote Play**:
 `cgutman` respondió (29/10 04:54): es **limitación de FFmpeg**, su implementación `v4l2m2m` no soporta
 `P010` (la tabla de `libavcodec/v4l2_fmt.c`). La implementación "V4L2 requests" sí lo soporta, pero no
 está en FFmpeg. **No hay nada que podamos arreglar de nuestro lado**; se queda como SDR + "Low Res Desktop".
+
+## 29/10/2026 (2ª parte) — lote de armada para el Odin 3 (kernel 20)
+
+Barrido de `armada-os/armada` (los commits del 16-27/10 que sí son para SM8750).
+
+### Adoptado — kernel `pkgrel 20`
+
+**iris completo (10 parches, `10-mainline/0016-0025`):** la serie de armada es superset del PR #157 de
+shuuri y **no son intercambiables** (su `1034` difiere: `1037` no aplica sobre el de shuuri).
+
+| Nuestro | Armada | Qué añade |
+|---|---|---|
+| 0016 | cache work mode (v9 Sachin) | idéntico al que ya teníamos |
+| 0017 | `1030` | manda el POC type del stream |
+| 0018 | `1031` | AV1 tier ya no pisa el de HEVC |
+| 0019 | `1032` | coste CABAC en el reloj del VSP |
+| 0020 | `1033` | delays decoder/display |
+| 0021 | `1034` | decode en stage 1 |
+| 0022 | `1035` | sesiones decode-order al reloj máximo |
+| 0023 | `1036` | rescale de potencia solo al encolar bitstream |
+| 0024 | **`1037`** | stage 1 al reloj máximo **por defecto** (el que acelera de verdad) |
+| 0025 | `1370` | el último buffer de un cambio de resolución no es error |
+
+**Otros dos:**
+- `2110` `0569` soc/qcom: smp2p resetea el estado inbound solo en restart.
+- `2111-2114` `0560-0563` ASoC lpass: los macros pasan a pm-clock y **fuerzan runtime suspend
+  durante system sleep** (que el audio no bloquee el suspend profundo).
+
+Verificado aplicando la secuencia completa sobre un `linux-7.2.12` limpio: 10/10 iris y 4/4 pm-clock.
+
+### Aplican limpio pero NO se meten todavía (necesitan el DTS)
+
+`0072`/`0073` (HPH PCM HiFi), `0080` (decimadores del tx-macro → **micrófonos**), `0063` (usbss en
+jack) y `0603` (codec resumido con jack). Sin los nodos del DTS no encienden el micrófono ni cambian
+los auriculares. Su DTS (`dts/cq8725s-ayn-odin3.dts.patch`) además activa:
+- **LED de carga** RGB (`pm8550_pwm`, multicolor) — los drivers ya están en el config.
+- **SoCCP** (`remoteproc_soccp`) → hace falta portar antes `0556` + `0556a`.
+- Reguladores del códec en LPM durante s2idle (bob1, l15b, l2i, s3g, s7i: los nodos existen).
+- Micrófono interno (`&{/sound}` widgets/routing) — el nuestro **no tiene nodo `sound`**.
+- `armada,dpu-8bpc-dither` (el driver ya lo tenemos: `2100`).
+
+Nuestro DTS es propio (8 KB) y no es el de armada: hay que portar los nodos a mano y probar arranque.
+
+### Pendiente: giroscopio (esto es lo que lo desbloquea)
+
+Armada lo resuelve en **paquetes**, no en el kernel:
+- `inputplumber` `0005` SSC sensors, `0006` calibración del giro, `0007` fastrpc en los devices,
+  `0008` suspender las fuentes SSC durante system sleep.
+- `libssc` `0005` loguear el disable fallido antes de pasar el error.
+- `armada-ssc` `0001` apagar el modo isla (lo nuestro ya lo hace el helper de `msm-firmware-loader`).
+
+Requiere adaptar a nuestro `inputplumber 0.83.0` (el de armada es 0.82) — sesión aparte.
+
+### Vulkan layers de Deckard (pendiente de probar)
+
+Paquete `deckard-vulkan-layers-linux-aarch64-20261023.1-4` (4,8 MB): `VK_LAYER_VALVE_rpo`
+(renderpass optimizer) y `VK_LAYER_fossilize` (caché de pipelines). Se puede probar sin instalar
+(extraer en `/tmp` + `VK_LAYER_PATH`). No meter hasta ver que carga y que no crashea juegos.
