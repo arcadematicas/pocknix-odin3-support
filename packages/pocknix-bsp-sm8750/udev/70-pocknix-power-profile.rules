@@ -1,0 +1,5 @@
+# El perfil de energia (techos de CPU/GPU) se aplicaba al arranque antes de que el adreno
+# registrase su devfreq, asi que la GPU se quedaba en el OPP por defecto (389 MHz) aunque el
+# perfil guardado fuese "medio" (832 MHz). En vez de dormir un tiempo fijo, re-aplicamos
+# justo cuando el nodo del devfreq aparece. Tambien corre al despertar (hook system-sleep).
+ACTION=="add", SUBSYSTEM=="devfreq", KERNEL=="3d00000.gpu", TAG+="systemd", ENV{SYSTEMD_WANTS}+="pocknix-power-profile-late.service"

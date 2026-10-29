@@ -1,0 +1,12 @@
+#!/bin/sh
+# zz-power-profile — re-aplica el perfil de energia al despertar.
+#
+# El driver puede resetear los techos de CPU/GPU al resumir (o el devfreq puede volver a su
+# OPP por defecto), igual que pasa al arrancar antes de que cargue el firmware. Se lanza el
+# mismo servicio "verify" que dispara udev, en segundo plano para no retrasar el resume.
+
+[ "$1" = "post" ] || exit 0
+
+/usr/bin/systemctl start --no-block pocknix-power-profile-late.service >/dev/null 2>&1
+
+exit 0

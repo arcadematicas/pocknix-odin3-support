@@ -52,7 +52,7 @@ pkgver=0.2.0
 #   (antes iba en la esquina inferior derecha), algo mas pequeno. Mismas 240 frames, 46,4 MB.
 # -14 (17/10): se vuelve a la ESQUINA (como el diseno anterior), calvOS algo mas pequeno (100px)
 #   y con FUNDIDO de entrada (frames 70-120) para que aparezca despues de "ODIN 3". 48,4 MB.
-pkgrel=38
+pkgrel=40
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 install=pocknix-bsp-sm8750.install
 arch=('any')
@@ -207,6 +207,10 @@ package() {
   install -Dm644 "${sd}/oled-care/oled-refresher.timer"                   "${unit}/oled-refresher.timer"
   install -Dm644 "${sd}/mangohud/mangohud-toggle-daemon.service"          "${unit}/mangohud-toggle-daemon.service"
   install -Dm644 "${sd}/power/pocknix-power-profile.service"              "${unit}/pocknix-power-profile.service"
+  # Re-aplicado del perfil por EVENTO, no por tiempo: udev la lanza cuando el adreno
+  # registra su devfreq (los firmwares llegan ~10 s despues del probe) y el hook de
+  # system-sleep al despertar. Sin [Install]: ver 70-pocknix-power-profile.rules.
+  install -Dm644 "${sd}/power/pocknix-power-profile-late.service"         "${unit}/pocknix-power-profile-late.service"
   install -Dm644 "${sd}/power/pocknix-cpu-governor.service"               "${unit}/pocknix-cpu-governor.service"
   install -Dm644 "${sd}/power/pocknix-pergame-power.service"              "${unit}/pocknix-pergame-power.service"
   install -Dm644 "${sd}/splash/odin3-splash.service"                      "${unit}/odin3-splash.service"
@@ -264,6 +268,9 @@ package() {
   # (clasificacion ID_INPUT_JOYSTICK, vive en overlay/etc/udev/rules.d/).
   install -Dm644 "${sd}/udev/60-input-id2-odin3-gamepad-rescan.rules" \
     "${pkgdir}/usr/lib/udev/rules.d/60-input-id2-odin3-gamepad-rescan.rules"
+  # Re-aplica el perfil de energia al aparecer el devfreq de la GPU (ver power/README.md).
+  install -Dm644 "${sd}/udev/70-pocknix-power-profile.rules" \
+    "${pkgdir}/usr/lib/udev/rules.d/70-pocknix-power-profile.rules"
 
   # Calibracion del panel (parche 0518): script de medida + servicio que aplica al arranque
   install -Dm755 "${sd}/panel/pocknix-panel-calib"   "${pkgdir}/usr/bin/pocknix-panel-calib"

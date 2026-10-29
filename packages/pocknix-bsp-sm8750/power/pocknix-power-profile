@@ -2,22 +2,30 @@
 # pocknix-power-profile — pseudo-TDP power profiles (bajo|medio|alto) for the Odin 3
 # (Snapdragon 8 Elite / SM8750). Mainline exposes no TDP/APC sysfs node for this SoC, so a
 # profile is enforced as MAX-FREQUENCY CAPS: each CPU policy's scaling_max_freq plus the
-# Adreno devfreq max_freq. Setting applies live; pocknix-power-profile.service re-applies
-# the saved profile at boot (boot order after local-fs).
+# Adreno devfreq max_freq.
 #
 #   bajo:  every CPU cluster capped near 1.8 GHz, GPU capped at 525 MHz
 #   medio: prime cluster (cpu6-7) capped near 2.85 GHz, perf cluster (cpu0-5) left at full,
 #          GPU capped at 832 MHz
-#   alto:  no limits — restore cpuinfo_max_freq on every CPU and 1100000000 on the GPU
+#   alto:  no limits — cpuinfo_max_freq on every CPU and the top OPP of the GPU
 #
-# The caps are picked from the kernel's scaling_available_frequencies so every write lands
-# on a real OPP. The values in place BEFORE the first non-alto set are captured in
-# /var/lib/pocknix/power-profile-orig and are what "alto" restores (cpuinfo_max_freq is
-# static, so the capture is belt-and-braces).
+# The caps are picked from the kernel's own tables, so every write lands on a real OPP:
+#   - CPU: scaling_available_frequencies (cap_for) or cpuinfo_max_freq (alto)
+#   - GPU: available_frequencies (last token = top OPP)
 #
-#   pocknix-power-profile             # print the current (saved) profile
-#   pocknix-power-profile bajo        # set a profile and apply it live
-#   pocknix-power-profile restore     # re-apply the saved profile (used at boot)
+# ORDER MATTERS (29/10/2026): the adreno driver probes early but only registers its devfreq
+# and loads the firmware ~10 s later. This script used to run at boot before that, write
+# nothing (the node did not exist yet) and leave the GPU at the driver default (389 MHz) and
+# the prime cluster at 1.69 GHz — below what the saved profile said. That is why:
+#   - "restore" tolerates a missing GPU node (boot must not hang),
+#   - "verify" retries with backoff until the writes actually stick,
+#   - pocknix-power-profile-late.service is fired by udev when the devfreq appears, and by
+#     the system-sleep hook on resume.
+#
+#   pocknix-power-profile              # print the current (saved) profile
+#   pocknix-power-profile bajo         # set a profile and apply it live
+#   pocknix-power-profile restore      # apply the saved profile (boot; tolerates no GPU yet)
+#   pocknix-power-profile verify       # apply and retry until it sticks (late service)
 
 PROFILE_FILE=/var/lib/pocknix/power-profile
 ORIG_FILE=/var/lib/pocknix/power-profile-orig
@@ -25,6 +33,8 @@ DEFAULT=alto
 GPU_DEV=/sys/class/devfreq/3d00000.gpu
 GPU_FULL=1100000000
 PROFILES="bajo medio alto"
+VERIFY_TRIES=30
+VERIFY_HOLD=6
 
 saved() {
   p="$(cat "${PROFILE_FILE}" 2>/dev/null)"
@@ -54,62 +64,103 @@ cpu_idx() {
   printf '%s\n' "${p}"
 }
 
+# Top OPP the GPU can actually run at (available_frequencies is ascending).
+gpu_top() {
+  t=""
+  if [ -r "${GPU_DEV}/available_frequencies" ]; then
+    for _tok in $(cat "${GPU_DEV}/available_frequencies" 2>/dev/null); do
+      t="${_tok}"
+    done
+  fi
+  printf '%s\n' "${t:-${GPU_FULL}}"
+}
+
+want_gpu() {
+  case "${1}" in
+    bajo)  echo 525000000 ;;
+    medio) echo 832000000 ;;
+    alto)  gpu_top ;;
+  esac
+}
+
+# Target cap in kHz for a CPU under a profile. "alto" goes to the real hardware maximum
+# (cpuinfo_max_freq is static), NOT to the old power-profile-orig capture: that capture was
+# taken while a cap was already in place (cpu7=4089600 vs 4320000 today).
+want_cpu() {  # $1=profile $2=cpu index
+  case "${1}" in
+    alto) cat "/sys/devices/system/cpu/cpu${2}/cpufreq/cpuinfo_max_freq" 2>/dev/null ;;
+    *)    cap_for "${1}" "${2}" ;;
+  esac
+}
+
+# Kept for compatibility/forensics; the profiles no longer read it.
 save_originals() {
-  # First time only: snapshot the un-capped hardware maxima (cpuinfo_max_freq per CPU and
-  # the GPU devfreq max_freq) so "alto" can always hand the machine back to its original
-  # state even if this script is re-run after an update.
   [ -f "${ORIG_FILE}" ] && return 0
   : > "${ORIG_FILE}" 2>/dev/null || return 0
   for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/cpuinfo_max_freq; do
     [ -r "${f}" ] || continue
     echo "cpu$(cpu_idx "${f}")=$(cat "${f}" 2>/dev/null)" >> "${ORIG_FILE}"
   done
-  # GPU "original" is the top of available_frequencies, NOT the live max_freq: the live
-  # value may already carry a cap from an earlier profile, which would make "alto" restore
-  # the cap instead of handing the GPU back un-limited.
-  if [ -r "${GPU_DEV}/available_frequencies" ]; then
-    gpu_orig=""
-    for _tok in $(cat "${GPU_DEV}/available_frequencies" 2>/dev/null); do
-      gpu_orig="${_tok}"          # available_frequencies is ascending; last = max
-    done
-    gpu_orig="${gpu_orig:-${GPU_FULL}}"
-    echo "gpu=${gpu_orig}" >> "${ORIG_FILE}"
-  elif [ -r "${GPU_DEV}/max_freq" ]; then
-    echo "gpu=$(cat "${GPU_DEV}/max_freq" 2>/dev/null)" >> "${ORIG_FILE}"
-  fi
+  echo "gpu=$(gpu_top)" >> "${ORIG_FILE}"
 }
 
-apply_profile() {
-  p="${1}"
+write_val() {  # $1=file $2=value
+  [ -w "${1}" ] || return 1
+  printf '%s\n' "${2}" > "${1}" 2>/dev/null || return 1
+  return 0
+}
 
-  # GPU cap. For alto fall back to the captured original, then to the full 1.1 GHz.
+# Check WITHOUT writing. 0 when every writable CPU matches and the GPU node exists and
+# matches its target.
+check_profile() {
+  p="${1}"
+  rc=0
+
   if [ -e "${GPU_DEV}/max_freq" ]; then
-    case "${p}" in
-      bajo)  gpu=525000000 ;;
-      medio) gpu=832000000 ;;
-      alto)
-        gpu="$(grep '^gpu=' "${ORIG_FILE}" 2>/dev/null | cut -d= -f2)"
-        gpu="${gpu:-${GPU_FULL}}"
-        ;;
-    esac
-    echo "${gpu}" > "${GPU_DEV}/max_freq" 2>/dev/null
+    g="$(want_gpu "${p}")"
+    [ "$(cat "${GPU_DEV}/max_freq" 2>/dev/null)" = "${g}" ] || rc=1
+  else
+    rc=1
   fi
 
-  # Per-CPU scaling_max_freq. alto restores cpuinfo_max_freq (from the capture when
-  # present, straight off sysfs otherwise since it never changes).
   for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_max_freq; do
     [ -w "${f}" ] || continue
     n="$(cpu_idx "${f}")"
-    if [ "${p}" = alto ]; then
-      cap="$(grep "^cpu${n}=" "${ORIG_FILE}" 2>/dev/null | cut -d= -f2)"
-      if [ -z "${cap}" ]; then
-        cap="$(cat "/sys/devices/system/cpu/cpu${n}/cpufreq/cpuinfo_max_freq" 2>/dev/null)"
-      fi
-    else
-      cap="$(cap_for "${p}" "${n}")"
-    fi
-    [ -n "${cap}" ] && echo "${cap}" > "${f}" 2>/dev/null
+    c="$(want_cpu "${p}" "${n}")"
+    [ -n "${c}" ] || continue
+    [ "$(cat "${f}" 2>/dev/null)" = "${c}" ] || rc=1
   done
+
+  return "${rc}"
+}
+
+# Apply the profile and report whether it actually stuck.
+# Returns 0 only when the GPU node exists AND its max_freq matches AND every writable CPU
+# max matches. A missing GPU node counts as failure so "verify" keeps retrying.
+apply_profile() {
+  p="${1}"
+  rc=0
+
+  if [ -e "${GPU_DEV}/max_freq" ]; then
+    g="$(want_gpu "${p}")"
+    if [ -n "${g}" ]; then
+      write_val "${GPU_DEV}/max_freq" "${g}" || rc=1
+      [ "$(cat "${GPU_DEV}/max_freq" 2>/dev/null)" = "${g}" ] || rc=1
+    fi
+  else
+    rc=1
+  fi
+
+  for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_max_freq; do
+    [ -w "${f}" ] || continue
+    n="$(cpu_idx "${f}")"
+    c="$(want_cpu "${p}" "${n}")"
+    [ -n "${c}" ] || continue
+    write_val "${f}" "${c}" || { rc=1; continue; }
+    [ "$(cat "${f}" 2>/dev/null)" = "${c}" ] || rc=1
+  done
+
+  return "${rc}"
 }
 
 # Scheduler sched_ext recomendado por perfil. El usuario puede fijar uno a mano desde
@@ -132,8 +183,36 @@ case "${1:-}" in
   restore)
     # Nothing saved yet -> leave the boot defaults alone.
     [ -f "${PROFILE_FILE}" ] || exit 0
-    apply_profile "$(saved)" || exit 1
+    # Tolerate a GPU node that does not exist yet; the late service finishes the job.
+    apply_profile "$(saved)" || true
     apply_scx "$(saved)"
+    ;;
+  verify)
+    # El adreno puede reescribir max_freq justo despues de registrarse (su OPP "sostenido"),
+    # asi que no basta con aplicar y leer una vez: el valor tiene que AGUANTAR unos segundos.
+    p="$(saved)"
+    i=0
+    while [ "${i}" -lt "${VERIFY_TRIES}" ]; do
+      if apply_profile "${p}"; then
+        held=1
+        k=0
+        while [ "${k}" -lt "${VERIFY_HOLD}" ]; do
+          sleep 1
+          if ! check_profile "${p}"; then held=0; break; fi
+          k=$((k + 1))
+        done
+        if [ "${held}" = 1 ]; then
+          apply_scx "${p}"
+          echo "power profile: ${p} (applied and held ${VERIFY_HOLD}s after ${i}s)"
+          exit 0
+        fi
+      fi
+      i=$((i + 1))
+      sleep 1
+    done
+    apply_scx "${p}"
+    echo "pocknix-power-profile: '${p}' did not stick after ${VERIFY_TRIES}s" >&2
+    exit 1
     ;;
   bajo|medio|alto)
     if [ "${1}" != alto ]; then
@@ -149,7 +228,7 @@ case "${1:-}" in
     echo "power profile: ${1}"
     ;;
   *)
-    echo "usage: pocknix-power-profile [bajo|medio|alto|restore]" >&2
+    echo "usage: pocknix-power-profile [bajo|medio|alto|restore|verify]" >&2
     exit 2
     ;;
 esac

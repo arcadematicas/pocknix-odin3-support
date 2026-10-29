@@ -1,0 +1,16 @@
+[Unit]
+Description=pocknix power profile (re-apply once the GPU devfreq is up)
+# El adreno registra su devfreq y carga los firmwares ~10 s despues del probe, asi que
+# pocknix-power-profile.service (After=local-fs.target) se quedaba sin nodo donde escribir
+# y la GPU arrancaba en su OPP por defecto (389 MHz) en vez del tope del perfil.
+# Esta unidad NO arranca en el boot: la dispara la regla udev 70-pocknix-power-profile.rules
+# cuando el devfreq aparece, y el hook de system-sleep al despertar. "verify" reintenta hasta
+# que las escrituras cuajan, en vez de dormir un tiempo fijo.
+After=local-fs.target systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-power-profile verify
+TimeoutStartSec=60
+
+# Sin [Install]: se dispara por evento (udev / hook de suspensoion).

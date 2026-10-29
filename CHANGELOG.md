@@ -17,6 +17,19 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ## 📅 29 de octubre 2026 — publicado el lote de sensores y adoptado iris low-latency
 
+### ✅ Perfiles de energía: arrancaba por debajo del perfil guardado
+- El `adreno` registra su devfreq y carga los firmwares ~10 s **después** del probe, y al terminar
+  reescribe `max_freq`. El servicio de perfil corría antes: la consola arrancaba en **389 MHz GPU /
+  1,69 GHz prime** aunque el perfil fuese `medio` (832 / 2,84), y el panel no lo corregía porque
+  solo escribe cuando cambias el perfil.
+- Ahora: `pocknix-power-profile verify` aplica, comprueba y **exige que el valor aguante 6 s**;
+  una regla udev lo dispara cuando aparece el devfreq y un hook lo repite al despertar.
+- Verificado tras reiniciar **sin tocar nada**: GPU 832 MHz y prime 2.841.600 desde el arranque, y
+  tras un ciclo de suspensión (`applied and held 6s`).
+- `alto` corregido: usaba una captura hecha con el tope puesto (4.089.600); ahora va al máximo real
+  (`cpuinfo_max_freq` = **4.320.000** y 1,1 GHz de GPU).
+- `pocknix-bsp-sm8750 0.2.0-40` + `pocknix-system-overlay 0.1.0-9`, publicados.
+
 ### ✅ Publicado (19:46): `linux-pocknix-sm8750 7.2.12-22` — SoCCP y deep sleep (D3)
 - El driver `qcom_q6v5_pas` **ya soporta** `sm8750-soccp` en 7.2.12, el dtsi **ya define**
   `remoteproc_soccp` y el firmware ya estaba en `qcom/sm8750/ayn/odin3/soccp.mbn`. Solo faltaba
