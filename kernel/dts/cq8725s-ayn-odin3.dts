@@ -406,3 +406,12 @@
 		regulator-mode = <RPMH_REGULATOR_MODE_LPM>;
 	};
 };
+
+/*
+ * SoCCP: sin firmware-name el driver busca soccp.mbn en la raiz de
+ * /lib/firmware y queda offline (remoteproc0). Con el cargado el SoC alcanza
+ * D3 (deep sleep). De armada (0556a); el driver ya soporta sm8750-soccp.
+ */
+&remoteproc_soccp {
+	firmware-name = "qcom/sm8750/ayn/odin3/soccp.mbn";
+};

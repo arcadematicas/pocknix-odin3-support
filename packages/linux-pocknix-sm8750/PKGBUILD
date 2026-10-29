@@ -18,10 +18,10 @@ pkgname=linux-pocknix-sm8750
 # Odin 3 (2107-input-haptics-stop-zero-amplitude-immediately-armada); se recompila el
 # kernel con el parche aplicado y se republica como -2. Ver §3 del CIERRE.
 # pkgrel 20 (29/10): serie completa de iris de armada + 2110 smp2p + 2111-2114 pm-clock.
-# pkgrel 21: audio de armada (2115-2119: HPH PCM/HiFi, decimadores del tx-macro, usbss en
-# el jack y codec resumido), microfono interno en el DTS y dither 8bpc del panel.
+# pkgrel 21: audio de armada (2115-2119), microfono interno y dither 8bpc en el DTS.
+# pkgrel 22: firmware-name del SoCCP en el DTS -> remoteproc0 arranca y el SoC llega a D3.
 pkgver=7.2.12
-pkgrel=21
+pkgrel=22
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"
