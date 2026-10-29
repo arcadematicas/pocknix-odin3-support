@@ -15,7 +15,7 @@ Fecha: 29/10/2026. Fuente: `armada-os/armada` @ `main` (clone completo, 501 MB),
 | **Iris low-latency** | 1030-1037 + 1370 | ✅ kernel 21 | Nada (aunque Moonlight no se ha probado por decisión de Fransis) | — |
 | **Audio HPH / clipping** | 0072, 0073, 0080, 0063, 0603 | ✅ kernel 21 (altavoces y auriculares OK) | Nada | — |
 | **Micrófono interno** | DTS + `0073`/`0080` + UCM `AYN/Odin3` | ⚠️ kernel sí, **no captura** | **Enrutado ALSA/UCM**: el FE abre el backend `WCD` en vez de `TX_CODEC_DMA_TX_3`, y el UCM pide `DMIC2 Switch`/`DMIC3_MIXER Switch`, nombres que este kernel no tiene (`DMIC2`, `DMIC3_MIXER`) | Medio |
-| **LED de carga RGB** | paquete `armada-rgb` (Rust, userspace) | ❌ | El trigger `battery-charging-orange-full-green` **no existe** en nuestro kernel (es de SteamOS). Su demonio lee `power_supply` y escribe en `/sys/class/leds`. Nodo `pm8550_pwm` disponible, pero **el canal 3 lo usa el ventilador** | Bajo-medio |
+| **LED de carga RGB** | paquete `armada-rgb` (Rust, userspace) | ❌ **no prioritario (decisión 29/10)** | El trigger `battery-charging-orange-full-green` **no existe** en nuestro kernel (es de SteamOS). Su demonio lee `power_supply` y escribe en `/sys/class/leds`. Nodo `pm8550_pwm` disponible, pero **el canal 3 lo usa el ventilador** | Bajo-medio |
 | **Giroscopio / SSC** | `inputplumber` 0005-0008, `libssc` 0005, `armada-ssc` | ❌ | Portar los parches a `inputplumber 0.83.0` (ellos van por 0.82) y decidir el apagado de la isla | Alto |
 | **sched_ext (`scx-scheds`)** | paquete + kernel con sched_ext | ❌ | `CONFIG_SCHED_CLASS_EXT` no está en nuestro config; además haría falta el paquete | Bajo (config) / medio (paquete) |
 | **UFS sm8750** | `0066` | ✅ ya en upstream 7.2.12 (`qcom,sm8750-ufshc`) | Nada | — |
@@ -37,11 +37,10 @@ Fecha: 29/10/2026. Fuente: `armada-os/armada` @ `main` (clone completo, 501 MB),
 1. **Micrófono** (medio): UCM propio para `SM8750-AYN` con la secuencia de armada corregida
    (`DMIC2`, `DMIC3_MIXER`, `TX_DEC0`) y el mezclador `MultiMedia3 Mixer TX_CODEC_DMA_TX_3` en
    ambos canales. Se prueba sin recompilar kernel: `arecord` + 4 s de audio.
-2. **LED de carga** (bajo-medio): nodo `multi-led` rojo/verde (sin tocar el canal 3 del ventilador)
-   + servicio userspace que lea `/sys/class/power_supply/*/status` y la capacidad.
-3. **sched_ext** (bajo): activar `CONFIG_SCHED_CLASS_EXT` en el config del kernel y probar
+2. ~~**LED de carga**~~ — **descartado por Fransis el 29/10** (no es importante).
+2. **sched_ext** (bajo): activar `CONFIG_SCHED_CLASS_EXT` en el config del kernel y probar
    `scx_lavd`/`scx_bpfland` con juegos.
-4. **Giroscopio** (alto): es el más grande y el que más depende de paquetes.
+3. **Giroscopio** (alto): es el más grande y el que más depende de paquetes.
 
 ## Nota sobre el método
 

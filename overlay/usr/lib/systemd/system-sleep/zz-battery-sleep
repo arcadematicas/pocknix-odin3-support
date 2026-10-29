@@ -1,0 +1,34 @@
+#!/bin/sh
+# zz-battery-sleep — apunta el estado de la batería al entrar y salir de suspensión.
+#
+# Sirve para medir el consumo en standby: permite ver si una mejora de deep sleep
+# (SoCCP/D3, runtime PM, etc.) se nota de verdad y detectar fugas. Se instala vía
+# pocknix-system-overlay; el informe se lee con `pocknix-sleep-report`.
+#
+# systemd-sleep llama al hook con $1 = pre|post.
+
+L=/var/log/pocknix/sleep-battery.log
+
+# Solo la batería (el AC no tiene capacity).
+CAP=""; STA=""; EN=""; PW=""
+for d in /sys/class/power_supply/*/; do
+	[ -f "${d}capacity" ] || continue
+	CAP=$(cat "${d}capacity" 2>/dev/null)
+	STA=$(cat "${d}status" 2>/dev/null)
+	EN=$(cat "${d}energy_now" 2>/dev/null)
+	PW=$(cat "${d}power_now" 2>/dev/null)
+	break
+done
+[ -n "${CAP}" ] || exit 0
+
+mkdir -p "$(dirname "${L}")" 2>/dev/null
+
+# Rotación simple: 256 KB es mucho histórico (años de suspensiones).
+if [ -f "${L}" ] && [ "$(stat -c%s "${L}" 2>/dev/null || echo 0)" -gt 262144 ]; then
+	mv -f "${L}" "${L}.1"
+fi
+
+printf '%s %s cap=%s status=%s energy_now=%s power_now=%s\n' \
+	"$(date +%s)" "$1" "${CAP}" "${STA}" "${EN:-0}" "${PW:-0}" >> "${L}"
+
+exit 0
