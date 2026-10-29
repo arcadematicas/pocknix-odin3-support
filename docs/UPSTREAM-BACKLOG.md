@@ -272,3 +272,18 @@ Requiere adaptar a nuestro `inputplumber 0.83.0` (el de armada es 0.82) — sesi
 Paquete `deckard-vulkan-layers-linux-aarch64-20261023.1-4` (4,8 MB): `VK_LAYER_VALVE_rpo`
 (renderpass optimizer) y `VK_LAYER_fossilize` (caché de pipelines). Se puede probar sin instalar
 (extraer en `/tmp` + `VK_LAYER_PATH`). No meter hasta ver que carga y que no crashea juegos.
+
+## 29/10/2026 — decisión: micrófono y giroscopio son los próximos
+
+Fransis los marca como **prioridad próxima**. Diagnóstico y pasos en
+`docs/PLAN-MICRO-GIRO-20261029.md`:
+
+- **Micrófono**: el kernel y el DTS están bien; captura ceros. El fallo está aguas arriba del SWR
+  (bias/reloj del DMIC o mapeo del board). Barrido de `SWR_MIC0..7` ya hecho: todos mudos. Siguiente:
+  DAPM con la captura activa (`MIC BIAS3`), camino analógico de control, UCM propio con los nombres
+  reales de control.
+- **Giroscopio**: la isla SSC está apagada por estabilidad y `inputplumber` no tiene fuente IMU.
+  Requiere portar `inputplumber 0005-0008` + `libssc 0005` a 0.83.0, y **medir suspensión** después
+  (el giro puede impedir el deep sleep; armada tiene el parche).
+
+Ninguno bloquea la build: si se compila antes, se publica sin ellos.

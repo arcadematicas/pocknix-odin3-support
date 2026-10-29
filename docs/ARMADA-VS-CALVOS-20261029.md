@@ -14,9 +14,9 @@ Fecha: 29/10/2026. Fuente: `armada-os/armada` @ `main` (clone completo, 501 MB),
 | **SoCCP / deep sleep (D3)** | `0556` + `0556a` | ✅ **hecho hoy (kernel 22)** | Nada: el driver y el nodo ya venían en 7.2.12 y el firmware ya estaba instalado; solo faltaba `firmware-name` en el DTS | — |
 | **Iris low-latency** | 1030-1037 + 1370 | ✅ kernel 21 | Nada (aunque Moonlight no se ha probado por decisión de Fransis) | — |
 | **Audio HPH / clipping** | 0072, 0073, 0080, 0063, 0603 | ✅ kernel 21 (altavoces y auriculares OK) | Nada | — |
-| **Micrófono interno** | DTS + `0073`/`0080` + UCM `AYN/Odin3` | ⚠️ kernel sí, **no captura** | **Enrutado ALSA/UCM**: el FE abre el backend `WCD` en vez de `TX_CODEC_DMA_TX_3`, y el UCM pide `DMIC2 Switch`/`DMIC3_MIXER Switch`, nombres que este kernel no tiene (`DMIC2`, `DMIC3_MIXER`) | Medio |
+| **Micrófono interno** | DTS + `0073`/`0080` + UCM `AYN/Odin3` | ⚠️ kernel sí, **no captura** — **PRIORIDAD PRÓXIMA** | **Enrutado ALSA/UCM**: el FE abre el backend `WCD` en vez de `TX_CODEC_DMA_TX_3`, y el UCM pide `DMIC2 Switch`/`DMIC3_MIXER Switch`, nombres que este kernel no tiene (`DMIC2`, `DMIC3_MIXER`) | Medio |
 | **LED de carga RGB** | paquete `armada-rgb` (Rust, userspace) | ❌ **no prioritario (decisión 29/10)** | El trigger `battery-charging-orange-full-green` **no existe** en nuestro kernel (es de SteamOS). Su demonio lee `power_supply` y escribe en `/sys/class/leds`. Nodo `pm8550_pwm` disponible, pero **el canal 3 lo usa el ventilador** | Bajo-medio |
-| **Giroscopio / SSC** | `inputplumber` 0005-0008, `libssc` 0005, `armada-ssc` | ❌ | Portar los parches a `inputplumber 0.83.0` (ellos van por 0.82) y decidir el apagado de la isla | Alto |
+| **Giroscopio / SSC** | `inputplumber` 0005-0008, `libssc` 0005, `armada-ssc` | ❌ — **PRIORIDAD PRÓXIMA** | Portar los parches a `inputplumber 0.83.0` (ellos van por 0.82) y decidir el apagado de la isla | Alto |
 | **sched_ext (`scx-scheds`)** | paquete + kernel con sched_ext | ❌ | `CONFIG_SCHED_CLASS_EXT` no está en nuestro config; además haría falta el paquete | Bajo (config) / medio (paquete) |
 | **UFS sm8750** | `0066` | ✅ ya en upstream 7.2.12 (`qcom,sm8750-ufshc`) | Nada | — |
 | **Calibración frame-length del panel** (`0518`) | sí | ❓ | Nuestro panel va por el `1034` (icna35xx) y la calibración de 7.2.11; comprobar si son complementarios | Bajo |
