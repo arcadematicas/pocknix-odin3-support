@@ -130,11 +130,17 @@
 		assigned-clock-rates = <1536000>;
 
 		model = "SM8750-AYN";
-		audio-routing = 
+
+		widgets = "Microphone", "Internal Mic";
+
+		audio-routing =
 				"IN1_HPHL", "HPHL_OUT",
 				"IN2_HPHR", "HPHR_OUT",
 				"AMIC2", "MIC BIAS2",
-				"TX SWR_INPUT1", "ADC2_OUTPUT";
+				"TX SWR_INPUT1", "ADC2_OUTPUT",
+				"DMIC3", "Internal Mic",
+				"DMIC3", "MIC BIAS3",
+				"TX SWR_INPUT6", "DMIC3_OUTPUT";
 
 		spk-i2s-dai-link {
 			link-name = "Secondary MI2S Playback";

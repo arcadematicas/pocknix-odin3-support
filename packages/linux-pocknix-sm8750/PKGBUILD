@@ -17,11 +17,11 @@ pkgname=linux-pocknix-sm8750
 # pkgrel 2 (16/10): la 7.2.10-1 publicada NO llevaba el parche de rumble/haptics del
 # Odin 3 (2107-input-haptics-stop-zero-amplitude-immediately-armada); se recompila el
 # kernel con el parche aplicado y se republica como -2. Ver §3 del CIERRE.
-# pkgrel 19 (29/10): iris low-latency. pkgrel 20: serie COMPLETA de armada (1030-1037 +
-# 1370: POC type, AV1 tier, top clock por defecto, rescale de potencia y el buffer de
-# cambio de resolucion), 2110 smp2p y 2111-2114 pm-clock de los macros de audio.
+# pkgrel 20 (29/10): serie completa de iris de armada + 2110 smp2p + 2111-2114 pm-clock.
+# pkgrel 21: audio de armada (2115-2119: HPH PCM/HiFi, decimadores del tx-macro, usbss en
+# el jack y codec resumido), microfono interno en el DTS y dither 8bpc del panel.
 pkgver=7.2.12
-pkgrel=20
+pkgrel=21
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"

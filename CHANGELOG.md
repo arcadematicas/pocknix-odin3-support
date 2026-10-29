@@ -45,11 +45,19 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
   2 dtbs, cero errores.
 - Pendiente de probar (con Fransis): streaming en Moonlight y que el audio siga bien.
 
-### 📝 Pendiente de una sesión con pruebas: DTS + giroscopio
-- El DTS de armada activa **LED de carga**, **micrófono interno**, **SoCCP** (deep sleep) y reguladores
-  del códec en LPM. Nuestro DTS es propio y no tiene `pm8550_pwm`, `remoteproc_soccp` ni `/sound`;
-  hay que portar antes `0556/0556a` y probar arranque.
-- El **giroscopio** se arregla en paquetes (`inputplumber 0005-0008`, `libssc 0005`), no en el kernel.
+### 🎙️ DTS: micrófono interno + dither 8bpc (pkgrel 21)
+- El parche de DTS de armada **no aplica** (es un diff contra su árbol). Portado a mano lo que encaja:
+  - **Micrófono interno**: `widgets = "Microphone", "Internal Mic"` y las rutas `DMIC3`/`MIC BIAS3`/
+    `TX SWR_INPUT6` en `cq8725s-ayn-common.dtsi`. Comprobado en el `.dtb` compilado.
+  - **Dither 8bpc** del panel (`armada,dpu-8bpc-dither`); el driver ya lo teníamos (`2100`).
+  - Reguladores del códec en LPM: **ya estaban** de una adopción anterior.
+- **LED de carga: pendiente**. El nodo `pm8550_pwm` existe, pero el **canal 3 lo usa el ventilador**
+  (`pwms = <&pm8550_pwm 3 40000>`) y el trigger `battery-charging-orange-full-green` **no existe en
+  nuestro kernel** (es de SteamOS). Se hará con un servicio que lea `power_supply` y escriba rojo/verde.
+- **SoCCP (deep sleep)**: pendiente; necesita driver (`0556`) + nodo (`0556a`).
+- **Audio (2115-2119)**: HPH PCM/HiFi (0072/0073), decimadores del tx-macro (0080), usbss en el jack
+  (0063) y codec resumido con jack (0603). Compila; sin probar sonido todavía.
+- El **giroscopio** sigue pendiente: se arregla en paquetes (`inputplumber 0005-0008`, `libssc 0005`).
 
 ---
 
