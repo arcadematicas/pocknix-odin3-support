@@ -17,6 +17,17 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ## 📅 29 de octubre 2026 — publicado el lote de sensores y adoptado iris low-latency
 
+### ✅ Publicado (18:23): `linux-pocknix-sm8750 7.2.12-21` + `msm-firmware-loader 1.8.0-6`
+- Kernel 21 (iris completo de armada + smp2p + pm-clock + audio HPH/decimadores + micrófono y
+  dither en el DTS) y `msm 6` en el repo firmado. Verificado desde la Odin con `pacman -Sy`.
+- **Probado en la consola**: arranca en 55 s, 0 servicios fallidos, **altavoces y auriculares
+  correctos**, panel y táctil bien, `msm 6` ejecuta el helper de la isla con exit 0.
+- **Micrófono: no capta** (pendiente, no regresión: antes tampoco). Diagnóstico en el backlog:
+  el FE de captura abre el backend **WCD** (códec del jack) en vez del `TX_CODEC_DMA_TX_3`, y el
+  UCM pide `DMIC2 Switch`/`DMIC3_MIXER Switch`, nombres que en nuestro kernel no existen. Es
+  enrutado de ALSA (UCM), no kernel ni DTS.
+- Moonlight **no se ha probado** (decisión de Fransis: damos el lote por bueno).
+
 ### ✅ Publicado el lote del 28/10 (repo `sm8750`)
 - **`linux-pocknix-sm8750 7.2.12-18`**, **`hexagonrpc 0.5.0-3`** y **`libssc 0.4.4-2`** ya están
   en `r2:pocknix/sm8750`, firmados (3 paquetes, delta +3 −1 frente a la `7.2.12-17`).
