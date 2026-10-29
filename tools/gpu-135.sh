@@ -13,6 +13,7 @@
 set -u
 
 MIN="${1:-15}"
+NINST="${GPU135_INSTANCES:-1}"   # vkcube no es muy exigente: varias instancias cargan mas la GPU
 OUT="$HOME/gpu-135-$(date +%Y%m%d-%H%M%S).txt"
 JOURNAL_RX='gdsc|gmu|oob|hangcheck|recover'
 
@@ -33,7 +34,11 @@ done
 log ""
 
 # Carga: vkcube es lo mas simple y viene en vulkan-tools; si no, glmark2.
-if command -v vkcube >/dev/null 2>&1; then
+# glxgears sin vsync satura relleno de verdad (medido: 3100 FPS, GPU a 734 MHz);
+# vkcube (un cubo) es demasiado ligero y deja la GPU en 160 MHz: no sirve como carga.
+if command -v glxgears >/dev/null 2>&1; then
+  LOAD="env vblank_mode=0 glxgears -fullscreen"
+elif command -v vkcube >/dev/null 2>&1; then
   LOAD="vkcube"
 elif command -v glmark2 >/dev/null 2>&1; then
   LOAD="glmark2 --run-forever"
@@ -47,11 +52,16 @@ if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
   log "       Exporta DISPLAY=:0 o XDG_RUNTIME_DIR=/run/user/\$(id -u) WAYLAND_DISPLAY=wayland-0"
 fi
 
-log "-- carga (${LOAD}) durante ${MIN} min --"
+log "-- carga (${LOAD} x ${NINST}) durante ${MIN} min --"
 # La primera linea de vkcube dice la GPU y la version de Vulkan: se guarda.
 (sleep 2; kill "$(pgrep -n -f '^vkcube|^glmark2')" 2>/dev/null) &
 KILLER=$!
-timeout $((MIN * 60 + 5)) $LOAD > /tmp/gpu-135-load.log 2>&1
+i=1
+while [ "$i" -le "$NINST" ]; do
+  timeout $((MIN * 60 + 5)) $LOAD >> /tmp/gpu-135-load.log 2>&1 &
+  i=$((i + 1))
+done
+wait
 LOAD_RC=$?
 kill "$KILLER" 2>/dev/null
 log "salida de la carga (rc=$LOAD_RC):"

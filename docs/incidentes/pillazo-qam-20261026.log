@@ -1,0 +1,90 @@
+# Cuelgue al abrir el QAM con un juego — 26/10/2026 ~20:10
+# kernel: 7.2.12
+
+## errores i2c/tactil (bucle)
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+Oct 26 20:10:30 pocknix kernel: gpi a00000.dma-controller: Error in Transaction
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: DMA txn failed:3
+Oct 26 20:10:30 pocknix kernel: geni_i2c a94000.i2c: GPI transfer failed: -5
+
+## errores de kernel (prioridad err) del arranque
+Oct 26 19:19:53 pocknix kernel: exFAT-fs (sda19): failed to read boot sector
+Oct 26 19:19:53 pocknix kernel: exFAT-fs (sda19): failed to recognize exfat type
+Oct 26 19:19:53 pocknix kernel: F2FS-fs (sda19): Can't find valid F2FS filesystem in 1th superblock
+Oct 26 19:19:53 pocknix kernel: F2FS-fs (sda19): Can't find valid F2FS filesystem in 2th superblock
+Oct 26 19:19:53 pocknix systemd-gpt-auto-generator[234]: File system behind root file system is reported by btrfs to be backed by pseudo-device /dev/root, which is not a valid userspace accessible device node. Cannot determine correct backing block device.
+Oct 26 19:19:53 pocknix (generato[225]: '/usr/lib/systemd/system-generators/systemd-gpt-auto-generator' failed with exit status 1.
+Oct 26 19:19:55 pocknix kernel: remoteproc remoteproc0: request_firmware failed: -2
+Oct 26 19:19:56 pocknix kernel: qcom_q6v5_pas 6800000.remoteproc: Handover signaled, but it already happened
+Oct 26 19:19:56 pocknix kernel: Bluetooth: Received HCI_IBS_WAKE_ACK in tx state 0
+Oct 26 19:19:56 pocknix kernel: Bluetooth: hci0: Frame reassembly failed (-84)
+Oct 26 19:20:01 pocknix kernel: qcom-apm gprsvc:service:2:1: CMD timeout for [1001021] opcode
+Oct 26 19:20:01 pocknix kernel: qcom_q6v5_pas 6800000.remoteproc: Handover signaled, but it already happened
+Oct 26 19:20:01 pocknix kernel: Bluetooth: hci0: Frame reassembly failed (-84)
+Oct 26 19:20:01 pocknix kernel: qcom_q6v5_pas 6800000.remoteproc: Handover signaled, but it already happened
+Oct 26 19:20:02 pocknix kernel: qcom_q6v5_pas 6800000.remoteproc: Handover signaled, but it already happened
+Oct 26 19:22:02 pocknix kernel: qcom_q6v5_pas 6800000.remoteproc: Handover signaled, but it already happened
+Oct 26 19:46:06 pocknix kernel: Bluetooth: Received HCI_IBS_WAKE_ACK in tx state 0
+Oct 26 19:46:06 pocknix kernel: Bluetooth: hci0: Frame reassembly failed (-84)
+Oct 26 20:00:56 pocknix kernel: vhci_hcd: sendmsg failed!, ret=-32 for 48
+Oct 26 20:01:12 pocknix kernel: Bluetooth: Received HCI_IBS_WAKE_ACK in tx state 0
+Oct 26 20:01:12 pocknix kernel: Bluetooth: hci0: Frame reassembly failed (-84)
+Oct 26 20:01:34 pocknix kernel: vhci_hcd: sendmsg failed!, ret=-32 for 48
+Oct 26 20:01:48 pocknix kernel: dwc3-qcom a600000.usb: port-1 HS-PHY not in L2
+Oct 26 20:01:48 pocknix kernel: Bluetooth: Received HCI_IBS_WAKE_ACK in tx state 0
+Oct 26 20:01:48 pocknix kernel: Bluetooth: hci0: Frame reassembly failed (-84)
+Oct 26 20:02:37 pocknix kernel: dwc3-qcom a600000.usb: port-1 HS-PHY not in L2
+Oct 26 20:02:37 pocknix kernel: Bluetooth: Received HCI_IBS_WAKE_ACK in tx state 0
+Oct 26 20:02:37 pocknix kernel: Bluetooth: hci0: Frame reassembly failed (-84)
+Oct 26 20:07:13 pocknix kernel: Bluetooth: Received HCI_IBS_WAKE_ACK in tx state 0
+Oct 26 20:07:13 pocknix kernel: Bluetooth: hci0: Frame reassembly failed (-84)
+
+## firmas GPU/panel (deben estar ausentes)
+
+## procesos del juego en el momento
+63 [oom_reaper]
+2118 /bin/bash /usr/bin/pocknix-proton-prep --watch
+57836 gamescopereaper -- /usr/lib/pocknix/pocknix-steam-splash 1920x1080 -- env LD_LIBRARY_PATH=/home/deck/.local/share/Steam/steamrtarm64:/home/deck/.local/share/Steam/lib/aarch64-linux-gnu /home/deck/.local/share/Steam/steamrtarm64/steam -gamepadui -steamos3 -steampal -steamdeck -noshaders
+57838 gamescopereaper --respawn -- mangoapp
+59329 /home/deck/.local/share/Steam/linuxarm64/pw-audio-namespace -- /home/deck/.local/share/Steam/steamrtarm64/reaper SteamLaunch AppId=3322678579 -- /opt/wproton/wproton.sh
+59330 /home/deck/.local/share/Steam/steamrtarm64/reaper SteamLaunch AppId=3322678579 -- /opt/wproton/wproton.sh
+59331 bash /opt/wproton/wproton.sh
+61896 /usr/bin/squashfuse_ll /opt/wproton/games/The Adventures of Elliot - The Millennium Tales.wsquashfs /opt/wproton/wsquashfs/tmp_mount/The_Adventures_of_Elliot_-_The_Millennium_Tales_ro/upper -o ro
+61913 /opt/wproton/runtime-aarch64/tools/fuse-overlayfs -o lowerdir=/opt/wproton/wsquashfs/tmp_mount/The_Adventures_of_Elliot_-_The_Millennium_Tales_ro,upperdir=/opt/wproton/wsquashfs/overlays/The_Adventures_of_Elliot_-_The_Millennium_Tales,workdir=/opt/wproton/wsquashfs/work/The_Adventures_of_Elliot_-_The_Millennium_Tales,squash_to_uid=1001,squash_to_gid=1001 /opt/wproton/wsquashfs/tmp_mount/The_Adventures_of_Elliot_-_The_Millennium_Tales
+62381 /opt/wproton/runtime-aarch64/python/bin/python3 /opt/wproton/runtime-aarch64/menu_pygame.py guardia /opt/wproton/runtime-aarch64/.salir_juego 5 select select_l1 ctrl_alt_w
