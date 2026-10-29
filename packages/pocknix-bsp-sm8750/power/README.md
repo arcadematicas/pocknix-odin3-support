@@ -16,6 +16,31 @@ PocknixControl → sección Performance, tanto en el perfil global como por jueg
 | `/etc/systemd/system/pocknix-power-profile.service` | oneshot que re-aplica el perfil al arrancar |
 | `/usr/local/bin/pocknix-pergame-power.py` | daemon que aplica governor/perfil del **juego en curso** y restaura el global al salir |
 | `/etc/systemd/system/pocknix-pergame-power.service` | servicio del daemon per-game |
+| `/usr/local/bin/pocknix-power-profile` (modo `verify`) | aplica y **comprueba**; reintenta hasta que el tope cuaja |
+| `/etc/systemd/system/pocknix-power-profile-late.service` | re-aplica por evento (udev / resume); sin `[Install]` |
+| `/usr/lib/udev/rules.d/70-pocknix-power-profile.rules` | lanza el *late* cuando aparece el devfreq de la GPU |
+| `/usr/lib/systemd/system-sleep/zz-power-profile` | lanza el *late* al despertar de suspensión |
+
+## Arranque: por qué hay un servicio "late"
+
+El `adreno` hace probe pronto pero **registra su devfreq y carga los firmwares ~10 s después**, y
+al terminar reescribe `max_freq` con su OPP "sostenido". El servicio de boot
+(`After=local-fs.target`) corría antes de eso, no podía escribir, y la consola arrancaba en
+**389 MHz / 1,69 GHz** aunque el perfil guardado fuese `medio` (832 MHz / 2,84 GHz). El plugin no
+lo corregía: solo escribe cuando cambias el perfil.
+
+Flujo actual:
+
+1. `pocknix-power-profile.service` (boot): aplica lo que pueda, **sin bloquear** si la GPU aún no existe.
+2. La regla udev `70-pocknix-power-profile.rules` dispara `pocknix-power-profile-late.service` en
+   cuanto aparece el nodo del devfreq.
+3. El *late* ejecuta `pocknix-power-profile verify`: aplica, comprueba y **exige que el valor se
+   mantenga 6 s** (el driver lo reescribe al acabar de inicializar). Reintenta hasta 30 s.
+4. Al despertar de suspensión, el hook `zz-power-profile` lanza el mismo *late*.
+
+`alto` ya no lee `power-profile-orig` (esa captura se tomó con un tope puesto: guardaba
+`cpu7=4089600` cuando el máximo real es **4320000**); ahora usa `cpuinfo_max_freq` y el último OPP
+de `available_frequencies` (1,1 GHz).
 
 ## Modos
 
