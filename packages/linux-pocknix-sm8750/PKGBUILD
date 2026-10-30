@@ -23,7 +23,7 @@ pkgname=linux-pocknix-sm8750
 # el coulomb counter). 26: fuera el iris 0021 (redundante con el 0024, que es superset y ya
 # define iris_dec_low_latency); era el que dejaba .rej en iris_ctrls/iris_hfi_gen2.
 pkgver=7.2.12
-pkgrel=27
+pkgrel=28
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"
