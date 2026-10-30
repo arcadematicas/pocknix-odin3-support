@@ -38,6 +38,13 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
   (6h50, medida con batería baja). Para que persista tras reiniciar: `mem_sleep_default=deep` en el
   kernel-cmdline.
 
+### ✅ Validado en uso real (30/10)
+- **Ventilador**: con *The Quarry* (juego exigente) se nota más suave, sin las oscilaciones de antes.
+- **MangoHud**: vuelve a mostrar el porcentaje de batería y el tiempo restante en juego.
+- **`deep`**: primer ciclo de 2h15 a **0,44 %/h** (empata con el mejor `s2idle`); con solo 2h15 el
+  redondeo del 1 % no distingue, así que la medida fina es la noche completa con el hook nuevo
+  (`charge_now` en µAh + vatios medios).
+
 ### 🔧 Notas de proceso
 - `sync-to-os.sh` no borra parches del árbol (rsync sin `--delete`): al quitar un parche hay que
   borrarlo también en `pocknix-os/kernel/sm8750/patches/`.
