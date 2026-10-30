@@ -46,6 +46,17 @@ overlay() {
   "${RSYNC[@]}" "${src}/" "${dst}/" | sed 's/^/    /'
 }
 
+# Como overlay() pero BORRA en el destino lo que ya no está en el centro.
+# Solo para los stacks de parches: al renumerar/sustituir un parche, el viejo se quedaba en el
+# árbol y colisionaba con el nuevo (30/10: dos 0017/0018/0019 -> .rej silenciosos en iris).
+overlay_prune() {
+  local src="${HERE}/$1" dst="${OS}/$2"
+  [ -d "${src}" ] || { log "SKIP (missing here): $1"; return 0; }
+  echo "==> overlay (prune) $1 -> $2"
+  mkdir -p "${dst}"
+  "${RSYNC[@]}" --delete "${src}/" "${dst}/" | sed 's/^/    /'
+}
+
 # --- our own device packages (whole directories) -----------------------------
 # OJO: estos mirrors son del DIRECTORIO ENTERO -> las reglas/servicios nuevos del
 # paquete viajan solos, no hay que listarlos uno a uno. Ej.: pocknix-bsp-sm8750

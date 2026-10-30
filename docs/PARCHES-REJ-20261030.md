@@ -38,3 +38,22 @@ el primer hunk. **Ejecutarlo justo después de `make kernel`**, antes de `make p
 
 > Mientras quede un `.rej`, el kernel publicado no lleva todo lo que dice el CHANGELOG. No publicar
 > más hasta repararlo.
+
+## Causa raíz (30/10, tarde)
+
+Los `.rej` del iris venían de **parches duplicados en el árbol**: al sustituir la serie de shuuri por
+la de armada (29/10) se renumeraron los nuevos a `0017-0025`, pero los viejos de shuuri
+(`0017-CABAC`, `0018-delay-controls`, `0019-decode-in-stage-1`) **se quedaron** en el árbol con los
+mismos números. El build aplicaba ambos y el segundo chocaba.
+
+- `sync-to-os.sh` usa `rsync -a` **sin `--delete`**: borrar o renumerar un parche en el centro **no**
+  lo quita del árbol.
+- **No se puede añadir `--delete`** a esos overlays: el árbol tiene ~67 parches del upstream que el
+  centro no gestiona y se borrarían (probado: el prune se llevó 67 ficheros y hubo que restaurarlos
+  con `git checkout -- kernel/sm8750/patches`).
+- Regla: al renumerar/sustituir un parche, **borrar a mano el viejo en
+  `pocknix-os/kernel/sm8750/patches/`** y comprobar que no hay dos ficheros con el mismo prefijo
+  (`ls | cut -c1-4 | sort | uniq -d`).
+
+Además, el `0021` de armada era redundante: el `0024` ya define `iris_dec_low_latency()`, que
+incluye `iris_dec_decode_order()`. Eliminado del centro y del árbol.
