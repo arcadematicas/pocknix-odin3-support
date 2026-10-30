@@ -17,6 +17,11 @@ for d in /sys/class/power_supply/*/; do
 	STA=$(cat "${d}status" 2>/dev/null)
 	EN=$(cat "${d}energy_now" 2>/dev/null)
 	PW=$(cat "${d}power_now" 2>/dev/null)
+	# Desde el kernel 25 (parche 2121) charge_now expone el coulomb counter: precision de uAh,
+	# mucho mejor que el 1% redondeado de capacity para medir ciclos cortos.
+	CH=$(cat "${d}charge_now" 2>/dev/null)
+	CF=$(cat "${d}charge_full" 2>/dev/null)
+	V=$(cat "${d}voltage_now" 2>/dev/null)
 	break
 done
 [ -n "${CAP}" ] || exit 0
@@ -28,7 +33,7 @@ if [ -f "${L}" ] && [ "$(stat -c%s "${L}" 2>/dev/null || echo 0)" -gt 262144 ]; 
 	mv -f "${L}" "${L}.1"
 fi
 
-printf '%s %s cap=%s status=%s energy_now=%s power_now=%s\n' \
-	"$(date +%s)" "$1" "${CAP}" "${STA}" "${EN:-0}" "${PW:-0}" >> "${L}"
+printf '%s %s cap=%s status=%s charge_now=%s charge_full=%s voltage_now=%s energy_now=%s power_now=%s\n' \
+	"$(date +%s)" "$1" "${CAP}" "${STA}" "${CH:-0}" "${CF:-0}" "${V:-0}" "${EN:-0}" "${PW:-0}" >> "${L}"
 
 exit 0

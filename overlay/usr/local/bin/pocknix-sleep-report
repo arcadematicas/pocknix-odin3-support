@@ -1,73 +1,143 @@
-#!/bin/bash
+#!/usr/bin/env python3
 # pocknix-sleep-report — consumo de batería por suspensión.
 #
-# Lee /var/log/pocknix/sleep-battery.log (lo escribe el hook zz-battery-sleep) y saca
-# una línea por ciclo pre/post con la duración y el %/h. Sirve para comprobar si una
-# mejora de deep sleep se nota y para detectar fugas en standby.
+# Lee /var/log/pocknix/sleep-battery.log (lo escribe el hook zz-battery-sleep) y saca una línea
+# por ciclo pre/post con la duración, el delta y el consumo en %/h (y W medios cuando hay datos).
 #
-# Uso:  pocknix-sleep-report [-n N]     (N = últimos ciclos, por defecto todos)
+# Desde el kernel 25 (parche 2121) charge_now expone el coulomb counter en µAh, así que el cálculo
+# usa la carga real en vez del 1 % redondeado de capacity: sirve para ciclos cortos. Si el log es
+# antiguo (sin charge_now), cae a capacity.
+#
+# Uso:  pocknix-sleep-report [-n N]
 
-set -uo pipefail
+import os
+import sys
+from datetime import datetime
 
-LOG="${SLEEP_LOG:-/var/log/pocknix/sleep-battery.log}"
-N=0
-[ "${1:-}" = "-n" ] && N="${2:-10}"
+LOG = os.environ.get("SLEEP_LOG", "/var/log/pocknix/sleep-battery.log")
+OK, ALTO = 0.60, 1.20
 
-if [ ! -r "${LOG}" ]; then
-	echo "No hay log en ${LOG}. ¿Has suspendido alguna vez con el hook instalado?" >&2
-	exit 1
-fi
 
-# Umbrales en %/h: por debajo de OK es normal; ALTO merece mirar; FUGA es un problema.
-OK=0.60
-ALTO=1.20
+def parse_kv(parts):
+    d = {}
+    for kv in parts:
+        if "=" in kv:
+            k, v = kv.split("=", 1)
+            d[k] = v
+    return d
 
-awk -v ok="${OK}" -v alto="${ALTO}" -v lastn="${N}" '
-function fmt_dur(s) {
-	h = int(s/3600); m = int((s%3600)/60)
-	if (h > 0) return sprintf("%dh%02dm", h, m)
-	return sprintf("%dm", m)
-}
-function fmt_time(t) { return strftime("%d/%m %H:%M", t) }
 
-$2 == "pre" {
-	for (i = 3; i <= NF; i++) {
-		split($i, kv, "=")
-		if (kv[1] == "cap") pre_cap = kv[2] + 0
-		if (kv[1] == "status") pre_st = kv[2]
-	}
-	pre_t = $1 + 0
-	have = 1
-	next
-}
-$2 == "post" && have {
-	for (i = 3; i <= NF; i++) {
-		split($i, kv, "=")
-		if (kv[1] == "cap") post_cap = kv[2] + 0
-		if (kv[1] == "status") post_st = kv[2]
-	}
-	dur = ($1 + 0) - pre_t
-	if (dur > 60) {
-		drop = pre_cap - post_cap
-		rate = (dur > 0) ? drop / (dur / 3600.0) : 0
-		verdict = (rate <= ok) ? "ok" : ((rate <= alto) ? "ALTO" : "FUGA")
-		if (pre_st ~ /Charg/ || post_st ~ /Charg/) verdict = "cargando"
-		n++
-		line[n] = sprintf("%-16s %-16s %8s  %5.1f%% -> %5.1f%%  %+6.1f%%  %5.2f %%/h  %s",
-			fmt_time(pre_t), fmt_time($1 + 0), fmt_dur(dur), pre_cap, post_cap, -drop, rate, verdict)
-		rates[n] = rate; verdicts[n] = verdict; drops[n] = drop; durs[n] = dur
-	}
-	have = 0
-}
-END {
-	if (n == 0) { print "Sin ciclos completos pre/post todavía."; exit 0 }
-	start = (lastn > 0 && n > lastn) ? n - lastn + 1 : 1
-	printf "%-16s %-16s %8s  %13s  %7s  %9s  %s\n", "DORMIDA", "DESPIERTA", "DURACION", "BATERIA", "DELTA", "CONSUMO", "ESTADO"
-	for (i = start; i <= n; i++) print line[i]
-	printf "\nUmbrales: ok <= %.2f %%/h, ALTO <= %.2f %%/h, por encima = FUGA\n", ok, alto
+def read_cycles(path):
+    cycles, pre = [], None
+    with open(path, "r", errors="replace") as fh:
+        for line in fh:
+            p = line.split()
+            if len(p) < 3:
+                continue
+            try:
+                ts = int(float(p[0]))
+            except ValueError:
+                continue
+            phase = p[1]
+            kv = parse_kv(p[2:])
+            if phase == "pre":
+                pre = (ts, kv)
+            elif phase == "post" and pre:
+                cycles.append((pre[0], pre[1], ts, kv))
+                pre = None
+    return cycles
 
-	# Resumen de los ciclos válidos (sin cargar)
-	v = 0; sr = 0; sd = 0
-	for (i = start; i <= n; i++) if (verdicts[i] != "cargando") { v++; sr += rates[i]; sd += drops[i] }
-	if (v > 0) printf "Media: %.2f %%/h en %d ciclo(s) valido(s), %.1f%% por ciclo\n", sr/v, v, sd/v
-}' "${LOG}"
+
+def num(kv, key):
+    try:
+        return float(kv.get(key, 0) or 0)
+    except ValueError:
+        return 0.0
+
+
+def dur(s):
+    h, m = int(s // 3600), int((s % 3600) // 60)
+    return f"{h}h{m:02d}m" if h else f"{m}m"
+
+
+def main():
+    n = 0
+    if len(sys.argv) >= 3 and sys.argv[1] == "-n":
+        try:
+            n = int(sys.argv[2])
+        except ValueError:
+            n = 0
+    if not os.access(LOG, os.R_OK):
+        print(f"No hay log en {LOG}. ¿Has suspendido con el hook instalado?", file=sys.stderr)
+        return 1
+
+    cycles = read_cycles(LOG)
+    if not cycles:
+        print("Sin ciclos completos pre/post todavía.")
+        return 0
+
+    rows = []
+    for t0, pre, t1, post in cycles:
+        secs = t1 - t0
+        if secs < 60:
+            continue
+        hours = secs / 3600.0
+        pre_cap, post_cap = num(pre, "cap"), num(post, "cap")
+        status = (pre.get("status", "") + post.get("status", ""))
+        cn0, cn1 = num(pre, "charge_now"), num(post, "charge_now")
+        cf = num(post, "charge_full") or num(pre, "charge_full")
+        v0, v1 = num(pre, "voltage_now"), num(post, "voltage_now")
+
+        if cn0 > 0 and cn1 >= 0 and cf > 0:
+            # µAh consumidos → % de la capacidad real (independiente del voltaje)
+            dq = cn0 - cn1
+            delta = dq / cf * 100.0
+            watts = (dq * ((v0 + v1) / 2.0) / 1e12) / hours if (v0 or v1) else 0.0
+            pct_src = "carga"
+        else:
+            delta = pre_cap - post_cap
+            watts = 0.0
+            pct_src = "cap"
+
+        rate = delta / hours if hours else 0.0
+        if "Charg" in status:
+            verdict = "cargando"
+        elif rate <= OK:
+            verdict = "ok"
+        elif rate <= ALTO:
+            verdict = "ALTO"
+        else:
+            verdict = "FUGA"
+
+        rows.append({
+            "t0": datetime.fromtimestamp(t0).strftime("%d/%m %H:%M"),
+            "t1": datetime.fromtimestamp(t1).strftime("%d/%m %H:%M"),
+            "dur": dur(secs),
+            "cap0": pre_cap, "cap1": post_cap,
+            "delta": delta, "rate": rate, "watts": watts,
+            "src": pct_src, "verdict": verdict,
+        })
+
+    if n > 0:
+        rows = rows[-n:]
+
+    print(f"{'DORMIDA':<14}{'DESPIERTA':<14}{'DURACION':>8}  {'BATERIA':>15}  {'DELTA':>8}  "
+          f"{'CONSUMO':>10}  {'W':>6}  ESTADO")
+    for r in rows:
+        w = f"{r['watts']:.3f}" if r["watts"] else "  -"
+        print(f"{r['t0']:<14}{r['t1']:<14}{r['dur']:>8}  "
+              f"{r['cap0']:>5.0f}% ->{r['cap1']:>6.0f}%  {r['delta']:>8.2f}  "
+              f"{r['rate']:>7.2f} %/h  {w:>6}  {r['verdict']}")
+
+    valid = [r for r in rows if r["verdict"] != "cargando"]
+    if valid:
+        avg = sum(r["rate"] for r in valid) / len(valid)
+        print(f"\n{len(valid)} ciclo(s) válido(s). Media: {avg:.2f} %/h")
+    print(f"Umbrales: ok <= {OK:.2f} %/h, ALTO <= {ALTO:.2f} %/h, por encima = FUGA")
+    if any(r["src"] == "cap" for r in rows):
+        print("Nota: algún ciclo usó capacity (1% redondeado); los que muestran W usan charge_now (µAh).")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
