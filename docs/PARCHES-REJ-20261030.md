@@ -57,3 +57,22 @@ mismos números. El build aplicaba ambos y el segundo chocaba.
 
 Además, el `0021` de armada era redundante: el `0024` ya define `iris_dec_low_latency()`, que
 incluye `iris_dec_decode_order()`. Eliminado del centro y del árbol.
+
+## Estado al cierre del 30/10
+
+Kernel **7.2.12-26 compilado e instalado** en la consola (no publicado): 0 fallos, `charge_now`
+6,36 M, perfil 832/2.841.600, ventilador 34-42 estable, iris con `display_delay` y la condición
+`iris_dec_low_latency` en `iris_set_stage`.
+
+Quedan **10 `.rej`** (`tools/check-kernel-patches.sh` sale 1), ninguno crítico:
+
+| Fichero | Qué se pierde |
+|---|---|
+| `iris/iris_ctrls.c` | hunk ya aplicado por otra vía (la condición está puesta); solo el `module_param(low_latency)` no aparece en `/sys/module/iris/parameters/` |
+| `msm/dsi/dsi_host.c` | ajuste de byte clock div-2 (el panel funciona sin él) |
+| `wcd939x-usbss.c` | ruteo USB-C del jack (el jack va por MBHC) |
+| `scripts/mksysmap` | micro-optimización del arranque |
+| `sound/soc/codecs/*` (6) | pm-clock (runtime suspend del audio) y `pm_runtime_forbid` del jack: por eso el cambio de jack sigue lento |
+
+Siguiente paso: adaptar esos hunks igual que el `2121`, recompilar con el chequeo en verde y
+**entonces** publicar el 26 (o el que salga).
