@@ -1,9 +1,33 @@
 #!/bin/sh
-# WCN7860/ath12k no entra en L2 al suspender ("qcom-pcie: Timeout waiting for L2 entry")
-# y aborta el s2idle. Se apagan WiFi y Bluetooth antes de dormir (BT encendido
-# se come la bateria: armada#264) y se recuperan al despertar.
+# WCN7860/ath12k no entra en L2 al suspender y aborta el s2idle: el driver falla en
+# pci_pm_suspend con -110 ("failed to flush transmit queue, data pkts pending 4" ->
+# "failed to suspend core: -110") aunque la radio este apagada. Se saca el dispositivo
+# PCI del ath12k (17cb:110e) del bus antes de dormir y se re-escanea al despertar.
+# El rescan crea la interfaz como wlanN; se normaliza a wlan0.
 case "$1" in
-  pre)  nmcli radio wifi off; rfkill block bluetooth 2>/dev/null ;;
-  post) rfkill unblock bluetooth 2>/dev/null; nmcli radio wifi on ;;
+  pre)
+    nmcli radio wifi off 2>/dev/null || true
+    rfkill block bluetooth 2>/dev/null || true
+    for d in /sys/bus/pci/devices/*/; do
+      [ "$(cat "$d/vendor" 2>/dev/null)" = "0x17cb" ] || continue
+      [ "$(cat "$d/device" 2>/dev/null)" = "0x110e" ] || continue
+      echo 1 > "$d/remove" 2>/dev/null || true
+    done
+    ;;
+  post)
+    echo 1 > /sys/bus/pci/rescan 2>/dev/null || true
+    i=0
+    while [ -z "$(ls /sys/class/net/wlan* 2>/dev/null)" ] && [ "$i" -lt 20 ]; do sleep 0.5; i=$((i+1)); done
+    for w in /sys/class/net/wlan*; do
+      [ -e "$w" ] || continue
+      n="$(basename "$w")"
+      [ "$n" = "wlan0" ] && continue
+      ip link set "$n" down 2>/dev/null || true
+      ip link set "$n" name wlan0 2>/dev/null || true
+    done
+    [ -e /sys/class/net/wlan0 ] && ip link set wlan0 up 2>/dev/null || true
+    rfkill unblock bluetooth 2>/dev/null || true
+    nmcli radio wifi on 2>/dev/null || true
+    ;;
 esac
 exit 0
