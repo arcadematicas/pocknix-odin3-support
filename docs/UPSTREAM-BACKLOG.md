@@ -82,10 +82,13 @@ DESCARTADO, ESPERANDO.
 
 ## Kernel de prueba para Jarvis — GMU al resumir (preparar esta semana)
 
-- [PENDIENTE] **2026-10-25 · kernel de PRUEBA con `0620` + `0622` de armada para que lo pruebe Davidusky.**
+- [PREPARADO 30/10 - pendiente de prueba] **2026-10-25 · kernel de PRUEBA con `0620` + `0622` de armada para que lo pruebe Davidusky.**
   Él reproduce el fallo en 2 suspends con toque corto; nosotros **no** (2 ciclos limpios el 25/10). Sin
   reproducer en nuestra consola no se puede validar aquí: el banco de pruebas es la suya.
   **Plazo**: preparado antes del fin de semana del 31/10 (él no puede probar antes).
+    **Estado 30/10**: compilado como **7.2.12-28** (`2122`/`2123`, 0 `.rej`) y subido a
+    `r2:pocknix/test/` con firma y SHA256; enlace y pasos en el commit `3119276`. **No publicar**
+    hasta que confirme 2-3 suspends con toque corto.
 
   **Contexto medido**:
   - Nuestro 7.2.12-16 ya tiene `0052` (= armada `0121`, presync floor de rails de la GMU) y
