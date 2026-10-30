@@ -99,3 +99,34 @@ opcional.
 2. **Giroscopio** (sesión larga: paquetes + pruebas de suspensión).
 
 Ninguno de los dos debe retrasar la build; si la build se compila antes, se publica sin ellos.
+
+## Avance del 30/10 (mañana) — cadena confirmada, sigue mudo
+
+Con la consola despierta y sin interferencias, se activó la ruta completa y se volcó el DAPM:
+
+- Códec: `MIC BIAS3 On`, `DMIC3_MIXER On`, `DMIC3_OUTPUT On`.
+- LPASS (6ae0000.codec): `TX SWR_INPUT6 On`, `TX SMIC MUX0 = SWR_MIC6`, `TX DEC0 MUX = SWR_MIC`,
+  `TX_AIF1_CAP Mixer DEC0 On`.
+- Ajustes: `DMIC2 off`, `DMIC3 on`, `DMIC3_MIXER on`, mezclador FE→TX_CODEC en ambos canales.
+
+Resultado: **captura a cero** (medido en el último segundo, descartando el transitorio de ~1 s).
+
+Dos hallazgos nuevos:
+
+1. **`DMIC2` se auto-enciende** en cuanto se activa `DMIC3_MIXER`, aunque el DTS solo enruta
+   `DMIC3 → Internal Mic`. Todo apunta al DAPM del códec (bias/clock compartido), no al UCM.
+2. **Ojo con los falsos positivos**: el transitorio de apertura del PCM dura ~1 s (pico 22.403).
+   Cualquier prueba que mida desde 0,3 s lo confunde con señal. Medir siempre el **último** segundo.
+
+Siguiente hipótesis (la que queda): **el DMIC no recibe reloj**. El `wcd939x` debe generar el clock
+del DMIC (bit de `DMIC3_MIXER` + pinctrl/GPIO); si ese reloj no sale, el códec entrega ceros aunque
+el DAPM esté arriba. Revisar en el DTS/binding del wcd939x el clock del DMIC y compararlo con el
+DTS de armada. Alternativa: probar el camino analógico `AMIC2` (micro en el jack) para validar el ADC.
+
+### 30/10 (tarde) — también probado DMIC2 + DMIC3_MIXER
+
+La combinación que usa el UCM de armada (`DMIC2` + `DMIC3_MIXER`) **también da ceros**. Probadas ya:
+DMIC0..7 con sus mixers, DMIC3+DMIC3_MIXER, DMIC2+DMIC3_MIXER, y la cadena DAPM completa en `On`.
+Conclusión: no es la selección de DMIC ni el UCM; falta algo físico o de reloj. Siguiente sesión:
+comparar el reloj del DMIC (el `wcd939x` debe generarlo) y, si hay dudas, probar el camino analógico
+`AMIC2` con un micro en el jack.
