@@ -15,6 +15,37 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 30 de octubre 2026 — ventilador estable, mangohud con batería y `deep`
+
+### ✅ Ventilador: deja de oscilar (kernel 24)
+- El `pwm-fan` registraba un *cooling device* y el thermal lo movía a saltos (0↔225 de PWM con el SoC
+  a 50 °C), pisando la curva del panel. Quitando `#cooling-cells` del nodo el dtb quedó sin
+  `cooling-cells` y el rango bajó a **27-59** (state 0-2). El driver sigue registrando el cooling
+  device y el firmware/EC también participa, pero ya no hay saltos audibles.
+
+### ✅ MangoHud: % y tiempo de batería (kernel 25, parche `2121`)
+- El `0081` exponía `CHARGE_NOW` pero con el firmware del SM8750 (mAh) devolvía `status.capacity`,
+  que es **0**. El dato real está en el coulomb counter (`charge_counter`, 6.338.640 a 80 %).
+- `2121` hace que `CHARGE_NOW` use `info.charge_count` siempre → mangohud muestra **80,8 %** y el
+  tiempo restante (el cálculo de tiempo necesita corriente real; con la consola en `Full` da cifras
+  absurdas y se corrige al descargar).
+
+### 🚀 `deep` funciona (suspensión real)
+- `/sys/power/mem_sleep` ofrecía `[s2idle] deep` y nunca lo usábamos. Probado con alarma RTC (60 s):
+  despertó a los ~108 s con **panel, wifi, audio, táctil, mando, Steam, SoCCP y perfil** intactos,
+  0 fallos, y el hook de inputplumber soltó el `vhci` al dormir.
+- Queda activo para medir el consumo esta noche. Referencias `s2idle`: 0,44 %/h (9 h) y 0,58 %/h
+  (6h50, medida con batería baja). Para que persista tras reiniciar: `mem_sleep_default=deep` en el
+  kernel-cmdline.
+
+### 🔧 Notas de proceso
+- `sync-to-os.sh` no borra parches del árbol (rsync sin `--delete`): al quitar un parche hay que
+  borrarlo también en `pocknix-os/kernel/sm8750/patches/`.
+- El `2120` de armada era redundante con nuestro `0081` y rompía el build (insertaba una propiedad
+  dentro de una firma de función): descartado.
+
+---
+
 ## 📅 29 de octubre 2026 — publicado el lote de sensores y adoptado iris low-latency
 
 ### ✅ Perfiles de energía: arrancaba por debajo del perfil guardado
