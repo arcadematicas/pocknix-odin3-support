@@ -1,0 +1,18 @@
+Subject: [PATCH] media: iris: apply the low-latency stage selection in iris_set_stage
+
+The low-latency helper was introduced but iris_set_stage still only looked at
+the resolution, so decode-order sessions ran in stage 2. Add the helper to the
+condition now that the intermediate decode_order-only version is gone.
+---
+--- a/drivers/media/platform/qcom/iris/iris_ctrls.c
++++ b/drivers/media/platform/qcom/iris/iris_ctrls.c
+@@ -566,7 +566,8 @@
+ 	u32 work_mode = STAGE_2;
+ 
+ 	if (inst->domain == DECODER) {
+-		if (iris_res_is_less_than(width, height, 1280, 720))
++		if (iris_res_is_less_than(width, height, 1280, 720) ||
++		    iris_dec_low_latency(inst))
+ 			work_mode = STAGE_1;
+ 	}
+ 

@@ -56,15 +56,6 @@ restores the previous behaviour.
  int iris_set_decode_order(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id)
  {
  	const struct iris_hfi_session_ops *hfi_ops = inst->hfi_session_ops;
-@@ -549,7 +567,7 @@ int iris_set_stage(struct iris_inst *inst, enum platform_inst_fw_cap_type cap_id
- 
- 	if (inst->domain == DECODER) {
- 		if (iris_res_is_less_than(width, height, 1280, 720) ||
--		    iris_dec_decode_order(inst))
-+		    iris_dec_low_latency(inst))
- 			work_mode = STAGE_1;
- 	}
- 
 --- a/drivers/media/platform/qcom/iris/iris_ctrls.h
 +++ b/drivers/media/platform/qcom/iris/iris_ctrls.h
 @@ -15,7 +15,7 @@ int iris_ctrls_init(struct iris_inst *inst);

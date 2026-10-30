@@ -76,3 +76,25 @@ Quedan **10 `.rej`** (`tools/check-kernel-patches.sh` sale 1), ninguno crítico:
 
 Siguiente paso: adaptar esos hunks igual que el `2121`, recompilar con el chequeo en verde y
 **entonces** publicar el 26 (o el que salga).
+
+## Resuelto (kernel 27, 30/10 noche)
+
+El chequeo sale **en verde** (0 `.rej`) y el build aborta ahora en el primer conflicto
+(`build-kernel.sh`: `warn`+`continue` → `die`).
+
+| `.rej` | Causa | Acción |
+|---|---|---|
+| `Kconfig`, `lpass-tx-macro.c` | `2111` duplicaba el `1031` del árbol (idénticos) | fuera `2111` |
+| `lpass-rx-macro.c` | `2115` duplicaba el `0072` | fuera `2115` |
+| `wcd939x-usbss.c`, `wcd-mbhc-v2.c/h` | `2118` duplicaba el `0063` (mismo cambio, otro orden) | fuera `2118` |
+| `wcd939x.c` | `2119` duplicaba el `0603` | fuera `2119` |
+| `wcd939x.c` (HPH PCM) | `2116` chocaba con el `0073`; solo difería en `&& !wcd->is_tx`, que **nunca** llegó a compilarse | fuera `2116` |
+| `dsi_host.c` | el `0048a` **ya está en el 7.2.12 vanilla** (`byte_intf_clk_div_2`) | fuera `0048a` |
+| `scripts/mksysmap` | el `08` reimplementa mksysmap en C y borra el script | fuera `01` y `02` |
+| `iris_ctrls.c` | el `0024` dependía del `0021` (que quitamos) para la condición de `set_stage` | `0024` sin ese hunk + **`0026`** nuevo |
+
+Verificado en el árbol del 27: `iris_low_latency` (param y condición), pm-clock tx/rx, usbss,
+jack resumido, byte clock, HPH PCM y `2121`.
+
+Nota: nuestro `2116` tenía un guard `!wcd->is_tx` que el `0073` no trae. No se incluye porque
+ningún kernel compilado lo llevó; si interesa (micro), se prueba aparte.
