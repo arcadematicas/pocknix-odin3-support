@@ -19,9 +19,11 @@ pkgname=linux-pocknix-sm8750
 # kernel con el parche aplicado y se republica como -2. Ver §3 del CIERRE.
 # pkgrel 20 (29/10): serie completa de iris de armada + 2110 smp2p + 2111-2114 pm-clock.
 # pkgrel 21: audio de armada (2115-2119), microfono interno y dither 8bpc en el DTS.
-# pkgrel 22: firmware-name del SoCCP en el DTS -> remoteproc0 arranca y el SoC llega a D3.
+# pkgrel 22: SoCCP (D3). 23/24: pwm-fan sin cooling-cells. 25: 2121 (mangohud: CHARGE_NOW desde
+# el coulomb counter). 26: fuera el iris 0021 (redundante con el 0024, que es superset y ya
+# define iris_dec_low_latency); era el que dejaba .rej en iris_ctrls/iris_hfi_gen2.
 pkgver=7.2.12
-pkgrel=22
+pkgrel=26
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"

@@ -1,0 +1,25 @@
+--- a/drivers/power/supply/qcom_battmgr.c
++++ b/drivers/power/supply/qcom_battmgr.c
+@@ -731,13 +731,18 @@
+ 		val->intval = battmgr->info.capacity_low;
+ 		break;
+ 	case POWER_SUPPLY_PROP_CHARGE_NOW:
+-		if (unit == QCOM_BATTMGR_UNIT_mAh) {
+-			val->intval = battmgr->status.capacity;
++		/*
++		 * pocknix: el firmware del SM8750 deja status.capacity a 0 y publica
++		 * la carga real en el coulomb counter (charge_counter). MangoHUD leia
++		 * 0% y no podia estimar el tiempo restante.
++		 */
++		if (battmgr->info.charge_count) {
++			val->intval = battmgr->info.charge_count;
+ 			break;
+ 		}
+-		if (!battmgr->info.charge_count)
++		if (unit != QCOM_BATTMGR_UNIT_mAh)
+ 			return -ENODATA;
+-		val->intval = battmgr->info.charge_count;
++		val->intval = battmgr->status.capacity;
+ 		break;
+ 	case POWER_SUPPLY_PROP_CHARGE_COUNTER:
+ 		val->intval = battmgr->info.charge_count;

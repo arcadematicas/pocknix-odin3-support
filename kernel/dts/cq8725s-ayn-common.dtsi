@@ -95,7 +95,12 @@
 		fan-supply = <&vdd_fan_5v0>;
 		pwms = <&pm8550_pwm 3 40000>;
 
-		#cooling-cells = <2>;
+		/* El ventilador lo gobierna el panel (PocknixControl -> /var/lib/pocknix/fan-mode
+		 * -> pocknix-fancontrol). Con #cooling-cells el kernel registraba ADEMAS un cooling
+		 * device y el thermal lo movia a saltos (0-7) pisando la curva del daemon: el
+		 * ventilador oscilaba 0<->225 con el SoC a 50 C. Sin cooling-cells, el thermal no
+		 * lo toca; el throttling de CPU/GPU sigue igual.
+		 * cooling-levels se queda: inocuo sin cooling-cells, y documenta los niveles. */
 		cooling-levels = <0 30 45 60 70 90 120 150>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&fan_pwm_default>;
