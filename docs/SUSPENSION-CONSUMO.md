@@ -39,3 +39,17 @@ batería, sin cargador y con una duración parecida.
   es fiable. `power_now` sí funciona (≈4,2 W con pantalla encendida en reposo).
 - El hook no toca nada: solo escribe una línea. Si algo fallara, el fichero se puede borrar sin más.
 - Los ciclos con `status=Charging` se marcan y se excluyen de la media.
+
+## 31/10/2026 — `deep` validado: 0,14 %/h
+
+Ciclo real de noche completa con `pocknix-sleep-report` (kernel 26, `mem_sleep=deep`,
+pantalla apagada, sin cargador):
+
+| Modo | Duración | Consumo |
+|---|---|---|
+| s2idle | 9 h | 0,44 %/h |
+| s2idle (batería baja) | 6h50 | 0,58 %/h |
+| **deep** | **13h31m** | **0,14 %/h** (1,85 % total, 0,044 W) |
+
+El journal confirma `PM: suspend entry (deep)` y despertó a las 13h31m con el toque.
+Con esto `mem_sleep_default=deep` pasa a ser el valor del BSP (`pkgrel 42`).
