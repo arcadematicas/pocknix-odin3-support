@@ -2,6 +2,8 @@
 
 Texto listo para copiar y pegar (Telegram no renderiza tablas ni Markdown complejo: usar tal cual).
 
+Grupo de releases: https://t.me/+Pz1kfKX8UZs0OWE0
+
 ---
 
 🎮 **calvOS / Pocknix 0.4 — AYN Odin 3**

@@ -77,9 +77,12 @@ Usuario `deck`, root `pocknix`, SSH desactivado por defecto.
 
 ## Distribución
 
-La imagen se reparte en trozos por Telegram (unos 11,6 GB). El torrent existe
-(`docs/RELEASE-v0.4-odin3-4.md`), pero la conexión de casa está **detrás de CGNAT**: los peers de
-fuera no pueden conectar con el seed, así que solo sirve en LAN.
+La imagen se reparte en trozos por **Telegram**, en el grupo de releases:
+
+👉 **https://t.me/+Pz1kfKX8UZs0OWE0**
+
+El torrent existe (`docs/RELEASE-v0.4-odin3-4.md`), pero la conexión de casa está **detrás de
+CGNAT**: los peers de fuera no pueden conectar con el seed, así que solo sirve en LAN.
 
 ## Gracias
 
