@@ -1,4 +1,8 @@
-# Release — Pocknix/calvOS 0.4 (Odin 3) — build del 1/11/2026
+# Release — CalvOS 1.3 (base Pocknix 0.4) — build del 1/11/2026
+
+> **Nombre interno del árbol de build**: `0.4` (base upstream Pocknix v0.4).
+> **Versión publicada**: **CalvOS 1.3**. Nota pública: `docs/RELEASE-CalvOS-1.3.md`.
+> Etiqueta: `calvos-1.3`.
 
 ## Imagen
 
