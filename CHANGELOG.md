@@ -35,7 +35,7 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
   Publicada la `0.1.0-64` (la imagen lleva la 63, mismo contenido: solo cambia el pkgrel).
   Se acabó el pin que revertía la versión del usuario.
 
-### 🚀 Imagen 0.4
+### 🚀 Imagen 0.4 (publicada como **CalvOS 1.3**)
 - `pocknix-sm8750-sd.img` verificada: kernel 28, decky 63, overlay 11, mesa 26.3 y
   gamescope ogc1-3. SHA256 y magnet en `docs/RELEASE-v0.4-odin3-4.md`.
 
@@ -45,8 +45,9 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 - **El torrent no es viable fuera de la LAN**: el operador usa **CGNAT** (WAN `100.68.121.83`,
   pública `147.136.252.230`) → `Port is open: No` aunque el mapeo UPnP del router existe. La
   distribución real va por Telegram.
-- Texto de anuncio listo en `docs/TELEGRAM-v0.4-odin3-4.md`; release público en
-  `docs/RELEASE-v0.4-odin3-4-PUBLICO.md`.
+- Texto de anuncio en `docs/TELEGRAM-CalvOS-1.3.md`; release público en
+  `docs/RELEASE-CalvOS-1.3.md`; etiqueta `calvos-1.3`.
+- **Se mantiene la numeración pública CalvOS 1.x**: la build 0.4 del árbol es **CalvOS 1.3**.
 
 ## 📅 30 de octubre 2026 — ventilador estable, mangohud con batería y `deep`
 
