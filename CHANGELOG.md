@@ -39,6 +39,15 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 - `pocknix-sm8750-sd.img` verificada: kernel 28, decky 63, overlay 11, mesa 26.3 y
   gamescope ogc1-3. SHA256 y magnet en `docs/RELEASE-v0.4-odin3-4.md`.
 
+### 🚀 Distribución de la 0.4 (1/11)
+- Repartida en **3 volúmenes 7-Zip** (modo *store*, 3,9 GB cada uno) que se abren con doble clic
+  (7-Zip ≥ 23 o PeaZip) y se unen solos. Verificado con `7z t` y extrayendo el `.001`.
+- **El torrent no es viable fuera de la LAN**: el operador usa **CGNAT** (WAN `100.68.121.83`,
+  pública `147.136.252.230`) → `Port is open: No` aunque el mapeo UPnP del router existe. La
+  distribución real va por Telegram.
+- Texto de anuncio listo en `docs/TELEGRAM-v0.4-odin3-4.md`; release público en
+  `docs/RELEASE-v0.4-odin3-4-PUBLICO.md`.
+
 ## 📅 30 de octubre 2026 — ventilador estable, mangohud con batería y `deep`
 
 ### ✅ Ventilador: deja de oscilar (kernel 24)

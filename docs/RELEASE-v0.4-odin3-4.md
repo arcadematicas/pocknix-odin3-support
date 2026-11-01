@@ -9,17 +9,34 @@
 - **SHA256 (zst)**:
   `31ee0c4f7939fc1a02b21c99e926ee4b54ee5f7a23b1e312592307a4c481d8d1`
 
-## Torrent
+## Distribución (1/11/2026) — volúmenes 7-Zip
+
+La imagen se reparte en **3 volúmenes 7-Zip** (modo *store*, sin recomprimir) dentro de una carpeta:
+
+```
+pocknix-sm8750-sd.7z.001  3.900.000.000 B  317049c5a7109e2bb0ddddf1e166f23924bb77cb03652d714bead4c669375a4d
+pocknix-sm8750-sd.7z.002  3.900.000.000 B  d34caf76e3c132d34120f1ba41d019e7d40e9f6a1d665d800fd61a423d15cbe7
+pocknix-sm8750-sd.7z.003  3.802.833.981 B  e501fc94f464a0f3a6892d1db8bc1ceb7576aa63575b283c59678ca3cb5d62f9
+```
+
+- Comprobado: `7z t` sobre los tres (CRC OK) y extracción real del `.001` → `.zst` con SHA256
+  `31ee0c4f…81d8d1`.
+- Destino: `/run/media/fransis/ROMS16TB/odin 3/CalvOS release/` (PC) con `LEEME.txt`.
+- Copia en el portátil: `~/releases/` (el `.zst` original sigue ahí para el seed).
+
+### Torrent: solo LAN
 
 ```
 magnet:?xt=urn:btih:37feb722583f2e86678d76e82cf15a35a0fcac01&dn=pocknix-sm8750-sd.img.zst&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A6969%2Fannounce
 ```
 
-- `.torrent` y `.sha256` en el PC: `~/releases/`.
-- **Seed**: transmission-daemon en el PC (`~/releases`, puerto 51413).
-  ⚠️ El router no tiene UPnP/port forward: `Port is open: No`. Para sembrar de verdad
-  hay que abrir **51413 TCP/UDP** en el router (o activar UPnP), o sembrar desde otra
-  máquina con el puerto accesible.
+- Seed activo (transmission-daemon, portátil, `~/releases`, 51413 TCP/UDP, DHT/PEX/LPD).
+- ⚠️ **CGNAT**: el WAN del router es `100.68.121.83` (100.64/10) y la IP pública real
+  `147.136.252.230` → los peers de fuera **no pueden conectar** con el seed. UPnP funciona (mapeo
+  creado vía URL directa del IGD, porque la wifi bloquea el SSDP), pero el operador filtra el
+  entrante: `Port is open: No`.
+- Sirve así para alguien en la misma LAN, o para un peer con puerto público al que el seed pueda
+  conectar hacia fuera.
 
 ## Qué lleva
 
