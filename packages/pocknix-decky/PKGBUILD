@@ -10,9 +10,9 @@ pkgver=0.1.0
 #     stderr to /run/pocknix-update.log so the log cannot end on an error line ahead of the
 #     POCKNIX_UPDATE_EXIT marker.
 # 49: ship CSS Loader (SDH-CssLoader 2.1.2, GPL) as /usr/share/decky-plugins/SDH-CssLoader plus the
-#     new pocknix-decky-theme-eclipse oneshot that installs + activates the Hooandee Eclipse
-#     theme on first boot (fetched from the official catalogue and sha256-verified; the theme
-#     itself is NOT redistributed). Also drops the deckthemes class-mappings snapshot at
+#     (63) el oneshot de Eclipse pasa a INSTALAR SOLO SI FALTA (0.3.5): la imagen trae el tema,
+#     pero actualizarlo es cosa del Panel de Control (Hooandee), que ya gestiona CSS Loader y el
+#     catalogo themes/v1. Antes iba pinneado y el store no podia tocarlo. Also drops the deckthemes class-mappings snapshot at
 #     /usr/share/pocknix/css_translations.json as an offline fallback for the plugin.
 # 50: ship Hooandee's "Panel de Control" (v0.70.1, GPL-3.0) as /usr/share/decky-plugins/Panel de
 #     Control. Unlike every other OS-shipped plugin it SELF-UPDATES on its own release cadence,
@@ -41,7 +41,7 @@ pkgver=0.1.0
 #     Why: the new Decky QAM update button is broken on ARM, so on the Odin there was no way to
 #     update Decky by hand. The frontend is NOT patched locally (upstream will fix it). See
 #     docs/DECKY-AUTOUPDATE.md. To revert, `pacman -S pocknix-decky` re-seeds the bundled build.
-pkgrel=62
+pkgrel=63
 pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"

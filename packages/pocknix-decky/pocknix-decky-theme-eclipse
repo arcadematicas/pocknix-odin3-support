@@ -16,9 +16,9 @@ theme_name="Hooandee Eclipse"
 theme_dir="${themes_dir}/${theme_name}"
 steam_dir="${user_home}/.steam/steam"
 
-theme_version="0.3.2"   # version pineada = nuestro canal de actualizacion
+theme_version="0.3.5"   # version pineada = nuestro canal de actualizacion
 theme_url="https://hooandee.github.io/panel-de-control/themes/v1/hooandee-eclipse/${theme_version}/theme.zip"
-theme_sha256="3ec5b776d5d9b8680bd9e7ed78083e7a5db6cfa9da7355ecbd476915b0623bc2"
+theme_sha256="c9304a21c855164c7aabdb3f9ca69f01a6b5e14f2394071d91a23e3cf26ee1ac"
 
 # Optional fallback of the deckthemes class mappings (the plugin downloads its own once
 # online; this is only used when it has none yet, e.g. a first boot while offline).
@@ -47,16 +47,12 @@ fi
 # --- 3. Instalar o ACTUALIZAR el tema (sin tocar la config del usuario) --------
 # La version va PINNEADA (nuestro canal). Si hay una mas vieja, se refresca
 # conservando config_USER.json (ajustes del usuario: active + opciones por parche).
-installed_version=""
+# Instalar SOLO si falta: despues el tema es del usuario y lo gestiona el Panel de
+# Control (Hooandee). No lo actualizamos desde aqui.
 if [ -f "${theme_dir}/theme.json" ]; then
     installed_version="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${theme_dir}/theme.json" | head -1)"
-fi
-if [ -n "${installed_version}" ] && [ "${installed_version}" = "${theme_version}" ]; then
-    log "theme '${theme_name}' ya en ${theme_version}; nada que hacer"
+    log "theme '${theme_name}' ya instalado (${installed_version:-?}); lo gestiona el Panel de Control; nada que hacer"
     exit 0
-fi
-if [ -n "${installed_version}" ]; then
-    log "actualizando '${theme_name}': ${installed_version} -> ${theme_version} (conservando config_USER.json)"
 fi
 
 tmp="$(mktemp -d /tmp/eclipse-theme.XXXXXX)" || { log "mktemp failed"; exit 0; }
