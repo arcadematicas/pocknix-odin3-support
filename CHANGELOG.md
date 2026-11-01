@@ -30,8 +30,9 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 - Noche completa: **0,14 %/h** en 13h31m (1,85 % de batería) frente a 0,44 %/h con `s2idle`.
   `mem_sleep_default=deep` en el cmdline (BSP 42) y en el `profile.conf` del centro.
 
-### ✅ Eclipse lo gestiona el Panel de Control (decky 63)
+### ✅ Eclipse lo gestiona el Panel de Control (decky 64)
 - El oneshot instala el tema (0.3.5) **solo si falta**; las actualizaciones las lleva el panel.
+  Publicada la `0.1.0-64` (la imagen lleva la 63, mismo contenido: solo cambia el pkgrel).
   Se acabó el pin que revertía la versión del usuario.
 
 ### 🚀 Imagen 0.4
