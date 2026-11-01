@@ -15,6 +15,29 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 31 de octubre / 1 de noviembre 2026 — suspensión resuelta y build 0.4
+
+### ✅ GMU al resumir (kernel 28)
+- `2122`/`2123` de armada (la IRQ HFI limpia solo CM3; máscara antes de arrancar la GMU).
+  Desaparecen `a6xx_gmu_resume`, `GMU OOB` y `44050000 preemption` al despertar.
+  Confirmado por Jarvis (su Odin) y por la nuestra.
+
+### ✅ ath12k al suspender (BSP 42, hook `zz-wifi`)
+- El driver fallaba `pci_pm_suspend` con `-110` incluso con la wifi como secundaria.
+  El hook saca el PCI (`17cb:110e`) en `pre` y re-escanea en `post`, normalizando `wlan0`.
+
+### ✅ `deep` por defecto
+- Noche completa: **0,14 %/h** en 13h31m (1,85 % de batería) frente a 0,44 %/h con `s2idle`.
+  `mem_sleep_default=deep` en el cmdline (BSP 42) y en el `profile.conf` del centro.
+
+### ✅ Eclipse lo gestiona el Panel de Control (decky 63)
+- El oneshot instala el tema (0.3.5) **solo si falta**; las actualizaciones las lleva el panel.
+  Se acabó el pin que revertía la versión del usuario.
+
+### 🚀 Imagen 0.4
+- `pocknix-sm8750-sd.img` verificada: kernel 28, decky 63, overlay 11, mesa 26.3 y
+  gamescope ogc1-3. SHA256 y magnet en `docs/RELEASE-v0.4-odin3-4.md`.
+
 ## 📅 30 de octubre 2026 — ventilador estable, mangohud con batería y `deep`
 
 ### ✅ Ventilador: deja de oscilar (kernel 24)
