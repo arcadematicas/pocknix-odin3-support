@@ -3,6 +3,7 @@
 Texto listo para copiar y pegar (Telegram no renderiza tablas ni Markdown complejo: usar tal cual).
 
 Grupo de releases: https://t.me/+Pz1kfKX8UZs0OWE0
+Release en GitHub: https://github.com/arcadematicas/pocknix-odin3-support/releases/tag/v0.4-odin3-4
 
 ---
 
@@ -27,6 +28,8 @@ ella: **la memoria interna no se toca**.
 • pocknix-sm8750-sd.7z.001 — 3,9 GB
 • pocknix-sm8750-sd.7z.002 — 3,9 GB
 • pocknix-sm8750-sd.7z.003 — 3,8 GB
+
+🔗 Notas y comprobaciones: https://github.com/arcadematicas/pocknix-odin3-support/releases/tag/v0.4-odin3-4
 
 🔐 SHA256 de los trozos:
 317049c5a7109e2bb0ddddf1e166f23924bb77cb03652d714bead4c669375a4d
@@ -53,4 +56,5 @@ quienes reportasteis los cuelgues del QAM y del resume.
 🔥 **calvOS / Pocknix 0.4 para AYN Odin 3** — suspensión arreglada y **0,14 %/h** en reposo con
 `deep`. Imagen nueva en 3 trozos 7-Zip (abrir `.001` y extraer). Se graba en microSD, la interna no
 se toca. Cambios: kernel 7.2.12-28 (GMU), hook del ath12k al suspender, MangoHUD con batería real,
-Eclipse por el Panel de Control. Gracias a Jarvis (DaViDuSkY) por las pruebas. 🙏
+Eclipse por el Panel de Control.
+📄 https://github.com/arcadematicas/pocknix-odin3-support/releases/tag/v0.4-odin3-4 Gracias a Jarvis (DaViDuSkY) por las pruebas. 🙏
