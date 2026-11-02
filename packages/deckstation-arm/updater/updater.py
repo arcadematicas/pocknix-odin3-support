@@ -601,16 +601,17 @@ class UpdaterEngine:
 
     # ------------------------------------------------------------------
     # OpenROM (suite de conversion de ROMs, M5Devs, GPL-3.0)
-    # Build ARM64 oficial: GUI Flutter (openrom_flutter) + CLI (openrom-core).
-    # Se instala como app en Apps/OpenROM/ (no es un emulador AppImage, por
-    # eso NO va en git.txt ni en el catalogo de emuladores).
+    # Desde 3.9.x el build Linux arm64 ya no es un zip unico: la GUI es un
+    # AppImage y el CLI (openrom-core) va en un zip aparte. Se instalan juntos
+    # en Apps/OpenROM/ (no es un emulador AppImage del catalogo: NO va en git.txt).
     # ------------------------------------------------------------------
-    OPENROM_URL = ("https://github.com/M5Devs/OpenROM/releases/download/v3.0.0/"
-                   "OpenROM-v3.0.0_Linux_arm64.zip")
+    OPENROM_VER = "3.9.5"
+    OPENROM_BASE = ("https://github.com/M5Devs/OpenROM/releases/download/"
+                    "v" + OPENROM_VER)
     OPENROM_DIR = os.path.join(APPS_DIR, "OpenROM")
 
     def _openrom_instalado(self):
-        return os.path.isfile(os.path.join(self.OPENROM_DIR, "openrom_flutter"))
+        return os.path.isfile(os.path.join(self.OPENROM_DIR, "OpenROM.AppImage"))
 
     def _openrom_opciones(self):
         """Opciones del menu OPENROM_MENU segun el estado de instalacion."""
@@ -621,32 +622,41 @@ class UpdaterEngine:
         return ["Descargar e instalar OpenROM"]
 
     def _openrom_descargar(self):
-        """Descarga el zip ARM64 y lo instala en Apps/OpenROM/ con sus wrappers."""
+        """Descarga la GUI (AppImage) y el CLI (zip) de OpenROM en Apps/OpenROM/."""
         try:
             os.makedirs(self.OPENROM_DIR, exist_ok=True)
-            tmp = os.path.join(self.OPENROM_DIR, "openrom.zip")
-            self.status_msg = "Descargando OpenROM..."
+            gui = os.path.join(self.OPENROM_DIR, "OpenROM.AppImage")
+            core_zip = os.path.join(self.OPENROM_DIR, "openrom-core.zip")
+            piezas = (
+                (self.OPENROM_BASE + "/OpenROM-v" + self.OPENROM_VER + "_Linux_arm64.AppImage",
+                 gui, "GUI"),
+                (self.OPENROM_BASE + "/OpenROM-Core-v" + self.OPENROM_VER + "_Linux_arm64.zip",
+                 core_zip, "CLI"),
+            )
+            for url, dest, label in piezas:
+                self.status_msg = "Descargando OpenROM (" + label + ")..."
+                self._draw_and_flip()
+                req = requests.get(url, stream=True, timeout=60)
+                req.raise_for_status()
+                total = int(req.headers.get("content-length", 0))
+                done = 0
+                with open(dest, "wb") as f:
+                    for chunk in req.iter_content(chunk_size=1 << 16):
+                        f.write(chunk)
+                        done += len(chunk)
+                        if total:
+                            self.status_msg = ("Descargando OpenROM (" + label + ")... "
+                                               + str(done * 100 // total) + "%")
+                            self._draw_and_flip()
+            self.status_msg = "Extrayendo OpenROM (CLI)..."
             self._draw_and_flip()
-            req = requests.get(self.OPENROM_URL, stream=True, timeout=60)
-            req.raise_for_status()
-            total = int(req.headers.get("content-length", 0))
-            done = 0
-            with open(tmp, "wb") as f:
-                for chunk in req.iter_content(chunk_size=1 << 16):
-                    f.write(chunk)
-                    done += len(chunk)
-                    if total:
-                        self.status_msg = f"Descargando OpenROM... {done*100//total}%"
-                        self._draw_and_flip()
-            self.status_msg = "Extrayendo OpenROM..."
-            self._draw_and_flip()
-            with zipfile.ZipFile(tmp) as z:
+            with zipfile.ZipFile(core_zip) as z:
                 z.extractall(self.OPENROM_DIR)
-            os.remove(tmp)
-            for b in ("openrom_flutter", "openrom-core"):
-                p = os.path.join(self.OPENROM_DIR, b)
-                if os.path.exists(p):
-                    os.chmod(p, 0o755)
+            os.remove(core_zip)
+            os.chmod(gui, 0o755)
+            core = os.path.join(self.OPENROM_DIR, "openrom-core")
+            if os.path.exists(core):
+                os.chmod(core, 0o755)
             self._openrom_escribir_wrappers()
             # Enlace para ES-DE (sistema openrom -> ROMs/openrom/)
             try:
@@ -665,13 +675,14 @@ class UpdaterEngine:
 
     def _openrom_escribir_wrappers(self):
         gui = os.path.join(self.OPENROM_DIR, "OpenROM.sh")
-        if not os.path.exists(gui):
-            with open(gui, "w") as f:
-                f.write("#!/bin/bash\n"
-                        "cd \"$(dirname \"$0\")\"\n"
-                        "export LANG=C.UTF-8 PYTHONIOENCODING=utf-8\n"
-                        "exec ./openrom_flutter \"$@\"\n")
-            os.chmod(gui, 0o755)
+        # Siempre se reescribe: en 3.0.0 apuntaba a openrom_flutter, que ya no existe.
+        with open(gui, "w") as f:
+            f.write("#!/bin/bash\n"
+                    "cd \"$(dirname \"$0\")\"\n"
+                    "export LANG=C.UTF-8 PYTHONIOENCODING=utf-8\n"
+                    "export APPIMAGE_EXTRACT_AND_RUN=1\n"
+                    "exec ./OpenROM.AppImage \"$@\"\n")
+        os.chmod(gui, 0o755)
         batch = os.path.join(self.OPENROM_DIR, "openrom-batch.sh")
         if not os.path.exists(batch):
             with open(batch, "w") as f:
