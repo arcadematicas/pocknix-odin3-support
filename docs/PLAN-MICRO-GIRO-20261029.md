@@ -186,3 +186,9 @@ PWM del PM8550: nodo `multi-led` en `&pm8550_pwm` (rojo canal 1, verde canal 2; 
 
 Ojo: el dtb va **dentro de `/flash/KERNEL`**; tras tocar `/boot/dtbs/*.dtb` hay que
 ejecutar `pocknix-build-bootimg` (no basta con copiar el dtb).
+
+Y aviso: al cambiar `/flash/KERNEL` el **`pocknix-kernel-guard`** vera que el md5 no
+coincide con `/usr/lib/modules/<ver>/.pocknix-kernel-md5`, reinstalara los modulos y
+**reiniciara una vez** (por diseno). No es un cuelgue ni una suspension a medias: es el
+guardia curandose. Si se quiere evitar ese reinicio, ejecutar `pocknix-kernel-pair`
+tras reensamblar el boot image.
