@@ -130,3 +130,34 @@ DMIC0..7 con sus mixers, DMIC3+DMIC3_MIXER, DMIC2+DMIC3_MIXER, y la cadena DAPM 
 Conclusión: no es la selección de DMIC ni el UCM; falta algo físico o de reloj. Siguiente sesión:
 comparar el reloj del DMIC (el `wcd939x` debe generarlo) y, si hay dudas, probar el camino analógico
 `AMIC2` con un micro en el jack.
+
+---
+
+## Avance 2/11 (Odin encendida) — el micro no es UCM: falta una ruta del driver
+
+Repetido el diagnóstico con la consola encendida y Steam en marcha. **No es enrutado ALSA**:
+
+- Único PCM de captura: `hw:0,2` (MultiMedia3), solo `S16_LE` 2ch 48k (lo dice `--dump-hw-params`).
+- El UCM `Mic` enruta `DMIC3 → SWR → TX SWR_INPUT6 → TX SMIC MUX0/1 → TX DEC0/DEC1 → TX_AIF1_CAP`.
+  DAPM lo confirma: `MIC BIAS3 On`, `DMIC3 On`, `TX SWR_INPUT6 On`, `TX DEC0/DEC1 On`.
+- Pero el FE está enganchado a **`TX_CODEC_DMA_TX_3`** (único mixer del PCM: `MultiMedia3 Mixer
+  TX_CODEC_DMA_TX_3`). Ese BE **no tiene ruta DAPM hasta ningún decimador**: `TX DEC3 MUX` sigue
+  `Off (in 1 out 0)` aunque se ponga a mano `SWR_MIC` o `MSM_DMIC`, con `TX SMIC MUX3`/`TX DMIC MUX3`
+  y el volumen puestos y el stream corriendo.
+- Consecuencia: la captura sale a **cero** (en 6 s, 544.000 de 576.000 muestras a 0; picos negativos
+  aislados de -22403). Igual por `arecord` y por PipeWire (`pw-record`).
+- El macro TX no expone widgets `CODEC_DMA` (solo `TX_AIF1/2/3 CAP`), así que el BE del FE no está
+  cableado en DAPM.
+
+**Conclusión**: para el micro hace falta un cambio de **kernel/DTS** (ruta DAPM del BE de captura a su
+decimador, o un PCM de captura enlazado a `TX_AIF1`). No se arregla con UCM. Probado descartando:
+formatos (S32/S24/U16 no soportados por el PCM), DEC0/1 vs DEC3, SWR_MIC vs MSM_DMIC, y PCMs 0/1/3
+(no existen).
+
+## LED de carga: la Odin 3 no tiene
+
+- `/sys/class/leds`: solo `l:r*/g*/b*`, `r:r*/g*/b*` (anillos RGB por canal, HTR3212) y `mmc0::`.
+- El DTS (`cq8725s-ayn-odin3.dts`) no define ningún LED de carga ni usa `pm8550_pwm` para iluminación.
+- `pm8550_pwm` existe, pero su canal 3 es el ventilador y no hay LED cableado.
+- Alternativa descartada por ahora: usar los anillos RGB como indicador. Choca con el Panel de Control
+  (dueño de los LED) y con el modo OLED care.
