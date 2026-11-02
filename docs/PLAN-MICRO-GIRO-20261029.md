@@ -133,7 +133,6 @@ comparar el reloj del DMIC (el `wcd939x` debe generarlo) y, si hay dudas, probar
 
 ---
 
-<<<<<<< HEAD
 ## Avance 2/11 (Odin encendida) — el micro no es UCM: falta una ruta del driver
 
 Repetido el diagnóstico con la consola encendida y Steam en marcha. **No es enrutado ALSA**:
@@ -155,14 +154,9 @@ decimador, o un PCM de captura enlazado a `TX_AIF1`). No se arregla con UCM. Pro
 formatos (S32/S24/U16 no soportados por el PCM), DEC0/1 vs DEC3, SWR_MIC vs MSM_DMIC, y PCMs 0/1/3
 (no existen).
 
-## LED de carga: la Odin 3 no tiene
+> Correccion (2/11, noche): la seccion que decia que la Odin 3 no tiene LED de carga era
+> **falsa**. Si lo tiene: cuelga de `&pm8550_pwm` (canales 1 y 2). Ver el avance de la noche.
 
-- `/sys/class/leds`: solo `l:r*/g*/b*`, `r:r*/g*/b*` (anillos RGB por canal, HTR3212) y `mmc0::`.
-- El DTS (`cq8725s-ayn-odin3.dts`) no define ningún LED de carga ni usa `pm8550_pwm` para iluminación.
-- `pm8550_pwm` existe, pero su canal 3 es el ventilador y no hay LED cableado.
-- Alternativa descartada por ahora: usar los anillos RGB como indicador. Choca con el Panel de Control
-  (dueño de los LED) y con el modo OLED care.
-=======
 ## Avance 2/11 (noche) — puerto SWR 5 descartado; LED de carga funcionando
 
 **Micro, intento nuevo (no documentado antes):** el binding `qcom,tx-port-mapping`
@@ -192,4 +186,3 @@ PWM del PM8550: nodo `multi-led` en `&pm8550_pwm` (rojo canal 1, verde canal 2; 
 
 Ojo: el dtb va **dentro de `/flash/KERNEL`**; tras tocar `/boot/dtbs/*.dtb` hay que
 ejecutar `pocknix-build-bootimg` (no basta con copiar el dtb).
->>>>>>> f0357ec (LED de carga de la Odin 3 (DTS pm8550 + servicio) y descarte del puerto SWR 5 para el micro)
