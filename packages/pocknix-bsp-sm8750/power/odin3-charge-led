@@ -1,0 +1,42 @@
+#!/bin/bash
+# odin3-charge-led — pilota el LED de carga de la Odin 3 (junto al boton de encendido).
+#
+# El LED es un multi-color sobre el PWM del PM8550 (canales 1 y 2; el 3 lo usa el
+# ventilador), declarado en el DTS como rgb:charging. El kernel no trae el trigger
+# "battery-charging-orange-full-green" de armada, asi que lo movemos desde aqui:
+#   cargando  -> rojo
+#   llena     -> verde
+#   el resto  -> apagado
+set -u
+
+LED="${LED:-/sys/class/leds/rgb:charging}"
+BAT="${BAT:-/sys/class/power_supply/battery}"
+
+[ -d "$LED" ] || exit 0
+
+set_led() { # $1 = "r g"  $2 = brillo
+	echo "$1" > "$LED/multi_intensity" 2>/dev/null || true
+	echo "$2" > "$LED/brightness" 2>/dev/null || true
+}
+
+last=""
+while :; do
+	st=$(cat "$BAT/status" 2>/dev/null || echo Unknown)
+	case "$st" in
+		Charging)          color="255 0"; bri=120 ;;
+		Full|Not\ charging) color="0 255"; bri=80 ;;
+		*)                 color="0 0";   bri=0 ;;
+	esac
+	# Full solo si de verdad esta al 100 %; "Not charging" puede ser un cargador
+	# limitado a 80 %, y ahi el verde seria mentira.
+	if [ "$st" = "Not charging" ]; then
+		cap=$(cat "$BAT/capacity" 2>/dev/null || echo 0)
+		[ "$cap" -ge 100 ] || { color="0 0"; bri=0; }
+	fi
+	state="$color/$bri"
+	if [ "$state" != "$last" ]; then
+		set_led "$color" "$bri"
+		last="$state"
+	fi
+	sleep 5
+done

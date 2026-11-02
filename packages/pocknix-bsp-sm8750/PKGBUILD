@@ -158,6 +158,10 @@ package() {
   install -Dm755 "${sd}/power/pocknix-power-profile"             "${bin}/pocknix-power-profile"
   install -Dm755 "${sd}/power/pocknix-cpu-governor"              "${bin}/pocknix-cpu-governor"
   install -Dm755 "${sd}/power/pocknix-pergame-power.py"          "${bin}/pocknix-pergame-power.py"
+  # LED de carga (rgb:charging del pm8550): rojo cargando, verde llena.
+  install -Dm755 "${sd}/power/odin3-charge-led"                  "${bin}/odin3-charge-led"
+  install -Dm644 "${sd}/power/odin3-charge-led.service" \
+    "${pkgdir}/usr/lib/systemd/system/odin3-charge-led.service"
   install -Dm755 "${sd}/splash/odin3-splash-play.sh"             "${bin}/odin3-splash-play.sh"
   install -Dm755 "${sd}/splash/convert_frames.py"                "${bin}/odin3-splash-convert-frames.py"
   # Boot splash: the player streams frames.raw.zst into /dev/fb0 (one dd per frame). The raw

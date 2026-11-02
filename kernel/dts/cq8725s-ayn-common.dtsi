@@ -1319,6 +1319,9 @@
 		compatible = "sdw20217010e00";
 		reg = <0 3>;
 
+		/* Probado tambien <2 2 5 6> (puerto 5, como el Android de stock)
+		 * con la ruta en TX SWR_INPUT5 y SWR_MIC5 en el UCM: la captura
+		 * sigue a ceros. Se vuelve al mapping de siempre, que es estable. */
 		qcom,tx-port-mapping = <2 2 3 4>;
 	};
 };

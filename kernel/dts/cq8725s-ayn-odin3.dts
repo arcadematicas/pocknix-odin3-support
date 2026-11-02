@@ -415,3 +415,29 @@
 &remoteproc_soccp {
 	firmware-name = "qcom/sm8750/ayn/odin3/soccp.mbn";
 };
+
+/*
+ * LED de carga (junto al boton de encendido): rojo + verde sobre el PWM del
+ * PM8550. El canal 3 lo usa el ventilador (pwm-fan), asi que aqui solo van
+ * los canales 1 y 2 (de armada, 7f36e76, sin el azul para no pelear por el 3).
+ * Sin trigger en el kernel: lo gobierna el servicio odin3-charge-led.
+ */
+&pm8550_pwm {
+	multi-led {
+		color = <LED_COLOR_ID_RGB>;
+		function = LED_FUNCTION_CHARGING;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_RED>;
+		};
+
+		led@2 {
+			reg = <2>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+	};
+};

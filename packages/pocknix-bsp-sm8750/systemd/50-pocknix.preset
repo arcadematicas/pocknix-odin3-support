@@ -15,3 +15,6 @@ enable pocknix-power-profile.service
 # pocknix-audio-jack: reengancha el audio al dispositivo correcto al conmutar el jack
 #   (el filtro del ecualizador no lo sigue solo) y tras reiniciar PipeWire.
 enable pocknix-audio-jack.service
+# odin3-charge-led: pinta el LED de carga (rojo cargando / verde llena). El kernel
+# no trae el trigger de armada, asi que lo gobierna este servicio.
+enable odin3-charge-led.service

@@ -133,6 +133,7 @@ comparar el reloj del DMIC (el `wcd939x` debe generarlo) y, si hay dudas, probar
 
 ---
 
+<<<<<<< HEAD
 ## Avance 2/11 (Odin encendida) — el micro no es UCM: falta una ruta del driver
 
 Repetido el diagnóstico con la consola encendida y Steam en marcha. **No es enrutado ALSA**:
@@ -161,3 +162,34 @@ formatos (S32/S24/U16 no soportados por el PCM), DEC0/1 vs DEC3, SWR_MIC vs MSM_
 - `pm8550_pwm` existe, pero su canal 3 es el ventilador y no hay LED cableado.
 - Alternativa descartada por ahora: usar los anillos RGB como indicador. Choca con el Panel de Control
   (dueño de los LED) y con el modo OLED care.
+=======
+## Avance 2/11 (noche) — puerto SWR 5 descartado; LED de carga funcionando
+
+**Micro, intento nuevo (no documentado antes):** el binding `qcom,tx-port-mapping`
+de nuestro DTS era el ejemplo genérico `<2 2 3 4>`, que manda DMIC0-3 al puerto
+SWR 3, mientras el DTS/UCM escuchaban en el 6. Se probó el mapping `<2 2 5 6>`
+(puerto 5, que es lo que usa el Android de stock: `TX SMIC MUX0 = SWR_MIC5`) con
+la ruta `TX SWR_INPUT5` y el UCM en `SWR_MIC5`:
+
+- La captura sigue a **ceros** (`max=0`, 80 % de muestras a 0).
+- En uno de los intentos el APM se quedó en `qcom-apm gprsvc:service:2:1: CMD
+  timeout for [1001021]` y la consola se reinició sola. No se pudo reproducir en
+  un test controlado, pero se revirtió igualmente.
+- Barrido en caliente de `TX SMIC MUX0` = SWR_MIC0..11 (los 12, no solo 0-7):
+  **silencio en todos**.
+
+Conclusión: el problema no es el puerto del macro ni el UCM. El códec no está
+entregando el DMIC al LPASS (o el DSP no lo lee), y eso pide instrumentación del
+lado kernel/SoundWire (dyndbg de `soundwire`/`q6apm` + estado de puertos DPn del
+slave), no más pruebas de mezcladores.
+
+**LED de carga: hecho y funcionando.** El LED existe (junto al botón) y cuelga del
+PWM del PM8550: nodo `multi-led` en `&pm8550_pwm` (rojo canal 1, verde canal 2; el
+3 es del ventilador; sin azul). Verificado en hardware: con `multi_intensity`
+`255 0` y brillo 511 se enciende en rojo. El kernel no trae el trigger
+`battery-charging-orange-full-green` de armada, así que lo gobierna
+`odin3-charge-led.service` (rojo cargando, verde llena, apagado el resto).
+
+Ojo: el dtb va **dentro de `/flash/KERNEL`**; tras tocar `/boot/dtbs/*.dtb` hay que
+ejecutar `pocknix-build-bootimg` (no basta con copiar el dtb).
+>>>>>>> f0357ec (LED de carga de la Odin 3 (DTS pm8550 + servicio) y descarte del puerto SWR 5 para el micro)

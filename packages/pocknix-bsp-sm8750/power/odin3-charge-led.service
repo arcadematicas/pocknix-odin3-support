@@ -1,0 +1,13 @@
+[Unit]
+Description=Odin 3 charge LED (red while charging, green when full)
+Documentation=https://github.com/arcadematicas/pocknix-odin3-support
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/odin3-charge-led
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
