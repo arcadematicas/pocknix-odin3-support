@@ -43,6 +43,10 @@ Nuestro snapshot `aa35464ee50c1311eb6cebb9882d02738642b692` tiene el `lookup_val
 2. **Probar el fix del ACD** (`docs/HOLODOR-HALLAZGOS.md`): `msm.disable_acd=1` en el cmdline,
    `pocknix-build-bootimg`, medir GPU y temperaturas. Si va bien, parche propio (2126) para quitar
    `qcom,opp-acd-level` del dtb.
+3. **Panel de Control (Hooandee)**: vendido `panel-de-control-v0.76.0`, upstream **v0.82.1**
+   (2026-11-03). Revisar el changelog y sembrar la nueva versión en el BSP.
+4. **Seguimiento Holodor**: ya integrado en `tools/check-upstream-daily.sh` (release, issues y último
+   commit). Revisar sus issues nuevos cada día; su #3 (ACD) es el que nos afecta.
 
 ## Secuencia del re-corte (comandos de `BASE-HEALTH.md`)
 

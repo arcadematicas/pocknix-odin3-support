@@ -61,6 +61,37 @@ print("MAKO: %s (%s) | aarch64=%s | plugin=%s" % (
 # vende, aunque sus fallos de descarga acaban en nuestro tejado. Solo avisa: actualizar es un build.
 HOOANDEE_LINES="$("${HERE}/check-hooandee.sh" 2>/dev/null || echo 'Hooandee: sin datos (API)')"
 
+# --- Holodor: proyecto hermano (Holo Core + kernel ROCKNIX) para Odin 3/RP5 ----------
+# Interesa su release (Odin 3), sus issues abiertos (bugs que nos afectan: p. ej. el ACD de la
+# GPU, issue #3) y la fecha del ultimo commit. Ver docs/HOLODOR-HALLAZGOS.md.
+holodor_line() {
+  timeout 50 python3 - <<'PY' 2>/dev/null || echo "HOLODOR: sin datos (red)"
+import json, urllib.request
+UA = {"User-Agent": "pocknix-upstream-check", "Accept": "application/vnd.github+json"}
+def get(u):
+    req = urllib.request.Request(u, headers=UA)
+    return json.load(urllib.request.urlopen(req, timeout=20))
+try:
+    rel = get("https://api.github.com/repos/transentient/holodor/releases?per_page=10")
+    iss = get("https://api.github.com/repos/transentient/holodor/issues?state=open&per_page=10&sort=updated&direction=desc")
+    com = get("https://api.github.com/repos/transentient/holodor/commits?per_page=1")
+except Exception:
+    print("HOLODOR: sin datos (API)"); raise SystemExit
+od = [r for r in rel if "rp5" not in str(r.get("tag_name", "")).lower()] or rel
+r = od[0] if od else {}
+issues = [i for i in iss if "pull_request" not in i]
+last_commit = (com[0]["commit"]["author"]["date"][:10] if com else "?")
+extra = ""
+if issues:
+    i0 = issues[0]
+    extra = " | ultimo: #%s %s (%s)" % (i0["number"], i0["title"][:70], i0["updated_at"][:10])
+print("HOLODOR: release %s (%s) | issues abiertos=%d | ultimo commit %s%s" % (
+    r.get("tag_name", "?"), (r.get("published_at") or "")[:10], len(issues), last_commit, extra))
+PY
+}
+
+HOLODOR_LINE="$(holodor_line)"
+
 MAKO_LINE="$(mako_line)"
 
 RAW="$(mktemp)"
@@ -68,7 +99,7 @@ RAW="$(mktemp)"
 
 # Huella: solo las lineas que implican una decision (versiones marcadas, parches que
 # faltan, resumen). Asi "novedad" = algo que merece mirarse, no ruido de commits.
-fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
+fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; printf '%s\n' "${HOLODOR_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
 
 day="$(date +%F)"
 if [ -f "${OUTDIR}/last-fingerprint.txt" ]; then
@@ -89,6 +120,10 @@ fi
   echo "## MAKO (seguimiento ARM)"
   printf '%s\n' "${MAKO_LINE}"
   echo "  (aarch64=SI significa que la release ya trae binarios ARM: avisar y probar)"
+  echo
+  echo "## Holodor (proyecto hermano: Holo Core + kernel ROCKNIX)"
+  printf '%s\n' "${HOLODOR_LINE}"
+  echo "  (sus bugs de kernel/GPU nos afectan; ver docs/HOLODOR-HALLAZGOS.md)"
   echo
   echo "## Informe completo"
   cat "${RAW}"
