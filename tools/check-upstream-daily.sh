@@ -92,6 +92,32 @@ PY
 
 HOLODOR_LINE="$(holodor_line)"
 
+# --- Nova-Deck: otro SteamOS para Snapdragon (Odin 3) --------------------------------
+# Su DTS y su pila de parches son referencia directa (audio DP, display, GPU).
+# Ver docs/NOVA-DECK-HALLAZGOS.md.
+novadeck_line() {
+  timeout 50 python3 - <<'PY' 2>/dev/null || echo "NOVADECK: sin datos (red)"
+import json, urllib.request
+UA = {"User-Agent": "pocknix-upstream-check", "Accept": "application/vnd.github+json"}
+def get(u):
+    req = urllib.request.Request(u, headers=UA)
+    return json.load(urllib.request.urlopen(req, timeout=20))
+try:
+    rel = get("https://api.github.com/repos/Nova-Deck/os-build/releases?per_page=1")
+    iss = get("https://api.github.com/repos/Nova-Deck/os-build/issues?state=open&per_page=100")
+    com = get("https://api.github.com/repos/Nova-Deck/os-build/commits?per_page=1")
+except Exception:
+    print("NOVADECK: sin datos (API)"); raise SystemExit
+r = rel[0] if rel else {}
+issues = [i for i in iss if "pull_request" not in i]
+last = com[0]["commit"]["author"]["date"][:10] if com else "?"
+print("NOVADECK: release %s (%s) | issues abiertos=%d | ultimo commit %s" % (
+    r.get("tag_name", "?"), (r.get("published_at") or "")[:10], len(issues), last))
+PY
+}
+
+NOVADECK_LINE="$(novadeck_line)"
+
 MAKO_LINE="$(mako_line)"
 
 RAW="$(mktemp)"
@@ -99,7 +125,7 @@ RAW="$(mktemp)"
 
 # Huella: solo las lineas que implican una decision (versiones marcadas, parches que
 # faltan, resumen). Asi "novedad" = algo que merece mirarse, no ruido de commits.
-fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; printf '%s\n' "${HOLODOR_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
+fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; printf '%s\n' "${HOLODOR_LINE}"; printf '%s\n' "${NOVADECK_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
 
 day="$(date +%F)"
 if [ -f "${OUTDIR}/last-fingerprint.txt" ]; then
@@ -124,6 +150,10 @@ fi
   echo "## Holodor (proyecto hermano: Holo Core + kernel ROCKNIX)"
   printf '%s\n' "${HOLODOR_LINE}"
   echo "  (sus bugs de kernel/GPU nos afectan; ver docs/HOLODOR-HALLAZGOS.md)"
+  echo
+  echo "## Nova-Deck (SteamOS para Snapdragon; referencia de DTS/parches)"
+  printf '%s\n' "${NOVADECK_LINE}"
+  echo "  (ver docs/NOVA-DECK-HALLAZGOS.md: audio DP, display, GPU)"
   echo
   echo "## Informe completo"
   cat "${RAW}"

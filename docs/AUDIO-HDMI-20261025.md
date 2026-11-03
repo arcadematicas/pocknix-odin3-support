@@ -80,3 +80,29 @@ reprobar altavoz, auriculares y micro después de cambiarla.
   UCM (`SectionDevice."HDMI"`) y probar `speaker-test -D hw:0,3`.
 - Mientras tanto, la salida de audio es: altavoz (`hw:0,0`), auriculares (`hw:0,1`) y captura
   (`hw:0,2`, ya funcionando).
+
+---
+
+## Actualización (3/11/2026) — el bloqueo está resuelto
+
+Dos piezas que faltaban, encontradas en el repo de Nova-Deck y en armada:
+
+1. **La tplg con DisplayPort existe**: la `SM8750-AYN-tplg.bin` **actual de armada** (24.516 B,
+   sha256 `821d52b7be37420766cfbf8910cf8baa97bf10c34c530330a366e13f15f5f2de`) trae `MultiMedia4`
+   y `DISPLAY_PORT_RX_0`. La nuestra (18.236 B) es una generación anterior: `strings | grep
+   DISPLAY_PORT` → 0.
+2. **El `dp-dai-link`**: Nova-Deck lo tiene en su `cq8725s-ayn-common.dtsi`:
+
+```dts
+dp-dai-link {
+    link-name = "DisplayPort Playback";
+    codec { sound-dai = <&mdss_dp0>; };
+    cpu { sound-dai = <&q6apmbedai DISPLAY_PORT_RX_0>; };
+    platform { sound-dai = <&q6apm>; };
+};
+```
+
+Es lo que hace que el machine driver cree el control **`DP0 Jack`** que el UCM necesita.
+
+Plan: cambiar la tplg del BSP por la de armada, añadir el dai-link, añadir la sección HDMI del UCM
+(la plantilla de este documento) y probar con el dock. Detalles en `docs/NOVA-DECK-HALLAZGOS.md`.
