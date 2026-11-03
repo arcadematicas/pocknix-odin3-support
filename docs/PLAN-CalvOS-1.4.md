@@ -36,6 +36,14 @@ Nuestro snapshot `aa35464ee50c1311eb6cebb9882d02738642b692` tiene el `lookup_val
    tanda que un build pequeño, porque editar el paquete fuerza su rebuild.
 4. Validar GPU: arranque, Steam, un juego DXVK/Vulkan y otro OpenGL; mirar `dmesg` por GPU faults.
 
+## Pendiente inmediato (4/11/2026)
+
+1. **Recompilar kernel** con los backports de resume de GPU (`2124`, `2125`): `make kernel` + paquete
+   (`pkgrel` 30 → 31) y validar suspender/reanudar varias veces.
+2. **Probar el fix del ACD** (`docs/HOLODOR-HALLAZGOS.md`): `msm.disable_acd=1` en el cmdline,
+   `pocknix-build-bootimg`, medir GPU y temperaturas. Si va bien, parche propio (2126) para quitar
+   `qcom,opp-acd-level` del dtb.
+
 ## Secuencia del re-corte (comandos de `BASE-HEALTH.md`)
 
 ```bash
