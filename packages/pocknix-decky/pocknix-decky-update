@@ -148,7 +148,7 @@ url = size = ""
 sha_url = ""
 for a in (d.get("assets") or []):
     n = (a.get("name") or "").lower()
-    if a.get("name") == "PluginLoader":
+    if a.get("name") == "PluginLoader-arm64":
         url = a.get("browser_download_url", "")
         size = a.get("size", 0) or 0
     elif "sha256" in n or "checksum" in n or n.endswith(".sha256sum"):
@@ -159,7 +159,15 @@ print("|".join([tag, url, str(size), d.get("published_at") or "", sha_url]))
 '
 }
 
-# Valida que $1 es un ELF ejecutable x86_64 de tamaño razonable. 0 = ok.
+# ¿$1 es un ELF aarch64? (e_machine 0xB7). Los loaders <= v3.2.x eran x86_64 bajo FEX.
+loader_is_arm64() {
+  local m
+  [ -f "$1" ] || return 1
+  m="$(od -An -tx1 -j18 -N1 "$1" 2>/dev/null | tr -d ' \n')"
+  [ "$m" = "b7" ]
+}
+
+# Valida que $1 es un ELF ejecutable aarch64 de tamaño razonable. 0 = ok.
 validate_elf() {
   local f="$1" sz magic machine
   [ -f "$f" ] || { log "  validación: no existe $f"; return 1; }
@@ -170,7 +178,7 @@ validate_elf() {
   magic="$(head -c4 "$f" | od -An -tx1 | tr -d ' \n')"
   [ "$magic" = "7f454c46" ] || { log "  validación: no es un ELF (magic=$magic)"; return 1; }
   machine="$(od -An -tx1 -j18 -N1 "$f" | tr -d ' \n')"
-  [ "$machine" = "3e" ] || { log "  validación: no es x86_64 (e_machine=0x${machine:-??})"; return 1; }
+  [ "$machine" = "b7" ] || { log "  validación: no es aarch64 (e_machine=0x${machine:-??})"; return 1; }
   return 0
 }
 
@@ -229,12 +237,18 @@ if [ ! -e "$LOADER" ]; then
   exit 0
 fi
 
+up_to_date=0
 if [ -n "$cur" ]; then
   case "$(vcompare "$cur" "$up_tag")" in
-    eq|gt)
-      log "al día (${cur} >= ${up_tag}). Nada que hacer."
-      exit 0 ;;
+    eq|gt) up_to_date=1 ;;
   esac
+fi
+if [ "$up_to_date" = 1 ] && loader_is_arm64 "$LOADER"; then
+  log "al día (${cur} >= ${up_tag}). Nada que hacer."
+  exit 0
+fi
+if [ "$up_to_date" = 1 ]; then
+  log "el loader instalado es x86_64 (FEX); lo sustituyo por el arm64 nativo de ${up_tag}"
 fi
 # a partir de aquí: $up_tag es más nueva (o no sabemos la actual)
 
@@ -263,8 +277,8 @@ if [ -n "${EXPECTED_SHA:-}" ]; then
   fi
 fi
 if ! validate_elf "$tmp"; then
-  log "FALLO la validación del asset descargado (no es un ELF x86_64 válido)"
-  telegram "❌ Decky Loader: el asset ${up_tag} no pasó la validación (ELF x86_64). No instalo nada."
+  log "FALLO la validación del asset descargado (no es un ELF aarch64 válido)"
+  telegram "❌ Decky Loader: el asset ${up_tag} no pasó la validación (ELF aarch64). No instalo nada."
   exit 1
 fi
 sha="$(sha256sum "$tmp" | cut -d' ' -f1)"

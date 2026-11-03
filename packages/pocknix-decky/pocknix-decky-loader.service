@@ -1,7 +1,7 @@
 [Unit]
-Description=Decky Loader (via FEX)
-# ExecStart must stay pocknix-decky-run: it supplies the private binfmt_misc namespace the
-# x86_64 loader needs. Rationale in that script.
+Description=Decky Loader (arm64 nativo)
+# ExecStart stays pocknix-decky-run: it keeps the launch in one place (now a direct exec of
+# the aarch64 loader; before pkgrel 65 it set up the private binfmt_misc namespace for FEX).
 After=network-online.target pocknix-decky-sync.service
 Wants=network-online.target pocknix-decky-sync.service
 
@@ -22,7 +22,6 @@ Environment=UNPRIVILEGED_USER=deck
 Environment=KEEP_SYSTEMD_SERVICE=1
 Environment=USE_CEF_CLOSE_WORKAROUND=0
 Environment=LOG_LEVEL=INFO
-Environment=FEX_APP_CONFIG=/usr/share/fex-emu/AppConfig/PluginLoader.json
 
 [Install]
 WantedBy=multi-user.target

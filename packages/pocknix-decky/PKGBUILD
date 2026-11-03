@@ -41,24 +41,24 @@ pkgver=0.1.0
 #     Why: the new Decky QAM update button is broken on ARM, so on the Odin there was no way to
 #     update Decky by hand. The frontend is NOT patched locally (upstream will fix it). See
 #     docs/DECKY-AUTOUPDATE.md. To revert, `pacman -S pocknix-decky` re-seeds the bundled build.
-pkgrel=64
-pkgdesc="Decky Loader (under FEX, namespaced binfmt) + Pocknix Control + default CSS Loader theme"
+pkgrel=65
+pkgdesc="Decky Loader (arm64 nativo) + Pocknix Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
 license=('GPL2')
 depends=('fex-emu' 'fex-rootfs')
-_loaderver=v3.2.10
+_loaderver=v3.3.1
 source=('pocknix-decky-run' 'pocknix-decky-sync' 'pocknix-decky-killall' 'pocknix-decky-sync.service'
         'pocknix-decky-loader.service' 'pocknix-decky-theme-eclipse' 'pocknix-decky-theme-eclipse.service'
         'css_translations.json' 'PluginLoader.json'
         'pocknix-decky-update' 'pocknix-decky-update.service' 'pocknix-decky-update.timer'
-        "PluginLoader-${_loaderver}::https://github.com/SteamDeckHomebrew/decky-loader/releases/download/${_loaderver}/PluginLoader")
+        "PluginLoader-arm64-${_loaderver}::https://github.com/SteamDeckHomebrew/decky-loader/releases/download/${_loaderver}/PluginLoader-arm64")
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
             'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'c2cf316a53e1c1d318c6dda8821c827e5db275922987f9097956d7a1576e8258')
+            '6320bcf990aacc1c7a8aff67e17c98ece66601d1a7cc3d21d4259c7273adb2bb')
 
 package() {
-  install -Dm755 "${srcdir}/PluginLoader-${_loaderver}" "${pkgdir}/usr/share/decky-loader/PluginLoader"
+  install -Dm755 "${srcdir}/PluginLoader-arm64-${_loaderver}" "${pkgdir}/usr/share/decky-loader/PluginLoader"
   printf '%s\n' "${_loaderver}" > "${srcdir}/loader.version"
   install -Dm644 "${srcdir}/loader.version"          "${pkgdir}/usr/share/decky-loader/.loader.version"
 

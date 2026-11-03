@@ -13,8 +13,18 @@ loader_src=/usr/share/decky-loader/PluginLoader
 loader_version_src=/usr/share/decky-loader/.loader.version
 src=/usr/share/decky-plugins
 
+# ¿$1 es un ELF aarch64? (e_machine 0xB7). Hasta pkgrel 64 el loader era x86_64 bajo FEX.
+loader_is_arm64() {
+    local m
+    [[ -f "$1" ]] || return 1
+    m=$(od -An -tx1 -j18 -N1 "$1" 2>/dev/null | tr -d ' \n')
+    [[ "$m" == "b7" ]]
+}
+
 loader_needs_seed() {
     [[ ! -x "${homebrew}/services/PluginLoader" ]] && return 0
+    # loader x86_64 (FEX) -> se sustituye una vez por el arm64 nativo del paquete
+    loader_is_arm64 "${homebrew}/services/PluginLoader" || return 0
     [[ -f "${loader_version_src}" ]] || return 1
     [[ -f "${homebrew}/services/.loader.version" ]] || return 0
 
