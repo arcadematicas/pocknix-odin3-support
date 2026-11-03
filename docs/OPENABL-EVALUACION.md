@@ -86,6 +86,13 @@ Plan mínimo si se decide probar:
 4. Probar: arranque Linux interna, SD, USB, Android, y “Uninstall CFW”.
 5. Solo si todo va: plantearlo como opción de la imagen (flag en el instalador).
 
+## Nota final (3/11/2026)
+
+El ABL que ya usamos (el de AYN/ROCKNIX) **también permite arranque dual y más cosas**, así que
+OpenABL no aporta ninguna capacidad que nos falte hoy. Revisados los 4 repos del colectivo
+(`OpenABL`, `linux` mainline, instalador Android, `regmsg-binaries`), **no hay paquetes ni
+utilidades aprovechables** para CalvOS. Se deja documentado solo como referencia futura.
+
 ## Otros repos del colectivo
 
 - `OpenHandheldCollective/linux`: árbol **mainline** (7.4-rc), sin parches de dispositivo.
