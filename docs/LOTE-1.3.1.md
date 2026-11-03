@@ -15,6 +15,8 @@ Notas:
 - El kernel 29 se descartó: se empaquetó con el dtb de pruebas (puerto SWR 5). El 30 es el bueno.
 - `pocknix-decky` mantiene las dependencias `fex-emu`/`fex-rootfs` aunque el loader ya no las use
   (FEX sigue haciendo falta para Steam; quitarlas del paquete no ahorra nada y evita sorpresas).
+- `deckstation-arm` lleva un marcador `nodeps`: es un paquete de ficheros y resolver su runtime
+  (wproton-arm, python-pygame…) en el chroot solo ralentiza; las dependencias siguen en el .PKGINFO.
 
 ## Validación en la Odin (en este orden)
 
