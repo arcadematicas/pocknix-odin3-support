@@ -57,6 +57,9 @@ pgrep -af PluginLoader | head
 
 ```bash
 cd ~/pocknix-odin3-project/pocknix-os
+# OJO: sin POCKNIX_STAGE_CHECK_SOCS el stage-check recorre kernel/common (no es un SoC) y
+# los SoC sin arbol publicado (sm8250/sm8550) y falla buscando sus *.db.
+export POCKNIX_STAGE_CHECK_SOCS="sm8750"
 make stage PKG="linux-pocknix-sm8750 pocknix-bsp-sm8750"     # repo soc
 make stage-check
 make publish
@@ -64,3 +67,6 @@ make stage-shared PKG="pocknix-decky deckstation-arm"        # repo shared
 make stage-check-shared
 make publish-shared
 ```
+
+> El `rclone` del portátil necesita el remoto `[r2]`. Se copió del sobremesa el 3/11
+> (`~/.config/rclone/rclone.conf`); si algún día falta, `rclone listremotes` debe mostrar `r2:`.
