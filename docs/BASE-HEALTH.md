@@ -79,6 +79,7 @@ echo 28021m | sudo -S -p '' env DEVICE=sm8750 make sd-image
 
 ## Estado actual (2/11/2026)
 
-- Snapshot **20260826.2**, 68 días → toca planificar re-corte (objetivo: mediados de noviembre, 1.4).
+- Snapshot **20260826.2**, **69 días** (3/11) → re-corte planificado: ver `docs/PLAN-CalvOS-1.4.md`
+  (ventana 10–21 de noviembre). 16 CVEs abiertos, ninguno con parche (2 `High`: libxml2, pam).
 - 16 incidencias abiertas nos afectan; **ninguna con parche publicado**. Las dos `High`:
   `libxml2` (AVG-2898, 4 CVEs) y `pam` (AVG-2901).
