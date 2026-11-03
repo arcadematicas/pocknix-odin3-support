@@ -21,6 +21,7 @@
 | OpenROM 3.9.5 (`deckstation-arm` 18) | hecho, instalado a mano en la Odin | pendiente validar GUI |
 | Parche Turnip ir3 (`ir3_array_to_ssa`: seguir cadenas de phi) | **pendiente**: nuestro Mesa es `26.3.0-devel aa35464` y **no lo trae** | ver abajo; un fichero |
 | Micrófono interno | **no entra** | sigue abierto; requiere instrumentación kernel/SoundWire |
+| Kernel: fixes de resume de la GPU (a6xx/a8xx) | **añadidos** (`2124`, `2125`), pendientes de compilar | uso-después-de-liberar de OPP + retornos de `pm_runtime_resume_and_get` sin comprobar; afectan a suspender/reanudar en la Odin |
 
 ### Parche Turnip pendiente
 
