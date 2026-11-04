@@ -15,6 +15,37 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 3 / 4 de noviembre 2026 — LED de carga, Decky arm64 y lote 1.3.1
+
+### ✅ LED de carga (kernel 30 + BSP 43)
+- Nodo `multi-led` en `&pm8550_pwm` (rojo canal 1, verde canal 2; el 3 es del ventilador) y
+  servicio `odin3-charge-led`: rojo cargando, verde al 100 %, apagado el resto.
+- Validado en hardware. El kernel no trae el trigger de armada, así que lo gobierna el servicio.
+
+### ✅ Decky arm64 nativo (`pocknix-decky` 65)
+- `PluginLoader-arm64` v3.3.1 en vez del x86_64 bajo FEX: arranque directo, sin `unshare`/binfmt,
+  y el autoactualizador ya descarga el asset arm64. `sync` migra un loader x86 la primera vez.
+- Validado en consola: servicios activos, sin procesos FEX y QAM funcionando.
+
+### ✅ OpenROM 3.9.5 (`deckstation-arm` 18)
+- El Updater descarga `OpenROM.AppImage` + `OpenROM-Core` zip (el zip arm64 ya no existe).
+  Validado en la Odin (GUI y conversión).
+
+### 🚀 Lote 1.3.1 publicado (4/11)
+- `linux-pocknix-sm8750 7.2.12-30`, `pocknix-bsp-sm8750 0.2.0-43`, `pocknix-decky 0.1.0-65` y
+  `deckstation-arm 1.0.0-18` en R2, con las DBs verificadas.
+
+### ✅ Kernel 31 — resume de GPU (compilando)
+- Backports `2124`/`2125` de drm-msm: se liberaba la OPP antes de usarla (use-after-free) y no se
+  comprobaban los `pm_runtime_resume_and_get` al reanudar la GPU.
+
+### ⚠️ Abierto
+- **Micrófono interno**: sigue a ceros; el siguiente paso es instrumentación kernel/SoundWire.
+- **ACD de la GPU**: Holodor reporta que los OPP con `qcom,opp-acd-level` rinden la mitad. Nuestro
+  dtb los lleva; pendiente de probar `msm.disable_acd=1` y medir.
+- **Audio HDMI/DP**: desbloqueado (tplg de armada con `DISPLAY_PORT_RX_0` + `dp-dai-link` de
+  Nova-Deck); pendiente de montar y probar con dock.
+
 ## 📅 31 de octubre / 1 de noviembre 2026 — suspensión resuelta y build 0.4
 
 ### ✅ GMU al resumir (kernel 28)

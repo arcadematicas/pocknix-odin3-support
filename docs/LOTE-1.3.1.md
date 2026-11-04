@@ -1,4 +1,4 @@
-# Lote CalvOS 1.3.1 (borrador) — pendiente de validar en consola
+# Lote CalvOS 1.3.1 — **PUBLICADO en R2 el 4/11/2026**
 
 > Paquetes construidos el 3/11/2026. **No publicar hasta validarlos en la Odin.**
 
