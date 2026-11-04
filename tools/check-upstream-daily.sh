@@ -118,6 +118,25 @@ PY
 
 NOVADECK_LINE="$(novadeck_line)"
 
+# --- Lepton: fork de Waydroid de Valve (Deckard/Steam Frame) -------------------------
+# Solo hay publicado el "pegamento" (lepton-compat). Vigilamos el repo de Deckard por si
+# aparecen mas paquetes lepton-* o la imagen de Android. Ver docs/LEPTON-EVALUACION.md.
+lepton_line() {
+  timeout 70 bash -c '
+    html=$(curl -fsSL -m 50 -H "User-Agent: pocknix-upstream-check" \
+      "https://holo-packages.steamos.cloud/archlinux-deckard-hotfixes/" 2>/dev/null) || {
+      echo "LEPTON: sin datos (red)"; exit 0; }
+    pkgs=$(printf "%s" "$html" | grep -oE "lepton[^\"<> ]*\.pkg\.tar\.zst" | sort -u)
+    if [ -z "$pkgs" ]; then echo "LEPTON: sin paquetes publicados"; exit 0; fi
+    n=$(printf "%s\n" "$pkgs" | wc -l | tr -d " ")
+    compat=$(printf "%s\n" "$pkgs" | grep -m1 "lepton-compat-[0-9]" | sed -E "s/^lepton-compat-([0-9.]+)-[0-9]+-aarch64.*/\1/")
+    others=$(printf "%s\n" "$pkgs" | grep -v "lepton-compat" | head -5 | tr "\n" " ")
+    echo "LEPTON: paquetes=${n} | compat=${compat:-?} | otros=${others:-ninguno}"
+  '
+}
+
+LEPTON_LINE="$(lepton_line)"
+
 MAKO_LINE="$(mako_line)"
 
 RAW="$(mktemp)"
@@ -125,7 +144,7 @@ RAW="$(mktemp)"
 
 # Huella: solo las lineas que implican una decision (versiones marcadas, parches que
 # faltan, resumen). Asi "novedad" = algo que merece mirarse, no ruido de commits.
-fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; printf '%s\n' "${HOLODOR_LINE}"; printf '%s\n' "${NOVADECK_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
+fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; printf '%s\n' "${HOLODOR_LINE}"; printf '%s\n' "${NOVADECK_LINE}"; printf '%s\n' "${LEPTON_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
 
 day="$(date +%F)"
 if [ -f "${OUTDIR}/last-fingerprint.txt" ]; then
@@ -154,6 +173,10 @@ fi
   echo "## Nova-Deck (SteamOS para Snapdragon; referencia de DTS/parches)"
   printf '%s\n' "${NOVADECK_LINE}"
   echo "  (ver docs/NOVA-DECK-HALLAZGOS.md: audio DP, display, GPU)"
+  echo
+  echo "## Lepton (fork de Waydroid de Valve; buscar paquetes nuevos)"
+  printf '%s\n' "${LEPTON_LINE}"
+  echo "  (ver docs/LEPTON-EVALUACION.md: solo lepton-compat publico)"
   echo
   echo "## Informe completo"
   cat "${RAW}"
