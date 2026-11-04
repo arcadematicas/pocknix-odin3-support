@@ -35,9 +35,13 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 - `linux-pocknix-sm8750 7.2.12-30`, `pocknix-bsp-sm8750 0.2.0-43`, `pocknix-decky 0.1.0-65` y
   `deckstation-arm 1.0.0-18` en R2, con las DBs verificadas.
 
-### ✅ Kernel 31 — resume de GPU (compilando)
+### ✅ Kernel 31 — resume de GPU (publicado)
 - Backports `2124`/`2125` de drm-msm: se liberaba la OPP antes de usarla (use-after-free) y no se
   comprobaban los `pm_runtime_resume_and_get` al reanudar la GPU.
+- Validado en la Odin: 3 ciclos de suspender/reanudar sin `a6xx_gmu_resume`, `GMU OOB` ni
+  `44050000 preemption`. Publicado en R2 (4/11).
+- Medida la GPU con `clpeak`: **3,34 TFLOPS a 1100 MHz** (teórico 3,38) y 2,00 a 660 → el bug del
+  ACD que reporta Holodor **no nos afecta**.
 
 ### ⚠️ Abierto
 - **Micrófono interno**: sigue a ceros; el siguiente paso es instrumentación kernel/SoundWire.
