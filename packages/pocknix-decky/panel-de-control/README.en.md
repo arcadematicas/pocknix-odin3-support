@@ -32,9 +32,9 @@ German, Brazilian Portuguese and French.
 
 The videos are in Spanish, but YouTube's auto-translated subtitles work well.
 
-| [![Panel de Control in depth](https://img.youtube.com/vi/sDpXFTxG7NQ/hqdefault.jpg)](https://youtu.be/sDpXFTxG7NQ) | [![How to install themes](https://img.youtube.com/vi/aENDY4BFcRE/hqdefault.jpg)](https://youtu.be/aENDY4BFcRE) | [![Panel on ARM with Armada](https://img.youtube.com/vi/1BHufGK6nbo/hqdefault.jpg)](https://youtu.be/1BHufGK6nbo) |
-|:---:|:---:|:---:|
-| **The plugin in depth** | **How to install themes** | **Panel on ARM with Armada** |
+| [![Panel de Control in depth](https://img.youtube.com/vi/sDpXFTxG7NQ/hqdefault.jpg)](https://youtu.be/sDpXFTxG7NQ) | [![How to install themes](https://img.youtube.com/vi/aENDY4BFcRE/hqdefault.jpg)](https://youtu.be/aENDY4BFcRE) | [![Panel on ARM with Armada](https://img.youtube.com/vi/1BHufGK6nbo/hqdefault.jpg)](https://youtu.be/1BHufGK6nbo) | [![TV, music and backgrounds with Ambient](https://img.youtube.com/vi/tSKquRbJgeg/hqdefault.jpg)](https://youtu.be/tSKquRbJgeg) |
+|:---:|:---:|:---:|:---:|
+| **The plugin in depth** | **How to install themes** | **Panel on ARM with Armada** | **TV, music and backgrounds** |
 
 ## What it does
 
@@ -64,6 +64,9 @@ FSR4, HDR, scaling and more, but only what your Proton version supports.
 🧹 **Cleanup.** See how much space your games' Shader Cache and prefixes take up and get it back in
 a moment.
 
+🌄 **Ambient.** Your own Home backgrounds and a player for music, radio, YouTube, Twitch and TV
+that keeps going while you play. More on it below.
+
 ✨ **Themes.** Change how Steam looks from top to bottom with themes you install and update right
 from Panel. Themes in early access show an Early label and install from their zip.
 
@@ -72,6 +75,19 @@ in beta.
 
 🧩 **Your way.** Reorder and hide tabs, build your own views and pick an accent color. Everything
 works with the controller, and updates show up on their own in the quick access menu.
+
+## 📺 Ambient
+
+Put your photos, your videos or your games' art behind Home, and let a game's soundtrack play or
+its trailer show when you land on it.
+
+It's also a player for everything: your music, radio from around the world on a map, YouTube,
+Twitch or TV channels from M3U lists. Queue it up, pick repeat or shuffle and take it into your game
+in a mini player you control with the gamepad. And instead of typing links with the D-pad, scan a
+QR code with your phone and send them from there.
+
+It starts off, so Steam stays as it is until you turn it on. The
+[video](https://youtu.be/tSKquRbJgeg) shows it in action.
 
 ## 📱 ARM too
 
@@ -99,8 +115,8 @@ ROG Xbox Ally X, Legion Go, Legion Go S, Legion Go 2 and MSI Claw 8 AI+**, and o
 AYN Odin 3, AYN Odin 2 Portal, Retroid Pocket 5, Retroid Pocket Nova and Anbernic RG Cube**.
 
 Many more have received support too: OneXFly Apex, GPD Win 5, GPD Win Mini, AOKZOE A1X, MSI Claw A8,
-OneXPlayer X2 Mini Pro and quite a few others, even desktop PCs and the Steam Machine. If your
-device isn't on the list, Panel looks at what it can control on it and shows you that.
+OneXPlayer X2 Mini Pro and quite a few others, even desktop PCs, the Steam Machine and the PS5 running Linux. If
+your device isn't on the list, Panel looks at what it can control on it and shows you that.
 
 ## 📦 Installation
 

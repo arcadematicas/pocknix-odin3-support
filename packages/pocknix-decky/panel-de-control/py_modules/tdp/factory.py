@@ -13,6 +13,7 @@ from device_quirks import (
     legion_go_s_83n6_boost_floors_menu_only,
     legion_go_s_83n6_rail_floors,
     lenovo_legion_firmware_attr_quirks,
+    xbox_ally_x_20_legacy_rail_floors,
 )
 from tdp.alib import AlibBackend
 from tdp.amd_dptc import AmdDptcBackend
@@ -189,6 +190,7 @@ def _candidates(device, fallback, root, ryzenadj, os_id=None, desktop_cpu=False,
                 "ownership-asus-nb-wmi.lock",
             ),
             write_max_ac=charger_write_max(device),
+            rail_floors=xbox_ally_x_20_legacy_rail_floors(device, root),
         )
 
     def dptc():
@@ -245,6 +247,10 @@ def _candidates(device, fallback, root, ryzenadj, os_id=None, desktop_cpu=False,
         # binary is therefore not a capability. Keep future firmware-attribute
         # paths discoverable, but never fall into write-only generic AMD methods.
         return [asus, lenovo, msi]
+    if key == "playstation_5":
+        # ryzenadj answers "unsupported model 72" on the PS5 APU and the console has no
+        # firmware power attributes: the APU power budget belongs to its firmware.
+        return []
     if key.startswith("steam_deck"):
         return [deck]
     if os_id != "anatase":

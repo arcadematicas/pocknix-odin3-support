@@ -4,6 +4,10 @@ Plugin upstream: https://github.com/Hooandee/panel-de-control
 
 ## Versión vendida
 
+- **v0.82.1** (release `panel-de-control-v0.82.1`, publicada el 2026-11-03), actualizada el 4/11
+  desde `Panel.de.Control.zip`. Incluye la sección Ambiente (fondos/música/radio), cola de
+  reproducción, enlaces por QR, arreglo de caída con Steam beta, cierre de juegos colgados y
+  que los temas recuerden sus ajustes. El `hdr=True` de `ayn_odin3` ya está upstream.
 - **v0.70.1** (release `panel-de-control-v0.70.1`, publicada el 2026-10-14),
   descargada del asset `Panel.de.Control.zip`.
 - Versión anterior en la imagen: **v0.66.0** (copia del 2026-10-12).
