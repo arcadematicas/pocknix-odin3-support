@@ -19,7 +19,20 @@ una fuente directa de bugs y arreglos.
   a **95 °C** con cooling-map al devfreq de la GPU (`gpuss0/gpuss1`). Sin eso, a plena velocidad el
   issue reporta 101 °C en 2 min de carga (17 W de sistema); con el half-rate el problema quedaba tapado.
 
-### Plan de prueba (mañana, junto al kernel nuevo)
+### Medido en NUESTRA Odin (4/11/2026, kernel 7.2.12-31): **no tenemos el bug**
+
+`clpeak --vulkan --single-precision-compute` con la GPU pinchada por devfreq:
+
+| OPP | Medido (float/float4) | Teórico (1536 ALU × 2 × f) |
+|---|---|---|
+| 1100 MHz | **3,34 / 3,36 TFLOPS** | 3,38 |
+| 660 MHz | 2,00 / 2,01 TFLOPS | 2,03 |
+
+Escala lineal y a plena velocidad **con ACD activado**. Conclusión: el half-clock de Holodor no
+aplica a nuestra unidad (su tabla ACD o su speed bin serán distintos). **No hace falta**
+`msm.disable_acd=1` ni el parche 2126. Se deja como referencia por si otra unidad lo reproduce.
+
+### Plan de prueba (solo si se reproduce en otra unidad)
 
 1. Añadir `msm.disable_acd=1` a `kernel-cmdline` (paquete bsp), `pocknix-build-bootimg` y reiniciar.
    Es reversible y **no** requiere recompilar kernel.
