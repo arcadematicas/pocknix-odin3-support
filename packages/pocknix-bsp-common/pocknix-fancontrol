@@ -3,6 +3,23 @@
 # without this it never spins and the device cooks. /var/lib/pocknix/fan-mode is re-read every
 # tick, so switching curves is a bare file write with no service restart. Curves and the quiet
 # default are ROCKNIX's (their system.cfg ships cooling.profile=quiet).
+#
+# Per 3 s tick the fan is driven with smoothing, so it no longer jumps between curve steps:
+#  * ALL cpu*/gpu* zones are read in one pass: TAVG is their mean (what the curve used to use)
+#    and TMAX their maximum. TMAX is only consumed by the safety fast-path.
+#  * EMA = EMA + (TAVG - EMA)/4, integer arithmetic, is the smoothed mean the curve is
+#    evaluated against; EMA starts at the first TAVG. A one-tick spike moves it by a quarter.
+#  * Hysteresis of 2000 mC around the levels: the curve is evaluated at EMA-2000 to allow a
+#    faster level and at EMA+2000 to allow a slower one. Net effect: stepping up needs the EMA
+#    a full 2000 mC above the next step's threshold, stepping down needs it 2000 mC below the
+#    current step's threshold, and in between the current level is held.
+#  * Ramp: the PWM actually written walks toward the target level's speed by at most +40 per
+#    tick going up and -12 per tick going down (0 -> 255 is ~7 ticks = ~21 s; the slow descent
+#    is what stops the fan hunting around a threshold).
+#  * Safety fast-path: TMAX >= 90000 mC (90 C) forces PWM 255 at once, no ramp and no
+#    hysteresis. "off" is the one exception: it keeps PWM at 0 immediately, and not even this
+#    path overrides it (same promise as before).
+# pwm1 is only written when the value actually changes.
 set -u
 
 MODE_FILE=/var/lib/pocknix/fan-mode
@@ -40,7 +57,7 @@ effective_mode() {
 }
 
 curve_temps() {
-  case "$(effective_mode)" in
+  case "${1:-$(effective_mode)}" in
     performance) echo "80000 75000 70000 65000 60000 55000 50000 0" ;;
     moderate)    echo "85000 80000 75000 70000 65000 60000 55000 0" ;;
     off)         echo "1000000 1000000 1000000 1000000 1000000 1000000 1000000 1000000" ;;  # unreachable -> SPEED stays 0
@@ -48,22 +65,71 @@ curve_temps() {
   esac
 }
 
+# Level index (1 = fastest ... n = slowest) for a millidegC temperature, using ${TEMPS}.
+# Nothing above the lowest threshold (all of them, in "off") yields the slowest level.
+level_for() {
+  _t="$1"; _i=1; _n=0
+  for _th in ${TEMPS}; do
+    _n=$((_n + 1))
+    if [ "${_t}" -gt "${_th}" ]; then printf '%s\n' "${_i}"; return 0; fi
+    _i=$((_i + 1))
+  done
+  printf '%s\n' "${_n}"
+}
+
 # pwm1_enable: 1 = manual control, 0 = back to the hardware's automatic mode.
 [ -e "${FAN_EN}" ] && echo 1 > "${FAN_EN}" 2>/dev/null
 trap '[ -e "${FAN_EN}" ] && echo 0 > "${FAN_EN}" 2>/dev/null; exit 0' INT TERM
 
-LAST=""
+# Start the ramp where the hardware already is, so the first tick does not yank the fan.
+CURR=0
+if HW="$(cat "${FAN_PWM}" 2>/dev/null)" && [ -n "${HW}" ]; then
+  case "${HW}" in
+    *[!0-9]*) ;;
+    *) CURR="${HW}" ;;
+  esac
+fi
+[ "${CURR}" -gt 255 ] && CURR=255
+
+LAST=""; EMA=""; LEVEL=""
 while :; do
-  TEMPS="$(curve_temps)"
-  TEMP="$(awk '{s+=$1;n++} END{printf "%d", (n? s/n : 0)}' ${SENSORS} 2>/dev/null)"
-  i=1; SPEED=0
-  for th in ${TEMPS}; do
-    if [ "${TEMP}" -gt "${th}" ]; then SPEED="$(echo ${SPEEDS} | cut -d' ' -f${i})"; break; fi
-    i=$((i+1))
-  done
-  if [ "${SPEED}" != "${LAST}" ]; then
-    echo "${SPEED}" > "${FAN_PWM}" 2>/dev/null
-    LAST="${SPEED}"
+  MODE="$(effective_mode)"
+  TEMPS="$(curve_temps "${MODE}")"
+  TSTAT="$(awk '{s+=$1; if (n==0 || $1>m) m=$1; n++}
+                END {if (n) printf "%d %d", s/n, m; else printf "0 0"}' ${SENSORS} 2>/dev/null)"
+  case "${TSTAT}" in
+    *" "*) TAVG="${TSTAT%% *}"; TMAX="${TSTAT##* }" ;;
+    *)     TAVG=0; TMAX=0 ;;
+  esac
+
+  # EMA of the mean; seeded on the very first tick.
+  if [ -z "${EMA}" ]; then EMA="${TAVG}"; else EMA=$((EMA + (TAVG - EMA) / 4)); fi
+
+  # Hysteresis: hold the level unless the EMA clears the dead band (see header).
+  if [ -z "${LEVEL}" ]; then
+    LEVEL="$(level_for "${EMA}")"
+  else
+    LUP="$(level_for $((EMA - 2000)))"
+    if [ "${LUP}" -lt "${LEVEL}" ]; then LEVEL="${LUP}"; fi
+    LDOWN="$(level_for $((EMA + 2000)))"
+    if [ "${LDOWN}" -gt "${LEVEL}" ]; then LEVEL="${LDOWN}"; fi
+  fi
+  TARGET="$(echo ${SPEEDS} | cut -d' ' -f"${LEVEL}")"
+
+  # Dangerous heat: full PWM now, bypassing ramp and hysteresis. "off" always wins with 0.
+  if [ "${MODE}" = "off" ]; then
+    CURR=0
+  elif [ "${TMAX}" -ge 90000 ]; then
+    CURR=255
+  elif [ "${TARGET}" -gt "${CURR}" ]; then
+    CURR=$((CURR + 40)); [ "${CURR}" -gt "${TARGET}" ] && CURR="${TARGET}"
+  elif [ "${TARGET}" -lt "${CURR}" ]; then
+    CURR=$((CURR - 12)); [ "${CURR}" -lt "${TARGET}" ] && CURR="${TARGET}"
+  fi
+
+  if [ "${CURR}" != "${LAST}" ]; then
+    echo "${CURR}" > "${FAN_PWM}" 2>/dev/null
+    LAST="${CURR}"
   fi
   sleep 3
 done

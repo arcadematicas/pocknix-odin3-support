@@ -106,3 +106,22 @@ Es lo que hace que el machine driver cree el control **`DP0 Jack`** que el UCM n
 
 Plan: cambiar la tplg del BSP por la de armada, añadir el dai-link, añadir la sección HDMI del UCM
 (la plantilla de este documento) y probar con el dock. Detalles en `docs/NOVA-DECK-HALLAZGOS.md`.
+
+## Implementado (4/11/2026) — pendiente de probar en hardware
+
+- **tplg**: `SM8750-AYN-tplg.bin` de armada (24.516 B, sha256 `821d52b7…f5f2de`) en
+  `devices/sm8750/firmware/qcom/sm8750/` → paquete `pocknix-firmware-sm8750 0.1.0-4`
+  → se instala en `/usr/lib/firmware/updates/` (prioridad sobre el de serie).
+- **DTS**: nodo `dp-dai-link` ("DisplayPort Playback") en `cq8725s-ayn-common.dtsi`
+  → `linux-pocknix-sm8750 7.2.12-32`. Verificado que el DTB y el KERNEL contienen la cadena.
+- **UCM**: `SectionDevice."HDMI"` (`hw:${CardId},3`, `DP0 Jack`, `JackHWMute Speaker`)
+  → `pocknix-bsp-sm8750 0.2.0-44`.
+
+### Prueba con dock (para davidusky)
+
+1. `aplay -l` → debe aparecer `device 3: MultiMedia4 Playback`.
+2. `amixer -c 0 cget name="DP0 Jack"` → el control debe existir.
+3. Con el dock/HDMI enchufado: `speaker-test -D hw:0,3 -c 2 -t sine`.
+4. Comprobar que altavoz y auriculares siguen funcionando (la tplg es la misma para todo).
+5. Si no suena: adjuntar `dmesg | grep -iE "q6|adsp|dp|hdmi"`, `aplay -l`, `amixer -c 0 contents`
+   y `pactl list sinks short`.
