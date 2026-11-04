@@ -1,0 +1,53 @@
+#!/bin/sh
+# vhci_hcd -EBUSYs the whole system suspend while a virtual USB device is attached, and
+# InputPlumber's `deck` target attaches over USB/IP. Only then: the desktop `xb360` target is
+# plain uinput, and stopping there destroys the pad's evdev node for nothing (ES-DE and friends
+# rescan on focus change only, so they come back pad-less).
+STATUS=/sys/devices/platform/vhci_hcd.0/status
+DETACH=/sys/devices/platform/vhci_hcd.0/detach
+FLAG=/run/pocknix-inputplumber-resume
+
+# sockfd is nonzero hex on an attached port; the hex test also skips the header row.
+vhci_ports() {
+  [ -r "${STATUS}" ] || return 0
+  awk '$6 ~ /^[0-9a-f]+$/ && $6 != "000000" {print $2}' "${STATUS}" 2>/dev/null
+}
+vhci_attached() { [ -n "$(vhci_ports)" ]; }
+
+before="$(vhci_ports | tr '\n' ' ')"
+if vhci_attached && systemctl is-active --quiet inputplumber; then
+  : > "${FLAG}"
+  systemctl stop inputplumber
+fi
+
+# `systemctl stop` returns before the kernel tears the port down; suspend still aborts if we
+# leave now.
+i=0
+while vhci_attached; do
+  [ "${i}" -ge 30 ] && break
+  i=$((i + 1))
+  sleep 0.1
+done
+
+# Fallback: after a resume, stopping InputPlumber sometimes leaves the usbip port attached and
+# the suspend aborts with EBUSY. Force the detach through vhci's sysfs; the kernel parses the
+# port as DECIMAL while the status file prints it in hex.
+forced=""
+if vhci_attached && [ -w "${DETACH}" ]; then
+  for p in $(vhci_ports); do
+    d=$(printf '%d' "0x${p}" 2>/dev/null) || continue
+    [ -n "${d}" ] || continue
+    echo "${d}" > "${DETACH}" 2>/dev/null && forced="${forced}${p} "
+  done
+  i=0
+  while vhci_attached; do
+    [ "${i}" -ge 20 ] && break
+    i=$((i + 1))
+    sleep 0.1
+  done
+fi
+
+# Breadcrumb in the journal so the next failed suspend is diagnosable.
+echo "pocknix-sleep: vhci pre: before='${before}' forced='${forced}' left='$(vhci_ports | tr '\n' ' ')'" \
+  > /dev/kmsg 2>/dev/null || true
+exit 0

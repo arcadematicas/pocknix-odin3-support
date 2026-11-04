@@ -1,0 +1,5 @@
+#!/bin/sh
+# Republica el alias mDNS cuando cambia la dirección.
+case "$2" in
+  up|dhcp4-change|dhcp6-change) systemctl restart calvos-mdns-alias.service 2>/dev/null || true ;;
+esac

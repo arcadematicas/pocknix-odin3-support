@@ -1,0 +1,3 @@
+## The ALARM base ships the stock /etc/sudoers with the %wheel line commented out, so
+## deck (in wheel since image creation) had no sudo at all without this.
+%wheel ALL=(ALL:ALL) ALL

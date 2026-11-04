@@ -1,6 +1,6 @@
 {
-  "name": "Pocknix Control",
-  "author": "Pocknix",
+  "name": "CalvOS Control",
+  "author": "CalvOS",
   "flags": ["root"],
   "api_version": 1
 }

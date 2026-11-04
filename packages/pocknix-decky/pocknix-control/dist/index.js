@@ -1,4 +1,4 @@
-const manifest = {"name":"Pocknix Control"};
+const manifest = {"name":"CalvOS Control"};
 const API_VERSION = 2;
 const internalAPIConnection = window.__DECKY_SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_deckyLoaderAPIInit;
 if (!internalAPIConnection) {
@@ -1068,7 +1068,7 @@ function FileSharing() {
         if (!share.installed)
             return "Samba is not installed (7.4 MB download)";
         if (share.on)
-            return "On - open smb://pocknix.local and connect as Guest";
+            return "On - open smb://calvos.local and connect as Guest";
         return "Off - your home folder is not shared";
     };
     return (SP_JSX.jsxs(DFL.PanelSection, { title: "FILE SHARING", children: [SP_JSX.jsx(DFL.Field, { label: "Network share", description: summary() }), share && !share.installed ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: busy, onClick: () => run(installSamba), children: busy ? "Installing…" : "Install Samba" }) })) : (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Share my home folder", description: "Drag files straight onto the device from another computer", checked: !!share?.on, disabled: busy || !share?.installed, onChange: (on) => {
@@ -1523,7 +1523,7 @@ function Content() {
     }, [!!config]);
     useDebouncedSave({ config, field: "tweaks", snapshot: savedTweaksSnapshot, save: saveTweaks, setConfig, onError: load });
     if (!config)
-        return SP_JSX.jsx(DFL.PanelSection, { title: "Pocknix Control", children: SP_JSX.jsx(DFL.Field, { label: message }) });
+        return SP_JSX.jsx(DFL.PanelSection, { title: "CalvOS Control", children: SP_JSX.jsx(DFL.Field, { label: message }) });
     const tabContent = (content) => (SP_JSX.jsx("div", { className: "pocknix-control-tab-content", children: content }));
     const tabs = [
         { id: "Games", title: tabIcons.Games, content: tabContent(SP_JSX.jsx(Games, { config: config, setConfig: setConfig, reload: load })) },
@@ -1616,7 +1616,7 @@ function patchLibraryContextMenu() {
                     return ret;
                 if (children.some((child) => child?.key === "pocknix-settings"))
                     return ret;
-                children.push(SP_JSX.jsx(DFL.MenuItem, { onSelected: () => DFL.showModal(SP_JSX.jsx(GameSettingsModal, { appid: String(appid), name: String(overview?.display_name ?? "") })), children: "Pocknix Settings" }, "pocknix-settings"));
+                children.push(SP_JSX.jsx(DFL.MenuItem, { onSelected: () => DFL.showModal(SP_JSX.jsx(GameSettingsModal, { appid: String(appid), name: String(overview?.display_name ?? "") })), children: "CalvOS Settings" }, "pocknix-settings"));
             }
             catch (error) { }
             return ret;
@@ -1688,7 +1688,7 @@ function registerQamTab(content, icon) {
         const staticClasses = DFL?.staticClasses;
         hook.add({
             id: TAB_ID,
-            title: SP_JSX.jsx("div", { className: staticClasses?.Title, children: "Pocknix Control" }),
+            title: SP_JSX.jsx("div", { className: staticClasses?.Title, children: "CalvOS Control" }),
             content,
             icon,
             __pkcOwner: OWNER,
@@ -1762,7 +1762,7 @@ var index = definePlugin(() => {
     // de Decky como siempre.
     const stopQamWatchdog = startQamTabWatchdog(SP_JSX.jsx(Content, {}), tabIcon);
     return {
-        name: "Pocknix Control",
+        name: "CalvOS Control",
         content: SP_JSX.jsx(Content, {}),
         icon: tabIcon,
         alwaysRender: true,

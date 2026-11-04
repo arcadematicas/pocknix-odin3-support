@@ -1,7 +1,7 @@
 {
     "KPlugin": {
         "Id": "PocknixOS",
-        "Name": "Pocknix OS",
+        "Name": "CalvOS",
         "Authors": [{ "Name": "meodai" }],
         "License": "GPL-2.0-or-later"
     }

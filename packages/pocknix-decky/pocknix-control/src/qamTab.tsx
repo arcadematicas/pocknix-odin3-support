@@ -83,7 +83,7 @@ export function registerQamTab(
     const staticClasses = (DUI as any)?.staticClasses;
     hook.add({
       id: TAB_ID,
-      title: <div className={staticClasses?.Title}>Pocknix Control</div>,
+      title: <div className={staticClasses?.Title}>CalvOS Control</div>,
       content,
       icon,
       __pkcOwner: OWNER,

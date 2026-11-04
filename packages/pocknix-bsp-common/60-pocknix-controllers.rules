@@ -1,0 +1,22 @@
+# Controller uaccess for the deck session: Arch's game-devices-udev rules are not in the ALARM
+# repos and native ARM Steam ships none, so nothing grants them. deck is in `input` and can read
+# evdev already; the gap is /dev/hidraw* (root:root 0600), which Steam Input needs for the full
+# controller. Without uinput write, input works in the Steam UI but NOT in-game.
+KERNEL=="uinput", SUBSYSTEM=="misc", MODE="0660", GROUP="input", OPTIONS+="static_node=uinput"
+
+# 28de = Valve: Steam Controller, Steam Deck, and InputPlumber's 'deck' virtual target.
+KERNEL=="hidraw*", ATTRS{idVendor}=="28de", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="input", ATTRS{idVendor}=="28de", MODE="0660", TAG+="uaccess"
+
+# Sony (DualShock 3/4, DualSense)
+KERNEL=="hidraw*", ATTRS{idVendor}=="054c", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="input", ATTRS{idVendor}=="054c", MODE="0660", TAG+="uaccess"
+# Microsoft (Xbox)
+KERNEL=="hidraw*", ATTRS{idVendor}=="045e", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="input", ATTRS{idVendor}=="045e", MODE="0660", TAG+="uaccess"
+# Nintendo (Switch Pro / Joy-Con)
+KERNEL=="hidraw*", ATTRS{idVendor}=="057e", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="input", ATTRS{idVendor}=="057e", MODE="0660", TAG+="uaccess"
+# 8BitDo
+KERNEL=="hidraw*", ATTRS{idVendor}=="2dc8", MODE="0660", TAG+="uaccess"
+SUBSYSTEM=="input", ATTRS{idVendor}=="2dc8", MODE="0660", TAG+="uaccess"

@@ -79,7 +79,7 @@ export function FileSharing() {
     if (status) return status;
     if (!share) return "Checking…";
     if (!share.installed) return "Samba is not installed (7.4 MB download)";
-    if (share.on) return "On - open smb://pocknix.local and connect as Guest";
+    if (share.on) return "On - open smb://calvos.local and connect as Guest";
     return "Off - your home folder is not shared";
   };
 

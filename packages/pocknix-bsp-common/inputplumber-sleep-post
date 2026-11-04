@@ -1,0 +1,8 @@
+#!/bin/sh
+# Restart only if the pre hook is the one that stopped it.
+FLAG=/run/pocknix-inputplumber-resume
+if [ -e "${FLAG}" ]; then
+  rm -f "${FLAG}"
+  systemctl start inputplumber
+fi
+exit 0

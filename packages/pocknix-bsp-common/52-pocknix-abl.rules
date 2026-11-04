@@ -1,0 +1,9 @@
+// wheel may pkexec pocknix-update-abl without a prompt; skipping the password still
+// means a typed FLASH, since the program does its own confirming.
+polkit.addRule(function(action, subject) {
+    if (!subject.isInGroup("wheel")) { return; }
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/bin/pocknix-update-abl") {
+        return polkit.Result.YES;
+    }
+});

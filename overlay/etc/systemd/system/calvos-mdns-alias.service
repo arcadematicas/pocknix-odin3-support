@@ -1,0 +1,14 @@
+[Unit]
+Description=CalvOS mDNS alias (pocknix.local) for existing SMB/SSH shortcuts
+After=network-online.target avahi-daemon.service
+Wants=network-online.target avahi-daemon.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/calvos-mdns-alias
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

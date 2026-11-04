@@ -58,7 +58,7 @@ export function Content() {
   }, [!!config]);
   useDebouncedSave({ config, field: "tweaks", snapshot: savedTweaksSnapshot, save: saveTweaks, setConfig, onError: load });
 
-  if (!config) return <PanelSection title="Pocknix Control"><Field label={message} /></PanelSection>;
+  if (!config) return <PanelSection title="CalvOS Control"><Field label={message} /></PanelSection>;
 
   const tabContent = (content: ReactNode) => (
     <div className="pocknix-control-tab-content">{content}</div>

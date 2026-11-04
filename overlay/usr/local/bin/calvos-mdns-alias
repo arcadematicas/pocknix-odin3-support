@@ -1,0 +1,7 @@
+#!/bin/sh
+# Publica pocknix.local como alias mDNS del host actual: compatibilidad con
+# accesos SMB/SSH existentes tras renombrar el host a calvos.
+set -u
+ip=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") { print $(i+1); exit }}')
+[ -n "${ip:-}" ] || exit 1
+exec avahi-publish-address -R pocknix.local "$ip"

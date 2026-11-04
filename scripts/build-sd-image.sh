@@ -90,7 +90,7 @@ PARTUUID=${SD_ROOT_PARTUUID}  /.snapshots        btrfs  rw,noatime,compress=zstd
   PARTUUID=${SD_ROOT_PARTUUID}  /var/log           btrfs  rw,noatime,nodatacow,commit=5,subvol=@var-log       0 0
 PARTUUID=${SD_BOOT_PARTUUID}  /flash             vfat   rw,noatime,nofail                                0 2
 EOF
-  echo "pocknix" > "${root}/etc/hostname"
+  echo "calvos" > "${root}/etc/hostname"
   # ALARM ships no /etc/localtime; without the symlink, timezone changes in the UI have nothing
   # to land in and silently stay UTC.
   chroot "${root}" ln -sfn "/usr/share/zoneinfo/${SD_TIMEZONE:-UTC}" /etc/localtime

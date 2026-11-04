@@ -1,0 +1,10 @@
+#!/bin/sh
+for r in /sys/class/usb_role/*-role-switch/role; do
+  [ -f "$r" ] || continue
+  s="/run/pocknix/usb-role.$(basename "$(dirname "$r")")"
+  if [ -f "$s" ]; then
+    echo "$(cat "$s")" > "$r" 2>/dev/null || true
+    rm -f "$s"
+  fi
+done
+exit 0

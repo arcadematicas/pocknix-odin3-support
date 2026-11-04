@@ -4,7 +4,7 @@
 # reads as one surface instead of three unrelated screens).
 pkgname=pocknix-branding
 pkgver=0.1.0
-pkgrel=5
+pkgrel=6
 pkgdesc="Pocknix OS branding: plymouth boot theme, Plasma splash, wallpaper"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -37,8 +37,8 @@ package() {
   # Name/Description/ImageDir must point at OUR dir, and the field matches the wallpaper
   # so plymouth does not flash black before handing over.
   sed -i -e '/^Name\[[^]]*\]=/d' \
-         -e 's|^Name=.*|Name=Pocknix|' \
-         -e 's|^Description=.*|Description=Pocknix OS boot splash: the stock spinner with the Pocknix wordmark.|' \
+         -e 's|^Name=.*|Name=CalvOS|' \
+         -e 's|^Description=.*|Description=CalvOS boot splash: the stock spinner with the CalvOS wordmark.|' \
          -e "s|^ImageDir=.*|ImageDir=/usr/share/plymouth/themes/pocknix|" \
          -e 's|^BackgroundStartColor=.*|BackgroundStartColor=0x202126|' \
          -e 's|^BackgroundEndColor=.*|BackgroundEndColor=0x202126|' \

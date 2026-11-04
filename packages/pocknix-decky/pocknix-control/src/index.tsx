@@ -14,7 +14,7 @@ export default definePlugin(() => {
   const stopQamWatchdog = startQamTabWatchdog(<Content />, tabIcon);
 
   return {
-    name: "Pocknix Control",
+    name: "CalvOS Control",
     content: <Content />,
     icon: tabIcon,
     alwaysRender: true,

@@ -43,7 +43,7 @@ export function patchLibraryContextMenu(): () => void {
               showModal(<GameSettingsModal appid={String(appid)} name={String(overview?.display_name ?? "")} />)
             }
           >
-            Pocknix Settings
+            CalvOS Settings
           </MenuItem>,
         );
       } catch (error) {}

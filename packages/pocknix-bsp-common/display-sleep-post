@@ -1,0 +1,41 @@
+#!/bin/sh
+# Bring the internal panel back after resume.
+#
+# On the Odin 3 (SM8750) an s2idle resume can leave the panel backlight blanked: bl_power=4
+# (FB_BLANK_POWERDOWN) and actual_brightness=0, even though the DRM connector still reports
+# DPMS On. gamescope does not re-enable it when the sleep was requested outside Steam's own
+# flow, so the machine wakes with a black screen until something writes bl_power=0. Ask
+# gamescope to wake its internal screen first (Game Mode), then unblank the backlight, which
+# is the reliable fix in both Game Mode and on the desktop.
+set -u
+
+op="${2:-}"
+case "$op" in
+  suspend|hibernate|hybrid-sleep|suspend-then-hibernate) ;;
+  *) exit 0 ;;
+esac
+
+# 1) Game Mode: tell gamescope to wake its internal screen. gamescopectl talks to the session
+# compositor over its control socket, found through XDG_RUNTIME_DIR. Running it as root is
+# fine here (no PAM session, unlike runuser) and keeps the resume path fast.
+for dir in /run/user/*; do
+  [ -d "$dir" ] || continue
+  case "${dir##*/}" in *[!0-9]*) continue ;; esac
+  sock=
+  for s in "$dir"/gamescope-*; do
+    [ -S "$s" ] || continue
+    case "${s##*/}" in gamescope-[0-9]*) sock="${s##*/}"; break ;; esac
+  done
+  [ -n "$sock" ] || continue
+  timeout 3 env XDG_RUNTIME_DIR="$dir" GAMESCOPE_WAYLAND_DISPLAY="$sock" \
+    gamescopectl drm_sleep_internal_screen 0 >/dev/null 2>&1 || true
+done
+
+# 2) Unblank the panel. bl_power uses FB_BLANK_* (0 = unblank) and brightness keeps its
+# value, so this restores the previous level without having to guess it.
+for bl in /sys/class/backlight/*/bl_power; do
+  [ -w "$bl" ] || continue
+  echo 0 > "$bl" 2>/dev/null || true
+done
+
+exit 0
