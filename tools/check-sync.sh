@@ -91,6 +91,7 @@ cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pyga
   cmp_tree "${HERE}/packages/vboycolor-libretro" "${OS}/packages/shared/vboycolor-libretro"
   cmp_tree "${HERE}/packages/libretro-cores-pocknix" "${OS}/packages/shared/libretro-cores-pocknix"
   cmp_tree "${HERE}/packages/libretro-azahar"     "${OS}/packages/shared/libretro-azahar"
+  cmp_tree "${HERE}/packages/libretro-hakux"      "${OS}/packages/shared/libretro-hakux"
   cmp_tree "${HERE}/packages/libretro-bsnes-hd"   "${OS}/packages/shared/libretro-bsnes-hd"
 # Librerias + shims de los cores precompilados (ARMSX2/uae4arm los piden por
 # soname). Sin estas lineas, un cambio aqui podria quedarse SIN sincronizar y el

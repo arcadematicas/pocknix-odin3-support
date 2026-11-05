@@ -125,3 +125,19 @@ Plan: cambiar la tplg del BSP por la de armada, añadir el dai-link, añadir la 
 4. Comprobar que altavoz y auriculares siguen funcionando (la tplg es la misma para todo).
 5. Si no suena: adjuntar `dmesg | grep -iE "q6|adsp|dp|hdmi"`, `aplay -l`, `amixer -c 0 contents`
    y `pactl list sinks short`.
+
+## 5/11/2026 — la sección HDMI rompía TODO el UCM (retirada)
+
+Al instalar el lote en la Odin, **sin dock**, desapareció el audio: la tarjeta caía al perfil
+`off` (sin sink hardware; solo el sink virtual del EQ). Causa: `SectionDevice."HDMI"` del UCM
+(`JackControl "DP0 Jack"` es un control de **iface=CARD** y `PlaybackMixer "default:${CardId}"`);
+UCM2 no parseaba el verbo.
+
+Verificado que el **hardware DP sí está**: PCM `hw:0,3` (MultiMedia4), control CARD `DP0 Jack`
+(off sin dock) y mixer `DISPLAY_PORT_RX_0 Audio Mixer MultiMedia4`.
+
+- Sección retirada del paquete → `pocknix-bsp-sm8750 0.2.0-45`; audio restaurado (HiFi,
+  Speaker/Headphones).
+- Prueba con dock: `speaker-test -D hw:0,3 -c 2 -t sine` (ALSA directo).
+- **Pendiente**: sintaxis UCM2 correcta para un jack de iface=CARD (o exponerlo como mixer
+  en el machine driver) antes de reactivar el auto-routing HDMI.

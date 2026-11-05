@@ -1,0 +1,39 @@
+# libretro-hakux — hakuX-lr: emulador de Xbox clásica para RetroArch (aarch64 Linux).
+#
+# Fork de hakuX (Android) con backend libretro/Linux: FEXCore para traducir x86->ARM64,
+# kernel de Xbox reimplementado y traducción de la NV2A a Vulkan. NO necesita BIOS,
+# MCPX ROM ni imagen de HDD (crea su almacenamiento en el save dir de RetroArch:
+# hdd/ y cache/). Formatos: .iso (XISO) y .chd.
+#
+# Requisitos en runtime: Vulkan >= 1.2 (1.3 recomendado) y el driver de vídeo Vulkan
+# de RetroArch (la entrada de ES-DE pasa --vulkan). Sin savestates/rewind/run-ahead.
+#
+# Binario prebuilt del release oficial (GPLv3+); el fuente está en el repo upstream
+# (commit _commit). Se empaqueta como el resto de cores vendored (libretro-cores-pocknix).
+pkgname=libretro-hakux
+pkgver=0.19.1
+pkgrel=1
+pkgdesc="hakuX-lr libretro core: original Xbox emulation (aarch64, no BIOS, Vulkan)"
+arch=('aarch64')
+url="https://github.com/portare-ch/hakuX-lr"
+license=('GPL-3.0-or-later')  # + licencias de las dependencias embebidas en /usr/share/licenses/hakux
+# Dependencias de runtime (el .so está enlazado contra libz/libstdc++/libm/libgcc_s/libc
+# y carga libvulkan.so.1 con dlopen). El marcador ./nodeps evita que el chroot de
+# compilación intente resolverlas: es un paquete de ficheros, no compila nada.
+depends=('glibc' 'gcc-libs' 'zlib' 'vulkan-icd-loader')
+optdepends=('retroarch: frontend libretro')
+_commit=8e28a8fe4b21e1f16f2fbd9182b3bf3821b13635
+_asset="hakux-${pkgver}-aarch64.tar.gz"
+source=("${_asset}::https://github.com/portare-ch/hakuX-lr/releases/download/linux-v${pkgver}/${_asset}")
+sha256sums=('cf8e03de53a5c5daaf990fff09ba34bb54325ced148172118b7d3a7591b3e1f3')
+
+package() {
+  local src="${srcdir}/hakux-${pkgver}"
+  install -Dm755 "${src}/lib/libretro/hakux_libretro.so" \
+    "${pkgdir}/usr/lib/libretro/hakux_libretro.so"
+  install -Dm644 "${src}/lib/libretro/hakux_libretro.info" \
+    "${pkgdir}/usr/share/libretro/info/hakux_libretro.info"
+  install -Dm644 "${src}/BUILD-INFO" "${pkgdir}/usr/share/doc/${pkgname}/BUILD-INFO"
+  install -d "${pkgdir}/usr/share/licenses/hakux"
+  cp -a "${src}/share/licenses/hakux/." "${pkgdir}/usr/share/licenses/hakux/"
+}

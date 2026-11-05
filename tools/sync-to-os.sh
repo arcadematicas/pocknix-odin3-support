@@ -212,6 +212,7 @@ overlay "packages/vboycolor-libretro" "packages/shared/vboycolor-libretro"
 # que es justo lo que recoge DeckStation). Vivieron SOLO en el centro y NO estaban
 # registrados en el sync -> el arbol nunca los tuvo y el bucle los daba por NO ENCONTRADOS.
 overlay "packages/libretro-azahar"   "packages/shared/libretro-azahar"
+overlay "packages/libretro-hakux"    "packages/shared/libretro-hakux"
 overlay "packages/libretro-bsnes-hd" "packages/shared/libretro-bsnes-hd"
 
 overlay "packages/libretro-cores-pocknix" "packages/shared/libretro-cores-pocknix"

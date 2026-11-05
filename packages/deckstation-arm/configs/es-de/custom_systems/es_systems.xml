@@ -2950,7 +2950,8 @@
         <name>xbox</name>
         <fullname>Microsoft Xbox</fullname>
         <path>%ROMPATH%/xbox</path>
-        <extension>.iso .ISO .squashfs</extension>
+        <extension>.iso .ISO .chd .CHD .xiso .XISO .squashfs</extension>
+        <command label="hakuX (Vulkan)">%EMULATOR_RETROARCH% --vulkan -L %CORE_RETROARCH%/hakux_libretro.so %ROM%</command>
         <command label="xemu (Standalone)">%INJECT%=%BASENAME%.esprefix %EMULATOR_XEMU% -dvd_path %ROM%</command>
         <command label="Xemu (Squashfs)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% ./ROMs/xbox/unsquashfs.sh %ROMRAW%</command>
         <command label="xemu (RetroArch)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/xemu_libretro.so %ROM%</command>
