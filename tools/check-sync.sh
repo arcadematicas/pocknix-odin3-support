@@ -67,6 +67,7 @@ cmp_tree "${HERE}/scripts"                        "${OS}/scripts"
 cmp_tree "${HERE}/kernel/patches/05-speedup"       "${OS}/kernel/sm8750/patches/05-speedup"
 cmp_tree "${HERE}/kernel/patches/10-mainline"      "${OS}/kernel/sm8750/patches/10-mainline"
 cmp_tree "${HERE}/kernel/patches/20-sm8750"        "${OS}/kernel/sm8750/patches/20-sm8750"
+cmp_tree "${HERE}/kernel/patches/25-armada-sleep" "${OS}/kernel/sm8750/patches/25-armada-sleep"
 cmp_tree "${HERE}/kernel/patches/30-version"       "${OS}/kernel/sm8750/patches/30-version"
 # kernel.conf: fichero suelto (el directorio del arbol lleva ademas patches/dts/config)
 if [ ! -f "${HERE}/kernel/sm8750/kernel.conf" ]; then

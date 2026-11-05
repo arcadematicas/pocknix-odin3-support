@@ -1,0 +1,67 @@
+From: Armada <noreply@armada.local>
+Subject: [PATCH] soc: qcom: override the SM8750 PCIe state manager power control
+
+The SM8750 PCIe state managers (CESTA) report a power state to the AOSS.
+Downstream, pci-msm sets their PWR_CTRL and PWR_CTRL_MASK override registers
+at module init ("If the override is not done then CX Power Collapse won't
+happen") and only clears them once it runs the state manager program, which
+pcie-qcom never does. Without the override the PCI0 CESTA requestor stays
+non-idle in the AOP's AOSS monitor even with every device suspended; with it
+the requestor goes idle, the link and resume are unaffected.
+
+Set the override once at boot on SM8750.
+---
+--- a/drivers/soc/qcom/Makefile
++++ b/drivers/soc/qcom/Makefile
+@@ -22,6 +22,7 @@
+ obj-$(CONFIG_QCOM_RPMH)		+= qcom_rpmh.o
+ qcom_rpmh-y			+= rpmh-rsc.o
+ qcom_rpmh-y			+= rpmh.o
++obj-$(CONFIG_QCOM_RPMH)		+= sm8750-pcie-sm.o
+ obj-$(CONFIG_QCOM_SMD_RPM)	+= rpm-proc.o smd-rpm.o
+ obj-$(CONFIG_QCOM_SMEM) +=	smem.o
+ obj-$(CONFIG_QCOM_SMEM_STATE) += smem_state.o
+--- /dev/null
++++ b/drivers/soc/qcom/sm8750-pcie-sm.c
+@@ -0,0 +1,41 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * SM8750 PCIe state manager power-control override.
++ *
++ * The PCIe state managers (CESTA, 0x1d07000) report a power state to the AOSS.
++ * The downstream pci-msm driver loads and runs their program; until it does,
++ * it sets the PWR_CTRL and PWR_CTRL_MASK override registers of each instance
++ * at module init ("If the override is not done then CX Power Collapse won't
++ * happen"). pcie-qcom never runs the state managers, so set the override for
++ * good: otherwise the PCI0 CESTA requestor stays non-idle and keeps the SoC
++ * out of AOSS deep sleep.
++ */
++
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/printk.h>
++
++#define SM8750_PCIE_SM_BASE		0x01d07000
++#define SM8750_PCIE_SM_PWR_CTRL		0x1040
++#define SM8750_PCIE_SM_PWR_CTRL_MASK	0x1048
++
++static int __init sm8750_pcie_sm_override(void)
++{
++	void __iomem *base;
++
++	if (!of_machine_is_compatible("qcom,sm8750"))
++		return 0;
++
++	base = ioremap(SM8750_PCIE_SM_BASE + SM8750_PCIE_SM_PWR_CTRL, 0x10);
++	if (!base)
++		return -ENOMEM;
++
++	writel(1, base);
++	writel(1, base + SM8750_PCIE_SM_PWR_CTRL_MASK - SM8750_PCIE_SM_PWR_CTRL);
++	pr_info("sm8750: PCIe state manager power control overridden\n");
++	iounmap(base);
++
++	return 0;
++}
++subsys_initcall(sm8750_pcie_sm_override);

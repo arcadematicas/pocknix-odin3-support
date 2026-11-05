@@ -110,6 +110,7 @@ overlay "packages/pocknix-bsp-common" "packages/shared/pocknix-bsp-common"
 overlay "kernel/patches/05-speedup"  "kernel/sm8750/patches/05-speedup"
 overlay "kernel/patches/10-mainline" "kernel/sm8750/patches/10-mainline"
 overlay "kernel/patches/20-sm8750"   "kernel/sm8750/patches/20-sm8750"
+overlay "kernel/patches/25-armada-sleep" "kernel/sm8750/patches/25-armada-sleep"
 overlay "kernel/patches/30-version"  "kernel/sm8750/patches/30-version"
 overlay "kernel/dts"                 "kernel/sm8750/dts/qcom"
 overlay "kernel/sm8750"               "kernel/sm8750"   # kernel.conf (version + sha256 del tarball)
