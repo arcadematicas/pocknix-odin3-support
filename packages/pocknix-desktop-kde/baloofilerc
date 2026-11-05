@@ -1,0 +1,5 @@
+# System default (/etc/xdg/baloofilerc); a user's ~/.config/baloofilerc still wins, so
+# turning search back on in System Settings sticks. Off: the index grows to hundreds of MB
+# on the one shared filesystem.
+[Basic Settings]
+Indexing-Enabled=false

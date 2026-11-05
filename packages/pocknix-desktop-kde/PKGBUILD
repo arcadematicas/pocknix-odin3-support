@@ -1,0 +1,33 @@
+# Defaults every Plasma flavour shares; the flavours depend on it so no two own the same file.
+# Build with ./nodeps: makepkg -s would drag all of KDE/Qt into the chroot for a data package.
+pkgname=pocknix-desktop-kde
+pkgver=0.1.0
+pkgrel=3
+pkgdesc="pocknix KDE defaults shared by the Plasma desktop flavours"
+arch=('any')
+url="https://github.com/shuuri-labs/pocknix-os"
+license=('GPL-2.0-or-later')
+depends=('bash'
+         'plasma-workspace'
+         'kwin'
+         'powerdevil'
+         'kscreen'           # kscreen-doctor drives the rotated-DSI transform
+         'plasma-nm'
+         'bluedevil')
+# These files lived in pocknix-desktop up to -26; a lone install against that would collide.
+conflicts=('pocknix-desktop<0.1.0-27')
+source=('pocknix-desktop-rotate' 'pocknix-desktop-rotate.desktop'
+        'ksplashrc' 'powerdevilrc' 'kscreenlockerrc' 'baloofilerc' '50-kde-power-key.sh')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/pocknix-desktop-rotate"   "${pkgdir}/usr/bin/pocknix-desktop-rotate"
+  install -Dm644 "${srcdir}/pocknix-desktop-rotate.desktop" \
+    "${pkgdir}/etc/xdg/autostart/pocknix-desktop-rotate.desktop"
+  install -Dm644 "${srcdir}/ksplashrc"                "${pkgdir}/etc/xdg/ksplashrc"
+  install -Dm644 "${srcdir}/powerdevilrc"             "${pkgdir}/etc/xdg/powerdevilrc"
+  install -Dm644 "${srcdir}/kscreenlockerrc"          "${pkgdir}/etc/xdg/kscreenlockerrc"
+  install -Dm644 "${srcdir}/baloofilerc"              "${pkgdir}/etc/xdg/baloofilerc"
+  install -Dm755 "${srcdir}/50-kde-power-key.sh" \
+    "${pkgdir}/usr/lib/pocknix/desktop.d/50-kde-power-key.sh"
+}

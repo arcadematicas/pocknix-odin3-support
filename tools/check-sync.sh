@@ -80,6 +80,7 @@ cmp_tree "${HERE}/kernel/dts"                     "${OS}/kernel/sm8750/dts/qcom"
 # gamescope ya NO tiene linea propia: es un paquete packages/soc/ y lo cubre el bucle
 # `packages/soc-overrides/*` de mas abajo (antes vivia en packages/gamescope/).
 cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix-desktop"
+cmp_tree "${HERE}/packages/pocknix-desktop-kde"   "${OS}/packages/shared/pocknix-desktop-kde"
 # La capa vendored: si NO se comprueba, puede quedarse atras EN SILENCIO (paso con
 # deckstation-arm: al launcher le faltaba el fix de SDL y al setup el de libXss, y
 # check-sync decia OK -> la imagen habria salido con ES-DE en negro desde Game Mode).

@@ -1,0 +1,38 @@
+#!/bin/sh
+# pocknix-kernel-guard — red de seguridad del kernel (sin input humano).
+#
+# Caso real (26/10/2026): se copio un KERNEL nuevo a /flash sin los modulos del mismo
+# build. Ambos son 7.2.12, asi que nada "canta" hasta que arranca: sin mando, sin wifi
+# y sin audio, y con el sistema en la memoria interna no hay teclado ni red para
+# arreglarlo. Este guardia lo detecta 75 s despues del arranque y lo repara solo desde
+# la copia que deja pocknix-kernel-pair en /flash/modules-<ver>.tar.zst.
+set -u
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+VER=$(uname -r); MOD="/usr/lib/modules/$VER"; LOG=/flash/pocknix-kernel-guard.log
+say() { echo "$(date -Is) $*" >>"$LOG" 2>/dev/null; echo "$*"; }
+
+want=$(cut -d' ' -f1 "$MOD/.pocknix-kernel-md5" 2>/dev/null)
+have=$(md5sum /flash/KERNEL 2>/dev/null | cut -d' ' -f1)
+bad=""
+[ -f "$MOD/modules.dep" ] || bad="falta $MOD/modules.dep"
+if [ -z "$bad" ] && [ -n "$want" ] && [ "$want" != "$have" ]; then
+    bad="md5 no coincide: marcador=$want /flash=$have"
+fi
+# Canario: si el kernel puede cargar modulos, ath12k existe. Con BTF rota, no.
+if [ -z "$bad" ] && [ ! -d /sys/module/ath12k ]; then
+    bad="el modulo canario ath12k no esta cargado"
+fi
+
+if [ -z "$bad" ]; then say "OK: kernel $VER con modulos coherentes"; exit 0; fi
+say "PROBLEMA: $bad"
+[ -f /run/pocknix-kernel-guard.repaired ] && { say "ya se intento en este arranque; no reinicio"; exit 1; }
+TAR="/flash/modules-$VER.tar.zst"
+[ -f "$TAR" ] || { say "no existe $TAR: no puedo reparar en solitario"; exit 1; }
+say "reinstalando modulos desde $TAR"
+tar -I zstd -xf "$TAR" -C "$MOD/" || { say "fallo al extraer"; exit 1; }
+depmod -a "$VER" || { say "fallo depmod"; exit 1; }
+[ -n "$have" ] && echo "$have" > "$MOD/.pocknix-kernel-md5"
+touch /run/pocknix-kernel-guard.repaired
+say "reparado; reiniciando"
+sync
+systemctl reboot

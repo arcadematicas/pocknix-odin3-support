@@ -1,0 +1,7 @@
+# System default (/etc/xdg/kscreenlockerrc); a user's ~/.config/kscreenlockerrc still wins.
+# Autolock=false drops the idle-timeout lock, LockOnResume=false the wake lock; manual locking
+# is unaffected. Plasma Mobile locks on both by default, which put a PIN pad in front of every
+# wake press on a handheld whose gaming session has no lock at all.
+[Daemon]
+Autolock=false
+LockOnResume=false

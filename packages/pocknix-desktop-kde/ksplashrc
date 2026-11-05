@@ -1,0 +1,4 @@
+# A theme is safe under Plasma Mobile: ksplashqml runs Type=oneshot and exits on its own.
+[KSplash]
+Theme=com.pocknix.splash
+Engine=KSplashQML

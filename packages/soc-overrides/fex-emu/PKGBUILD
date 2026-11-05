@@ -3,8 +3,9 @@
 # GUEST thunks cross-compile with plain clang against a sysroot assembled from pinned
 # Arch x86_64 + lib32 packages, so the build stays inside the `make packages` chroot.
 pkgname=fex-emu
-_commit=14c92681f4d62cf84d901460e0358de09c8847a7
-pkgver=2610.20261007.14c92681
+# The release tag's child: thunkgen stops calling clearStatCache, which clang 23 removed.
+_commit=896a8691229cb7fc30169dae34bd6edad46b5f4f
+pkgver=2610.20261012.896a8691
 pkgrel=1
 pkgdesc="Fast usermode x86/x86-64 emulator for AArch64, built with host+guest thunks"
 arch=('aarch64')
@@ -21,8 +22,6 @@ makedepends=('git' 'clang' 'lld' 'llvm' 'cmake' 'ninja' 'pkgconf'
 # FEX falls back to its pinned External/ submodules only when find_package misses, and Arch's
 # rolling fmt v11 rejects FEX's join_view<std::byte*> format calls — hence the
 # CMAKE_DISABLE_FIND_PACKAGE_* forcing below, and no fmt/xxhash/Catch2 in makedepends.
-provides=('fex-emu')
-conflicts=('fex-emu')
 options=('!lto')   # FEX manages its own LTO; let the upstream build decide.
 
 # pinned x86 dev sysroot (build-time only; for compiling the x86 guest thunks)
@@ -32,10 +31,6 @@ _apihdr='7.1-1'
 _arch='https://archive.archlinux.org/packages'
 
 source=("fex::git+https://github.com/FEX-Emu/FEX.git#commit=${_commit}"
-        '0001-fexcore-aarch64-workaround-llvm18-ice.patch'
-        '0002-split-thunk-build-thunkgen-only.patch'
-        '0005-host-thunks-aarch64-char-signed-char.patch'
-        '0006-thunkgen-march-armv8-sve.patch'
         'toolchain_x86_64.cmake'
         'toolchain_x86_32.cmake'
         'Config.json'
@@ -51,7 +46,7 @@ noextract=('fexsysroot-glibc.pkg.tar.zst'
            'fexsysroot-gcc-libs.pkg.tar.zst'
            'fexsysroot-lib32-gcc-libs.pkg.tar.zst'
            'fexsysroot-linux-api-headers.pkg.tar.zst')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP'
             'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
@@ -59,10 +54,6 @@ prepare() {
   # FEX pins its deps (vixl, jemalloc, Vulkan-Headers, zydis) as submodules and makepkg's
   # git source does not recurse them.
   git submodule update --init --recursive
-  local p
-  for p in 0001 0002 0005 0006; do
-    patch -p1 < "${srcdir}/${p}-"*.patch
-  done
 
   msg2 "assembling x86 dev sysroot from pinned Arch x86_64 + lib32 packages"
   rm -rf "${srcdir}/sysroot"; mkdir -p "${srcdir}/sysroot"
@@ -85,14 +76,14 @@ build() {
   cd "${srcdir}/fex"
   # FEX requires clang as the host compiler; makepkg defaults to gcc, so force it.
   export CC=clang CXX=clang++
-  # TUNE_CPU (injected per-SoC by build-packages.sh) tunes only FEXCore's own engine — JIT
-  # output is runtime-tuned to the real CPU — so it stays at a safe armv8.2 core to avoid an
-  # armv9 host-tool SIGILL on the build host. Do not raise it to the device's prime core.
+  # TUNE_CPU tunes only FEX's own engine (the JIT output is tuned to the real CPU at runtime),
+  # so the one shared build targets the weakest little core of any supported device (an A55,
+  # armv8.2). Never an armv9 core: the build runs its own host tools and would SIGILL.
   cmake -G Ninja -S . -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_INSTALL_LIBDIR=lib \
-    -DTUNE_CPU="${POCKNIX_FEX_TUNE_CPU:-cortex-a78}" \
+    -DTUNE_CPU=cortex-a55 \
     -DUSE_LINKER=lld \
     -DENABLE_OFFLINE_TELEMETRY=OFF \
     -DBUILD_TESTING=OFF \

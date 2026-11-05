@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Path
+Target = usr/lib/modules/*
+Target = boot/Image
+
+[Action]
+Description = pocknix: keeping the /flash repair pair (kernel + modules)...
+When = PostTransaction
+Exec = /usr/local/bin/pocknix-kernel-pair
