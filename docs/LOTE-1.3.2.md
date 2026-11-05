@@ -91,3 +91,11 @@ Portado al **centro** para que el sync no lo revierta:
 Compilado y verificado: `inputplumber 0.83.0-1`, `pocknix-desktop 0.1.0-32`,
 `pocknix-desktop-kde 0.1.0-3`, `pocknix-steam 0.1.0-73`, `gamescope-session 20260928-4`.
 Pendiente de build: `pocknix-decky 68` y `fex-emu 2610.20261012`.
+
+## Audio DP (5/11) — parche de armada + verbo Dock
+
+- Kernel **7.2.12-33**: `10-mainline/0027` (hw_params en las ops de audio HDMI; fix de armada).
+- `pocknix-bsp-sm8750 0.2.0-47`: `HiFi-Dock.conf` instalado pero **sin activar**; el UCM por
+  defecto sigue sin HDMI (seguro sin dock).
+- Kit de prueba con dock (davidusky): `packages/pocknix-bsp-sm8750/dock-kit/` +
+  `docs/DOCK-AUDIO-TEST.md`.

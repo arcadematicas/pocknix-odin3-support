@@ -141,3 +141,21 @@ Verificado que el **hardware DP sí está**: PCM `hw:0,3` (MultiMedia4), control
 - Prueba con dock: `speaker-test -D hw:0,3 -c 2 -t sine` (ALSA directo).
 - **Pendiente**: sintaxis UCM2 correcta para un jack de iface=CARD (o exponerlo como mixer
   en el machine driver) antes de reactivar el auto-routing HDMI.
+
+## 5/11/2026 — la pieza que faltaba (parche de armada) y verbo Dock
+
+Buscando en los repos de armada/Nova-Deck/ROCKNIX, la pieza está en **armada**:
+
+- `packages/kernel/patches/0006-add-hw_params-callback-function-to-drm_connector_hdmi_audio_ops.patch`
+  añade `.hw_params = drm_connector_hdmi_audio_prepare` a `drm_connector_hdmi_audio_ops`.
+  Sin él, `hdmi-codec` no llama a `msm_dp_audio_prepare` antes de `q6apm_lpass_dai_prepare`
+  y el DSP devuelve **-22** en `DISPLAY_PORT_RX_0` (no hay audio DP).
+- Portado como `kernel/patches/10-mainline/0027-...` → kernel **7.2.12-33**.
+
+Además, el UCM: meter `SectionDevice."HDMI"` en el verbo **HiFi** hace que WirePlumber
+sondee `hw:0,3` **sin dock**, falle (`EINVAL`) y deje la tarjeta en `off` (sin altavoz).
+Solución: un **verbo separado "Dock"** (`HiFi-Dock.conf`, activable con
+`packages/pocknix-bsp-sm8750/dock-kit/`), que solo se activa con el dock conectado.
+Sin dock, el UCM por defecto queda igual que antes (solo HiFi).
+
+Pendiente de validar en hardware con dock: `docs/DOCK-AUDIO-TEST.md`.

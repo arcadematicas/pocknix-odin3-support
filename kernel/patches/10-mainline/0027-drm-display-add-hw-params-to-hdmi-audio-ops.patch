@@ -1,0 +1,25 @@
+From: Jianfeng Liu <liujianfeng1994@gmail.com>
+Date: Thu, 25 Sep 2025 12:05:09 +0800
+Subject: [PATCH] drm/display: add hw_params callback to drm_connector_hdmi_audio_ops
+
+Without it, hdmi-codec only runs prepare; msm_dp_audio_prepare is not called
+before q6apm_lpass_dai_prepare and the DSP returns -22 on DISPLAY_PORT_RX_0,
+so there is no DisplayPort audio. Backport of the upstream fix carried by
+armada; needed for dock audio on SM8750.
+
+Signed-off-by: Jianfeng Liu <liujianfeng1994@gmail.com>
+---
+ drivers/gpu/drm/display/drm_hdmi_audio_helper.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/gpu/drm/display/drm_hdmi_audio_helper.c b/drivers/gpu/drm/display/drm_hdmi_audio_helper.c
+--- a/drivers/gpu/drm/display/drm_hdmi_audio_helper.c
++++ b/drivers/gpu/drm/display/drm_hdmi_audio_helper.c
+@@ -128,6 +128,7 @@
+ 
+ static const struct hdmi_codec_ops drm_connector_hdmi_audio_ops = {
+ 	.audio_startup = drm_connector_hdmi_audio_startup,
++	.hw_params = drm_connector_hdmi_audio_prepare,
+ 	.prepare = drm_connector_hdmi_audio_prepare,
+ 	.audio_shutdown = drm_connector_hdmi_audio_shutdown,
+ 	.mute_stream = drm_connector_hdmi_audio_mute_stream,
