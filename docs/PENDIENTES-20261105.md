@@ -29,3 +29,21 @@ A revisar:
 - PR #148 (ath12k NULL guard): **cerrado** por shuuri-labs el 5/11. Pide el oops NULL real sin
   la guarda o aceptación upstream, número nuevo (1081 ocupado) y entrada en `PATCHES.md`.
   Decisión: dejarlo en nuestro fork, sin reabrir.
+
+## 4) HDR tras el resume (noche del 5/11)
+- Síntoma: al despertar, `GAMESCOPE_DISPLAY_HDR_ENABLED = 1` (HDR real ON) mientras el panel
+  muestra HDR desactivado (`state.json` → `hdr_enabled: false`; `color.json` →
+  `games.ns:windwaker.hdr: false`).
+- Causa: el panel, **por diseño**, en el resume solo re-afirma HDR **ON**
+  (`main.py::_reapply_hdr_sync`: "never force a supported panel OUT of an HDR mode set
+  elsewhere, e.g. Steam's own toggle"). Si el átomo quedó en 1 (p. ej. el toggle de Steam),
+  el panel no lo apaga. El toggle explícito (`set_hdr`) sí aplica ambos estados.
+- Workaround inmediato: en el panel, encender y apagar HDR una vez (o usar el toggle de
+  Steam) para sincronizar; después se mantiene.
+- Pendiente (mañana): elegir fuente única de verdad:
+  a) `get_hdr_state` lee el átomo real (`xprop -root GAMESCOPE_DISPLAY_HDR_ENABLED`) y
+     sincroniza el estado del panel al iniciar/resumir (parche al plugin vía
+     `pocknix-panel-control-patch`, que ya se re-aplica solo);
+  b) hook de resume del sistema que re-aplique el estado del panel en ambos sentidos
+     (necesita el appid actual);
+  c) dejar solo el toggle de Steam y ocultar el del panel (contradice la decisión del 16/10).
