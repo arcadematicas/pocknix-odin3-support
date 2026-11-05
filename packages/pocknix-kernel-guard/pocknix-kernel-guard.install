@@ -1,0 +1,13 @@
+# Enable sin arrancar: el timer corre 75 s tras el arranque. No usar --now al instalar
+# (el guardia podria reparar y reiniciar en mitad de una sesion).
+post_install() {
+  systemctl enable pocknix-kernel-guard.timer >/dev/null 2>&1 || true
+}
+
+post_upgrade() {
+  post_install
+}
+
+pre_remove() {
+  systemctl disable pocknix-kernel-guard.timer >/dev/null 2>&1 || true
+}

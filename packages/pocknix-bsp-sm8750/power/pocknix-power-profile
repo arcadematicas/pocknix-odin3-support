@@ -31,6 +31,7 @@ PROFILE_FILE=/var/lib/pocknix/power-profile
 ORIG_FILE=/var/lib/pocknix/power-profile-orig
 DEFAULT=alto
 GPU_DEV=/sys/class/devfreq/3d00000.gpu
+SNAP_FILE=/run/pocknix/tdp-caps
 GPU_FULL=1100000000
 PROFILES="bajo medio alto"
 VERIFY_TRIES=30
@@ -176,6 +177,23 @@ apply_scx() {
   esac
 }
 
+# El Panel de Control (Hooandee) gestiona el TDP por niveles (1-10) cuando su interruptor
+# esta activo: escribe el mismo scaling_max_freq/devfreq y re-aplica su nivel al despertar.
+# En ese caso el perfil del sistema (bajo/medio/alto) no debe pisarlo tras el resume.
+panel_manages() {
+  st="/home/deck/homebrew/settings/Panel de Control/state.json"
+  [ -r "${st}" ] || return 1
+  command -v python3 >/dev/null 2>&1 || return 1
+  python3 - "${st}" <<'PY' >/dev/null 2>&1
+import json, sys
+try:
+    data = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(1)
+sys.exit(0 if data.get("tdp_control_enabled", True) else 1)
+PY
+}
+
 case "${1:-}" in
   "")
     saved
@@ -227,8 +245,51 @@ case "${1:-}" in
     apply_scx "${1}"
     echo "power profile: ${1}"
     ;;
+  snapshot)
+    # Guarda los topes reales (los que ha puesto el Panel) antes de suspender. Solo si el
+    # Panel gestiona el TDP; si no, el perfil del sistema manda y no hay nada que restaurar.
+    if ! panel_manages; then
+      rm -f "${SNAP_FILE}"
+      exit 0
+    fi
+    mkdir -p "$(dirname "${SNAP_FILE}")" 2>/dev/null
+    tmp="${SNAP_FILE}.tmp.$$"
+    : > "${tmp}" || exit 1
+    for f in /sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_max_freq; do
+      [ -r "${f}" ] || continue
+      v="$(cat "${f}" 2>/dev/null)"
+      [ -n "${v}" ] && printf '%s %s\n' "${f}" "${v}" >> "${tmp}"
+    done
+    if [ -r "${GPU_DEV}/max_freq" ]; then
+      v="$(cat "${GPU_DEV}/max_freq" 2>/dev/null)"
+      [ -n "${v}" ] && printf '%s %s\n' "${GPU_DEV}/max_freq" "${v}" >> "${tmp}"
+    fi
+    mv -f "${tmp}" "${SNAP_FILE}"
+    ;;
+  reassert)
+    # Restaura los topes guardados DESPUES de que el servicio "late" haya aplicado el perfil
+    # del sistema (lo arranca la unidad reassert con After=). Reintenta unos segundos: el
+    # firmware puede reescribirlos justo al resumir.
+    [ -f "${SNAP_FILE}" ] || exit 0
+    i=0
+    ok=0
+    while [ "${i}" -lt 5 ]; do
+      ok=1
+      while read -r f v; do
+        [ -n "${f}" ] && [ -n "${v}" ] || continue
+        printf '%s\n' "${v}" > "${f}" 2>/dev/null || ok=0
+        [ "$(cat "${f}" 2>/dev/null)" = "${v}" ] || ok=0
+      done < "${SNAP_FILE}"
+      [ "${ok}" = 1 ] && break
+      i=$((i + 1))
+      sleep 1
+    done
+    rm -f "${SNAP_FILE}"
+    [ "${ok}" = 1 ] || echo "pocknix-power-profile: los topes del Panel no cuajaron al resumir" >&2
+    exit 0
+    ;;
   *)
-    echo "usage: pocknix-power-profile [bajo|medio|alto|restore|verify]" >&2
+    echo "usage: pocknix-power-profile [bajo|medio|alto|restore|verify|snapshot|reassert]" >&2
     exit 2
     ;;
 esac

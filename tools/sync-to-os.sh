@@ -271,7 +271,7 @@ overlay "packages/pocknix-steam-full" "packages/shared/pocknix-steam-full"
 
 # --- pocknix-system-overlay: nuestro overlay/ como PAQUETE (llega por -Syu) ---
 overlay "packages/pocknix-system-overlay" "packages/shared/pocknix-system-overlay"
-overlay "overlay" "packages/shared/pocknix-system-overlay/rootfs"
+overlay_prune "overlay" "packages/shared/pocknix-system-overlay/rootfs"
 
 # --- NOT synced (needs manual work — see the note below) ---------------------
 # kernel/patches is an OVERLAY: a patch we REMOVE from the centre is NOT removed from the build.

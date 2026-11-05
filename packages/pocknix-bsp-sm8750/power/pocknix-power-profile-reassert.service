@@ -1,0 +1,13 @@
+[Unit]
+Description=pocknix power profile (restore Panel de Control caps after resume)
+# Solo tras el resume: el hook zz-power-profile arranca esta unidad y la de "late" en la
+# misma transaccion. "After" garantiza que corre cuando "late" (verify) ha terminado, incluso
+# si "verify" fallo. El snapshot lo crea la fase "pre" del hook; sin el, no hace nada.
+After=pocknix-power-profile-late.service
+ConditionPathExists=/run/pocknix/tdp-caps
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-power-profile reassert
+
+# Sin [Install]: solo la dispara el hook de suspensoion.
