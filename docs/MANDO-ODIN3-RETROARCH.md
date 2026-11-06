@@ -366,3 +366,24 @@ Para usar de verdad el mando físico habría que **decirle a InputPlumber que no
 (ROCKNIX lo hace con `target: ds5` + `keyboard` y **sin `passthrough`**; en el centro ya se ha
 quitado `passthrough: true` del `01-ayn-controller.yaml`, **sin verificar aún en la consola**).
 Mientras tanto: J1 = virtual.
+
+## 12. 6/11/2026 — REGRESIÓN de los atajos (21/10) y vuelta al estado verificado
+
+Los commits del 21/10 (`8b78f11`, `c3f2467`, `039d97a`) añadieron a `lanzar.sh` un
+`--appendconfig` con `input_player1_joypad_index = "<jsN>"` para "arreglar" el índice del
+mando virtual. **Ese override pisa el `player1=1` verificado** y, según el arranque, apunta a
+un `js` que no es el slot udev correcto (se llegó a ver `pad-index.cfg=2` con solo dos pads),
+así que los hotkeys dejan de recibir los botones. Coincide con la fecha en que desaparecieron
+los atajos.
+
+**Decisión (6/11)**: volver **exactamente** al estado del 18/10 15:38 (`d66a193`), que Fransis
+verificó en consola:
+
+- `retroarch.cfg`: `player1=1` (virtual), `player2=0` (físico), `enable_hotkey_btn=6`
+  (Select), `exit=7` (Start), `menu=2` (X), `load=5`, `save=4`, `menu_toggle_gamepad_combo=0`,
+  `config_save_on_exit=false`.
+- `lanzar.sh`: **sin** bloques 4c / sin `pad-index.cfg` / sin `--appendconfig`.
+
+Si algún día vuelve a bailar el índice del mando virtual, **no** se parchea a ciegas: se
+comprueba primero qué slot le da RetroArch (`[Input] Device N ...`) y se ajusta **solo el
+player1**, dejando el resto como está.
