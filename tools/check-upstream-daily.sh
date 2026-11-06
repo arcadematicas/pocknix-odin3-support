@@ -137,6 +137,41 @@ lepton_line() {
 
 LEPTON_LINE="$(lepton_line)"
 
+# --- FEX-Emu: emulador x86/x86-64 (paquete soc-overrides/fex-emu) ----------------
+# Es la pieza que mas rendimiento mueve en juegos de Steam/Proton. Comparamos la
+# ultima release de FEX con el pkgver de nuestro PKGBUILD (que se compila desde git).
+fex_line() {
+  timeout 50 python3 - "${HERE}/../packages/soc-overrides/fex-emu/PKGBUILD" <<'PY' 2>/dev/null || echo "FEX: sin datos (red)"
+import json, re, sys, urllib.request
+UA = {"User-Agent": "pocknix-upstream-check", "Accept": "application/vnd.github+json"}
+def get(u):
+    req = urllib.request.Request(u, headers=UA)
+    return json.load(urllib.request.urlopen(req, timeout=20))
+ours = "?"
+try:
+    txt = open(sys.argv[1], encoding="utf-8").read()
+    m = re.search(r"^pkgver=(.+)$", txt, re.M)
+    if m:
+        ours = m.group(1).strip()
+except Exception:
+    pass
+try:
+    rel = get("https://api.github.com/repos/FEX-Emu/FEX/releases?per_page=1")
+except Exception:
+    print("FEX: sin datos (API) | nuestro pkgver=%s" % ours); raise SystemExit
+r = rel[0] if rel else {}
+tag = r.get("tag_name", "?")
+pub = (r.get("published_at") or "")[:10]
+# FEX-2611 vs 2611.20261105.8f92e80 -> comparar el numero de release
+ours_rel = ours.split(".")[0] if ours != "?" else "?"
+newer = tag.startswith("FEX-") and ours_rel != "?" and tag[4:] != ours_rel
+print("FEX: release %s (%s) | nuestro pkgver=%s%s" % (
+    tag, pub, ours, " <<< ACTUALIZAR" if newer else ""))
+PY
+}
+
+FEX_LINE="$(fex_line)"
+
 MAKO_LINE="$(mako_line)"
 
 RAW="$(mktemp)"
@@ -144,7 +179,7 @@ RAW="$(mktemp)"
 
 # Huella: solo las lineas que implican una decision (versiones marcadas, parches que
 # faltan, resumen). Asi "novedad" = algo que merece mirarse, no ruido de commits.
-fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; printf '%s\n' "${HOLODOR_LINE}"; printf '%s\n' "${NOVADECK_LINE}"; printf '%s\n' "${LEPTON_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
+fp_now="$( { grep -aE '(<<<|ACTUALIZAR|FALTAN|^ +- |Resumen:)' "${RAW}"; printf '%s\n' "${HOOANDEE_LINES}"; printf '%s\n' "${MAKO_LINE}"; printf '%s\n' "${HOLODOR_LINE}"; printf '%s\n' "${NOVADECK_LINE}"; printf '%s\n' "${LEPTON_LINE}"; printf '%s\n' "${FEX_LINE}"; } | sed -E 's/[[:space:]]+/ /g' | sort -u )"
 
 day="$(date +%F)"
 if [ -f "${OUTDIR}/last-fingerprint.txt" ]; then
@@ -177,6 +212,10 @@ fi
   echo "## Lepton (fork de Waydroid de Valve; buscar paquetes nuevos)"
   printf '%s\n' "${LEPTON_LINE}"
   echo "  (ver docs/LEPTON-EVALUACION.md: solo lepton-compat publico)"
+  echo
+  echo "## FEX (emulador x86/x86-64; paquete soc-overrides/fex-emu)"
+  printf '%s\n' "${FEX_LINE}"
+  echo "  (si marca ACTUALIZAR: cambiar _commit/pkgver en packages/soc-overrides/fex-emu y compilar)"
   echo
   echo "## Informe completo"
   cat "${RAW}"
