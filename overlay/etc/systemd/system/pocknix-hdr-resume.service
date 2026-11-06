@@ -1,0 +1,11 @@
+[Unit]
+Description=Re-aplicar el HDR del Panel de Control tras despertar
+Documentation=file:///usr/share/doc/pocknix/PANEL-CONTROL-HDR-PATCH.md
+After=graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-hdr-restore
+TimeoutStartSec=240
+
+# Sin [Install]: lo dispara el hook de system-sleep al despertar.

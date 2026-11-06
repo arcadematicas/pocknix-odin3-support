@@ -1,0 +1,8 @@
+#!/bin/sh
+# zz-hdr — al despertar, re-aplica el HDR que manda el Panel de Control.
+# Steam pone GAMESCOPE_DISPLAY_HDR_ENABLED a 1 al iniciar/resumir; el panel solo
+# re-afirma ON, asi que el estado OFF se perderia sin esta pasada.
+[ "$1" = "post" ] || exit 0
+[ -x /usr/local/bin/pocknix-hdr-restore ] && \
+  /usr/bin/systemctl start --no-block pocknix-hdr-resume.service >/dev/null 2>&1
+exit 0

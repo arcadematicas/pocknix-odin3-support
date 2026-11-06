@@ -11,7 +11,7 @@
 # Binario prebuilt del release oficial (GPLv3+); el fuente está en el repo upstream
 # (commit _commit). Se empaqueta como el resto de cores vendored (libretro-cores-pocknix).
 pkgname=libretro-hakux
-pkgver=0.19.1
+pkgver=0.19.2
 pkgrel=1
 pkgdesc="hakuX-lr libretro core: original Xbox emulation (aarch64, no BIOS, Vulkan)"
 arch=('aarch64')
@@ -22,10 +22,10 @@ license=('GPL-3.0-or-later')  # + licencias de las dependencias embebidas en /us
 # compilación intente resolverlas: es un paquete de ficheros, no compila nada.
 depends=('glibc' 'gcc-libs' 'zlib' 'vulkan-icd-loader')
 optdepends=('retroarch: frontend libretro')
-_commit=8e28a8fe4b21e1f16f2fbd9182b3bf3821b13635
+_commit=6f9fedc4a1
 _asset="hakux-${pkgver}-aarch64.tar.gz"
 source=("${_asset}::https://github.com/portare-ch/hakuX-lr/releases/download/linux-v${pkgver}/${_asset}")
-sha256sums=('cf8e03de53a5c5daaf990fff09ba34bb54325ced148172118b7d3a7591b3e1f3')
+sha256sums=('e4cd2a07d3e89c9372fc5f15de2167818f6be42656ca44ace7b55ac1445d6cda')
 
 package() {
   local src="${srcdir}/hakux-${pkgver}"
