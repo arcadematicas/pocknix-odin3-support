@@ -23,9 +23,13 @@ SEEN_OK=0
 log() { logger -t steamui-watchdog "$1"; }
 
 game_running() {
-    # Hay juego si corre un .exe de Proton/FEX o un lanzador de juego.
+    # Hay juego si corre un .exe de Proton/FEX, un lanzador de juego o un emulador
+    # de DeckStation (xemu, RetroArch, Dolphin, Cemu...). Los binarios y wrappers de
+    # los emuladores viven en /opt/deckstation; sin esta linea el watchdog reiniciaba
+    # steamwebhelper en plena partida nativa y el QAM se quedaba congelado (6/11).
     pgrep -f -d '' '\.exe( |$)' >/dev/null 2>&1 && return 0
     pgrep -f 'pocknix-game-launch' >/dev/null 2>&1 && return 0
+    pgrep -f -d '' '/opt/deckstation/' >/dev/null 2>&1 && return 0
     return 1
 }
 
