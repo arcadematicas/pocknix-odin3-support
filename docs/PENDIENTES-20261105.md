@@ -57,3 +57,11 @@ El driver ya es `video_driver = "vulkan"` en el retroarch.cfg portable.
 - "Xemu (Squashfs)" renombrado a "Xemu (ROM .squashfs)": solo vale para `.squashfs`.
 - XML activo de ES-DE regenerado (deckstation-cores-sync.sh); se podaron los comandos
   de cores no instalados (incluido xemu_libretro.so, que no existe).
+
+## 2b) TDP y HDR — VALIDADOS con suspensión real (6/11)
+Prueba: alarma RTC `+120` + `systemctl suspend` (deep); despertó sola.
+- HDR: `pocknix-hdr-resume` -> `HDR=0 appid=769`; átomo **0** tras despertar.
+- TDP: `late` aplicó `medio` y `reassert` restauró los topes del panel
+  (cpu0 1363200, cpu6 1401600, gpu 389000000) idénticos a antes.
+- vhci: `before='0000 ' forced='' left=''` (camino normal, sin fallback).
+- /flash: limpiado, se conservan `KERNEL`, `KERNEL.bak` y `KERNEL.bak-20261105-33`.
