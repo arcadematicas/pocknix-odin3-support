@@ -47,3 +47,13 @@ A revisar:
   b) hook de resume del sistema que re-aplique el estado del panel en ambos sentidos
      (necesita el appid actual);
   c) dejar solo el toggle de Steam y ocultar el del panel (contradice la decisión del 16/10).
+
+## 1b) Xbox — RESUELTO (6/11)
+Causa real: el comando de ES-DE pasaba `--vulkan` y el RetroArch de DeckStation no
+reconoce ese flag (`unrecognized option '--vulkan'` -> exit 1, el core ni se cargaba).
+El driver ya es `video_driver = "vulkan"` en el retroarch.cfg portable.
+- Arreglo: quitado `--vulkan` del comando hakuX; `deckstation-arm 1.0.0-20`.
+- Probado en vivo: hakuX 0.19.2 arranca Otogi PAL (~14-18 fps en 60 s), sin errores.
+- "Xemu (Squashfs)" renombrado a "Xemu (ROM .squashfs)": solo vale para `.squashfs`.
+- XML activo de ES-DE regenerado (deckstation-cores-sync.sh); se podaron los comandos
+  de cores no instalados (incluido xemu_libretro.so, que no existe).

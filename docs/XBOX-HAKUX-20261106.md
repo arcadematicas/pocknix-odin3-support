@@ -61,3 +61,23 @@
 - `packages/deckstation-arm/PKGBUILD`: `pkgrel` 18 → 19 (republicar el paquete con el XML).
 - Nuevo `tools/xbox-diag.sh`: recogida de estado **solo lectura** (cores, `.info`, Vulkan,
   bloque xbox de ES-DE, logs y magia XDVDFS de la ROM).
+
+## Confirmado en la Odin (6/11, prueba en vivo)
+
+El fallo de hakuX **no era el core ni el XISO**: el comando de ES-DE pasaba
+`--vulkan`, y el RetroArch de DeckStation **no reconoce ese flag**:
+
+```
+/opt/deckstation/Apps/RetroArch/retroarch: unrecognized option '--vulkan'
+```
+
+RetroArch abortaba antes de cargar el core (`exit=1`). El driver ya está en
+`video_driver = "vulkan"` en el `retroarch.cfg` portable, así que el flag sobra.
+
+- **Arreglo**: quitado `--vulkan` del comando `hakuX (Vulkan)` en `es_systems.xml`.
+- **Probado sin el flag** (hakuX 0.19.2, Otogi PAL, 60 s): arranca y juega
+  (~14-18 fps en la prueba; kernel de Xbox vivo, 1.600 frames, sin errores).
+- La entrada "Xemu (Squashfs)" sigue siendo solo para ROMs `.squashfs`; con un
+  `.iso` da el error de squashfs (esperado). Renombrada a "Xemu (ROM .squashfs)".
+- El HDR de gamescope siguió en 0 tras la prueba: RetroArch no lo enciende; el
+  drift de HDR era Steam al arrancar/resumir (ver `HDR-RESUME-20261106.md`).
