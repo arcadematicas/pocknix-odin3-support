@@ -114,4 +114,13 @@ if [ -n "${QT_QUICK_CONTROLS_MOBILE:-}" ] || pgrep -f startplasmamobile >/dev/nu
 fi
 
 # 5. Lanzamos
+# Hotkeys verificadas del mando: appendconfig fijo. No toca el retroarch.cfg del
+# usuario y sobrevive a updates de RetroArch/InputPlumber que reseteen la config.
+case "$(basename "${EXEC_TARGET:-}")" in
+  *[Rr]etro[Aa]rch*)
+    _hk="$DIR/../../configs/retroarch/retroarch-hotkeys.cfg"
+    [ -r "$_hk" ] && set -- "--appendconfig=${_hk}" "$@"
+    ;;
+esac
+
 exec "$EXEC_TARGET" "$@"

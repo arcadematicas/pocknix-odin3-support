@@ -387,3 +387,60 @@ verificó en consola:
 Si algún día vuelve a bailar el índice del mando virtual, **no** se parchea a ciegas: se
 comprueba primero qué slot le da RetroArch (`[Input] Device N ...`) y se ajusta **solo el
 player1**, dejando el resto como está.
+
+## 13. Blindaje (6/11/2026)
+
+Tres capas para que los atajos **no** se vuelvan a perder. Parten del estado verificado del
+18/10 (`d66a193`): `player1=1`, `player2=0`, `enable_hotkey_btn=6` (Select), `exit=7` (Start),
+`menu=2` (X), `load=5`, `save=4`, `menu_toggle_gamepad_combo=0`, `config_save_on_exit=false`.
+
+**1. `appendconfig` fijo en `lanzar.sh`.**
+Nuevo `configs/retroarch/retroarch-hotkeys.cfg`, con **solo** las claves de arriba, y el
+lanzador lo pasa a RetroArch:
+
+```bash
+case "$(basename "${EXEC_TARGET:-}")" in
+  *[Rr]etro[Aa]rch*)
+    _hk="$DIR/../../configs/retroarch/retroarch-hotkeys.cfg"
+    [ -r "$_hk" ] && set -- "--appendconfig=${_hk}" "$@"
+    ;;
+esac
+```
+
+Es un fichero **fijo**, versionado en el paquete. No se genera en tiempo de ejecución (eso era
+el `pad-index.cfg` del 21/10) y **no escribe** en el `retroarch.cfg` del usuario: `--appendconfig`
+se aplica por encima en cada arranque, así que un update de RetroArch que resetee la config
+portable no se lleva los atajos. Si el fichero no existe, el lanzador sigue funcionando igual.
+
+**2. Guardia systemd + timer.**
+`pocknix-deckstation-guard` (en `pocknix-bsp-sm8750`) es un oneshot de root que, contra
+`/opt/deckstation`:
+
+- borra `Apps/RetroArch/retroarch.AppImage.home/.config/retroarch/pad-index.cfg` si reaparece;
+- compara `Apps/RetroArch/lanzar.sh` con la plantilla `scripts/lanzar.sh` y, si difieren o
+  contienen `4c.`/`pad-index`/`appendconfig`/`_idx=` fuera de lo previsto, reinstala la
+  plantilla como `deck:deck` 755;
+- reescribe en el `retroarch.cfg` **live** solo las claves del `retroarch-hotkeys.cfg` que
+  estén mal o falten (no toca nada más), y lo registra en el journal
+  (`logger -t pocknix-deckstation-guard`).
+
+Lo dispara `pocknix-deckstation-guard.timer` (`OnBootSec=45s`, `OnUnitActiveSec=5min`), que el
+`.install` del paquete habilita con `systemctl enable --now`.
+
+**3. Hook de pacman.**
+`90-pocknix-deckstation-guard.hook` (PostTransaction) arranca la guardia en cuanto se instala o
+actualiza `deckstation-arm` o `inputplumber`, sin esperar al siguiente tick del timer.
+
+**Qué cubre:**
+
+| Fallo | Capa que lo corrige |
+|---|---|
+| Update de RetroArch resetea el `retroarch.cfg` portable | `appendconfig` fijo (cada arranque) + guardia (reescribe el live) |
+| Alguien/devuelve un `lanzar.sh` con override dinámico (`pad-index.cfg`, `--appendconfig` calculado) | guardia: restaura la plantilla |
+| `pad-index.cfg` huérfano en el `.home` | guardia: lo borra |
+| Update de `deckstation-arm`/`inputplumber` que toca configs | hook de pacman: guardia inmediata |
+
+> **Nota:** `player1=1` asume el **mando virtual de InputPlumber** (ver §11). El guardia no
+> elige índice por sí mismo: mantiene el que está verificado. Si el reparto de virtuales cambia,
+> primero se mide (`[Input] Device N ...`) y se ajusta `retroarch-hotkeys.cfg`, no el cfg live.
+

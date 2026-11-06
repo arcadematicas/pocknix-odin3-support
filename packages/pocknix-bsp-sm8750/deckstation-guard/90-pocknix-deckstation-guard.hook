@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = deckstation-arm
+Target = inputplumber
+
+[Action]
+Description = Restaurando hotkeys verificados de RetroArch (DeckStation)...
+When = PostTransaction
+Exec = /usr/bin/systemctl start --no-block pocknix-deckstation-guard.service

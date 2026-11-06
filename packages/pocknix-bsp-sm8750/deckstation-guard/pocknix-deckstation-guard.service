@@ -1,0 +1,8 @@
+[Unit]
+Description=Restaurar los hotkeys verificados de RetroArch (DeckStation)
+After=local-fs.target
+ConditionPathExists=/opt/deckstation
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pocknix-deckstation-guard

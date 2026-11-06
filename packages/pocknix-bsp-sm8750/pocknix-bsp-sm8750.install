@@ -11,5 +11,5 @@ _rebuild_bootimg() {
     [ -x /usr/local/bin/pocknix-kernel-pair ] && /usr/local/bin/pocknix-kernel-pair || true
 }
 
-post_install() { _rebuild_bootimg; }
-post_upgrade() { _rebuild_bootimg; }
+post_install() { _rebuild_bootimg; systemctl enable --now pocknix-deckstation-guard.timer >/dev/null 2>&1 || true; }
+post_upgrade() { _rebuild_bootimg; systemctl enable --now pocknix-deckstation-guard.timer >/dev/null 2>&1 || true; }

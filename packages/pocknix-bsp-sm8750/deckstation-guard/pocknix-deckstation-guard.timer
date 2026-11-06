@@ -1,0 +1,9 @@
+[Unit]
+Description=Guardia periodico de los hotkeys de RetroArch
+
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,52 @@
+#!/bin/bash
+# pocknix-deckstation-guard — mantiene el estado verificado de los hotkeys de RetroArch.
+set -u
+DECK="/opt/deckstation"
+RA_DIR="$DECK/Apps/RetroArch/retroarch.AppImage.home/.config/retroarch"
+RA_CFG="$RA_DIR/retroarch.cfg"
+RA_APP="$DECK/Apps/RetroArch/lanzar.sh"
+RA_TPL="$DECK/scripts/lanzar.sh"
+HK="$DECK/configs/retroarch/retroarch-hotkeys.cfg"
+log() { logger -t pocknix-deckstation-guard "$*" 2>/dev/null || true; }
+[ -d "$DECK" ] || exit 0
+
+# 1) pad-index.cfg: el override dinamico que rompio los atajos el 21/10.
+if [ -e "$RA_DIR/pad-index.cfg" ]; then
+    rm -f "$RA_DIR/pad-index.cfg" && log "eliminado pad-index.cfg"
+fi
+
+# 2) lanzar.sh de RetroArch: debe ser exactamente la plantilla verificada.
+if [ -f "$RA_APP" ] && [ -f "$RA_TPL" ]; then
+    if grep -qE '4c\.|pad-index|_idx=' "$RA_APP" 2>/dev/null || ! cmp -s "$RA_APP" "$RA_TPL"; then
+        install -o deck -g deck -m755 "$RA_TPL" "$RA_APP" && log "lanzar.sh restaurado desde la plantilla"
+    fi
+fi
+
+# 3) claves verificadas en el retroarch.cfg live.
+if [ -f "$RA_CFG" ] && [ -f "$HK" ]; then
+    out="$(python3 - "$RA_CFG" "$HK" <<'PY'
+import re, sys
+cfg, hk = sys.argv[1], sys.argv[2]
+keys = []
+for line in open(hk, encoding="utf-8"):
+    m = re.match(r'^(input_[a-z0-9_]+|config_save_on_exit)\s*=\s*"(.*)"\s*$', line.strip())
+    if m:
+        keys.append((m.group(1), m.group(2)))
+t = open(cfg, encoding="utf-8").read()
+changed = []
+for k, v in keys:
+    pat = rf'(?m)^{re.escape(k)}\s*=\s*".*"$'
+    if re.search(pat, t):
+        new = re.sub(pat, f'{k} = "{v}"', t)
+        if new != t:
+            changed.append(k); t = new
+    else:
+        t = t.rstrip("\n") + f'\n{k} = "{v}"\n'; changed.append(k)
+if changed:
+    open(cfg, "w", encoding="utf-8").write(t)
+print(" ".join(changed))
+PY
+)"
+    [ -n "$out" ] && log "retroarch.cfg restaurado: $out"
+fi
+exit 0
