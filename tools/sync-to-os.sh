@@ -99,6 +99,7 @@ overlay "scripts" "scripts"
 # --- our versions of files that live in upstream's packages ------------------
 # pocknix-bsp-common is upstream's device-neutral BSP; we carry newer fan control scripts
 # (the "off" fan mode, the [ -f ] guard). Copied in, never deleted.
+overlay "packages/shared/calvos-dotnet-x86_64" "packages/shared/calvos-dotnet-x86_64"
 overlay "packages/pocknix-bsp-common" "packages/shared/pocknix-bsp-common"
 
 # --- kernel patches + DTS ----------------------------------------------------

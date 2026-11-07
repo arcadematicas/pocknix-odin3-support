@@ -1,0 +1,19 @@
+# calvos-dotnet-x86_64 — runtime .NET x86_64 para los decomps CalvOS bajo Box64.
+# Se instala aislado en /opt/calvos/dotnet-x86_64 y calvos-run lo expone con DOTNET_ROOT.
+pkgname=calvos-dotnet-x86_64
+pkgver=10.0.14
+pkgrel=1
+pkgdesc=".NET runtime x86_64 for CalvOS decomps under Box64"
+arch=('any')
+url="https://dotnet.microsoft.com/"
+license=('MIT')
+depends=()
+source=("dotnet-runtime-${pkgver}-linux-x64.tar.gz::https://dotnetcli.blob.core.windows.net/dotnet/Runtime/${pkgver}/dotnet-runtime-${pkgver}-linux-x64.tar.gz")
+sha256sums=('bd3a25b2c5b617934de7ca55fc410711afd772c0d95a1af9205db6c3cc2c59f1')
+
+package() {
+    install -d "$pkgdir/opt/calvos/dotnet-x86_64"
+    cp -a "$srcdir/dotnet/." "$pkgdir/opt/calvos/dotnet-x86_64/"
+    install -d "$pkgdir/usr/bin"
+    ln -sfn /opt/calvos/dotnet-x86_64/dotnet "$pkgdir/usr/bin/calvos-dotnet"
+}
