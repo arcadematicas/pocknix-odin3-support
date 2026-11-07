@@ -10,15 +10,15 @@ Resume runs the power-on sequence from a work item, since it takes about
 ---
 --- a/drivers/input/joystick/mcu_joystick.c
 +++ b/drivers/input/joystick/mcu_joystick.c
-@@ -150,6 +150,7 @@
+@@ -167,6 +167,7 @@ struct mcu_joystick {
  	struct mutex io_lock;
  	struct delayed_work poll_work;
  	struct work_struct ff_work;	/* rumble: deferred SPI write (play is atomic) */
 +	struct work_struct resume_work;
  	u8 ff_strong;
  	u8 ff_weak;
- 	int irq;
-@@ -449,6 +450,24 @@
+ 	bool gap_sleep;			/* watchdog fallback: sleep the inter-word gap */
+@@ -595,6 +596,24 @@ static void mcu_poll_work(struct work_struct *work)
  	schedule_delayed_work(&mcu->poll_work, msecs_to_jiffies(MCU_POLL_MS));
  }
  
@@ -43,7 +43,7 @@ Resume runs the power-on sequence from a work item, since it takes about
  static int mcu_joystick_probe(struct spi_device *spi)
  {
  	struct device *dev = &spi->dev;
-@@ -587,6 +606,7 @@
+@@ -733,6 +752,7 @@ static int mcu_joystick_probe(struct spi_device *spi)
  	/* poll fallback (and primary path if no irq wired); also the recovery
  	 * watchdog — it re-inits a silent MCU */
  	INIT_DELAYED_WORK(&mcu->poll_work, mcu_poll_work);
@@ -51,7 +51,7 @@ Resume runs the power-on sequence from a work item, since it takes about
  	schedule_delayed_work(&mcu->poll_work, msecs_to_jiffies(MCU_POLL_MS));
  
  	return 0;
-@@ -596,6 +616,7 @@
+@@ -742,6 +762,7 @@ static void mcu_joystick_remove(struct spi_device *spi)
  {
  	struct mcu_joystick *mcu = spi_get_drvdata(spi);
  
@@ -59,7 +59,7 @@ Resume runs the power-on sequence from a work item, since it takes about
  	cancel_delayed_work_sync(&mcu->poll_work);
  	if (mcu->vdd)
  		regulator_disable(mcu->vdd);
-@@ -611,43 +632,32 @@
+@@ -757,43 +778,32 @@ static int mcu_joystick_suspend(struct device *dev)
  {
  	struct mcu_joystick *mcu = spi_get_drvdata(to_spi_device(dev));
  

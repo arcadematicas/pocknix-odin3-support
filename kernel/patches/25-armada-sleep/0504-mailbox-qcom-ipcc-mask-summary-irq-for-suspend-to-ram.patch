@@ -36,7 +36,7 @@ IRQCHIP_MASK_ON_SUSPEND on the previous approach.
  
  #include <dt-bindings/mailbox/qcom-ipcc.h>
  
-@@ -48,6 +50,7 @@
+@@ -48,6 +50,7 @@ struct qcom_ipcc_chan_info {
   * @mbox:		The mailbox controller
   * @num_chans:		Number of @chans elements
   * @irq:		Summary irq
@@ -44,7 +44,7 @@ IRQCHIP_MASK_ON_SUSPEND on the previous approach.
   */
  struct qcom_ipcc {
  	struct device *dev;
-@@ -58,6 +61,7 @@
+@@ -58,6 +61,7 @@ struct qcom_ipcc {
  	struct mbox_controller mbox;
  	int num_chans;
  	int irq;
@@ -52,7 +52,7 @@ IRQCHIP_MASK_ON_SUSPEND on the previous approach.
  };
  
  static inline struct qcom_ipcc *to_qcom_ipcc(struct mbox_controller *mbox)
-@@ -255,6 +259,31 @@
+@@ -260,6 +264,31 @@ static int qcom_ipcc_setup_mbox(struct qcom_ipcc *ipcc,
  	return devm_mbox_controller_register(dev, mbox);
  }
  
@@ -84,7 +84,7 @@ IRQCHIP_MASK_ON_SUSPEND on the previous approach.
  static int qcom_ipcc_pm_resume(struct device *dev)
  {
  	struct qcom_ipcc *ipcc = dev_get_drvdata(dev);
-@@ -320,6 +349,17 @@
+@@ -325,8 +354,19 @@ static int qcom_ipcc_probe(struct platform_device *pdev)
  	if (ret)
  		goto err_mbox;
  
@@ -100,9 +100,12 @@ IRQCHIP_MASK_ON_SUSPEND on the previous approach.
 +		irq_set_status_flags(ipcc->irq, IRQ_DISABLE_UNLAZY);
 +
  	ret = devm_request_irq(&pdev->dev, ipcc->irq, qcom_ipcc_irq_fn,
- 			       IRQF_TRIGGER_HIGH | IRQF_NO_SUSPEND |
+-			       IRQF_TRIGGER_HIGH |
++			       IRQF_TRIGGER_HIGH | IRQF_NO_SUSPEND |
  			       IRQF_NO_THREAD, name, ipcc);
-@@ -356,6 +396,7 @@
+ 	if (ret < 0) {
+ 		dev_err(&pdev->dev, "Failed to register the irq: %d\n", ret);
+@@ -361,6 +401,7 @@ static const struct of_device_id qcom_ipcc_of_match[] = {
  MODULE_DEVICE_TABLE(of, qcom_ipcc_of_match);
  
  static const struct dev_pm_ops qcom_ipcc_dev_pm_ops = {
