@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodic CalvOS decomps -> Steam shortcuts sync
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+Unit=calvos-decomps-sync.service
+
+[Install]
+WantedBy=timers.target

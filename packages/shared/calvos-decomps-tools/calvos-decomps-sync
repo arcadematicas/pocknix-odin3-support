@@ -1,0 +1,165 @@
+#!/usr/bin/python3
+# calvos-decomps-sync — añade a Steam los juegos Linux de /home/games/linux.
+# AppImage / .sh / ELF (x86_64 o aarch64). Se lanzan con /usr/local/bin/calvos-run.
+import os, sys, glob, struct, zlib, subprocess
+
+HOME = os.path.expanduser("~")
+GAMES_DIR = os.environ.get("CALVOS_GAMES_DIR", "/home/games/linux")
+CALVOS_RUN = "/usr/local/bin/calvos-run"
+OWNER = "calvos"
+TAG = "CalvOS"
+
+TYPE_MAP, TYPE_STR, TYPE_INT, END = 0x00, 0x01, 0x02, 0x08
+
+def parse_map(data, pos):
+    out = {}
+    while True:
+        t = data[pos]
+        if t == END:
+            return out, pos + 1
+        pos += 1
+        k_end = data.index(b"\x00", pos)
+        key = data[pos:k_end].decode("utf-8", "replace")
+        pos = k_end + 1
+        if t == TYPE_MAP:
+            out[key], pos = parse_map(data, pos)
+        elif t == TYPE_STR:
+            v_end = data.index(b"\x00", pos)
+            out[key] = data[pos:v_end].decode("utf-8", "replace")
+            pos = v_end + 1
+        elif t == TYPE_INT:
+            out[key] = struct.unpack_from("<i", data, pos)[0]
+            pos += 4
+        else:
+            raise ValueError(f"unknown vdf type 0x{t:02x}")
+
+def dump_map(d):
+    out = b""
+    for k, v in d.items():
+        kb = k.encode() + b"\x00"
+        if isinstance(v, dict):
+            out += bytes([TYPE_MAP]) + kb + dump_map(v)
+        elif isinstance(v, int):
+            out += bytes([TYPE_INT]) + kb + struct.pack("<i", v)
+        else:
+            out += bytes([TYPE_STR]) + kb + str(v).encode() + b"\x00"
+    return out + bytes([END])
+
+def make_entry(appname, exe, launch_options="", startdir=None, icon=""):
+    appid = zlib.crc32((exe.strip('"') + appname).encode()) | 0x80000000
+    return {
+        "appid": struct.unpack("<i", struct.pack("<I", appid))[0],
+        "appname": appname, "exe": exe,
+        "StartDir": f'"{startdir or HOME}"', "icon": icon,
+        "ShortcutPath": "", "LaunchOptions": launch_options,
+        "IsHidden": 0, "AllowDesktopConfig": 1, "AllowOverlay": 1,
+        "OpenVR": 0, "Devkit": 0, "DevkitGameID": OWNER,
+        "DevkitOverrideAppID": 0, "LastPlayTime": 0, "FlatpakAppID": "",
+        "tags": {"0": TAG},
+    }
+
+def is_elf(path):
+    try:
+        with open(path, "rb") as f:
+            return f.read(4) == b"\x7fELF"
+    except OSError:
+        return False
+
+EXCLUDE_SUB = ("android", "tools", "toolchain", "dependencies", "docs", "Docs", "Redist", "redist")
+BAD_NAME = ("patcher", "launcher", "setup", "installer", "unins", "updater", "crashpad", "probe", "gpu-capabilities", "fetch_")
+
+def _ok_name(p):
+    n = os.path.basename(p).lower()
+    return not any(b in n for b in BAD_NAME)
+
+def detect_launcher(d):
+    # AppImage (prefiere aarch64)
+    imgs = [p for p in sorted(glob.glob(os.path.join(d, "*.AppImage")) + glob.glob(os.path.join(d, "*.appimage"))) if _ok_name(p)]
+    if imgs:
+        arm = [p for p in imgs if any(k in os.path.basename(p).lower() for k in ("aarch64", "arm64"))]
+        return (arm or imgs)[0]
+    # .sh de primer nivel, preferiendo Launch/run/start/play
+    shs = [p for p in sorted(glob.glob(os.path.join(d, "*.sh"))) if _ok_name(p)]
+    if shs:
+        pref = [p for p in shs if any(k in os.path.basename(p).lower() for k in ("launch", "run", "start", "play"))]
+        return (pref or shs)[0]
+    # binario del juego dentro de Play/bin/Binaries (incluso anidado)
+    for pat in ("Play/*", "*/Play/*", "play/*", "*/play/*",
+                "bin/*", "*/bin/*", "Binaries/Linux/*", "*/Binaries/Linux/*",
+                "Game/*", "*/Game/*"):
+        for p in sorted(glob.glob(os.path.join(d, pat))):
+            if (os.path.isfile(p) and os.access(p, os.X_OK) and is_elf(p)
+                    and _ok_name(p)):
+                return p
+    # ELF de primer nivel
+    cands = [p for p in sorted(glob.glob(os.path.join(d, "*")))
+             if os.path.isfile(p) and os.access(p, os.X_OK) and is_elf(p) and _ok_name(p)]
+    if cands:
+        return cands[0]
+    # último recurso: cualquier ELF, sin excluir subdirs problemáticos
+    for sub in sorted(glob.glob(os.path.join(d, "*"))):
+        if not os.path.isdir(sub) or os.path.basename(sub) in EXCLUDE_SUB:
+            continue
+        for p in sorted(glob.glob(os.path.join(sub, "*"))):
+            if os.path.isfile(p) and os.access(p, os.X_OK) and is_elf(p):
+                return p
+    return None
+
+def tiles():
+    out = []
+    for d in sorted(glob.glob(os.path.join(GAMES_DIR, "*"))):
+        if not os.path.isdir(d) or os.path.basename(d) == "logs":
+            continue
+        launcher = detect_launcher(d)
+        if not launcher:
+            print(f"[calvos-decomps-sync] sin lanzador, omitido: {d}", file=sys.stderr)
+            continue
+        icon = ""
+        for c in ("icon.png", "logo.png", "cover.png"):
+            p = os.path.join(d, c)
+            if os.path.exists(p):
+                icon = p
+                break
+        name = os.path.basename(d)
+        out.append((name, launcher, make_entry(name, f'"{CALVOS_RUN}"', f'"{launcher}"', startdir=d, icon=icon)))
+    return out
+
+def sync(cfgdir, desired):
+    path = os.path.join(cfgdir, "shortcuts.vdf")
+    shortcuts = {}
+    if os.path.exists(path) and os.path.getsize(path) > 2:
+        with open(path, "rb") as f:
+            data = f.read()
+        if data[0] == TYPE_MAP:
+            shortcuts, _ = parse_map(data, data.index(b"\x00", 1) + 1)
+    kept = [v for v in shortcuts.values()
+            if isinstance(v, dict) and v.get("DevkitGameID") != OWNER]
+    merged = kept + [e for _, _, e in desired]
+    blob = (bytes([TYPE_MAP]) + b"shortcuts\x00"
+            + dump_map({str(i): e for i, e in enumerate(merged)}) + bytes([END]))
+    tmp = path + ".calvos-tmp"
+    with open(tmp, "wb") as f:
+        f.write(blob)
+    os.replace(tmp, path)
+    print(f"[calvos-decomps-sync] {cfgdir}: {len(desired)} decomps + {len(kept)} ajenos")
+
+def main():
+    dry = "--dry-run" in sys.argv
+    desired = tiles()
+    for name, launcher, _ in desired:
+        print(f"[calvos-decomps-sync] {name} -> {launcher}")
+    if dry:
+        return
+    if subprocess.run(["pgrep", "-x", "steam"], capture_output=True).returncode == 0:
+        print("[calvos-decomps-sync] Steam está abierto; ciérralo y reintenta.", file=sys.stderr)
+        sys.exit(2)
+    for cfgdir in glob.glob(os.path.join(HOME, ".local/share/Steam/userdata/*/config")):
+        if os.path.basename(os.path.dirname(cfgdir)) == "0":
+            continue
+        try:
+            sync(cfgdir, desired)
+        except OSError as e:
+            print(f"[calvos-decomps-sync] {cfgdir}: {e}", file=sys.stderr)
+
+if __name__ == "__main__":
+    main()

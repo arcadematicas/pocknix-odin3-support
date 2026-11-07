@@ -74,7 +74,9 @@ license=('GPL2')
 # Ver docs/CIERRE-20261016-PUBLICACION.md §4 y docs/SENSORES-ODIN3-2026-10-15.md.
 depends=('pocknix-bsp-common' 'pocknix-firmware-sm8750' 'python' 'sudo' 'sdl2'
           'pocknix-system-overlay'
-          'hexagonrpc' 'libssc' 'msm-firmware-loader' 'pd-mapper' 'pocknix-sensors-config')
+          'hexagonrpc' 'libssc' 'msm-firmware-loader' 'pd-mapper' 'pocknix-sensors-config'
+          # decomps Linux: lanzador + sync de atajos y runtime .NET x86_64 (Box64)
+          'calvos-decomps-tools' 'calvos-dotnet-x86_64')
 # gcc + SDL2 headers to build the OLED pixel refresher (see build()).
 makedepends=('sdl2')
 # Exactly one device BSP may be installed (wrong-device guard for a shared repo).

@@ -1,0 +1,146 @@
+#!/bin/bash
+# calvos-run v4 — lanzador CalvOS para Linux (x86_64/aarch64), AppImage, .sh y .NET
+# - Pasa el lanzador explícito desde calvos-decomps-sync (no adivina).
+# - AppImage: intento directo; si falla, extrae el squashfs y ejecuta AppRun/binario interno.
+# - .NET: expone el runtime x86_64 de /opt/calvos/dotnet-x86_64 (DOTNET_ROOT + PATH).
+# - Detecta librerías que faltan y, si hay paquete, intenta instalarlas sin preguntar.
+set -uo pipefail
+
+GAMES_DIR="${CALVOS_GAMES_DIR:-/home/games/linux}"
+LOG_DIR="$GAMES_DIR/logs"
+EXTRACT_DIR="$GAMES_DIR/.appimage"
+DOTNET_ROOT_DEFAULT="/opt/calvos/dotnet-x86_64"
+mkdir -p "$LOG_DIR" "$EXTRACT_DIR" 2>/dev/null || true
+
+TARGET="${1:?uso: calvos-run <binario|AppImage|carpeta|.sh> [args...]}"; shift || true
+
+if [ -d "$TARGET" ]; then
+  GAME_DIR="$TARGET"
+  CAND=$(find "$TARGET" -maxdepth 2 -type f \( -iname '*.AppImage' -o -name '*.sh' \) | head -1)
+  [ -n "$CAND" ] || CAND=$(find "$TARGET" -maxdepth 2 -type f -perm -u+x | head -1)
+  if [ -n "$CAND" ]; then TARGET="$CAND"; else echo "No encuentro lanzador en $GAME_DIR"; exit 1; fi
+else
+  GAME_DIR="$(dirname "$TARGET")"
+fi
+
+LOG="$LOG_DIR/$(basename "$GAME_DIR" | tr ' ' '_')-$(date +%Y%m%d-%H%M%S).log"
+exec > >(tee -a "$LOG") 2>&1
+echo "[calvos-run] $(date -Is) target=$TARGET dir=$GAME_DIR"
+
+# --- runtime .NET x86_64 (Wario/Links/Symphony/Crash) ----------------------
+if [ -x "$DOTNET_ROOT_DEFAULT/dotnet" ]; then
+  export DOTNET_ROOT="$DOTNET_ROOT_DEFAULT"
+  export PATH="$DOTNET_ROOT:$PATH"
+fi
+export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT="${DOTNET_SYSTEM_GLOBALIZATION_INVARIANT:-1}"
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_NOLOGO=1
+
+cd "$GAME_DIR" || exit 1
+
+# --- detección de librerías que faltan -------------------------------------
+report_missing_libs() {
+  local arch="$1" lib pkg
+  # Box64: "Error loading needed lib libX.so.1" / glibc: "libX.so.1: cannot open shared object file"
+  grep -oE '(Error loading needed lib [^ ]+|lib[A-Za-z0-9_.+-]+\.so(\.[0-9]+)*: cannot open shared object file)' "$LOG" 2>/dev/null \
+    | sed -e 's/^Error loading needed lib //' -e 's/: cannot open shared object file.*//' \
+    | sort -u | while read -r lib; do
+        [ -n "$lib" ] || continue
+        if [ "$arch" = "aarch64" ]; then
+          pkg=$(pacman -Fq "$lib" 2>/dev/null | sort -u | head -1 | cut -d/ -f1)
+          if [ -n "$pkg" ]; then
+            echo "[calvos-libs] falta $lib (paquete: $pkg) — intentando instalar"
+            if sudo -n pacman -S --noconfirm --needed "$pkg" >/dev/null 2>&1; then
+              echo "[calvos-libs] instalado $pkg"
+            else
+              echo "[calvos-libs] no se pudo instalar sin contraseña; ejecuta: sudo pacman -S $pkg"
+            fi
+          else
+            echo "[calvos-libs] falta $lib — sin paquete aarch64 que lo aporte"
+          fi
+        else
+          echo "[calvos-libs] falta $lib (x86_64) — no hay paquete aarch64; busca la .so x86_64 del port"
+        fi
+      done
+}
+
+case "$TARGET" in
+  *.sh) exec "$TARGET" "$@" ;;
+esac
+
+arch_of() { readelf -h "$1" 2>/dev/null | awk -F: '/Machine/{gsub(/^ +/,"",$2); print $2}' | head -1 || true; }
+
+run_x86() { # $1 = binario, resto args
+  local bin="$1"; shift
+  export BOX64_DYNAREC_BIGBLOCK="${BOX64_DYNAREC_BIGBLOCK:-2}"
+  export BOX64_DYNAREC_SAFEFLAGS="${BOX64_DYNAREC_SAFEFLAGS:-1}"
+  export BOX64_DYNAREC_FASTNAN="${BOX64_DYNAREC_FASTNAN:-1}"
+  box64 "$bin" "$@"
+}
+
+# --- AppImage --------------------------------------------------------------
+is_appimage=0
+case "$TARGET" in *.AppImage|*.appimage) is_appimage=1 ;; esac
+
+if [ "$is_appimage" -eq 1 ]; then
+  export APPIMAGE_EXTRACT_AND_RUN=1
+  echo "[calvos-run] AppImage: intento directo (extract-and-run)"
+  run_x86 "$TARGET" "$@"; rc=$?
+  [ "$rc" -eq 0 ] && exit 0
+  report_missing_libs x86_64
+  echo "[calvos-run] AppImage directo falló (rc=$rc); extrayendo con unsquashfs"
+  OFFSET=$(run_x86 "$TARGET" --appimage-offset 2>/dev/null | tail -1 || true)
+  [ -n "${OFFSET:-}" ] || OFFSET=$(grep -aob 'hsqs' "$TARGET" | head -1 | cut -d: -f1 || true)
+  DEST="$EXTRACT_DIR/$(basename "$TARGET" .AppImage)"
+  rm -rf "$DEST"; mkdir -p "$DEST"
+  if [ -n "${OFFSET:-}" ] && unsquashfs -o "$OFFSET" -d "$DEST" "$TARGET" >/dev/null 2>&1; then
+    if [ -x "$DEST/AppRun" ]; then
+      echo "[calvos-run] ejecutando $DEST/AppRun"
+      cd "$DEST" || exit 1
+      if [ "$(arch_of "$DEST/AppRun" 2>/dev/null)" = "Advanced Micro Devices X86-64" ] || file -b "$DEST/AppRun" 2>/dev/null | grep -qi 'x86-64'; then
+        run_x86 "$DEST/AppRun" "$@"
+      else
+        "$DEST/AppRun" "$@"
+      fi
+      rc=$?
+      report_missing_libs x86_64
+      exit "$rc"
+    fi
+    BIN=$(find "$DEST" -maxdepth 3 -type f -perm -u+x | head -1)
+    if [ -n "$BIN" ]; then
+      echo "[calvos-run] ejecutando binario interno $BIN"
+      run_x86 "$BIN" "$@"
+      rc=$?
+      report_missing_libs x86_64
+      exit "$rc"
+    fi
+  fi
+  echo "[calvos-run] no se pudo extraer/ejecutar el AppImage"
+  exit 1
+fi
+
+# --- binario nativo --------------------------------------------------------
+ARCH=$(arch_of "$TARGET")
+echo "[calvos-run] arch=$ARCH"
+for L in "$GAME_DIR/libs.x86_64" "$GAME_DIR/libs" "$GAME_DIR/lib"; do
+  [ -d "$L" ] && export BOX64_LD_LIBRARY_PATH="$L:${BOX64_LD_LIBRARY_PATH:-}"
+done
+
+case "$ARCH" in
+  *AArch64*)
+    "$TARGET" "$@"
+    rc=$?
+    report_missing_libs aarch64
+    exit "$rc"
+    ;;
+  *X86-64*)
+    run_x86 "$TARGET" "$@"
+    rc=$?
+    report_missing_libs x86_64
+    exit "$rc"
+    ;;
+  *)
+    "$TARGET" "$@"
+    exit $?
+    ;;
+esac

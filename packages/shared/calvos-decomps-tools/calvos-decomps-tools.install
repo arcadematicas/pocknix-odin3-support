@@ -1,0 +1,12 @@
+post_install() {
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    systemctl enable --now calvos-decomps-sync.timer >/dev/null 2>&1 || true
+}
+
+post_upgrade() {
+    post_install
+}
+
+pre_remove() {
+    systemctl disable --now calvos-decomps-sync.timer >/dev/null 2>&1 || true
+}

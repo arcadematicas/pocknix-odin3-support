@@ -1,0 +1,11 @@
+[Unit]
+Description=CalvOS decomps -> Steam shortcuts sync
+After=local-fs.target
+# El bind /home/games/linux -> /opt/decomps debe estar montado antes.
+
+[Service]
+Type=oneshot
+User=deck
+ExecStart=/usr/local/bin/calvos-decomps-sync
+# 2 = Steam abierto; se reintenta en el siguiente tick del timer.
+SuccessExitStatus=2

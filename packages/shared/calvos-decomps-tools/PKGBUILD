@@ -1,0 +1,30 @@
+# calvos-decomps-tools — lanzador y sincronizacion de decomps Linux en Steam.
+#
+# calvos-run: lanza binarios Linux (aarch64/x86_64 bajo Box64), AppImages (con
+#   fallback de extraccion via unsquashfs), scripts y apps .NET (usa el runtime
+#   x86_64 de calvos-dotnet-x86_64). Deja un log por ejecucion en
+#   /home/games/linux/logs.
+# calvos-decomps-sync: escribe los atajos de los decomps en shortcuts.vdf,
+#   marcandolos con DevkitGameID=calvos para no tocar los ajenos.
+#   Se ejecuta cada 5 min con un timer systemd (con Steam cerrado).
+pkgname=calvos-decomps-tools
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="CalvOS decomps launcher and Steam shortcuts sync"
+arch=('any')
+url="https://github.com/arcadematicas/pocknix-odin3-support"
+license=('MIT')
+depends=('python' 'squashfs-tools' 'calvos-dotnet-x86_64')
+optdepends=('steam: necesario para los atajos del modo juego'
+            'box64: ejecutar decomps x86_64 (FEX es la alternativa)')
+install=calvos-decomps-tools.install
+source=('calvos-run' 'calvos-decomps-sync' 'calvos-decomps-sync.service' 'calvos-decomps-sync.timer')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+    install -Dm755 "${srcdir}/calvos-run" "${pkgdir}/usr/local/bin/calvos-run"
+    ln -sfn calvos-run "${pkgdir}/usr/local/bin/decomp-run"
+    install -Dm755 "${srcdir}/calvos-decomps-sync" "${pkgdir}/usr/local/bin/calvos-decomps-sync"
+    install -Dm644 "${srcdir}/calvos-decomps-sync.service" "${pkgdir}/usr/lib/systemd/system/calvos-decomps-sync.service"
+    install -Dm644 "${srcdir}/calvos-decomps-sync.timer" "${pkgdir}/usr/lib/systemd/system/calvos-decomps-sync.timer"
+}
