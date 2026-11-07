@@ -90,6 +90,7 @@ build() {
     -DBUILD_FEX_LINUX_TESTS=OFF \
     -DBUILD_THUNKS=ON \
     -DENABLE_CLANG_THUNKS=ON \
+    -DBUILD_FEXCONFIG=OFF \
     -DX86_DEV_ROOTFS="${srcdir}/sysroot" \
     -DX86_64_TOOLCHAIN_FILE="${srcdir}/toolchain_x86_64.cmake" \
     -DX86_32_TOOLCHAIN_FILE="${srcdir}/toolchain_x86_32.cmake" \
