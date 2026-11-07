@@ -101,6 +101,7 @@ overlay "scripts" "scripts"
 # (the "off" fan mode, the [ -f ] guard). Copied in, never deleted.
 overlay "packages/shared/calvos-dotnet-x86_64" "packages/shared/calvos-dotnet-x86_64"
 overlay "packages/shared/calvos-decomps-tools" "packages/shared/calvos-decomps-tools"
+overlay "packages/shared/calvos-x86_64-libs" "packages/shared/calvos-x86_64-libs"
 overlay "packages/pocknix-bsp-common" "packages/shared/pocknix-bsp-common"
 
 # --- kernel patches + DTS ----------------------------------------------------

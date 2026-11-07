@@ -9,12 +9,12 @@
 #   Se ejecuta cada 5 min con un timer systemd (con Steam cerrado).
 pkgname=calvos-decomps-tools
 pkgver=1.0.0
-pkgrel=1
+pkgrel=2
 pkgdesc="CalvOS decomps launcher and Steam shortcuts sync"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"
 license=('MIT')
-depends=('python' 'squashfs-tools' 'calvos-dotnet-x86_64')
+depends=('python' 'squashfs-tools' 'calvos-dotnet-x86_64' 'calvos-x86_64-libs')
 optdepends=('steam: necesario para los atajos del modo juego'
             'box64: ejecutar decomps x86_64 (FEX es la alternativa)')
 install=calvos-decomps-tools.install

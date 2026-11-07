@@ -70,8 +70,16 @@ esac
 
 arch_of() { readelf -h "$1" 2>/dev/null | awk -F: '/Machine/{gsub(/^ +/,"",$2); print $2}' | head -1 || true; }
 
+CALVOS_X86_LIBS="${CALVOS_X86_LIBS:-$GAMES_DIR/libs.x86_64}"
+CALVOS_X86_SYS_LIBS="/opt/calvos/x86_64/lib"
+
 run_x86() { # $1 = binario, resto args
   local bin="$1"; shift
+  # Librerias x86_64 compartidas entre ports (abseil, etc.): paquete + carpeta de juegos
+  local extra=""
+  [ -d "$CALVOS_X86_SYS_LIBS" ] && extra="$CALVOS_X86_SYS_LIBS"
+  [ -d "$CALVOS_X86_LIBS" ] && extra="${extra:+$extra:}$CALVOS_X86_LIBS"
+  [ -n "$extra" ] && export BOX64_LD_LIBRARY_PATH="$extra${BOX64_LD_LIBRARY_PATH:+:$BOX64_LD_LIBRARY_PATH}"
   export BOX64_DYNAREC_BIGBLOCK="${BOX64_DYNAREC_BIGBLOCK:-2}"
   export BOX64_DYNAREC_SAFEFLAGS="${BOX64_DYNAREC_SAFEFLAGS:-1}"
   export BOX64_DYNAREC_FASTNAN="${BOX64_DYNAREC_FASTNAN:-1}"

@@ -1,0 +1,27 @@
+# calvos-x86_64-libs — librerias x86_64 compartidas para los decomps bajo Box64.
+#
+# Muchos ports x86_64 se compilan contra las libs de Arch x86_64 y no las
+# incluyen (WarioRecomp -> libabsl_*.so.2608.0.0). Las instalamos aparte en
+# /opt/calvos/x86_64/lib y calvos-run las añade a BOX64_LD_LIBRARY_PATH.
+#
+# abseil-cpp 20260817.0 (soname 2608.0.0) del archivo oficial de Arch x86_64.
+pkgname=calvos-x86_64-libs
+pkgver=20260817.0
+pkgrel=1
+pkgdesc="Shared x86_64 libraries for CalvOS decomps under Box64 (abseil)"
+arch=('any')
+url="https://github.com/arcadematicas/pocknix-odin3-support"
+license=('Apache-2.0')
+depends=()
+source=("abseil-cpp-20260817.0-2-x86_64.pkg.tar.zst::https://archive.archlinux.org/packages/a/abseil-cpp/abseil-cpp-20260817.0-2-x86_64.pkg.tar.zst")
+sha256sums=('4ecd2e4e2cf7096edfad8522df68d0d9adbe41ce7a6689c1915905342ae6a016')
+
+package() {
+    install -d "${pkgdir}/opt/calvos/x86_64/lib"
+    local so
+    for so in "${srcdir}/usr/lib/"libabsl_*.so.2608.0.0; do
+        install -m755 "${so}" "${pkgdir}/opt/calvos/x86_64/lib/"
+    done
+    install -m644 "${srcdir}/usr/share/licenses/abseil-cpp/LICENSE" \
+        "${pkgdir}/opt/calvos/x86_64/lib/LICENSE.abseil" 2>/dev/null || true
+}
