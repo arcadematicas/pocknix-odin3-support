@@ -93,3 +93,32 @@ Verificado en `shortcuts.vdf`: 17 decomps + 10 ajenos.
 - **SymphonyRecomp**: `run.sh` con .NET; mismo problema de `libhostfxr.so`.
 - **Crash**: compila el recomp la primera vez (esperar).
 - **Conker/Xenogear**: OK.
+
+## Paquetes calvos-* (07/11 noche)
+Para que esto no dependa de instalar cosas a mano en cada Odin, dos paquetes
+`shared` en el centro (van en la imagen via `pocknix-bsp-sm8750`):
+
+- **calvos-dotnet-x86_64** — runtime .NET 10.0.14 **x86_64** (Microsoft, MIT)
+  aislado en `/opt/calvos/dotnet-x86_64` + `/usr/bin/calvos-dotnet`.
+  Es lo que necesitan Wario/Links/Symphony/Crash: el ELF es un apphost .NET y
+  busca `libhostfxr.so`; este runtime corre bajo Box64.
+- **calvos-decomps-tools** — `calvos-run` v4 y `calvos-decomps-sync` con sus
+  `systemd` (service `User=deck` + timer de 5 min). Incluye
+  `decomp-run` como symlink.
+
+`calvos-run` v4:
+- recibe el lanzador **explicito** del sync (ya no adivina);
+- AppImage: intento directo y, si falla, `unsquashfs` al offset y ejecuta
+  `AppRun`/binario interno (funciona con Uncharted);
+- exporta `DOTNET_ROOT`/`PATH` si existe el runtime;
+- detecta `Error loading needed lib` / `cannot open shared object file` y, en
+  binarios aarch64, busca el paquete con `pacman -F` e intenta `pacman -S`
+  (sin contraseña solo si hay NOPASSWD; si no, deja el comando en el log).
+
+Instalacion manual (mientras la Odin esta apagada):
+```
+scp /tmp/opencode/pkg/calvos-*.pkg.tar.xz deck@odin:/tmp/
+sudo pacman -U --noconfirm --overwrite '/usr/local/bin/*' /tmp/calvos-*.pkg.tar.xz
+sudo rm -f /etc/systemd/system/calvos-decomps-sync.{service,timer}
+sudo systemctl daemon-reload && sudo systemctl enable --now calvos-decomps-sync.timer
+```
