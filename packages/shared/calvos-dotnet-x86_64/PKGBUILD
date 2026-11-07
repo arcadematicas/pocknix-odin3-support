@@ -12,8 +12,10 @@ source=("dotnet-runtime-${pkgver}-linux-x64.tar.gz::https://dotnetcli.blob.core.
 sha256sums=('bd3a25b2c5b617934de7ca55fc410711afd772c0d95a1af9205db6c3cc2c59f1')
 
 package() {
-    install -d "$pkgdir/opt/calvos/dotnet-x86_64"
-    cp -a "$srcdir/dotnet/." "$pkgdir/opt/calvos/dotnet-x86_64/"
+    # El tarball extrae en la raiz de $srcdir: dotnet, host/, shared/ y las licencias.
+    local dst="$pkgdir/opt/calvos/dotnet-x86_64"
+    install -d "$dst"
+    cp -a "$srcdir/dotnet" "$srcdir/host" "$srcdir/shared" "$srcdir/LICENSE.txt" "$srcdir/ThirdPartyNotices.txt" "$dst/"
     install -d "$pkgdir/usr/bin"
     ln -sfn /opt/calvos/dotnet-x86_64/dotnet "$pkgdir/usr/bin/calvos-dotnet"
 }
