@@ -65,7 +65,14 @@ report_missing_libs() {
 }
 
 case "$TARGET" in
-  *.sh) exec "$TARGET" "$@" ;;
+  *.sh)
+    "$TARGET" "$@"; rc=$?
+    if [ "$rc" -eq 139 ]; then
+      echo "[calvos-run] SIGSEGV (139) en el .sh; reintento con BOX64_DYNAREC_BIGBLOCK=0"
+      BOX64_DYNAREC_BIGBLOCK=0 "$TARGET" "$@"; rc=$?
+    fi
+    exit "$rc"
+    ;;
 esac
 
 arch_of() { readelf -h "$1" 2>/dev/null | awk -F: '/Machine/{gsub(/^ +/,"",$2); print $2}' | head -1 || true; }
