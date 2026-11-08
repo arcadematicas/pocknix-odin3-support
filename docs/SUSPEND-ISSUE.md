@@ -4,6 +4,12 @@
 ArmadaOS.** El botón de encendido suspende y, al volver, la pantalla se reactiva
 sola.
 
+> **Actualización (CalvOS 1.3, 08/11/2026):** el modo por defecto es **`deep`** (no
+> `s2idle`) y el consumo medido en reposo es **0,14 %/h** (1,85 % de batería en
+> 13 h 31 min), un tercio de lo que gastaba `s2idle`. Este documento conserva el
+> diagnóstico de por qué `s2idle` era el modo seguro antes de los parches de
+> armada; `s2idle` queda como reserva si `deep` fallara.
+
 ---
 
 ## 1. Síntoma

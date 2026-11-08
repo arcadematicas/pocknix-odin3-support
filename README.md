@@ -40,7 +40,7 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 | 🧩 **Plugins (Decky)** | **PocknixControl** (TDP, HDR a mano, OLED care, snapshots, updates), **CSS Loader** y el tema **Eclipse 0.3.2** (autoactualizable). |
 | 🖥️ **Escritorio** | **KDE Plasma 6 (Wayland + Plasma Mobile)** con KScreen funcionando. |
 | 🖼️ **Pantalla** | **Rotación por hardware** del DPU (sin coste de GPU) y **HDR apagado por defecto** (evita que el QAM/MangoHUD caigan detrás; se enciende a mano). |
-| 🔋 **Energía** | Suspensión **s2idle real** (~0,37 W), carga con autenticación de batería y % estimado. |
+| 🔋 **Energía** | Suspensión **`deep` real** (**0,14 %/h** en reposo; un tercio de lo que gastaba `s2idle`), carga con autenticación de batería y % estimado. |
 | 🔊 **Audio y mandos** | Stack LPASS + UCM (`SM8750AYN`) y **InputPlumber** (gamepad UART + paddles). |
 | 📦 **Actualizaciones** | **Repo pacman propio en Cloudflare R2**, firmado y **sin `[aur]`** → `pacman -Syu` trae todo (kernel, Mesa, Steam, Decky…). |
 | 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.15`** (parches de aceleración, GPU Adreno 830, WiFi `ath12k` WCN7860, batería, audio WCD939x) + parche **anti‑bucle** en ath12k. |

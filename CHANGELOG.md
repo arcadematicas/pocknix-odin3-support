@@ -69,6 +69,15 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 - Los flags de Box64 (`SAFEFLAGS`, `STRONGMEM`, `BIGBLOCK=3`, `CALLRET`,
   `FASTROUND`) **no cambian nada**. Es la traducción x86_64→ARM64, no la config.
 
+### ✅ Mesa 26.3.0-2 publicada en R2 (8/11)
+- El artefacto ya estaba construido y **validado en la Odin** (mesa y vulkan-freedreno
+  26.3.0-2, 3–4/11); solo faltaba publicarlo.
+- `make stage DEVICE=sm8750 PKG="mesa vulkan-freedreno"` (offline + `POCKNIX_STAGE_CHECK_SOCS=sm8750`),
+  firma y subida a `r2:pocknix/sm8750`. Delta verificado: +2 −2.
+- `PKGBUILD` de mesa en `pkgrel=2` para que futuros builds no lo downgradeen.
+- La Odin ya lo tiene instalado; el único paquete actualizable que queda es `7zip`
+  (ALARM, ajeno a CalvOS).
+
 ### 📚 Manuales y documentación (8/11)
 - Nuevos `docs/guias/`: índice, **DeckStation**, **WProton**, **Decomps Linux** y
   **Sistema** (energía/TDP, HDR, snapshots, updates, captura, diagnóstico, mando).
@@ -80,8 +89,9 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
   Necesita build dinámico del autor o el `.exe` por Proton.
 - **Paper Mario TTYD**: aborta por `C heap below 2 GiB`; `BOX64_MMAP32=0` no lo arregla.
 - **Uncharted**: usa el fallback de runtime (su launcher PyInstaller no corre extraído).
-- **SD que no monta al arrancar** con 7.2.15 (aparece `mmc0` a los ~331 s); montaje
-  manual OK.
+- **SD**: un arranque con 7.2.15 no montó la SD (`mmc0` tardío, ~331 s). **No
+  reproducido**: tras despertar de suspensión monta y funciona con normalidad; queda
+  como observación, no como fallo abierto.
 - Micrófono interno, giroscopio, re-corte base 1.4 y **Odin 3 Portal** (ABL pendiente).
 
 ## 📅 3 / 4 de noviembre 2026 — LED de carga, Decky arm64 y lote 1.3.1
