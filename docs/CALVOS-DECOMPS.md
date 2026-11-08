@@ -122,3 +122,33 @@ sudo pacman -U --noconfirm --overwrite '/usr/local/bin/*' /tmp/calvos-*.pkg.tar.
 sudo rm -f /etc/systemd/system/calvos-decomps-sync.{service,timer}
 sudo systemctl daemon-reload && sudo systemctl enable --now calvos-decomps-sync.timer
 ```
+
+## Validación 08/11 — .NET resuelto
+Instalados en la Odin `calvos-dotnet-x86_64 10.0.14-1`,
+`calvos-decomps-tools 1.0.0-4` y `calvos-x86_64-libs 20260817.0-1`.
+
+| juego | resultado |
+|---|---|
+| SymphonyRecomp | **OK**: carga .NET y crea contexto GL (Mesa 26.3.0 / Adreno 830). |
+| Links Awakening DX HD | **OK**: carga .NET/Vulkan (instance extensions Wayland). |
+| Wario Land (WarioRecomp) | **OK**: 686–1618 frames en 30 s. Necesitaba las abseil x86_64 y `dvd_root` correcto. |
+| Crash Bandicoot | **OK**: recompila, “Game ready”, ventana GL y JIT warmup. |
+
+Claves:
+- El “nativo Linux” de estos ports es un **apphost .NET x86_64**; el
+  `libhostfxr.so` que fallaba era el de `/home/deck/.dotnet`, que el `run.sh`
+  había instalado **aarch64**. Con `DOTNET_ROOT=/opt/calvos/dotnet-x86_64`
+  (x86_64) arrancan los cuatro.
+- **Wario** enlaza `libabsl_*.so.2608.0.0` y no las trae. Nuevo paquete
+  **calvos-x86_64-libs** (abseil-cpp 20260817.0 de Arch x86_64) en
+  `/opt/calvos/x86_64/lib`; `calvos-run` lo añade a `BOX64_LD_LIBRARY_PATH`.
+- **Wario** tenía `dvd_root` apuntando a `/run/media/...` (sobremesa). Ahora
+  `/opt/decomps/...`, que existe en la Odin (montaje) y en el sobremesa
+  (symlink `/opt/decomps -> /run/media/fransis/ROMS16TB/decomps`).
+- **Crash** compila con Roslyn la primera vez; si Box64 muere con SIGSEGV,
+  `calvos-run` reintenta una vez con `BOX64_DYNAREC_BIGBLOCK=0` (también para
+  lanzadores `.sh`). La segunda pasada usa la caché y entra al juego.
+
+Pendiente de revalidar: AppImages x86_64 (Uncharted ya ejecutaba el `AppRun`
+extraído; falta verlo en pantalla) y los ports que sigan pidiendo libs x86_64
+(añadirlas a `calvos-x86_64-libs`).
