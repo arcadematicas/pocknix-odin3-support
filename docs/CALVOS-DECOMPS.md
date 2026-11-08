@@ -108,46 +108,39 @@ aarch64 del sistema: Box64 necesita binarios x86_64. Se empaquetan en
 
 Regla: **cada vez que un port pida una `.so` x86_64, se añade al paquete** (no a la SD).
 
-## AppImages: cómo funciona hoy y el problema pendiente
+## AppImages: extracción persistente (implementado 08/11)
 
-Hoy: intento directo con `APPIMAGE_EXTRACT_AND_RUN=1`. El runtime x86_64 del AppImage
-extrae el squashfs a **`/tmp/appimage_extracted_<hash>`** y ejecuta allí. Si el runtime
-peta bajo Box64, se extrae con `unsquashfs` a `/home/games/linux/.appimage/<nombre>/` y se
-lanza `AppRun` (esto ya funciona, p. ej. Uncharted).
+`calvos-run` v4.2 extrae los AppImage **x86_64** en
+`<juego>/.calimage/<nombre>-<sha256[:12]>/` y ejecuta su `AppRun` con:
 
-**Dos problemas reales, ya observados:**
+- `cwd` = carpeta del juego (las rutas relativas del port se mantienen),
+- `APPDIR` / `APPIMAGE` / `ARGV0` / `OWD` explícitos,
+- `HOME` = `<AppImage>.home` si existe (el HOME portable del runtime).
 
-1. **Rutas perdidas / partidas que no persisten.** El juego corre con `cwd` y `APPDIR`
-   dentro de `/tmp/appimage_extracted_*`. Lo que escriba junto al ejecutable (saves,
-   configs, cachés, shaders) vive en un directorio temporal que se borra. Cada arranque
-   es “nuevo”.
-2. **Consumo de RAM.** `/tmp` es **tmpfs**: una extracción de 300 MB son 300 MB de RAM.
-   Se han visto 5 restos (`appimage_extracted_*`) sumando **811 MB**. Paper Mario 64
-   (Paperboat) usa además ~2,6 GB de RSS; con Steam (~1,5 GB) la consola entra en
-   presión de memoria y el **QAM se queda colgado**.
+Ventajas:
+- Los saves/configs/cachés del port **persisten** (antes iban a `/tmp` y se borraban).
+- **No usa `/tmp`** (tmpfs = RAM): se acabaron las extracciones de 200–800 MB en memoria.
+- La extracción se reutiliza; solo se repite si cambia el sha256 del AppImage.
 
-**Diseño propuesto (pendiente de implementar): extracción persistente + `cwd` original.**
+Modos (`CALVOS_APPIMAGE_MODE`, también en `<juego>/.calvos.env`):
+- `auto` (defecto): persistente para x86_64; runtime para aarch64.
+- `runtime`: fuerza el runtime (extrae a `/tmp`), para ports que solo funcionan así.
+- Si la extracción persistente falla, **fallback automático** al runtime.
+
+Validado (08/11): Paper Mario 64, SSF2, Earthworm Jim y Vandal Hearts corren desde
+`.calimage` sin `/tmp`. **Uncharted** no: su launcher (PyInstaller) se cae fuera del
+runtime, así que usa el fallback (el runtime sí funciona); su `HOME` portable ya se
+aplica. `papercut` (TTYD) aborta antes por el chequeo de heap.
+
+### Config por juego
+
+`<juego>/.calvos.env` se carga con `set -a` antes de lanzar. Ejemplos:
 
 ```
-dir = <juego>/.calvos-appimage/<nombre>-<sha256[:8]>/
-si no existe o cambió el sha256 del AppImage:
-    rm -rf dir ; unsquashfs -o <offset> -d dir <AppImage>
-export APPDIR=dir
-export ARGV0=<ruta original del AppImage>
-export APPIMAGE=<ruta original>
-export OWD=<carpeta del juego>
-cd <carpeta del juego>
-exec box64 dir/AppRun "$@"
+CALVOS_APPIMAGE_MODE=runtime      # forzar runtime en un port concreto
+BOX64_DYNAREC_BIGBLOCK=3          # tuning puntual
+SDL_VIDEODRIVER=x11               # ports con SDL sin Wayland
 ```
-
-- Persistente → saves/configs sobreviven y dejan de ocupar RAM.
-- `APPDIR` explícito → los `AppRun` que lo recalculan siguen funcionando.
-- `cwd` = carpeta del juego → las rutas relativas al directorio del port se mantienen.
-- `CALVOS_EXTRACT=force` para re-extraer al actualizar el AppImage (o comparar sha256).
-- Limpieza: borrar `<juego>/.calvos-appimage/` al desinstalar/actualizar; nunca en `/tmp`.
-
-Mientras no esté hecho: **no dejar AppImages abiertos**; tras un cierre forzado, limpiar
-`/tmp/appimage_extracted_*` (son RAM).
 
 ## Memoria y QAM
 
@@ -237,6 +230,25 @@ garantía de 60 estables.
 memoria el intercambio comprimido también añade tirones. Otra razón para reducir
 el consumo de los AppImage (extracción en `/tmp` = RAM).
 
+### TDP y flags: qué mueve de verdad (08/11)
+
+El **Panel de Control** (plugin) tenía `pl1 = 4 W` en modo estable: CPU a
+**1,99/2,44 GHz** (hardware: 3,53/4,09 GHz) y GPU a **660 MHz** (hardware: 1,1 GHz).
+Forzando relojes máximos solo durante la prueba:
+
+| Config | Wario |
+|---|---|
+| 4 W (real) | 44,9 fps, 180 slow (13,5 %) |
+| relojes máximos | **52,7 fps**, 30 slow (~3 %) |
+| + `SAFEFLAGS=0` | 52,1 fps |
+| + `STRONGMEM=0 CALLRET=1 FASTROUND=1 BIGBLOCK=3` | 52,7 fps |
+
+Los **flags de Box64 no cambian nada** (dentro del ruido). Fransis confirma que con
+el TDP al máximo tampoco hay una diferencia grande en juego. Conclusión: el techo
+real es la **traducción x86_64→ARM64** (Box64), no el dynarec configurable ni el TDP.
+Queda como línea futura probar **FEX** por juego (Minish ya falla en FEX por binario
+estático; Wario habría que probarlo con rootfs x86_64).
+
 ### Cómo medir (repetible)
 
 Wario escribe en su log, cada ~6 s:
@@ -264,8 +276,8 @@ Benchmark: misma escena, 60 s, un solo cambio por pasada.
 
 ## Backlog priorizado
 
-1. **AppImage persistente** (arriba): rutas/saves + RAM. Es el mayor bloqueo actual.
-0. **Rendimiento**: matriz de flags Box64 + FEX por juego + perfil de energía (ver sección).
+1. ~~AppImage persistente~~ — **HECHO 08/11** (`v4.2`): rutas/saves + RAM.
+0. **Rendimiento**: flags Box64 descartados (sin efecto); pendiente FEX por juego (ver sección).
 2. **Scope de memoria por juego** (`systemd-run --user --scope -p MemoryHigh=...`) y aviso
    de memoria baja; evitar que el QAM se bloquee.
 3. **`calvos-run --diagnose <juego>`**: lanzador, arch, libs que faltan, runtime .NET.

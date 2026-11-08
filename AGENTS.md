@@ -1340,11 +1340,19 @@ Reglas cortas:
    Box64 no puede usar las aarch64 del sistema (abseil de Wario fue el primer caso).
 4. **`.NET`**: el `run.sh` de algunos ports instala `/home/deck/.dotnet` en **aarch64**
    (inservible para el apphost x86_64). `calvos-run` exporta `DOTNET_ROOT=/opt/calvos/...`.
-5. **AppImages x86_64**: hoy se extraen a `/tmp` (tmpfs = RAM) y pierden saves/rutas.
-   Hay diseño aprobado para extracción persistente en `<juego>/.calimage/` (backlog #1).
-   Si un AppImage se cierra forzado, limpiar `/tmp/appimage_extracted_*`.
+5. **AppImages x86_64**: `calvos-run` v4.2 los extrae en `<juego>/.calimage/<nombre>-<sha>/`
+   (persistente, sin `/tmp`) y ejecuta `AppRun` con `cwd`=juego, `APPDIR`/`APPIMAGE`/`OWD`
+   y `HOME`=`<AppImage>.home` si existe. Si falla (Uncharted/PyInstaller), cae al runtime.
+   Config por juego en `<juego>/.calvos.env` (`CALVOS_APPIMAGE_MODE`, `BOX64_*`, `SDL_*`).
 6. **Memoria**: 10,9 GB. Antes de probar otro juego, cerrar el anterior y mirar `free -m`.
    Si el QAM se bloquea, matar el juego (y su `AppRun`), **no** Steam/gamescope.
+   Ya no deberían quedar `appimage_extracted_*` en `/tmp`; si aparecen, son del runtime
+   (fallback) y ocupan RAM: limpiarlos si no hay proceso usándolos.
+7. **Rendimiento**: el Panel de Control (Hooandee) fija TDP (`pl1=4 W` en la sesión del
+   08/11) y capa CPU/GPU; el perfil `pocknix-power-profile` no manda mientras el panel
+   gestione TDP. Medido: relojes máximos → Wario 44,9→52,7 fps y slow 13,5%→3%. Los flags
+   de Box64 (SAFEFLAGS/STRONGMEM/BIGBLOCK3/CALLRET/FASTROUND) **no cambian nada**.
+   El techo real es la traducción Box64; no prometer 60 estables.
 7. **Wario**: `Play/UserData/Config.toml` debe tener
    `dvd_root = "/opt/decomps/Wario Land Shake it PC Port/WarioRecomp-0.3.1-linux/Game/DATA"`.
 8. **Crash**: la primera ejecución compila (~2 min). `calvos-run` reintenta con
