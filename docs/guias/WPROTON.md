@@ -6,7 +6,7 @@ soporte de `.wsquashfs`. Proyecto independiente de **stshunz**
 
 ## Instalación / primer arranque
 
-1. **Pocknix Tools** → **“Set up WProton (Windows games)...”** (o ejecuta `wproton`
+1. **CalvOS Tools** → **“Set up WProton (Windows games)...”** (o ejecuta `wproton`
    en una terminal).
 2. El **asistente de primera vez** elige runner (Proton/Wine) y ajustes básicos, y
    añade WProton al **modo juego** de Steam.

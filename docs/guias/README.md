@@ -6,8 +6,8 @@ enlaza al suyo para el detalle interno.
 
 | Función | Se usa desde | Guía |
 |---|---|---|
-| **DeckStation** (emulación) | Pocknix Tools / Steam | [DECKSTATION.md](DECKSTATION.md) |
-| **WProton** (juegos Windows) | Pocknix Tools / mando | [WPROTON.md](WPROTON.md) |
+| **DeckStation** (emulación) | CalvOS Tools / Steam | [DECKSTATION.md](DECKSTATION.md) |
+| **WProton** (juegos Windows) | CalvOS Tools / mando | [WPROTON.md](WPROTON.md) |
 | **Decomps Linux** (ports de PC) | Carpeta + Steam | [DECOMP-LINUX.md](DECOMP-LINUX.md) |
 | **Sistema** (energía, HDR, snapshots, captura, diagnóstico) | QAM / terminal | [SISTEMA.md](SISTEMA.md) |
 | **Mando y atajos** | RetroArch / ES-DE | [../MANDO-ODIN3-RETROARCH.md](../MANDO-ODIN3-RETROARCH.md) |
@@ -18,8 +18,10 @@ enlaza al suyo para el detalle interno.
 - Los comandos que necesitan root se indican con `sudo`.
 - La tarjeta SD grande se monta en `/opt`; los juegos Linux viven en
   `/home/games/linux` (bind a `/opt/decomps`) y las ROMs donde las tengas.
-- **Pocknix Tools** es el menú de instalación/preparación (accesible desde el
-  escritorio o el propio sistema). Las opciones que se citan aquí son las que
+- **CalvOS Tools** (comando `pocknix-tools`) es el menú de instalación/preparación
+  (accesible desde el escritorio o el propio sistema). En la versión actual del
+  paquete el título del menú aún dice «Pocknix Tools»; se rebrandea en la próxima
+  actualización de paquetes. Las opciones que se citan aquí son las que
   aparecen en ese menú.
 
 ## Documentos técnicos relacionados

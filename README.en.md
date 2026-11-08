@@ -35,7 +35,7 @@ An **[arcadematicas](https://github.com/arcadematicas)** project, built on
 | 🪟 **Windows games** | **ARM64 Proton + FEX**; **WProton** (`1.72`) to launch `.wsquashfs` titles with its runners. |
 | 🐧 **Linux PC ports** | **Decomps** launched from a Steam tile: AppImage/ELF/.sh under **Box64**, **.NET x86_64** runtime and **persistent** AppImage extraction (no `/tmp`). See the [manual](docs/guias/DECOMP-LINUX.md) and [compatibility matrix](docs/CALVOS-DECOMP-COMPAT.md). |
 | 🎮 **Emulation** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 aarch64 emulators (RetroArch + 200 cores, Dolphin, DuckStation, Cemu, Eden, MAME…). First install **without limits**: it resolves assets without the GitHub API. |
-| 🧩 **Plugins (Decky)** | **PocknixControl** (TDP, manual HDR, OLED care, snapshots, updates), **CSS Loader** and the **Eclipse 0.3.2** theme (self-updating). |
+| 🧩 **Plugins (Decky)** | **CalvOS Control** (TDP, manual HDR, OLED care, snapshots, updates), **CSS Loader** and the **Eclipse 0.3.2** theme (self-updating). |
 | 🖥️ **Desktop** | **KDE Plasma 6 (Wayland + Plasma Mobile)** with KScreen working. |
 | 🖼️ **Display** | **Hardware rotation** of the DPU (no GPU cost) and **HDR off by default** (keeps the QAM/MangoHUD on top; enable it by hand). |
 | 🔋 **Power** | Real **`deep`** suspend (**0.14 %/h** idle; a third of `s2idle`), battery-auth charging and estimated percentage. |
@@ -52,14 +52,14 @@ An **[arcadematicas](https://github.com/arcadematicas)** project, built on
    ```
    *(double-check the device with `lsblk` first — `dd` does not forgive)*
 3. **Boot** the Odin with the card inserted. User **`deck`** / root password **`pocknix`**.
-   SSH is **OFF** by default (enable it in *Pocknix Tools*).
+   SSH is **OFF** by default (enable it in *CalvOS Tools*).
 
 > 💡 The first boot takes a moment: the btrfs root expands to the whole card and Steam gets set up.
 
 ## 🔄 Update
 
 ```sh
-sudo pacman -Syu      # or from the QAM / PocknixControl
+sudo pacman -Syu      # or from the QAM / CalvOS Control
 ```
 
 ## 📸 Screenshots
@@ -96,7 +96,7 @@ sudo pacman -Syu      # or from the QAM / PocknixControl
 | **Boot** | ✅ Kernel **7.2.15** + Odin 3 device tree |
 | **Rotation** | ✅ **Hardware** (DPU scanout) |
 | **Steam** | ✅ gamescope session + Steam gamepadui, UI at the right scale |
-| **HDR** | ⚠️ **OFF by default** (on purpose: with global HDR the QAM/MangoHUD fell behind). Manual toggle in PocknixControl |
+| **HDR** | ⚠️ **OFF by default** (on purpose: with global HDR the QAM/MangoHUD fell behind). Manual toggle in CalvOS Control |
 | **Graphics** | ✅ **Mesa 26.3.0** + our Turnip + **Valve's Turnip** (`pocknix-vk-valve`, per-game) |
 | **Emulation** | ✅ **DeckStation**: full first install (**31/31**) with the GitHub API exhausted |
 | **WProton** | ✅ **1.72** (`arm-2026-10-11a`) — download a runner from its menu |

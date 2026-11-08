@@ -6,7 +6,7 @@ entero en `/opt/deckstation`. Proyecto independiente de **stshunz**
 
 ## Instalación
 
-1. Abre **Pocknix Tools**.
+1. Abre **CalvOS Tools**.
 2. Elige **“Install DeckStation (emulators)...”**.
 3. Espera: descarga unos **1,5 GB** (30 AppImages + launchers + configs + assets de
    RetroArch) y necesita red. Es **seguro repetirlo**: lo que ya está se salta.
@@ -14,7 +14,7 @@ entero en `/opt/deckstation`. Proyecto independiente de **stshunz**
    (tile “DeckStation”). También puedes lanzarlo con el comando `deckstation`.
 
 El instalador real es `/opt/deckstation/scripts/deckstation-setup.sh`; el menú de
-Pocknix Tools solo lo llama. Después, para actualizar o añadir emuladores sueltos,
+CalvOS Tools solo lo llama. Después, para actualizar o añadir emuladores sueltos,
 usa el **Updater dentro de ES-DE**.
 
 ## Dónde está todo

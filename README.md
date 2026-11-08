@@ -37,7 +37,7 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 | 🐧 **Ports Linux de PC** | **Decomps** desde el icono de Steam: AppImage/ELF/.sh con **Box64**, runtime **.NET x86_64** y extracción **persistente** de AppImage (sin `/tmp`). Ver [manual](docs/guias/DECOMP-LINUX.md) y [matriz](docs/CALVOS-DECOMP-COMPAT.md). |
 | 🎮 **Emulación** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 emuladores aarch64 (RetroArch + 200 cores, Dolphin, Duckstation, Cemu, Eden, MAME…). Instalación inicial **sin límites**: resuelve los assets sin la API de GitHub. |
 | 🩺 **Informes y captura** | **`calvos-doctor`** (informe redactado, se envía solo si tú quieres) + **`calvos-grabar`** (1080p60 con encoder **H.264 por hardware**) y **`dock-check`** para capturadora. |
-| 🧩 **Plugins (Decky)** | **PocknixControl** (TDP, HDR a mano, OLED care, snapshots, updates), **CSS Loader** y el tema **Eclipse 0.3.2** (autoactualizable). |
+| 🧩 **Plugins (Decky)** | **CalvOS Control** (TDP, HDR a mano, OLED care, snapshots, updates), **CSS Loader** y el tema **Eclipse 0.3.2** (autoactualizable). |
 | 🖥️ **Escritorio** | **KDE Plasma 6 (Wayland + Plasma Mobile)** con KScreen funcionando. |
 | 🖼️ **Pantalla** | **Rotación por hardware** del DPU (sin coste de GPU) y **HDR apagado por defecto** (evita que el QAM/MangoHUD caigan detrás; se enciende a mano). |
 | 🔋 **Energía** | Suspensión **`deep` real** (**0,14 %/h** en reposo; un tercio de lo que gastaba `s2idle`), carga con autenticación de batería y % estimado. |
@@ -54,14 +54,14 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
    ```
    *(comprueba el disco con `lsblk` antes — es un `dd`, no perdona)*
 3. **Arranca** la Odin con la SD puesta. Usuario **`deck`** / root: contraseña **`pocknix`**.
-   SSH viene **OFF** (actívalo en *Pocknix Tools*).
+   SSH viene **OFF** (actívalo en *CalvOS Tools*).
 
 > 💡 La primera vez tarda un poco: la raíz btrfs se expande a toda la tarjeta y Steam se prepara.
 
 ## 🔄 Actualizar
 
 ```sh
-sudo pacman -Syu      # o desde el QAM / PocknixControl
+sudo pacman -Syu      # o desde el QAM / CalvOS Control
 ```
 
 ## 📸 Capturas
@@ -98,7 +98,7 @@ sudo pacman -Syu      # o desde el QAM / PocknixControl
 | **Arranque** | ✅ Kernel **7.2.12-18** + DTS del Odin 3 · **red de seguridad** (guardia + par en `/flash`) |
 | **Rotación** | ✅ **Por hardware** (DPU en scanout) |
 | **Steam** | ✅ Sesión gamescope + Steam gamepadui, UI a escala correcta. Atajos no‑Steam estables (VDF en mayúsculas) |
-| **HDR** | ⚠️ **OFF por defecto** (a propósito: con HDR global el QAM/MangoHUD caían detrás). Toggle manual en PocknixControl |
+| **HDR** | ⚠️ **OFF por defecto** (a propósito: con HDR global el QAM/MangoHUD caían detrás). Toggle manual en CalvOS Control |
 | **Gráficos** | ✅ **Mesa 26.3.0** + Turnip propia + **Turnip de Valve** (`pocknix-vk-valve`, per‑game) |
 | **Refresco del panel** | ⚠️ 120 Hz por defecto; **60 Hz funciona si es el primer modo** (59,95 Hz medidos) pero aún **no conmuta en caliente** (`docs/REFRESH-60HZ-20261021.md`) |
 | **Emulación** | ✅ **DeckStation**: instalación inicial completa (**31/31**) con la API de GitHub agotada. Mandos de RetroArch por el pad virtual |
@@ -107,7 +107,7 @@ sudo pacman -Syu      # o desde el QAM / PocknixControl
 | **Audio** | ✅ LPASS + UCM · **auriculares** con volumen real (`2109`), conmutación automática altavoz↔cascos y **micrófono** (`Mic` DMIC2/3 + `Headset` wcd939x en el UCM) |
 | **Mandos / batería** | ✅ InputPlumber (gamepad UART + paddles) · carga autenticada |
 | **Suspensión** | ✅ s2idle real **≈0,26 W** (63–70 mA medidos en batería) |
-| **Informes** | 🚀 **`calvOS-reports`** (repo público) + botón **"Enviar informe"** en PocknixControl (tipo problema/sugerencia y áreas elegibles) |
+| **Informes** | 🚀 **`calvOS-reports`** (repo público) + botón **"Enviar informe"** en CalvOS Control (tipo problema/sugerencia y áreas elegibles) |
 | **Streaming** | ✅ **Moonlight + Sunshine** probado contra el PC (VAAPI). ⚠️ **HDR** no disponible: el cliente no acepta el decodificador (Iris/P010) — [moonlight-qt#2081](https://github.com/moonlight-stream/moonlight-qt/issues/2081) |
 | **Batería** | ✅ % + **tiempo restante** (power_now = V×I) y **salud 98,6 %** tras el parche `battmgr` |
 
@@ -213,7 +213,7 @@ Guía completa: [`BUILD.md`](BUILD.md)
     puerto de debug (`127.0.0.1:8080`) para reiniciarlo.
 14. **Bootanimation en fb0** — el patrón para splash en handhelds con panel DSI sin EDID:
     dibujar en `/dev/fb0` desde systemd, no Plymouth.
-15. **Plugin Decky en la imagen** — PocknixControl en `/usr/share/decky-plugins/`; Decky lo copia
+15. **Plugin Decky en la imagen** — CalvOS Control en `/usr/share/decky-plugins/`; Decky lo copia
     a `homebrew/` al arrancar, así que los cambios van en la **fuente** o se pierden.
 
 ---

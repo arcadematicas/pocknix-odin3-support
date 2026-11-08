@@ -46,14 +46,14 @@ apartado enlaza a su documento.
   sudo pocknix-rollback --list
   sudo pocknix-rollback --to <id> --yes
   ```
-- También desde **Pocknix Tools** (menú de snapshots) y desde **PocknixControl**
+- También desde **CalvOS Tools** (menú de snapshots) y desde **CalvOS Control**
   (pestaña de updates/snapshots).
 - Rollback del kernel: `pocknix-kernel-guard` + `/flash/KERNEL.bak*` (ver
   `../RED-SEGURIDAD-KERNEL-20261026.md`).
 
 ## Actualizaciones
 
-- Usa el **actualizador del QAM / CalvOS** (PocknixControl → Updates). La base va
+- Usa el **actualizador del QAM / CalvOS** (CalvOS Control → Updates). La base va
   sobre un snapshot congelado: **no hagas `pacman -Syu` a lo bruto** (sube ~260
   paquetes y puede romper la sesión). Para instalar algo suelto:
   ```sh
