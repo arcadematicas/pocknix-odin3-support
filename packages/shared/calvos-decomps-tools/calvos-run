@@ -86,6 +86,18 @@ run_x86() { # $1 = binario, resto args
   box64 "$bin" "$@"
 }
 
+# Si Box64 muere con SIGSEGV (139), reintenta una vez con dynarec conservador:
+# algunos recompiladores (.NET/LLVM) tropiezan con BIGBLOCK en la 1a compilacion.
+run_x86_retry() {
+  run_x86 "$@"; local rc=$?
+  if [ "$rc" -eq 139 ] && [ "${BOX64_DYNAREC_BIGBLOCK:-2}" != "0" ]; then
+    echo "[calvos-run] SIGSEGV (139) en Box64; reintento con BOX64_DYNAREC_BIGBLOCK=0"
+    BOX64_DYNAREC_BIGBLOCK=0 run_x86 "$@"
+    return $?
+  fi
+  return $rc
+}
+
 # --- AppImage --------------------------------------------------------------
 is_appimage=0
 case "$TARGET" in *.AppImage|*.appimage) is_appimage=1 ;; esac
@@ -93,7 +105,7 @@ case "$TARGET" in *.AppImage|*.appimage) is_appimage=1 ;; esac
 if [ "$is_appimage" -eq 1 ]; then
   export APPIMAGE_EXTRACT_AND_RUN=1
   echo "[calvos-run] AppImage: intento directo (extract-and-run)"
-  run_x86 "$TARGET" "$@"; rc=$?
+  run_x86_retry "$TARGET" "$@"; rc=$?
   [ "$rc" -eq 0 ] && exit 0
   report_missing_libs x86_64
   echo "[calvos-run] AppImage directo falló (rc=$rc); extrayendo con unsquashfs"
@@ -106,7 +118,7 @@ if [ "$is_appimage" -eq 1 ]; then
       echo "[calvos-run] ejecutando $DEST/AppRun"
       cd "$DEST" || exit 1
       if [ "$(arch_of "$DEST/AppRun" 2>/dev/null)" = "Advanced Micro Devices X86-64" ] || file -b "$DEST/AppRun" 2>/dev/null | grep -qi 'x86-64'; then
-        run_x86 "$DEST/AppRun" "$@"
+        run_x86_retry "$DEST/AppRun" "$@"
       else
         "$DEST/AppRun" "$@"
       fi
@@ -117,7 +129,7 @@ if [ "$is_appimage" -eq 1 ]; then
     BIN=$(find "$DEST" -maxdepth 3 -type f -perm -u+x | head -1)
     if [ -n "$BIN" ]; then
       echo "[calvos-run] ejecutando binario interno $BIN"
-      run_x86 "$BIN" "$@"
+      run_x86_retry "$BIN" "$@"
       rc=$?
       report_missing_libs x86_64
       exit "$rc"
@@ -142,7 +154,7 @@ case "$ARCH" in
     exit "$rc"
     ;;
   *X86-64*)
-    run_x86 "$TARGET" "$@"
+    run_x86_retry "$TARGET" "$@"
     rc=$?
     report_missing_libs x86_64
     exit "$rc"
