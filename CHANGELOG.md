@@ -69,15 +69,17 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 - Los flags de Box64 (`SAFEFLAGS`, `STRONGMEM`, `BIGBLOCK=3`, `CALLRET`,
   `FASTROUND`) **no cambian nada**. Es la traducción x86_64→ARM64, no la config.
 
-### 🚀 Lepton (Android) — integración en curso (8/11)
+### ⚠️ Lepton (Android) — descartado (8/11)
 - Decisión: **DeckStation se queda**; no se adopta el Store/`pocknix-emu-*` de upstream.
 - Añadidos en la rama `lepton` del fork: `pocknix-lepton` (host side), `pocknix-mesa-android`
   (Mesa bionic + Fossilize) y `pocknix-waydroid` (opcional).
 - `base.list`: podman, crun, catatonit, passt, android-tools, attr, inotify-tools, patch.
 - `pocknix-steam` 74: `SYSTEM_PATH`, `SYSTEM_LD_LIBRARY_PATH` y `APP_WANTS_FLATSCREEN=true`
   para los compat tools; `pocknix-steam-full` 5 depende de `pocknix-lepton`.
-- Pendiente: build de `pocknix-mesa-android` (en curso), patch de toque en gamescope OGC,
-  prueba con un APK y publicación. Detalle en `docs/LEPTON-INTEGRACION.md`.
+- **Descartado**: Lepton solo lanza apps Android de Steam Frame, no APKs locales.
+  Se instalaron `pocknix-lepton`/`pocknix-mesa-android` para probar y se retiraron.
+  Para APKs, Waydroid; para Xbox, el core **hakuX-lr** (actualizado a 0.23.0).
+  Detalle en `docs/LEPTON-INTEGRACION.md`.
 
 ### ✅ Mesa 26.3.0-2 publicada en R2 (8/11)
 - El artefacto ya estaba construido y **validado en la Odin** (mesa y vulkan-freedreno

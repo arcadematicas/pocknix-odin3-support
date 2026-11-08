@@ -217,24 +217,4 @@ if [ "$(cat "/sys/block/${root_disk}/device/type" 2>/dev/null)" = SD ]; then
   VERIFY=(-noverifyfiles)
 fi
 
-# --- Lepton / compat tools (Steam los arranca sin PATH) ---------------------
-export SYSTEM_PATH="${SYSTEM_PATH:-${PATH}}"
-export SYSTEM_LD_LIBRARY_PATH="${SYSTEM_LD_LIBRARY_PATH-${LD_LIBRARY_PATH-}}"
-export APP_WANTS_FLATSCREEN="${APP_WANTS_FLATSCREEN:-true}"
-
-env -u WAYLAND_DISPLAY \
-  GAMESCOPE_FAKE_OUTPUT_MM="${PANEL_MM}" \
-  gamescope "${GS_OUTPUT[@]}" -W "${GS_W}" -H "${GS_H}" -r "${REFRESH}" --xwayland-count 2 --mangoapp --backend drm \
-    --fake-output-mm "${PANEL_MM}" \
-    --force-orientation "${ORIENT}" "${GS_ROTATE[@]}" -e -- \
-    /usr/lib/pocknix/pocknix-steam-splash "${GS_W}x${GS_H}" -- \
-    env LD_LIBRARY_PATH="${LDLP}" "${CLIENT}" -gamepadui -steamos3 -steampal -steamdeck "${VERIFY[@]}" -noshaders \
-  >"${GS_LOG}" 2>&1 &
-GS_PID=$!
-
-# NOTA (09/10/2026): aquí vivía un watcher `xprop -spy` que re-aseguraba GAMESCOPE_COMPOSITE_FORCE=1
-# (para que `--force-composition` no lo cancelara; nuestro parche gamescope 0011 lo forzaba). Todo
-# eso ya NO se usa: el flag se quitó porque con la base gamescope de OGC dejaba el QAM DETRÁS.
-# Ver docs/QAM-DETRAS-DEL-JUEGO-2026-10-09.md.
-
 wait "${GS_PID}" || true

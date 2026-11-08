@@ -150,14 +150,3 @@ tk
 # Sin el, los menus y los scripts existen pero fallan al usarlos.
 squashfs-tools
 squashfuse            # montar .wsquashfs (lanzador WindWaker / juegos comprimidos)
-# --- Lepton (Android compat, Steam app 3029110) ---
-# Dependencias de runtime del host side (pocknix-lepton las deja en ./nodeps para que no
-# entren en el chroot de compilacion). Sin ellas Lepton no arranca el contenedor.
-podman
-crun                 # runc falla el init del contenedor en el bind de /dev/tty de Lepton
-catatonit
-passt
-android-tools        # adb (Lepton busca la ruta de Debian)
-attr
-inotify-tools
-patch

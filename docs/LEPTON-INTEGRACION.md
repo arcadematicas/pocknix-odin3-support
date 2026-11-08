@@ -1,4 +1,10 @@
-# Lepton — juegos Android en CalvOS (integración 08/11/2026)
+# Lepton — DESCARTADO (08/11/2026)
+
+> **Decisión final:** Lepton es la capa de compatibilidad Android de Valve para apps
+> **de Steam Frame** (lanzadas por Steam), **no** un instalador de APKs locales. Para
+> APKs se usa el Android del sistema (Waydroid) o, para Xbox, el **core libretro
+> hakuX-lr**. Se instaló para probar, se comprobó que no aplica y **se retiró**.
+> Este documento queda como registro de la investigación.
 
 **Qué es**: Lepton es la herramienta de compatibilidad **Android** de Valve para
 ARM64 (la que usa el Steam Frame). Steam la trata como un *compat tool* más (app
