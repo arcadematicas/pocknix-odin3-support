@@ -249,6 +249,25 @@ real es la **traducción x86_64→ARM64** (Box64), no el dynarec configurable ni
 Queda como línea futura probar **FEX** por juego (Minish ya falla en FEX por binario
 estático; Wario habría que probarlo con rootfs x86_64).
 
+### FEX vs Box64 — medido 08/11
+
+FEX 2611 estaba instalado, pero su rootfs (`fex-rootfs`) era de enero (glibc 2.42)
+y Wario pide 2.44. Se construyó un rootfs ligero con Arch x86_64 actual
+(`pacstrap`, 308 MB con Mesa/Turnip x86_64, `libdisplay-info` y `xcb-utils`) para
+poder medir en igualdad de condiciones.
+
+| Motor | Wario (relojes máximos) |
+|---|---|
+| Box64 0.4.5 | **52,7 fps** |
+| FEX 2611 | **52,5 fps** |
+
+Mismo perfil de frames lentos (30; p50 33,4 ms). **FEX no aporta rendimiento** en
+estos ports nativos: sería coste de mantenimiento (rootfs de 300 MB + Mesa + deps)
+sin ganancia. Se mantiene Box64. El rootfs nuevo queda en
+`/opt/calvos/fex-rootfs-glibc244.sqsh` por si hace falta FEX como **fallback de
+compatibilidad** (juego que no arranque en Box64); el rootfs original se restauró
+para no perder FEX 32-bit.
+
 ### Cómo medir (repetible)
 
 Wario escribe en su log, cada ~6 s:
@@ -261,9 +280,7 @@ Benchmark: misma escena, 60 s, un solo cambio por pasada.
 1. **Matriz de flags Box64** (A/B con Wario, 60 s): `BIGBLOCK=2/3`,
    `SAFEFLAGS=0`, `STRONGMEM=0`, `CALLRET=1`, `FASTROUND=1`,
    `BLEEDING_EDGE=1`. Medir fps medio y % de slow frames.
-2. **FEX vs Box64 por juego**: FEX 2611 está instalado; el binfmt x86_64 está
-   desactivado. Añadir selección de motor por juego y comparar (FEX suele ganar
-   en algunos títulos y perder en otros).
+2. ~~FEX vs Box64~~ — **medido 08/11**: empate técnico (52,5 vs 52,7). Se mantiene Box64.
 3. **Perfil de energía**: probar con perfil “alto” del QAM (`performance`) y
    mirar `cpufreq`/TDP durante la partida; comparar con “medio”.
 4. **`DOTNET_TieredCompilation`** y afines en los .NET para ver si reduce el
