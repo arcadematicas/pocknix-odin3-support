@@ -1358,3 +1358,14 @@ Reglas cortas:
 8. **Crash**: la primera ejecución compila (~2 min). `calvos-run` reintenta con
    `BOX64_DYNAREC_BIGBLOCK=0` si hay SIGSEGV.
 9. Validar **en pantalla** y anotarlo en `CALVOS-DECOMP-COMPAT.md`.
+
+## 📝 Git, README y CHANGELOG — regla (08/11/2026)
+
+- Cada **cambio de comportamiento o función nueva** va en un **commit propio** (no
+  acumular diez cosas en un commit de "varios").
+- En el mismo pase, actualizar:
+  - `README.md` / `README.en.md` si el cambio es visible para el usuario;
+  - `CHANGELOG.md` con fecha y la marca `✅`/`🚀`/`⚠️`/`🧹`;
+  - la **guía de usuario** correspondiente en `docs/guias/` (qué es, dónde está,
+    cómo se usa) y, si toca, el documento técnico de `docs/`.
+- Las guías de `docs/guias/` son **de usuario**; el detalle interno sigue en `docs/`.

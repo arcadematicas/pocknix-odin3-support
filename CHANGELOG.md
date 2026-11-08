@@ -3,8 +3,7 @@
 *La historia de qué se ha añadido y quitado en el proyecto, en orden. Para el detalle
 técnico fino ver `AGENTS.md` y `docs/`.*
 
-Este fichero resume el historial real del repositorio `pocknix-odin3-support` (209
-registros, del 25/08/2026 al 25/09/2026), agrupado por semanas y explicado en lenguaje
+Este fichero resume el historial real del repositorio `pocknix-odin3-support` (registros del 25/08/2026 al 08/11/2026), agrupado por semanas y explicado en lenguaje
 normal: qué se hace, qué se quita y por qué. Los identificadores técnicos aparecen
 solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
@@ -14,6 +13,76 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 - `🧹` = limpieza / algo retirado
 
 ---
+
+## 📅 7 / 8 de noviembre 2026 — Decomps Linux, .NET x86_64 y AppImage persistente
+
+### ✅ Kernel 7.2.15 (7/11)
+- Bumps + **rebase de 82 parches** sobre 7.2.15; paquete `linux-pocknix-sm8750-7.2.15-1`.
+- Instalado y arrancado en la Odin, **publicado en R2** y podada la 7.2.12-33.
+- Auditoría post-reboot: DSI 1080×1920, audio `SM8750AYN`, 0 unidades fallidas, suspend/resume OK.
+
+### ✅ FEX 2611 (7/11)
+- Compilado sin `FEXConfig` (Qt6 6.11); el 2610 con GUI queda guardado.
+- Publicado en R2 e instalado; validado con Dead Island (sin errores, 60–68 °C).
+- `FEX-x86` para 32 bits/Windows; `FEX-x86_64` desactivado en favor de Box64.
+
+### 🚀 Decomps Linux en modo juego (7/11)
+- `/home/games/linux` (bind a `/opt/decomps`, SD) con `logs/` por ejecución.
+- `calvos-run` (AppImage/ELF/.sh, Box64, AppImage extract, flag .NET) y
+  `calvos-decomps-sync` + timer de 5 min; 17 juegos con etiqueta `calvos` en Steam.
+- El sync guarda la **ruta del lanzador** (no la carpeta): se acabaron los
+  `tools/build-launcher.sh`, patchers y `android/fetch_sdl.sh`.
+- Paquetes `calvos-decomps-tools`, `calvos-dotnet-x86_64` y `calvos-x86_64-libs`;
+  la BSP de la Odin depende de ellos (van en la imagen).
+
+### ✅ .NET x86_64 (8/11)
+- El `libhostfxr.so` que fallaba era el `/home/deck/.dotnet` **aarch64** que instalan
+  algunos `run.sh`. Con el runtime **x86_64** de `/opt/calvos/dotnet-x86_64` arrancan
+  **Symphony, Links, Wario y Crash**.
+- Crash compila con Roslyn la primera vez; si Box64 muere con SIGSEGV, `calvos-run`
+  reintenta con `BOX64_DYNAREC_BIGBLOCK=0`.
+
+### ✅ Librerías x86_64 y Wario (8/11)
+- Wario enlaza `libabsl_*.so.2608.0.0` y no las trae: paquete **`calvos-x86_64-libs`**
+  (abseil de Arch x86_64) en `/opt/calvos/x86_64/lib`.
+- `dvd_root` corregido a `/opt/decomps/...` (existe en la Odin como montaje y en el
+  sobremesa como symlink).
+
+### ✅ AppImage persistente (8/11) — `calvos-run` v4.2
+- Los AppImage **x86_64** se extraen en `<juego>/.calimage/<nombre>-<sha>/` y se
+  ejecutan con `cwd`=juego, `APPDIR`/`APPIMAGE`/`OWD` y `HOME`=`<AppImage>.home`.
+- **Saves y configs persisten** y **no se usa `/tmp`** (tmpfs = RAM): se acabaron las
+  extracciones de 200–800 MB en memoria y el QAM sin aire.
+- Fallback automático al runtime si la extracción falla (Uncharted/PyInstaller).
+- Config por juego en `<juego>/.calvos.env` (`CALVOS_APPIMAGE_MODE`, `BOX64_*`, `SDL_*`).
+
+### ✅ A/B FEX vs Box64 (8/11)
+- Para medirlo se construyó un rootfs Arch x86_64 con **glibc 2.44** + Mesa/Turnip
+  x86_64 + `libdisplay-info` + `xcb-utils` (308 MB).
+- Wario, relojes al máximo: **Box64 52,7 fps / FEX 52,5 fps**, mismo perfil de slow
+  frames. **Se mantiene Box64**; el rootfs queda en `/opt/calvos/fex-rootfs-glibc244.sqsh`
+  como fallback de compatibilidad.
+
+### ⚠️ Rendimiento — el techo es Box64
+- El Panel de Control tenía **TDP 4 W** (CPU ~2,0/2,4 GHz, GPU 660 MHz). Forzando
+  relojes: Wario **44,9 → 52,7 fps** y frames lentos **13,5 % → 3 %**.
+- Los flags de Box64 (`SAFEFLAGS`, `STRONGMEM`, `BIGBLOCK=3`, `CALLRET`,
+  `FASTROUND`) **no cambian nada**. Es la traducción x86_64→ARM64, no la config.
+
+### 📚 Manuales y documentación (8/11)
+- Nuevos `docs/guias/`: índice, **DeckStation**, **WProton**, **Decomps Linux** y
+  **Sistema** (energía/TDP, HDR, snapshots, updates, captura, diagnóstico, mando).
+- `README`/`README.en` actualizados (kernel 7.2.15, decomps, enlaces a manuales).
+- `docs/CALVOS-DECOMPS.md` y `docs/CALVOS-DECOMP-COMPAT.md` al día con las mediciones.
+
+### ⚠️ Abierto
+- **Minish Cap**: binario estáticamente enlazado; Box64 avisa y FEX da SIGILL.
+  Necesita build dinámico del autor o el `.exe` por Proton.
+- **Paper Mario TTYD**: aborta por `C heap below 2 GiB`; `BOX64_MMAP32=0` no lo arregla.
+- **Uncharted**: usa el fallback de runtime (su launcher PyInstaller no corre extraído).
+- **SD que no monta al arrancar** con 7.2.15 (aparece `mmc0` a los ~331 s); montaje
+  manual OK.
+- Micrófono interno, giroscopio, re-corte base 1.4 y **Odin 3 Portal** (ABL pendiente).
 
 ## 📅 3 / 4 de noviembre 2026 — LED de carga, Decky arm64 y lote 1.3.1
 

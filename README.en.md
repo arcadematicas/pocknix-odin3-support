@@ -9,14 +9,14 @@
 
 [![Release](https://img.shields.io/github/v/release/arcadematicas/pocknix-odin3-support?label=CalvOS&color=2f81f7)](https://github.com/arcadematicas/pocknix-odin3-support/releases/latest)
 [![Arch](https://img.shields.io/badge/arch-aarch64-orange)]()
-[![Kernel](https://img.shields.io/badge/kernel-7.2.9--2-informational)]()
+[![Kernel](https://img.shields.io/badge/kernel-7.2.15-informational)]()
 [![License](https://img.shields.io/badge/license-GPL--2.0-green)](LICENSE.md)
 [![Upstream](https://img.shields.io/badge/upstream-pocknix--os-8957e5)](https://github.com/shuuri-labs/pocknix-os)
 
 **CalvOS** turns the **AYN Odin 3** into a gaming handheld/PC with the *SteamOS* experience:
 Steam in **Game Mode** under **gamescope**, Windows games through **ARM64 Proton (FEX)**,
-**emulators ready out of the box with DeckStation**, **Decky** plugins and a full
-**KDE Plasma** desktop.
+**Linux PC ports (decomps)**, **emulators ready out of the box with DeckStation**, **Decky**
+plugins and a full **KDE Plasma** desktop.
 
 An **[arcadematicas](https://github.com/arcadematicas)** project, built on
 **[pocknix-os](https://github.com/shuuri-labs/pocknix-os)** (Arch Linux ARM).
@@ -25,12 +25,15 @@ An **[arcadematicas](https://github.com/arcadematicas)** project, built on
 
 ---
 
+> 📚 **[User manuals](docs/guias/README.md)** (Spanish): DeckStation, WProton, Linux decomps, power/HDR, capture and diagnostics.
+
 ## ✨ Out of the box
 
 | | |
 |---|---|
 | 🕹️ **Steam games** | Native **Steam ARM64** client in Game Mode (gamepadui) under **gamescope** (OGC build). UI at the right scale (`--fake-output-mm`). |
 | 🪟 **Windows games** | **ARM64 Proton + FEX**; **WProton** (`1.72`) to launch `.wsquashfs` titles with its runners. |
+| 🐧 **Linux PC ports** | **Decomps** launched from a Steam tile: AppImage/ELF/.sh under **Box64**, **.NET x86_64** runtime and **persistent** AppImage extraction (no `/tmp`). See the [manual](docs/guias/DECOMP-LINUX.md) and [compatibility matrix](docs/CALVOS-DECOMP-COMPAT.md). |
 | 🎮 **Emulation** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 aarch64 emulators (RetroArch + 200 cores, Dolphin, DuckStation, Cemu, Eden, MAME…). First install **without limits**: it resolves assets without the GitHub API. |
 | 🧩 **Plugins (Decky)** | **PocknixControl** (TDP, manual HDR, OLED care, snapshots, updates), **CSS Loader** and the **Eclipse 0.3.2** theme (self-updating). |
 | 🖥️ **Desktop** | **KDE Plasma 6 (Wayland + Plasma Mobile)** with KScreen working. |
@@ -38,7 +41,7 @@ An **[arcadematicas](https://github.com/arcadematicas)** project, built on
 | 🔋 **Power** | Real **s2idle** suspend (~0.37 W), battery-auth charging and estimated percentage. |
 | 🔊 **Audio & input** | LPASS stack + UCM (`SM8750AYN`) and **InputPlumber** (UART gamepad + paddles). |
 | 📦 **Updates** | **Own signed pacman repo on Cloudflare R2**, **no `[aur]`** → `pacman -Syu` brings everything (kernel, Mesa, Steam, Decky…). |
-| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.9-2`** (acceleration patches, Adreno 830 GPU, `ath12k` WCN7860 Wi-Fi, battery) + an **anti-bootloop** ath12k patch. |
+| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.15`** (acceleration patches, Adreno 830 GPU, `ath12k` WCN7860 Wi-Fi, battery) + an **anti-bootloop** ath12k patch. |
 
 ## 📥 Install
 
@@ -90,7 +93,7 @@ sudo pacman -Syu      # or from the QAM / PocknixControl
 
 | Area | Status |
 |---|---|
-| **Boot** | ✅ Kernel **7.2.9-2** + Odin 3 device tree |
+| **Boot** | ✅ Kernel **7.2.15** + Odin 3 device tree |
 | **Rotation** | ✅ **Hardware** (DPU scanout) |
 | **Steam** | ✅ gamescope session + Steam gamepadui, UI at the right scale |
 | **HDR** | ⚠️ **OFF by default** (on purpose: with global HDR the QAM/MangoHUD fell behind). Manual toggle in PocknixControl |

@@ -9,13 +9,14 @@
 
 [![Release](https://img.shields.io/github/v/release/arcadematicas/pocknix-odin3-support?label=CalvOS&color=2f81f7)](https://github.com/arcadematicas/pocknix-odin3-support/releases/latest)
 [![Arch](https://img.shields.io/badge/arch-aarch64-orange)]()
-[![Kernel](https://img.shields.io/badge/kernel-7.2.12--18-informational)]()
+[![Kernel](https://img.shields.io/badge/kernel-7.2.15-informational)]()
 [![License](https://img.shields.io/badge/license-GPL--2.0-green)]()
 [![Upstream](https://img.shields.io/badge/upstream-pocknix--os-8957e5)](https://github.com/shuuri-labs/pocknix-os)
 
 **CalvOS** convierte la **AYN Odin 3** en una consola/PC de juegos con la experiencia de *SteamOS*:
 Steam en **modo juego** dentro de **gamescope**, juegos de Windows con **Proton ARM64 (FEX)**,
-**emuladores listos con DeckStation**, plugins con **Decky** y un escritorio **KDE Plasma** completo.
+**ports Linux de PC (decomps)**, **emuladores listos con DeckStation**, plugins con **Decky**
+y un escritorio **KDE Plasma** completo.
 
 Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido sobre
 **[pocknix-os](https://github.com/shuuri-labs/pocknix-os)** (Arch Linux ARM).
@@ -24,6 +25,7 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 
 ---
 
+- 📚 **[Manuales de usuario](docs/guias/README.md)** — DeckStation, WProton, decomps Linux, energía/HDR, captura y diagnóstico.
 - [Plan de pruebas pendientes (25/10/2026)](docs/PLAN-PRUEBAS-2026-10-25.md) — qué medir, en qué orden y qué decide cada prueba.
 
 ## ✨ Lo que llevas de serie
@@ -32,6 +34,7 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 |---|---|
 | 🕹️ **Juegos de Steam** | Cliente **Steam ARM64** nativo en modo juego (gamepadui) dentro de **gamescope** (base OGC). UI a escala correcta (`--fake-output-mm`). |
 | 🪟 **Juegos de Windows** | **Proton ARM64 + FEX**; **WProton** (`1.72`) para lanzar `.wsquashfs` con sus runners. |
+| 🐧 **Ports Linux de PC** | **Decomps** desde el icono de Steam: AppImage/ELF/.sh con **Box64**, runtime **.NET x86_64** y extracción **persistente** de AppImage (sin `/tmp`). Ver [manual](docs/guias/DECOMP-LINUX.md) y [matriz](docs/CALVOS-DECOMP-COMPAT.md). |
 | 🎮 **Emulación** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 emuladores aarch64 (RetroArch + 200 cores, Dolphin, Duckstation, Cemu, Eden, MAME…). Instalación inicial **sin límites**: resuelve los assets sin la API de GitHub. |
 | 🩺 **Informes y captura** | **`calvos-doctor`** (informe redactado, se envía solo si tú quieres) + **`calvos-grabar`** (1080p60 con encoder **H.264 por hardware**) y **`dock-check`** para capturadora. |
 | 🧩 **Plugins (Decky)** | **PocknixControl** (TDP, HDR a mano, OLED care, snapshots, updates), **CSS Loader** y el tema **Eclipse 0.3.2** (autoactualizable). |
@@ -40,7 +43,7 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 | 🔋 **Energía** | Suspensión **s2idle real** (~0,37 W), carga con autenticación de batería y % estimado. |
 | 🔊 **Audio y mandos** | Stack LPASS + UCM (`SM8750AYN`) y **InputPlumber** (gamepad UART + paddles). |
 | 📦 **Actualizaciones** | **Repo pacman propio en Cloudflare R2**, firmado y **sin `[aur]`** → `pacman -Syu` trae todo (kernel, Mesa, Steam, Decky…). |
-| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.12-18`** (parches de aceleración, GPU Adreno 830, WiFi `ath12k` WCN7860, batería, audio WCD939x) + parche **anti‑bucle** en ath12k. |
+| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.15`** (parches de aceleración, GPU Adreno 830, WiFi `ath12k` WCN7860, batería, audio WCD939x) + parche **anti‑bucle** en ath12k. |
 
 ## 📥 Instalar
 
