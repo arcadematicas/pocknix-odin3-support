@@ -1,154 +1,216 @@
 # CALVOS — Decomps Linux en la Odin 3 (x86_64/aarch64)
 
-Estado: **experimental**. Lo nuevo se llama `calvos-*`; `pocknix-*` es herencia.
+Estado: **funcional, en ampliación**. Lo nuevo se llama `calvos-*`; `pocknix-*` es herencia.
+Matriz de juegos y estado por título: **`CALVOS-DECOMP-COMPAT.md`** (mismo directorio).
 
 ## Objetivo
-Ejecutar los ports/decomps Linux de PC en la Odin 3 sin intervención: el usuario
-toca un icono/atajo de Steam y el sistema elige el motor adecuado.
+
+Ejecutar los ports/decomps Linux de PC en la Odin 3 sin intervención: el usuario toca
+un icono de Steam y el sistema elige motor, runtime y librerías. Sin teclado ni ratón.
+Todo lo necesario va **en la imagen**; nada de instalar a mano por dispositivo.
 
 ## Rutas
-- Juegos: `/home/games/linux/<Juego>/` (bind a `/opt/decomps` en la SD:
-  `/opt/decomps  /home/games/linux  none  bind,nofail,x-systemd.requires-mounts-for=/opt  0 0`).
-- Logs: `/home/games/linux/logs/<juego>-<AAAAMMDD-HHMMSS>.log` (uno por ejecución).
-- Lanzador: `/usr/local/bin/calvos-run` (`decomp-run` es symlink).
-- Sync Steam: `/usr/local/bin/calvos-decomps-sync` + `.service`/`.timer`.
-- Documentación: este fichero.
 
-## Componentes
-### calvos-run
-Detecta el tipo de lanzador y ejecuta:
-1. Carpeta → busca `*.AppImage`, `*.sh`, ELF (prefiere `Play/`, `bin/`, `Binaries/Linux/`).
-2. AppImage → `APPIMAGE_EXTRACT_AND_RUN=1` (FUSE no fiable bajo Box64).
-3. `.sh` → lo ejecuta directamente (el script elige el binario).
-4. ELF x86_64 → `box64` con `BOX64_DYNAREC_BIGBLOCK=2`, `SAFEFLAGS=1`, `FASTNAN=1`.
-5. ELF aarch64 → nativo.
-6. `.NET` → `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` (evita el abort de ICU).
-7. `cd` a la carpeta del juego y tee del log.
+| Qué | Dónde |
+|---|---|
+| Juegos | `/home/games/linux/<Juego>/` (bind a `/opt/decomps` en la SD) |
+| Logs | `/home/games/linux/logs/<juego>-<AAAAMMDD-HHMMSS>.log` (uno por ejecución) |
+| Lanzador | `/usr/local/bin/calvos-run` (`decomp-run` es symlink) |
+| Sync Steam | `/usr/local/bin/calvos-decomps-sync` + `.service`/`.timer` |
+| Runtime .NET x86_64 | `/opt/calvos/dotnet-x86_64` (`calvos-dotnet`) |
+| Libs x86_64 compartidas | `/opt/calvos/x86_64/lib` |
+| Extracción AppImage (fallback) | `/home/games/linux/.appimage/<nombre>/` |
 
-### calvos-decomps-sync
+El bind está en `/etc/fstab`:
+`/opt/decomps  /home/games/linux  none  bind,nofail,x-systemd.requires-mounts-for=/opt  0 0`
+
+`/opt` vive en la SD (`/dev/mmcblk0p2`); `/home` en la UFS interna.
+
+## Paquetes (van en la imagen vía `pocknix-bsp-sm8750`)
+
+| Paquete | Qué aporta |
+|---|---|
+| `calvos-dotnet-x86_64` | Runtime .NET **10.0.14 x86_64** (Microsoft, MIT) en `/opt/calvos/dotnet-x86_64` + `/usr/bin/calvos-dotnet`. Lo piden los ports .NET (Wario, Links, Symphony, Crash). |
+| `calvos-x86_64-libs` | Librerías x86_64 que los ports enlazan y no incluyen. Hoy: **abseil** (`libabsl_*.so.2608.0.0`, Arch x86_64 `20260817.0`). |
+| `calvos-decomps-tools` | `calvos-run` + `calvos-decomps-sync` + `systemd` (service `User=deck`, timer 5 min) + `decomp-run`. |
+
+`pocknix-bsp-sm8750` depende de los tres, así que una imagen nueva los trae de serie.
+
+## Arquitectura
+
+### 1. `calvos-decomps-sync` (Steam → atajos)
+
 - Escanea `/home/games/linux/*` (excepto `logs/`).
-- Detecta lanzador: AppImage (prefiere aarch64) → `.sh` → ELF.
-- Escribe `~/.local/share/Steam/userdata/<id>/config/shortcuts.vdf` con:
+- Elige **lanzador** con esta prioridad:
+  1. `*.AppImage` / `*.appimage` (prefiere aarch64 si hay varios).
+  2. `*.sh` de primer nivel (prefiere `Launch/run/start/play`).
+  3. ELF dentro de `Play/`, `bin/`, `Binaries/Linux/`, `Game/`.
+  4. ELF de primer nivel; último recurso, un subdirectorio.
+  - Excluye `android/`, `tools/`, `toolchain/`, `dependencies/`, `docs/`, `Redist/`
+    y nombres `patcher`, `launcher`, `setup`, `installer`, `unins`, `updater`,
+    `crashpad`, `probe`, `gpu-capabilities`, `fetch_`.
+- Escribe `~/.local/share/Steam/userdata/<id>/config/shortcuts.vdf`:
   - `Exe = /usr/local/bin/calvos-run`
-  - `LaunchOptions = "<carpeta del juego>"`
+  - `LaunchOptions = "<ruta del lanzador>"` ← **ruta explícita**, no la carpeta
   - `StartDir = <carpeta>`, `AppName = <carpeta>`
-  - `DevkitGameID = calvos` (solo reemplaza los suyos; conserva los ajenos).
-- **Steam debe estar cerrado**; si está abierto, sale con código 2.
-- `calvos-decomps-sync.timer`: arranque + cada 5 min.
+  - `DevkitGameID = calvos` (solo reemplaza sus entradas; conserva las ajenas)
+- **Steam debe estar cerrado**: si está abierto, sale con código 2 (Steam reescribe
+  `shortcuts.vdf` desde memoria). El servicio lo acepta (`SuccessExitStatus=2`).
+- Timer: `OnBootSec=3min`, luego cada 5 min, como `deck`.
 
-### binfmt
-- `FEX-x86` para 32 bits/Windows.
-- `box64` para ELF x86_64 (`/usr/local/bin/box64`, v0.4.5 con dynarec ARM64).
+### 2. `calvos-run` (lanzador)
+
+Recibe la ruta del lanzador y decide:
+
+```
+target = AppImage ─┬─ intento directo con APPIMAGE_EXTRACT_AND_RUN=1
+                   │    └─ si falla ─→ unsquashfs al offset → AppRun / binario interno
+                   ├─ .sh ─→ bash (reintento con BIGBLOCK=0 si SIGSEGV)
+                   ├─ ELF aarch64 ─→ nativo
+                   └─ ELF x86_64  ─→ box64
+                        · BOX64_DYNAREC_BIGBLOCK=2, SAFEFLAGS=1, FASTNAN=1
+                        · BOX64_LD_LIBRARY_PATH = /opt/calvos/x86_64/lib
+                          + <juego>/libs.x86_64 + libs/ + lib/
+                        · si SIGSEGV (139): reintento con BIGBLOCK=0
+```
+
+Siempre:
+- `cd` a la carpeta del juego y `tee` del log por ejecución.
+- `DOTNET_ROOT=/opt/calvos/dotnet-x86_64`, `PATH`, `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1`.
+- **Detección de libs**: parsea `Error loading needed lib` / `cannot open shared object file`.
+  En binarios aarch64 busca paquete (`pacman -F`) e intenta `pacman -S --noconfirm`
+  **solo si hay NOPASSWD**; si no, deja el comando exacto en el log. En x86_64 avisa de
+  que hay que añadir la `.so` a `calvos-x86_64-libs`.
+
+### 3. binfmt
+
+- `FEX-x86` → 32 bits / Windows.
+- `box64` → ELF x86_64 (v0.4.5, dynarec ARM64, `/usr/local/bin/box64`).
 - `FEX-x86_64` desactivado (competía con Box64).
 
-## Resultados de pruebas (07/11/2026)
-| Juego | Tipo | Estado |
-|---|---|---|
-| Xenogear-lite | UE5 ELF x86_64 | ✅ arranca |
-| ConkerRecompiled | recomp x86_64 | ✅ arranca |
-| CrashBandicoot | recomp x86_64 | 🔄 compila en el primer arranque |
-| DriveClub | AppImage aarch64 | ✅ nativo |
-| gen1recomp | AppImage aarch64 | ✅ nativo |
-| SuperMetroid | `.sh` | ❌ detector eligió `android/fetch_sdl.sh` |
-| Links Awakening | .NET/patcher | ❌ eligió el patcher; dotnet falla |
-| Wario | .NET + ELF | ❌ eligió el launcher .NET; el juego es `Play/WarioRecomp` |
-| Uncharted | AppImage x86_64 | ❌ runtime AppImage bajo Box64 |
-| Captain Toad | `.exe` | — (Windows: Proton/wproton) |
+## .NET: por qué lo piden ports “nativos”
 
-## Limitaciones conocidas
-- AppImage x86_64: el runtime puede petar bajo Box64 (probar `.exe` con Proton).
-- Ports con libs incompletas (p.ej. `libabsl` de Wario) no arrancan.
-- .NET/Avalonia: necesita ICU o el flag invariant.
-- Los `.exe` de Windows no se añaden a Steam desde este sync (van por Proton/wproton).
-- Los `.exe` dentro de las carpetas son normales (los ports traen ambas builds).
-- Steam debe estar cerrado para el sync.
+“Nativo Linux” solo significa que el ejecutable es un **ELF de Linux**. Muchos ports
+están hechos en **C#/.NET**: el ELF es un **apphost** que carga el runtime
+(`libhostfxr.so`, `libcoreclr.so`) y la lógica va en IL.
 
-## Siguiente
-1. Afinar `detect_launcher`: excluir `android/`, `tools/`, `dependencies/`,
-   `*Patcher*`, `*Launcher*`, `*Setup*`, `*Installer*`; preferir `Launch.sh`/`run.sh`
-   y el binario del juego.
-2. `decomp-run`/`calvos-run`: `--no-steam-overlay` para quitar el ruido de
-   `gameoverlayrenderer.so`.
-3. Evaluar `calvos-decomps-sync` con icono (`icon.png`/`logo.png`) y carátulas.
-4. Para Windows: mantener wproton/Proton; no mezclar con este sync.
-5. Añadir un comando `calvos-run --diagnose <juego>` que muestre el lanzador
-   elegido, la arquitectura y las libs que faltan.
+El fallo típico (`Failed to load .../.dotnet/host/fxr/10.0.14/libhostfxr.so`) era porque
+el `run.sh` del port instalaba .NET **aarch64** y el apphost es **x86_64**. Con el runtime
+x86_64 de `/opt/calvos/dotnet-x86_64` bajo Box64, los cuatro ports .NET arrancan.
 
-## Corrección 07/11 21:10 — lanzador explícito
-El sync guardaba la **carpeta** en `LaunchOptions`; `calvos-run` re-detectaba dentro
-y elegía mal (`tools/build-launcher.sh`, patcher, `android/fetch_sdl.sh`).
-Ahora `calvos-decomps-sync` guarda la **ruta del lanzador detectado**:
-- Links → `Link's Awakening DX HD`
-- Wario → `Play/WarioRecomp`
-- SuperMetroid → `Launch.sh`
-Verificado en `shortcuts.vdf`: 17 decomps + 10 ajenos.
+## Librerías x86_64 compartidas
 
-## Fallos restantes (07/11 noche)
-- **Wario/Links (.NET/Avalonia)**: `dotnet not found` / `libhostfxr.so` no carga.
-  Necesitan el runtime .NET x86_64 o el flag `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT`
-  (ya puesto) no basta si falta el hostfxr.
-- **AppImages x86_64** (Uncharted, Paper Mario, SSF2, minish, Earthworm): el runtime
-  del AppImage no sobrevive a Box64; usar el `.exe` con Proton o extraer el AppImage
-  y lanzar el binario interno.
-- **SymphonyRecomp**: `run.sh` con .NET; mismo problema de `libhostfxr.so`.
-- **Crash**: compila el recomp la primera vez (esperar).
-- **Conker/Xenogear**: OK.
+Los ports compilados contra Arch x86_64 enlazan contra sonames concretos que no incluyen
+(ej. Wario → `libabsl_*.so.2608.0.0`). Esas librerías **no** pueden salir de los paquetes
+aarch64 del sistema: Box64 necesita binarios x86_64. Se empaquetan en
+`calvos-x86_64-libs` (`/opt/calvos/x86_64/lib`) y `calvos-run` las pone en
+`BOX64_LD_LIBRARY_PATH`.
 
-## Paquetes calvos-* (07/11 noche)
-Para que esto no dependa de instalar cosas a mano en cada Odin, dos paquetes
-`shared` en el centro (van en la imagen via `pocknix-bsp-sm8750`):
+Regla: **cada vez que un port pida una `.so` x86_64, se añade al paquete** (no a la SD).
 
-- **calvos-dotnet-x86_64** — runtime .NET 10.0.14 **x86_64** (Microsoft, MIT)
-  aislado en `/opt/calvos/dotnet-x86_64` + `/usr/bin/calvos-dotnet`.
-  Es lo que necesitan Wario/Links/Symphony/Crash: el ELF es un apphost .NET y
-  busca `libhostfxr.so`; este runtime corre bajo Box64.
-- **calvos-decomps-tools** — `calvos-run` v4 y `calvos-decomps-sync` con sus
-  `systemd` (service `User=deck` + timer de 5 min). Incluye
-  `decomp-run` como symlink.
+## AppImages: cómo funciona hoy y el problema pendiente
 
-`calvos-run` v4:
-- recibe el lanzador **explicito** del sync (ya no adivina);
-- AppImage: intento directo y, si falla, `unsquashfs` al offset y ejecuta
-  `AppRun`/binario interno (funciona con Uncharted);
-- exporta `DOTNET_ROOT`/`PATH` si existe el runtime;
-- detecta `Error loading needed lib` / `cannot open shared object file` y, en
-  binarios aarch64, busca el paquete con `pacman -F` e intenta `pacman -S`
-  (sin contraseña solo si hay NOPASSWD; si no, deja el comando en el log).
+Hoy: intento directo con `APPIMAGE_EXTRACT_AND_RUN=1`. El runtime x86_64 del AppImage
+extrae el squashfs a **`/tmp/appimage_extracted_<hash>`** y ejecuta allí. Si el runtime
+peta bajo Box64, se extrae con `unsquashfs` a `/home/games/linux/.appimage/<nombre>/` y se
+lanza `AppRun` (esto ya funciona, p. ej. Uncharted).
 
-Instalacion manual (mientras la Odin esta apagada):
+**Dos problemas reales, ya observados:**
+
+1. **Rutas perdidas / partidas que no persisten.** El juego corre con `cwd` y `APPDIR`
+   dentro de `/tmp/appimage_extracted_*`. Lo que escriba junto al ejecutable (saves,
+   configs, cachés, shaders) vive en un directorio temporal que se borra. Cada arranque
+   es “nuevo”.
+2. **Consumo de RAM.** `/tmp` es **tmpfs**: una extracción de 300 MB son 300 MB de RAM.
+   Se han visto 5 restos (`appimage_extracted_*`) sumando **811 MB**. Paper Mario 64
+   (Paperboat) usa además ~2,6 GB de RSS; con Steam (~1,5 GB) la consola entra en
+   presión de memoria y el **QAM se queda colgado**.
+
+**Diseño propuesto (pendiente de implementar): extracción persistente + `cwd` original.**
+
 ```
-scp /tmp/opencode/pkg/calvos-*.pkg.tar.xz deck@odin:/tmp/
-sudo pacman -U --noconfirm --overwrite '/usr/local/bin/*' /tmp/calvos-*.pkg.tar.xz
-sudo rm -f /etc/systemd/system/calvos-decomps-sync.{service,timer}
-sudo systemctl daemon-reload && sudo systemctl enable --now calvos-decomps-sync.timer
+dir = <juego>/.calvos-appimage/<nombre>-<sha256[:8]>/
+si no existe o cambió el sha256 del AppImage:
+    rm -rf dir ; unsquashfs -o <offset> -d dir <AppImage>
+export APPDIR=dir
+export ARGV0=<ruta original del AppImage>
+export APPIMAGE=<ruta original>
+export OWD=<carpeta del juego>
+cd <carpeta del juego>
+exec box64 dir/AppRun "$@"
 ```
 
-## Validación 08/11 — .NET resuelto
-Instalados en la Odin `calvos-dotnet-x86_64 10.0.14-1`,
-`calvos-decomps-tools 1.0.0-4` y `calvos-x86_64-libs 20260817.0-1`.
+- Persistente → saves/configs sobreviven y dejan de ocupar RAM.
+- `APPDIR` explícito → los `AppRun` que lo recalculan siguen funcionando.
+- `cwd` = carpeta del juego → las rutas relativas al directorio del port se mantienen.
+- `CALVOS_EXTRACT=force` para re-extraer al actualizar el AppImage (o comparar sha256).
+- Limpieza: borrar `<juego>/.calvos-appimage/` al desinstalar/actualizar; nunca en `/tmp`.
 
-| juego | resultado |
-|---|---|
-| SymphonyRecomp | **OK**: carga .NET y crea contexto GL (Mesa 26.3.0 / Adreno 830). |
-| Links Awakening DX HD | **OK**: carga .NET/Vulkan (instance extensions Wayland). |
-| Wario Land (WarioRecomp) | **OK**: 686–1618 frames en 30 s. Necesitaba las abseil x86_64 y `dvd_root` correcto. |
-| Crash Bandicoot | **OK**: recompila, “Game ready”, ventana GL y JIT warmup. |
+Mientras no esté hecho: **no dejar AppImages abiertos**; tras un cierre forzado, limpiar
+`/tmp/appimage_extracted_*` (son RAM).
 
-Claves:
-- El “nativo Linux” de estos ports es un **apphost .NET x86_64**; el
-  `libhostfxr.so` que fallaba era el de `/home/deck/.dotnet`, que el `run.sh`
-  había instalado **aarch64**. Con `DOTNET_ROOT=/opt/calvos/dotnet-x86_64`
-  (x86_64) arrancan los cuatro.
-- **Wario** enlaza `libabsl_*.so.2608.0.0` y no las trae. Nuevo paquete
-  **calvos-x86_64-libs** (abseil-cpp 20260817.0 de Arch x86_64) en
-  `/opt/calvos/x86_64/lib`; `calvos-run` lo añade a `BOX64_LD_LIBRARY_PATH`.
-- **Wario** tenía `dvd_root` apuntando a `/run/media/...` (sobremesa). Ahora
-  `/opt/decomps/...`, que existe en la Odin (montaje) y en el sobremesa
-  (symlink `/opt/decomps -> /run/media/fransis/ROMS16TB/decomps`).
-- **Crash** compila con Roslyn la primera vez; si Box64 muere con SIGSEGV,
-  `calvos-run` reintenta una vez con `BOX64_DYNAREC_BIGBLOCK=0` (también para
-  lanzadores `.sh`). La segunda pasada usa la caché y entra al juego.
+## Memoria y QAM
 
-Pendiente de revalidar: AppImages x86_64 (Uncharted ya ejecutaba el `AppRun`
-extraído; falta verlo en pantalla) y los ports que sigan pidiendo libs x86_64
-(añadirlas a `calvos-x86_64-libs`).
+Síntoma: al probar un juego pesado, el **QAM deja de responder**. No es un cuelgue del
+sistema: es **presión de memoria** (10,9 GB RAM + swap). El juego, Steam/steamwebhelper y
+los restos de AppImage en tmpfs compiten; el cliente de Steam se queda sin margen.
+
+Medidas inmediatas (manuales):
+```
+free -m
+ps -eo pid,rss,comm --sort=-rss | head
+pgrep -af 'AppRun|box64|calvos-run'
+kill <pid del juego>          # NO matar steam ni gamescope
+rm -rf /tmp/appimage_extracted_*   # solo si ningún proceso los usa
+```
+
+Propuesta (backlog): lanzar el juego en un **scope systemd con `MemoryHigh`/`MemoryMax`**
+para que el OOM mate al juego y no a Steam, y un aviso en el log cuando
+`MemAvailable < 1 GB`.
+
+## Diagnóstico rápido
+
+```bash
+# qué lanzador detecta el sync (no escribe nada)
+calvos-decomps-sync --dry-run
+
+# log de la última ejecución de un juego
+ls -t /home/games/linux/logs/*.log | head
+grep -v gameoverlayrenderer <log> | tail -40
+
+# arquitectura de un binario
+readelf -h <bin> | grep Machine
+
+# libs que faltan (Box64)
+BOX64_LOG=1 box64 <bin> 2>&1 | grep -i 'needed lib'
+
+# runtime .NET
+box64 /opt/calvos/dotnet-x86_64/dotnet --list-runtimes
+```
+
+Notas:
+- El ruido de `gameoverlayrenderer.so` (`LD_PRELOAD`) es inofensivo.
+- Los `.exe` que aparecen en las carpetas son builds Windows/tools de los ports; no se
+  añaden a Steam desde este sync (van por wproton/Proton).
+
+## Backlog priorizado
+
+1. **AppImage persistente** (arriba): rutas/saves + RAM. Es el mayor bloqueo actual.
+2. **Scope de memoria por juego** (`systemd-run --user --scope -p MemoryHigh=...`) y aviso
+   de memoria baja; evitar que el QAM se bloquee.
+3. **`calvos-run --diagnose <juego>`**: lanzador, arch, libs que faltan, runtime .NET.
+4. **`--no-steam-overlay`**: quitar el ruido de `gameoverlayrenderer.so`.
+5. **Iconos/carátulas** en el sync (`icon.png`/`logo.png`/`cover.png`).
+6. **Auto-instalación de libs**: decidir si se habilita una regla sudoers acotada.
+7. **Windows**: mantener wproton/Proton aparte; no mezclar con este sync.
+8. **Documentar cada port nuevo** en `CALVOS-DECOMP-COMPAT.md` al validarlo.
+
+## Historial
+
+- **07/11**: sync pasa la **ruta del lanzador** (antes la carpeta; `calvos-run`
+  re-detectaba mal). Box64 nativo; bind de decomps; logs por ejecución.
+- **07/11**: paquete `calvos-dotnet-x86_64`; FEX 2611 validado con Dead Island.
+- **08/11**: validados Symphony, Links, Wario y Crash (.NET resuelto). Nuevo
+  `calvos-x86_64-libs` (abseil). Reintento automático `BIGBLOCK=0` ante SIGSEGV.
+  Wario: `dvd_root` corregido a `/opt/decomps/...` (existe en Odin y sobremesa).
+  Detectado el problema de RAM/rutas de los AppImages (Paper Mario 64 + QAM).

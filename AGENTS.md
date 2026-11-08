@@ -1323,3 +1323,30 @@ round-trip no da idéntico, no se escribe nada.
 Los paquetes se compilan y se **instalan primero en la consola**; a R2 se suben **después** de pasar
 las pruebas del documento correspondiente (`docs/PRUEBAS-*.md`). Lo que quede sin validar se anota
 como tal en el CHANGELOG y en el backlog.
+
+## 🎮 DECOMPS LINUX EN LA ODIN (08/11/2026) — LEER ANTES DE TOCAR
+
+Documentación viva:
+- **`docs/CALVOS-DECOMPS.md`** — arquitectura, paquetes, problemas y backlog.
+- **`docs/CALVOS-DECOMP-COMPAT.md`** — matriz por juego (lanzador, arch, estado, notas).
+
+Reglas cortas:
+1. **El sync pasa la ruta del lanzador**, no la carpeta. Si `calvos-run` vuelve a
+   "adivinar", Wario/Links/SuperMetroid eligen el script equivocado.
+2. **Nada de instalar a mano**: runtime .NET x86_64 (`calvos-dotnet-x86_64`), libs
+   x86_64 (`calvos-x86_64-libs`) y herramientas (`calvos-decomps-tools`) van en la
+   imagen vía `pocknix-bsp-sm8750`.
+3. **Las .so x86_64 que pida un port van a `calvos-x86_64-libs`**, nunca a la SD.
+   Box64 no puede usar las aarch64 del sistema (abseil de Wario fue el primer caso).
+4. **`.NET`**: el `run.sh` de algunos ports instala `/home/deck/.dotnet` en **aarch64**
+   (inservible para el apphost x86_64). `calvos-run` exporta `DOTNET_ROOT=/opt/calvos/...`.
+5. **AppImages x86_64**: hoy se extraen a `/tmp` (tmpfs = RAM) y pierden saves/rutas.
+   Hay diseño aprobado para extracción persistente en `<juego>/.calimage/` (backlog #1).
+   Si un AppImage se cierra forzado, limpiar `/tmp/appimage_extracted_*`.
+6. **Memoria**: 10,9 GB. Antes de probar otro juego, cerrar el anterior y mirar `free -m`.
+   Si el QAM se bloquea, matar el juego (y su `AppRun`), **no** Steam/gamescope.
+7. **Wario**: `Play/UserData/Config.toml` debe tener
+   `dvd_root = "/opt/decomps/Wario Land Shake it PC Port/WarioRecomp-0.3.1-linux/Game/DATA"`.
+8. **Crash**: la primera ejecución compila (~2 min). `calvos-run` reintenta con
+   `BOX64_DYNAREC_BIGBLOCK=0` si hay SIGSEGV.
+9. Validar **en pantalla** y anotarlo en `CALVOS-DECOMP-COMPAT.md`.
