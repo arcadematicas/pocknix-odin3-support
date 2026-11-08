@@ -12,21 +12,21 @@ Leyenda: ✅ validado en pantalla · 🟡 arranca pero falta algo · ⏳ sin val
 | Juego | Lanzador (sync) | Tipo / arch | Estado | Notas |
 |---|---|---|---|---|
 | ConkerRecompiled | `Conker.sh` | .sh → x86_64 | ✅ | Arranca bajo Box64. |
-| Crash Bandicoot | `crash.sh` | .sh → .NET x86_64 | ✅ | **1ª ejecución compila** con Roslyn (~2 min). Si Box64 muere con SIGSEGV, `calvos-run` reintenta con `BIGBLOCK=0`. Después usa caché. |
+| Crash Bandicoot | `crash.sh` | .sh → .NET x86_64 | ✅ | **1ª ejecución compila** con Roslyn (~2 min). Si Box64 muere con SIGSEGV, `calvos-run` reintenta con `BIGBLOCK=0`. Después usa caché. Lento: recompilador + .NET bajo Box64. |
 | DriveClub | `DriveClub-recomp-aarch64.AppImage` | AppImage aarch64 | ✅ | Nativo. |
-| Earthworm Jim HD | `EarthwormJimHD-linux-x86_64.AppImage` | AppImage x86_64 | ⏳ | Probar en pantalla; si el runtime peta → extracción persistente (backlog). |
-| New Super Paper Bros | `New Super Paper Bros` | ELF x86_64 | ⏳ | Probar. |
-| SymphonyRecomp | `run.sh` | .sh → .NET x86_64 | ✅ | Carga .NET y crea contexto GL. Su autoupdater avisa de v1.1.2p (hay 0.5.1b): **no actualizar sin probar**. |
+| Earthworm Jim HD | `EarthwormJimHD-linux-x86_64.AppImage` | AppImage x86_64 | ✅ | Arranca (swapchain creada). Rendimiento por medir. |
+| New Super Paper Bros | `New Super Paper Bros` | ELF x86_64 | ✅ | Arranca (Aurora, VSync, 2.2x). Rendimiento por medir. |
+| SymphonyRecomp | `run.sh` | .sh → .NET x86_64 | ✅ | Arranca (GL 4.6, assets/packs cargados). **Lento**: doble traducción .NET→x86_64→Box64. Autoupdater avisa de v1.1.2p (hay 0.5.1b): no actualizar sin probar. |
 | Zelda: Link's Awakening DX HD | `Link's Awakening DX HD` | ELF .NET x86_64 | ✅ | Carga .NET/Vulkan. |
 | Uncharted Remastered | `Uncharted-x86_64.AppImage` | AppImage x86_64 | 🟡 | El runtime directo peta; el `AppRun` extraído **sí arranca**. Falta validar en pantalla. |
-| Wario Land: Shake It! | `Play/WarioRecomp` | ELF x86_64 | ✅ | Necesita `calvos-x86_64-libs` (abseil) y `dvd_root=/opt/decomps/...` en `Play/UserData/Config.toml`. |
+| Wario Land: Shake It! | `Play/WarioRecomp` | ELF x86_64 | ✅ | Necesita `calvos-x86_64-libs` (abseil) y `dvd_root=/opt/decomps/...` en `Play/UserData/Config.toml`. **Medido: 44,9 fps de media**, p50 33,3 ms, picos de 463 ms. |
 | gen1recomp | `gen1recomp-0.2.56-linux-arm64.AppImage` | AppImage aarch64 | ✅ | Nativo. |
-| Minish Cap (Project Picori) | `Project_Picori_Minish_Cap-x86_64.AppImage` | AppImage x86_64 | ⏳ | Probar. |
-| Paper Mario 64 (Paperboat) | `Paperboat.AppImage` | AppImage x86_64 | 🟡 | Arranca, pero **~2,6 GB RSS** y el AppImage se extrae a `/tmp` (tmpfs = RAM). Con Steam, el QAM se bloquea por presión de memoria. Pendiente extracción persistente. |
-| Paper Mario: La puerta milenaria | `papercut-linux-x64.AppImage` | AppImage x86_64 | ⏳ | Probar. |
-| Super Street Fighter II HD Remix | `SSF2THDRemix-x86_64.AppImage` | AppImage x86_64 | ⏳ | Probar. |
+| Minish Cap (Project Picori) | `Project_Picori_Minish_Cap-x86_64.AppImage` | AppImage x86_64 | 🟡 | SDL cae al driver **dummy** ("No available video device") → sin ventana. Probar `SDL_VIDEODRIVER=x11`/`wayland` y revisar SDL embebido. |
+| Paper Mario 64 (Paperboat) | `Paperboat.AppImage` | AppImage x86_64 | ✅ | Arranca y corre (hilos de audio/VI sanos). **~2,6 GB RSS**; el AppImage se extrae a `/tmp` (tmpfs = RAM) → cuidado con el QAM. Pendiente extracción persistente. |
+| Paper Mario: La puerta milenaria | `papercut-linux-x64.AppImage` | AppImage x86_64 | ❌ | Aborta: `the C heap at 0x... is below 2 GiB` (asume heap >2 GiB). Probar `BOX64_MMAP32=0` o parche del port. Bloqueo duro, no es lentitud. |
+| Super Street Fighter II HD Remix | `SSF2THDRemix-x86_64.AppImage` | AppImage x86_64 | ✅ | Arranca (swapchain Vulkan 1920). Rendimiento por medir. |
 | Super Metroid | `Launch.sh` | .sh → x86_64 | 🟡 | Arranca; falta configurarlo (mandos/ROM). |
-| Vandal Hearts | `VandalHearts.appimage` | AppImage x86_64 | ⏳ | Probar (ojo: extensión en minúsculas). |
+| Vandal Hearts | `VandalHearts.appimage` | AppImage x86_64 | ✅ | Arranca (ventana 1600x1200, HD pack 75 fondos, textos en español). |
 | Xenogear-lite | `Weltall.sh` | .sh → UE5 x86_64 | ✅ | Arranca bajo Box64. |
 | Captain Toad | — | `.exe` (Windows) | ➖ | No lo gestiona este sync: va por **wproton/Proton** desde Steam. |
 

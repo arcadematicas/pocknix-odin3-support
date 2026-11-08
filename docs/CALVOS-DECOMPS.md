@@ -193,9 +193,79 @@ Notas:
 - Los `.exe` que aparecen en las carpetas son builds Windows/tools de los ports; no se
   añaden a Steam desde este sync (van por wproton/Proton).
 
+## Rendimiento — medición 08/11/2026
+
+Síntoma: los juegos arrancan pero van lentos, y el frametime es inestable (Wario
+marca 60 fps en el overlay pero oscila). **No es la GPU.**
+
+### Wario (WarioRecomp, x86_64 bajo Box64)
+
+Medido sobre el log `logs/Play-20261108-014918.log` (30 s de partida):
+
+| Métrica | Valor |
+|---|---|
+| FPS medio (watchdog) | **44,9 fps** (808 frames en 18 s) |
+| Frames “slow” | 180 de 1335 (**13,5 %**) |
+| p50 de los slow | **33,3 ms** (≈30 fps) |
+| Rango | 24,6 ms … **463 ms** |
+
+Desglose de un frame lento:
+`game 33.32 (gx 0.00, disc 0.00), present 0.00, end_frame 0.01, pace 0.00`
+
+→ **todo el tiempo es código invitado** (`game`); presentación GPU ≈0. La GPU
+(Mesa 26.3.0 / Adreno 830) está prácticamente idle. El juego pide 60 (VI), pero
+cuando el código no cabe en 16,7 ms cae al siguiente múltiplo (33,3 ms): de ahí
+la sensación de “60 con tirones”.
+
+El pico de 463 ms coincide con un **cambio de escena/init** (configuración de
+mandos, `scene 0xFFDC`, `disc 8.58 ms`, `PPCMtdec` stubbed), no con I/O de disco.
+
+### Crash / Symphony (.NET)
+
+Peor caso de traducción: **IL de .NET → JIT x86_64 → Box64 → ARM64**. Crash además
+recompila el juego (`JitWarmup 4117 métodos en 1,8 s`) y ejecuta código PSX
+recompilado. La lentitud es esperable; falta medir fps por escena.
+
+### Causa y margen
+
+Box64 traduce bloques x86_64 a ARM64 en tiempo de ejecución, un hilo por hilo
+invitado. En este SoC el límite es **CPU de un núcleo**, no GPU ni disco. Hay
+margen de mejora por flags, motor alternativo (FEX) y perfil de energía; no hay
+garantía de 60 estables.
+
+`zram0` (swap comprimido, 10,7 GB) tenía **1 GB usado** al probar: bajo presión de
+memoria el intercambio comprimido también añade tirones. Otra razón para reducir
+el consumo de los AppImage (extracción en `/tmp` = RAM).
+
+### Cómo medir (repetible)
+
+Wario escribe en su log, cada ~6 s:
+`[vi] [watchdog] N s: X guest frame(s) presented`
+→ fps medio = ΔX / Δs. Y cada frame > umbral deja `[vi] slow frame <ms>`.
+Benchmark: misma escena, 60 s, un solo cambio por pasada.
+
+### Líneas de trabajo (mañana)
+
+1. **Matriz de flags Box64** (A/B con Wario, 60 s): `BIGBLOCK=2/3`,
+   `SAFEFLAGS=0`, `STRONGMEM=0`, `CALLRET=1`, `FASTROUND=1`,
+   `BLEEDING_EDGE=1`. Medir fps medio y % de slow frames.
+2. **FEX vs Box64 por juego**: FEX 2611 está instalado; el binfmt x86_64 está
+   desactivado. Añadir selección de motor por juego y comparar (FEX suele ganar
+   en algunos títulos y perder en otros).
+3. **Perfil de energía**: probar con perfil “alto” del QAM (`performance`) y
+   mirar `cpufreq`/TDP durante la partida; comparar con “medio”.
+4. **`DOTNET_TieredCompilation`** y afines en los .NET para ver si reduce el
+   coste del JIT bajo Box64.
+5. **Config por juego** (diseño): `<juego>/.calvos.env` leído por `calvos-run`
+   con `CALVOS_ENGINE=box64|fex`, `BOX64_*` y `SDL_VIDEODRIVER`. Evita tocar el
+   lanzador global por un título.
+6. **AppImage persistente** (backlog #1): también quita presión de RAM, que
+   agrava los tirones.
+
 ## Backlog priorizado
 
 1. **AppImage persistente** (arriba): rutas/saves + RAM. Es el mayor bloqueo actual.
+0. **Rendimiento**: matriz de flags Box64 + FEX por juego + perfil de energía (ver sección).
 2. **Scope de memoria por juego** (`systemd-run --user --scope -p MemoryHigh=...`) y aviso
    de memoria baja; evitar que el QAM se bloquee.
 3. **`calvos-run --diagnose <juego>`**: lanzador, arch, libs que faltan, runtime .NET.
