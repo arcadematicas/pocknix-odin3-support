@@ -35,7 +35,8 @@ Los tres salen de `origin/main` y viven en la rama **`lepton`** del fork
 
 - **binder/binderfs** en el kernel: ya está en `build-kernel.sh`.
 - `gamescope` con **paso de toques** a ventanas Wayland nativas (patch upstream
-  `0015-wlserver-pass-touch-through-to-native-wayland-windows.patch`). Nuestra base
+  `0015-wlserver-pass-touch-through-to-native-wayland-windows.patch`, guardado en
+  `reference/upstream-gamescope-0015-touch.patch`). Nuestra base
   es **OGC 3.16.31** y la serie de parches es distinta (0014 nuestro “swallow
   ignored touch”); **hay que portar el 0015** a nuestra base. Sin él, el toque en
   juegos Android puede no llegar; ratón/teclado/Steam Input sí.
