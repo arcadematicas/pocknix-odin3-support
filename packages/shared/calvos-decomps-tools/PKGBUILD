@@ -9,7 +9,7 @@
 #   Se ejecuta cada 5 min con un timer systemd (con Steam cerrado).
 pkgname=calvos-decomps-tools
 pkgver=1.0.0
-pkgrel=4
+pkgrel=5
 pkgdesc="CalvOS decomps launcher and Steam shortcuts sync"
 arch=('any')
 url="https://github.com/arcadematicas/pocknix-odin3-support"

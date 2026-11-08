@@ -1,7 +1,9 @@
 #!/bin/bash
-# calvos-run v4 — lanzador CalvOS para Linux (x86_64/aarch64), AppImage, .sh y .NET
+# calvos-run v4.2 — lanzador CalvOS para Linux (x86_64/aarch64), AppImage, .sh y .NET
 # - Pasa el lanzador explícito desde calvos-decomps-sync (no adivina).
-# - AppImage: intento directo; si falla, extrae el squashfs y ejecuta AppRun/binario interno.
+# - AppImage x86_64: extracción PERSISTENTE en <juego>/.calimage/<nombre>-<sha>/ (saves y
+#   rutas sobreviven; no usa /tmp, que es RAM). Modo runtime disponible; aarch64 sigue con runtime.
+# - Config por juego en <juego>/.calvos.env (CALVOS_APPIMAGE_MODE, BOX64_*, SDL_*, ...).
 # - .NET: expone el runtime x86_64 de /opt/calvos/dotnet-x86_64 (DOTNET_ROOT + PATH).
 # - Detecta librerías que faltan y, si hay paquete, intenta instalarlas sin preguntar.
 set -uo pipefail
@@ -37,6 +39,14 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_NOLOGO=1
 
 cd "$GAME_DIR" || exit 1
+
+# --- config por juego: <juego>/.calvos.env ---------------------------------
+if [ -f "$GAME_DIR/.calvos.env" ]; then
+  echo "[calvos-run] cargando $GAME_DIR/.calvos.env"
+  set -a
+  . "$GAME_DIR/.calvos.env"
+  set +a
+fi
 
 # --- detección de librerías que faltan -------------------------------------
 report_missing_libs() {
@@ -109,41 +119,100 @@ run_x86_retry() {
 is_appimage=0
 case "$TARGET" in *.AppImage|*.appimage) is_appimage=1 ;; esac
 
-if [ "$is_appimage" -eq 1 ]; then
-  export APPIMAGE_EXTRACT_AND_RUN=1
-  echo "[calvos-run] AppImage: intento directo (extract-and-run)"
-  run_x86_retry "$TARGET" "$@"; rc=$?
-  [ "$rc" -eq 0 ] && exit 0
-  report_missing_libs x86_64
-  echo "[calvos-run] AppImage directo falló (rc=$rc); extrayendo con unsquashfs"
-  OFFSET=$(run_x86 "$TARGET" --appimage-offset 2>/dev/null | tail -1 || true)
-  [ -n "${OFFSET:-}" ] || OFFSET=$(grep -aob 'hsqs' "$TARGET" | head -1 | cut -d: -f1 || true)
-  DEST="$EXTRACT_DIR/$(basename "$TARGET" .AppImage)"
-  rm -rf "$DEST"; mkdir -p "$DEST"
-  if [ -n "${OFFSET:-}" ] && unsquashfs -o "$OFFSET" -d "$DEST" "$TARGET" >/dev/null 2>&1; then
-    if [ -x "$DEST/AppRun" ]; then
-      echo "[calvos-run] ejecutando $DEST/AppRun"
-      cd "$DEST" || exit 1
-      if [ "$(arch_of "$DEST/AppRun" 2>/dev/null)" = "Advanced Micro Devices X86-64" ] || file -b "$DEST/AppRun" 2>/dev/null | grep -qi 'x86-64'; then
-        run_x86_retry "$DEST/AppRun" "$@"
-      else
-        "$DEST/AppRun" "$@"
-      fi
-      rc=$?
-      report_missing_libs x86_64
-      exit "$rc"
-    fi
-    BIN=$(find "$DEST" -maxdepth 3 -type f -perm -u+x | head -1)
-    if [ -n "$BIN" ]; then
-      echo "[calvos-run] ejecutando binario interno $BIN"
-      run_x86_retry "$BIN" "$@"
-      rc=$?
-      report_missing_libs x86_64
-      exit "$rc"
-    fi
+CALVOS_IMAGE_DIR="${CALVOS_IMAGE_DIR:-$GAME_DIR/.calimage}"
+
+# Extrae el squashfs del AppImage a un directorio persistente.
+extract_image() { # $1=AppImage $2=destino
+  local img="$1" dest="$2" off
+  off=$(run_x86 "$img" --appimage-offset 2>/dev/null | tail -1 || true)
+  [ -n "${off:-}" ] || off=$(grep -aob 'hsqs' "$img" | head -1 | cut -d: -f1 || true)
+  [ -n "${off:-}" ] || return 1
+  rm -rf "$dest"; mkdir -p "$dest" || return 1
+  if unsquashfs -o "$off" -d "$dest" "$img" >/dev/null 2>&1; then
+    return 0
   fi
-  echo "[calvos-run] no se pudo extraer/ejecutar el AppImage"
-  exit 1
+  rm -rf "$dest"
+  return 1
+}
+
+# Ejecuta un AppDir extraido. cwd = carpeta del juego; APPDIR/APPIMAGE/ARGV0/OWD explicitos.
+run_appdir() { # $1=dir, resto args
+  local dir="$1" bin; shift
+  export APPDIR="$dir" APPIMAGE="$TARGET" ARGV0="$TARGET" OWD="$GAME_DIR"
+  # El runtime de AppImage usa <AppImage>.home como HOME portable si existe.
+  if [ -d "${TARGET}.home" ]; then
+    export HOME="${TARGET}.home"
+    echo "[calvos-run] HOME portable: $HOME"
+  fi
+  cd "$GAME_DIR" || return 1
+  if [ -x "$dir/AppRun" ]; then
+    echo "[calvos-run] ejecutando $dir/AppRun (cwd=$GAME_DIR)"
+    if head -c2 "$dir/AppRun" 2>/dev/null | grep -q '#!'; then
+      "$dir/AppRun" "$@"
+    else
+      run_x86_retry "$dir/AppRun" "$@"
+    fi
+    return $?
+  fi
+  bin=$(find "$dir" -maxdepth 3 -type f -perm -u+x | head -1)
+  [ -n "$bin" ] || return 127
+  echo "[calvos-run] ejecutando binario interno $bin"
+  run_x86_retry "$bin" "$@"
+}
+
+run_image_runtime() { # comportamiento antiguo: runtime del AppImage (extrae a /tmp)
+  export APPIMAGE_EXTRACT_AND_RUN=1
+  echo "[calvos-run] AppImage: runtime directo (extract-and-run)"
+  run_x86_retry "$TARGET" "$@"
+}
+
+if [ "$is_appimage" -eq 1 ]; then
+  img_arch=$(arch_of "$TARGET")
+  mode="${CALVOS_APPIMAGE_MODE:-auto}"
+  echo "[calvos-run] AppImage arch=${img_arch:-?} mode=$mode"
+
+  # aarch64: el runtime nativo funciona; no hace falta extraer
+  if [ "$mode" = runtime ] || { [ "$mode" = auto ] && [[ "${img_arch:-}" == *AArch64* ]]; }; then
+    run_image_runtime "$@"; rc=$?
+    [ "$rc" -eq 0 ] && exit 0
+    report_missing_libs x86_64
+    echo "[calvos-run] AppImage runtime falló (rc=$rc); extrayendo con unsquashfs"
+    DEST="$EXTRACT_DIR/$(basename "$TARGET" | sed -E 's/\.(AppImage|appimage)$//')"
+    if extract_image "$TARGET" "$DEST"; then
+      run_appdir "$DEST" "$@"; rc=$?
+      report_missing_libs x86_64
+      exit "$rc"
+    fi
+    echo "[calvos-run] no se pudo extraer/ejecutar el AppImage"
+    exit 1
+  fi
+
+  # x86_64 (y resto): extracción persistente junto al juego
+  name=$(basename "$TARGET"); name=${name%.AppImage}; name=${name%.appimage}
+  sha=$(sha256sum "$TARGET" 2>/dev/null | cut -c1-12)
+  DEST="$CALVOS_IMAGE_DIR/${name}-${sha:-x}"
+  if [ ! -x "$DEST/AppRun" ] || [ ! -f "$DEST/.calvos-image-ok" ]; then
+    echo "[calvos-run] extrayendo AppImage en $DEST"
+    if extract_image "$TARGET" "$DEST"; then
+      : > "$DEST/.calvos-image-ok"
+    else
+      echo "[calvos-run] extracción fallida; usando runtime directo"
+      run_image_runtime "$@"; rc=$?
+      report_missing_libs x86_64
+      exit "$rc"
+    fi
+  else
+    echo "[calvos-run] usando extracción existente $DEST"
+  fi
+
+  run_appdir "$DEST" "$@"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    report_missing_libs x86_64
+    echo "[calvos-run] AppRun persistente falló (rc=$rc); probando runtime directo"
+    run_image_runtime "$@"; rc=$?
+  fi
+  report_missing_libs x86_64
+  exit "$rc"
 fi
 
 # --- binario nativo --------------------------------------------------------
