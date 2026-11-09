@@ -1207,3 +1207,9 @@ presenta el soporte del Odin 3.
   (se resolvió el 11/09 installando el paquete que faltaba).
 - Ajustes de sesión para el sonido, el control de ficheros abiertos, el mapeo de mandos y
   la red (WiFi).
+
+## 2026-11-09
+
+- `libretro-hakux` 0.23.0 -> **0.25.2** (prebuilt `hakux-0.25.2-aarch64`, sha256 `2dedbe1e…`); publicado en R2 `shared`.
+- `pocknix-turnip-arm` 20261009 -> **20261106** (Mesa main 27.0 / `27.0.0devel`, `_develcommit=5508b6e1…`); publicado en R2 `sm8750`.
+- Limpieza del sobremesa: root de 22 G a **296 G libres**; builds viejos movidos al 16 TB con symlinks.
