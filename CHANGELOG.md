@@ -1213,3 +1213,5 @@ presenta el soporte del Odin 3.
 - `libretro-hakux` 0.23.0 -> **0.25.2** (prebuilt `hakux-0.25.2-aarch64`, sha256 `2dedbe1e…`); publicado en R2 `shared`.
 - `pocknix-turnip-arm` 20261009 -> **20261106** (Mesa main 27.0 / `27.0.0devel`, `_develcommit=5508b6e1…`); publicado en R2 `sm8750`.
 - Limpieza del sobremesa: root de 22 G a **296 G libres**; builds viejos movidos al 16 TB con symlinks.
+- `pocknix-steam` 0.1.0-76: restaurado el bloque que lanza `gamescope` (la versión 75 salió sin él y `GS_PID` nunca se asignaba, así que la sesión caía); publicado en R2 `shared` e instalado en la Odin; la sesión de prueba pasa a `gamescope`.
+- SD de la Odin: ya inicializa (`mmcblk0p2`, 955 GiB) y monta `/opt` y `/home/games/linux`; DeckStation con sus 4 imágenes.
