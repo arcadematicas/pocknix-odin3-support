@@ -14,6 +14,33 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10 de noviembre 2026 — Preparado el paso a OpenABL (sin tocar el arranque)
+
+### 🚀 Escritor de entradas BLS (`pocknix-bsp-common` 0.1.0-26)
+- `pocknix-bls-deploy` escribe en `/flash` lo que OpenABL necesita para arrancar:
+  `Image`, `dtbs/*.dtb` y `loader/entries/{pocknix,pocknix-previous}.conf`, con
+  `root=PARTUUID` repinado al root real. Escritura tmp+rename, `Image.bak`, poda de
+  dtbs que el kernel ya no trae y **control de espacio** antes de tocar nada.
+- Hook `91-pocknix-bls.hook`: cada actualización del kernel deja el payload listo.
+- **Con el ROCKNIX ABL actual es inofensivo**: ese bootloader ignora esos ficheros y
+  sigue arrancando `/KERNEL`. Verificado en la Odin y tras reiniciar.
+
+### 🚀 Kit OpenABL 1.2 junto al de ROCKNIX (`pocknix-bootloader-sm8750` 1.2-2)
+- Se instala `openabl/` (ELF SM8750, 532.480 B) **al lado** de `rocknix_abl/`; ninguno
+  se flashea al instalar. `pocknix-update-abl` pasa a ser openabl-aware (ESRT, backups
+  en `/flash/openabl`, copia a la SD, verificación por slot, gate de batería al 30 % y
+  aviso de *Device model*), con vuelta automática al kit de ROCKNIX si faltara.
+- ⚠️ ROCKNIX **borró los assets de v1.1.8**: el kit de reserva ahora viene de **v1.2**
+  (mismo contrato `/KERNEL`). El 1.1.8 que corre la consola queda guardado byte a byte
+  en `abl_a.img`/`abl_b.img` (en la Odin y fuera de ella).
+
+### 📄 Plan y estado
+- `docs/OPENABL-MIGRACION.md`: fases, checkpoints, cálculo de espacio, reversión y
+  estado real de la vía EDL. **Fase 0 y 1 hechas; el flasheo queda pendiente** de una
+  sesión delante de la consola (Volume −, *Device model*, *Start*).
+
+---
+
 ## 📅 7 / 8 de noviembre 2026 — Decomps Linux, .NET x86_64 y AppImage persistente
 
 ### ✅ Kernel 7.2.15 (7/11)

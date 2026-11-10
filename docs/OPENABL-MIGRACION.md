@@ -83,20 +83,28 @@ Cada fase termina en un **checkpoint**: si no se cumple, se para y se revierte.
 ### Fase 0 — Preparación (sin tocar el dispositivo)
 - [x] Documento (este fichero).
 - [x] Kit OpenABL descargado y verificado (sha512 + sha256 del ELF).
-- [ ] Código del centro revisado y testeado en seco (`/tmp`, sin dispositivo).
-- [ ] `git commit` + push del centro.
+- [x] Código del centro revisado y testeado en seco (`/tmp`, sin dispositivo): 28/28 PASS.
+- [x] `git commit` + push del centro (commits `f148cd4`, `4f198bc`, `08f71a4`, `32408bf`,
+      `76e40b6`).
 
 ### Fase 1 — Instalar paquetes con BLS (sigue arrancando por `/KERNEL`)
-1. Snapshot btrfs manual + copia de `/usr/share/pocknix/bootloader` y de `pocknix-update-abl`.
+1. Snapshot btrfs + copia de `/usr/share/pocknix/bootloader` y de `pocknix-update-abl`
+   (hecho: snapshot `0073` automático de la transacción; bundle en
+   `/home/deck/abl-rollback-20261110` y en `~/odin-backups` del portátil).
 2. Instalar `pocknix-bsp-common` + `pocknix-bootloader-sm8750` nuevos (`pacman -U`, desde paquetes
    compilados en el **PC de sobremesa**).
-3. **Checkpoint 1:** `/usr/lib/pocknix/pocknix-bls-deploy` existe; `/usr/share/pocknix/bootloader/openabl/abl_signed-SM8750.elf` existe; `pocknix-update-abl --status` responde.
+3. **Checkpoint 1:** ✅ `pocknix-bls-deploy` instalado; kit `openabl/` presente;
+   `sudo pocknix-update-abl --status` → `state=differs kit=openabl shipped_version=1.2
+   running_openabl= needs_openabl=1 menu_reboot=1`.
 4. Ejecutar a mano `SRCROOT=/ /usr/lib/pocknix/pocknix-bls-deploy` (o dejar que el hook lo haga al
    instalar el kernel).
-5. **Checkpoint 2:** en `/flash` existen `Image` (45,7 MiB), `dtbs/*.dtb` (3), `loader/loader.conf`
-   con `default pocknix.conf`, `loader/entries/pocknix.conf` con `root=PARTUUID=956c3c5f…`,
-   y `Image.bak` si ya había un `Image`.
-6. Reiniciar. **Checkpoint 3:** arranca igual que siempre (sigue mandando `/KERNEL`).
+5. **Checkpoint 2:** ✅ `/flash/Image` 45.771.264 B (cabecera `MZ`, EFI stub), `/flash/dtbs`
+   con 2 dtb (el `.dtb.bak-pre-mic` se ignora por extensión), `loader/loader.conf` con
+   `default pocknix.conf`, y `loader/entries/pocknix.conf` con
+   `root=PARTUUID=956c3c5f-d725-4a72-944f-c5313eb0185f`. Sin `Image.bak` (primer Image).
+   Espacio tras escribir: 316 MiB libres.
+6. Reiniciar. **Checkpoint 3:** ✅ vuelve en ~55 s, kernel 7.2.15, `/KERNEL` intacto,
+   0 unidades fallidas, root en `sda19[/@]`. El ROCKNIX ABL ignora el payload como estaba previsto.
 
 ### Fase 2 — Flashear OpenABL (ventana de 15 min, enchufado)
 Precondiciones: batería >50 %, cargador enchufado, sin procesos de build, backups hechos.
@@ -153,3 +161,36 @@ Precondiciones: batería >50 %, cargador enchufado, sin procesos de build, backu
 - Si mantenemos el `video=efifb:off` del cmdline (OpenABL gestiona el splash de forma distinta).
 - Si a medio plazo adoptamos `Image.bak` como entrada de rollback automática (ya se escribe, pero
   nadie la selecciona sola).
+
+---
+
+## 8. Estado a 10/11/2026 (lo que falta es solo la Fase 2)
+
+Hecho y verificado en la consola:
+
+| Comprobación | Resultado |
+|---|---|
+| `pocknix-bsp-common` / `pocknix-bootloader-sm8750` | `0.1.0-26` / `1.2-2` instalados |
+| Escritor BLS + hook | instalados; hook probado en seco (28/28) y a mano en la consola |
+| `/flash/Image` | 45.771.264 B, `MZ` (EFI stub), kernel 7.2.15 |
+| `/flash/dtbs` | `cq8725s-ayn-odin3.dtb`, `sm8750-konkr-pf-elite.dtb` |
+| Entrada por defecto | `loader.conf` → `pocknix.conf`, `root=PARTUUID=956c3c5f…` |
+| Kit en la consola | `openabl` 1.2 (`0dba7b90…`) y `rocknix_abl` 1.2 (`48441f73…`) |
+| Reversión | `abl_a.img`/`abl_b.img` con el 1.1.8 exacto (`8d7fd55d…`), dentro y fuera |
+| Tras reiniciar | arranca por `/KERNEL` como siempre, 0 fallos |
+
+Pendiente inmediato (necesita a Fransis delante):
+
+1. `sudo pocknix-update-abl` → escribir `FLASH` (deja backups de los slots en `/flash/openabl`).
+2. Reiniciar con **Volume −** → **Device model = AYN Odin 3**, **Boot mode = Linux**,
+   **Boot source = Internal** (o Auto) → **Start**.
+3. `cat /sys/firmware/efi/esrt/entries/entry0/fw_version` → debe dar `65538` (1.2).
+
+Notas sueltas:
+
+- `pocknix-update-abl --status` **necesita root** (sin él `state=nopart`: `blkid` no ve los
+  slots). Pocknix Tools lo llama por `pkexec`, así que allí no se nota.
+- `pocknix-tools` sigue etiquetando el bootloader como "ROCKNIX <ver>" en `do_abl()` /
+  `abl_item_label()`: con OpenABL 1.2 mostraría un nombre equivocado. Cosmético, pendiente.
+- El payload BLS también entra en la imagen de SD nueva (mismo escritor, con el PARTUUID de
+  la tarjeta). No se ha construido una SD de rescate en esta sesión.
