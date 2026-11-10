@@ -14,6 +14,19 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10 de noviembre 2026 (noche, 6) — InputPlumber 0.84
+
+### 🚀 InputPlumber 0.84.0 (upstream, prebuilt)
+- Tomado de `origin/main` (paquete sin delta nuestro): fixes de reglas udev que ocultaban
+  hidraw ajenos, `SendEvent` no bloqueante del CompositeDevice y arreglos del driver DualSense.
+- Instalado y servicio activo: crea el CompositeDevice "AYN Layout" con origen `event4`/`event6`
+  y destinos **deck-uhid** + teclado, como antes. El mando virtual sigue siendo hidraw
+  (Steam Controller), igual que en 0.83.
+- Rollback preparado en `/home/deck/rollback/inputplumber-083.pkg.tar.xz`.
+- Pendiente de probar **con mando** en modo juego (navegar, botones, gatillos, vibración).
+
+---
+
 ## 📅 10 de noviembre 2026 (noche, 5) — El Panel de Control manda sobre el ventilador
 
 ### ✅ Nuestro daemon se aparta (`pocknix-bsp-common` 0.1.0-28)
