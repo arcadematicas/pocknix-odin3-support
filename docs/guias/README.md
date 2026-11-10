@@ -10,6 +10,7 @@ enlaza al suyo para el detalle interno.
 | **WProton** (juegos Windows) | CalvOS Tools / mando | [WPROTON.md](WPROTON.md) |
 | **Decomps Linux** (ports de PC) | Carpeta + Steam | [DECOMP-LINUX.md](DECOMP-LINUX.md) |
 | **Sistema** (energía, HDR, snapshots, captura, diagnóstico) | QAM / terminal | [SISTEMA.md](SISTEMA.md) |
+| **Arranque / menú OpenABL** (kernel anterior, SD, recuperación) | Volume − al encender | [ARRANQUE-OPENABL.md](ARRANQUE-OPENABL.md) |
 | **Mando y atajos** | RetroArch / ES-DE | [../MANDO-ODIN3-RETROARCH.md](../MANDO-ODIN3-RETROARCH.md) |
 
 ## Convenciones
