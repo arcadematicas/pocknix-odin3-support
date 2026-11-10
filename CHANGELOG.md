@@ -14,6 +14,22 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10 de noviembre 2026 (noche, 4) — Elegir escritorio desde el QAM
+
+### 🚀 PocknixControl 0.1.0-70: sección "Escritorio"
+- Al salir del modo juego, Steam ejecuta `steamos-session-select` y **no tiene interfaz**
+  donde preguntar nada. Por eso la elección vive en el QAM: *CalvOS Control → Sistema →
+  Escritorio*, con dos botones, **Plasma (escritorio)** y **Plasma Mobile**, y el sabor actual
+  a la vista.
+- Backend nuevo `py_modules/pocknix_control/desktop.py`: fija el sabor con
+  `pocknix-desktop-select` y pide el cambio con `steamos-session-select`, lanzado
+  desacoplado (`systemd-run`) porque el cambio termina gamescope y con él el plugin. Todo se
+  ejecuta como `deck` (`runuser`), nunca como root.
+- Verificado en la consola: lectura/cambio de sabor, rechazo de sabores inválidos y un cambio
+  real (la sesión vuelve a arrancar, ajuste `plasma`).
+
+---
+
 ## 📅 10 de noviembre 2026 (noche, 3) — Plasma de escritorio por defecto, Mobile como alternativa
 
 ### 🚀 El selector de escritorio ahora manda (`pocknix-desktop` 0.1.0-33)

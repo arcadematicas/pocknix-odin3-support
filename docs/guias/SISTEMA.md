@@ -121,7 +121,9 @@ El modo escritorio puede arrancar con **Plasma de escritorio** (ratón/teclado, 
 con **Plasma Mobile** (táctil, pensado para la consola). El modo juego (Steam) es aparte y
 no cambia.
 
-- Ver cuál está activo y cuáles hay instalados:
+- **Desde el QAM** (modo juego, con mando): *CalvOS Control → Sistema → Escritorio* y pulsa
+  el que quieras. Fija el sabor y lanza el cambio; Steam se cierra y abre ese escritorio.
+- Desde una terminal:
   ```bash
   pocknix-desktop-select list
   ```
