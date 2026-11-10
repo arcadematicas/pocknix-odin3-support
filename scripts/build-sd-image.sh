@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # build-sd-image.sh - flashable SD image, laid out like ROCKNIX's so the device's ABL boots it:
-#   p1 fat32 "${SD_BOOT_PARTNAME}": /KERNEL (+ EFI/ and boot/grub/ with the dtbs on arm-efi)
+#   p1 fat32 "${SD_BOOT_PARTNAME}": OpenABL's /Image, dtbs/ and loader/ (inert under the ROCKNIX
+#      ABL), the legacy /KERNEL (+ EFI/ and boot/grub/ with the dtbs on arm-efi) and both ABL kits
 #   p2 btrfs "${ROOT_LABEL}": subvols @ @home @snapshots @pacman-cache @var-log
 # The kernel mounts root by PARTUUID (no initramfs) and boots the btrfs DEFAULT subvol: the
 # cmdline and fstab must never name one, that is what lets pocknix-rollback switch roots.
@@ -39,19 +40,33 @@ ensure_kernel_in_rootfs() {
     chroot "${ROOTFS_DIR}" pacman -Rdd --noconfirm linux-aarch64 2>/dev/null || true
     # host-owned build output; rsync -a would carry uid 1000 into the rootfs (gate in main)
     rsync -a --chown=root:root "${KOUT}/modroot/lib/modules/" "${ROOTFS_DIR}/usr/lib/modules/"
+    # /boot too: the OpenABL /Image and /dtbs are written from the rootfs by pocknix-bls-deploy
+    # and must match these modules (the package normally ships them; this covers an older rootfs).
+    [ -f "${KOUT}/Image" ] && [ -d "${KOUT}/dtbs" ] \
+      || die "no ${KOUT}/Image or ${KOUT}/dtbs — re-run 'make kernel DEVICE=${DEVICE}'"
+    install -m644 "${KOUT}/Image" "${ROOTFS_DIR}/boot/Image"
+    mkdir -p "${ROOTFS_DIR}/boot/dtbs"; rm -f "${ROOTFS_DIR}"/boot/dtbs/*.dtb
+    install -m644 "${KOUT}/dtbs/"*.dtb "${ROOTFS_DIR}/boot/dtbs/"
     [ -n "${kver}" ] && chroot "${ROOTFS_DIR}" depmod "${kver}" 2>/dev/null || true
   else
     warn "no kernel modules in ${KOUT} — rootfs may lack matching modules"
   fi
 }
 
-# ABL kit at the FAT root on both boot styles: stock Android mounts this FAT, so a factory
-# device is provisioned from the SD alone. Inert at boot.
+# ABL kit(s) at the FAT root on both boot styles: stock Android mounts this FAT, so a factory
+# device is provisioned from the SD alone. Inert at boot. Both kits are copied when the rootfs
+# has them: openabl (migration target) and rocknix_abl (fallback / way back). One is enough.
 copy_abl_kit() {
-  local mnt="$1" kit="${ROOTFS_DIR}/usr/share/pocknix/bootloader/rocknix_abl"
-  [ -f "${kit}/abl_signed-${SOC^^}.elf" ] \
-    || die "${kit#${ROOTFS_DIR}}/abl_signed-${SOC^^}.elf missing from the rootfs — is pocknix-bootloader-${SOC} built and installed? (make packages + make build)"
-  rsync -rltD --no-owner --no-group "${kit}" "${mnt}/"   # vfat no soporta duenos
+  local mnt="$1" bl="${ROOTFS_DIR}/usr/share/pocknix/bootloader" kit found=0
+  for kit in openabl rocknix_abl; do
+    [ -d "${bl}/${kit}" ] || continue
+    [ -f "${bl}/${kit}/abl_signed-${SOC^^}.elf" ] \
+      || die "${bl#${ROOTFS_DIR}}/${kit}/abl_signed-${SOC^^}.elf missing from the rootfs — is pocknix-bootloader-${SOC} built and installed? (make packages + make build)"
+    rsync -rltD --no-owner --no-group "${bl}/${kit}" "${mnt}/"   # vfat no soporta duenos
+    found=1
+  done
+  [ "${found}" = 1 ] \
+    || die "${bl#${ROOTFS_DIR}} has no ABL kit (openabl/ or rocknix_abl/) — is pocknix-bootloader-${SOC} built and installed? (make packages + make build)"
 }
 
 # GRUB + cfg + grubenv come from pocknix-bootloader-${SOC} in the rootfs (its alpm hook
@@ -68,6 +83,15 @@ populate_arm_efi_boot() {
 }
 
 populate_qcom_abl_boot() { copy_abl_kit "$1"; }
+
+# The device's own writer, run from the rootfs, so the card matches what an update rewrites.
+populate_bls_boot() {
+  local w="${ROOTFS_DIR}/usr/lib/pocknix/pocknix-bls-deploy"
+  [ -f "${w}" ] || die "${w#${ROOTFS_DIR}} missing from the rootfs — is pocknix-bsp-common built and installed?"
+  FLASH="$1" SRCROOT="${ROOTFS_DIR}" ROOT_PARTUUID="${SD_ROOT_PARTUUID}" bash "${w}" \
+    || die "writing the OpenABL boot files failed"
+  [ -f "$1/loader/entries/pocknix.conf" ] || die "no loader/entries/pocknix.conf on the boot FAT"
+}
 
 firstboot_config() {
   local root="$1"
@@ -289,6 +313,7 @@ main() {
     arm-efi)  populate_arm_efi_boot "${MNT}" ;;
     qcom-abl) populate_qcom_abl_boot "${MNT}" ;;
   esac
+  populate_bls_boot "${MNT}"
   sync; umount "${MNT}"
 
   # @ becomes the fs DEFAULT subvol, which is what the kernel boots (see the header).
