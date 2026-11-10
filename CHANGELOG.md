@@ -14,6 +14,31 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10 de noviembre 2026 (noche, 2) — Dock: DisplayPort AltMode y carga
+
+### 🚀 Kernel y BSP con el soporte de dock del PR ROCKNIX #3509
+- **5 parches de kernel** (0620-0624): `clientdata` del redriver `nb7vpq904m`, no esperar
+  ACK del altmode con firmware nuevo, audio en DP externo, preservar host-mode en el combo
+  PHY y no apagar el USB del mux en DP.
+  El 0525 del PR **no hace falta**: 7.2.15 ya trae `hw_params` en
+  `drm_connector_hdmi_audio_ops`.
+- **DTS**: `try-power-role = "sink"` en el conector USB-C → el dock puede dar corriente.
+- **udev**: fuerza DisplayPort al detectar el Billboard del dock y lo suelta al quitarlo.
+- **WirePlumber**: audio USB (docks, gafas, DACs) por encima del altavoz.
+- **`pocknix-bsp-sm8750` 0.2.0-51** y kernel nuevo instalados; arranca bien, 0 fallos,
+  altavoz y auriculares siguen en PipeWire.
+
+### ⚠️ Pendiente: perfil UCM "HDMI" (necesita un dock/monitor)
+- El PCM `hw:0,3` existe pero **abre con EINVAL cuando no hay display conectado**, así que
+  la sección UCM del PR no se puede validar todavía: con ella puesta, PipeWire descarta el
+  perfil entero y la consola se queda **sin altavoz ni auriculares** (fue el incidente del
+  5/11).
+- Plan: con un dock o monitor USB-C conectado, `speaker-test -D hw:0,3 -c 2 -t sine`; si
+  abre, añadir `SectionDevice."HDMI"` + el `cset` del mixer `DISPLAY_PORT_RX_0` y validar
+  con `alsaucm` antes de instalarlo.
+
+---
+
 ## 📅 10 de noviembre 2026 (noche) — El QAM y la librería dejan de pisarse
 
 ### ✅ Panel de Control: guardado por campos (`pocknix-decky` 0.1.0-69)
