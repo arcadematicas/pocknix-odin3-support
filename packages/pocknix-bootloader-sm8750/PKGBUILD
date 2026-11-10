@@ -23,7 +23,7 @@
 # A bump must keep the ABL matched to this contract — watch ROCKNIX's own pin in
 # packages/tools/rocknix-abl/package.mk when reviewing `make sync`, and OpenABL's release page.
 pkgname=pocknix-bootloader-sm8750
-_ablver=1.1.8
+_ablver=1.2
 _openablver=1.2
 pkgver=${_ablver}
 pkgrel=2
@@ -41,7 +41,7 @@ source=("https://github.com/ROCKNIX/abl/releases/download/v${_ablver}/rocknix-ab
         'backup_abl.sh'
         'restore_backup_abl.sh'
         '95-pocknix-abl-kit.hook')
-sha512sums=('b9f9f20776ec1f8f8b2d46ef06226856d3d5c28d31701d33fca2a3f840bf393fe292e62e71a1c717726d1fd8dc6291041811afddf31d2499e59a9cbcbee764dd'
+sha512sums=('b2d897b4f681f22d416201e332a5c27efc00b0139c3b0806126f8913182285e803b8a3726a7c9a1609956049d4b6d054b3529bd0f508d1a86ab9ab3bf79dca01'
             '41f8b0460bc5c2cbbec312911377e52c41eda7c4dcd365bc76486d81cf4da0e9072df00edaf3afacb87565d856487d0aac3c8b5506d46b9ea6c901c319635492'
             'SKIP'
             'SKIP'

@@ -74,3 +74,24 @@ byte-identical to what it shipped.
 
 Nothing flashes it automatically. The in-OS path is pocknix-update-abl, which
 prefers openabl/ and falls back to rocknix_abl/ only when openabl/ is absent.
+
+## 2026-11-10 — ROCKNIX kit bumped 1.1.8 -> 1.2 (assets, not behaviour)
+
+ROCKNIX **deleted the assets** of the v1.1.8 release (the tag still exists, the
+tarball 404s), so a clean rebuild of this package could not fetch the ELF it
+shipped. Their current release, **v1.2** (2026-10-01), does publish
+`rocknix-abl-v1.2.tar.gz` with `abl_signed-SM8750.elf` + `.sha256` sidecar, and
+the qcom-abl boot contract is unchanged (FAT label, `/KERNEL` Android boot
+image), so the fallback kit now comes from there.
+
+- tarball sha512 `b2d897b4f681f22d416201e332a5c27efc00b0139c3b0806126f8913182285e803b8a3726a7c9a1609956049d4b6d054b3529bd0f508d1a86ab9ab3bf79dca01`
+- `abl_signed-SM8750.elf` sha256 `48441f738a598feca19f30d009d3fc67c52776d5a1b58ff0fdfc331af15798a0`
+  (1.1.8's was `bedff34b99bd06202301e78ee5ee025b81d5144c9773de179b5f48ba3b38455a` — the
+  binaries differ, same size 258.048 B)
+
+**The exact 1.1.8 we actually run is preserved**, byte for byte, as whole-slot
+images: `abl_a.img` / `abl_b.img` (sha256 `8d7fd55d349620824a260b5b611a95aab81c1b8d8897856dbf09acaa4ad715da`,
+1 MiB each, first 258.048 B = the 1.1.8 ELF, rest zeroes). They live on the
+device in `/home/deck/abl-rollback-20261110/`, on `/flash/openabl/` after the
+first `pocknix-update-abl` run, and off-device in the laptop's
+`~/odin-backups/`. A revert is a `dd` of those images, not a package install.
