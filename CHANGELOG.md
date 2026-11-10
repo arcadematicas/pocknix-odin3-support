@@ -14,6 +14,24 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10 de noviembre 2026 (noche) — El QAM y la librería dejan de pisarse
+
+### ✅ Panel de Control: guardado por campos (`pocknix-decky` 0.1.0-69)
+- El panel del QAM y el modal de la librería **escribían el objeto `tweaks` completo**, cada
+  uno con su copia: el último en guardar borraba lo del otro (ajustes de un juego que
+  desaparecían al tocar el perfil global, o al revés).
+- Ahora el backend tiene `patch_tweaks(appid, fields)`: merge por campo bajo lock, y `null`
+  borra una clave. El frontend manda **solo el diff** (`usePatchTweaks` para el QAM, patch
+  de `games[appid]` para el modal). Si un perfil desaparece entero, cae a guardado completo.
+- Verificado el backend en la consola (alta, merge, borrado con `null`, appid inválido
+  rechazado) y que el plugin carga sin errores en Decky.
+
+### 🧹 Avisos del bootloader con el nombre correcto (`pocknix-tools` 0.1.0-24)
+- El diálogo de instalación decía "ROCKNIX <ver>" aunque el kit fuese OpenABL; ahora lee
+  `kit=` del `pocknix-update-abl --status`.
+
+---
+
 ## 📅 10 de noviembre 2026 (tarde) — Arranque OpenABL en marcha y ajustes de energía
 
 ### ✅ OpenABL v1.2 flasheado y en uso
