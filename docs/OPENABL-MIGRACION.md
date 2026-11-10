@@ -194,3 +194,36 @@ Notas sueltas:
   `abl_item_label()`: con OpenABL 1.2 mostraría un nombre equivocado. Cosmético, pendiente.
 - El payload BLS también entra en la imagen de SD nueva (mismo escritor, con el PARTUUID de
   la tarjeta). No se ha construido una SD de rescate en esta sesión.
+
+---
+
+## 9. ✅ Fase 2 hecha (10/11/2026, 11:27)
+
+Flasheo ejecutado desde Linux con `pocknix-update-abl -y`, batería 79 % y USB conectado:
+
+```
+[abl] current abl_a 15b6271, abl_b 15b6271, shipped 0dba7b9 (v1.2)
+[abl] backing up abl_a -> /flash/openabl/abl_a.img
+[abl] backing up abl_b -> /flash/openabl/abl_b.img
+[abl] writing abl_a (/dev/sde69) ...  abl_a verified 0dba7b9
+[abl] writing abl_b (/dev/sde70) ...  abl_b verified 0dba7b9
+```
+
+Comprobado después:
+
+| Prueba | Resultado |
+|---|---|
+| `pocknix-update-abl --status` | `state=uptodate`, `running_openabl=1.2`, `needs_openabl=0`, `current_a/b=0dba7b9` |
+| ESRT | `fw_class = c02d2ab2-…`, `fw_version = 65538` → **1.2** |
+| Arranque | primer arranque desde el menú (Volume −, *Device model = AYN Odin 3*, *Start*) |
+| `/proc/cmdline` | empieza por `root=PARTUUID=956c3c5f-…` → **lo cargó la entrada BLS**, no `/KERNEL` |
+| Reinicio normal (sin teclas) | entra solo a Linux en ~50 s, 0 unidades fallidas, Steam arriba |
+| Red / audio / mando | `wlan0` con IP, `sound.target` activo, Steam Controller visible |
+| Backups | `/flash/openabl/abl_{a,b}.img` sha256 `8d7fd55d…` (= 1.1.8), copiados también al portátil |
+
+**Ya no hace falta mantener Volume − al encender**: `loader.conf` no define `timeout`, así que
+arranca la entrada por defecto. Volume − solo se usa para abrir el menú a propósito.
+
+Queda como mejora opcional poner `timeout 2` en `loader.conf` para ver el menú unos segundos
+(útil para elegir *Pocknix (previous kernel)* tras un kernel malo). Hoy `Image.bak` se escribe pero
+nadie lo selecciona solo.

@@ -34,10 +34,13 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
   (mismo contrato `/KERNEL`). El 1.1.8 que corre la consola queda guardado byte a byte
   en `abl_a.img`/`abl_b.img` (en la Odin y fuera de ella).
 
-### 📄 Plan y estado
-- `docs/OPENABL-MIGRACION.md`: fases, checkpoints, cálculo de espacio, reversión y
-  estado real de la vía EDL. **Fase 0 y 1 hechas; el flasheo queda pendiente** de una
-  sesión delante de la consola (Volume −, *Device model*, *Start*).
+### ✅ OpenABL v1.2 flasheado y arrancando (10/11, 11:27)
+- `pocknix-update-abl` escribió y verificó los dos slots (`0dba7b9…`) con backup previo
+  del 1.1.8 en `/flash/openabl/`.
+- Arranca por **entradas BLS** (`/proc/cmdline` con `root=PARTUUID=956c3c5f…`), ESRT
+  informa **1.2** (`fw_version 65538`) y un reinicio normal entra solo a Linux.
+- El menú queda para cuando se pida con **Volume −** al encender.
+- `docs/OPENABL-MIGRACION.md` actualizado con la fase 2 y sus comprobaciones.
 
 ---
 
