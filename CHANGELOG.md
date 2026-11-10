@@ -14,6 +14,23 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10 de noviembre 2026 (noche, 3) — Plasma de escritorio por defecto, Mobile como alternativa
+
+### 🚀 El selector de escritorio ahora manda (`pocknix-desktop` 0.1.0-33)
+- `pocknix-desktop-select` existía pero **el lanzador lo ignoraba**: `pocknix-desktop` hacía
+  `exec startplasmamobile` a pelo, así que elegir "plasma" no cambiaba nada.
+- Ahora el lanzador pregunta al selector y ejecuta **`startplasma-wayland`** (vía
+  `plasma-dbus-run-session-if-needed`) o **`startplasmamobile`**. Si el sabor elegido deja de
+  ser usable (p. ej. se desinstala su shell), cae en Mobile en vez de dejar la pantalla negra.
+- `--now` **funciona**: `pocknix-session` nunca escribía el pidfile que el selector esperaba,
+  así que ahora, si no hay pid, termina la sesión visible y el supervisor la relanza con el
+  sabor nuevo. Probado en los dos sentidos sin reiniciar.
+- Instalado **`plasma-desktop` 6.7.5** (4 paquetes, desde nuestro repo base) y **Plasma de
+  escritorio queda como predeterminado**; Plasma Mobile sigue disponible en el selector.
+- ⚠️ Cambiar de sabor corta las sesiones SSH de `deck` (el supervisor limpia la sesión anterior).
+
+---
+
 ## 📅 10 de noviembre 2026 (noche, 2) — Dock: DisplayPort AltMode y carga
 
 ### 🚀 Kernel y BSP con el soporte de dock del PR ROCKNIX #3509

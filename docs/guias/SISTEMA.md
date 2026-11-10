@@ -115,6 +115,32 @@ dock-check                      # ¿detecta la capturadora HDMI/DP? ¿hay audio?
 - Volume Up **ya no despierta** la consola: solo el botón de encendido. Era la
   causa de encendidos accidentales en la mochila (kernel 7.2.15, 10/11/2026).
 
+## Escritorio: Plasma o Plasma Mobile
+
+El modo escritorio puede arrancar con **Plasma de escritorio** (ratón/teclado, ventanas) o
+con **Plasma Mobile** (táctil, pensado para la consola). El modo juego (Steam) es aparte y
+no cambia.
+
+- Ver cuál está activo y cuáles hay instalados:
+  ```bash
+  pocknix-desktop-select list
+  ```
+- Cambiar y aplicar **en el acto** (cierra la sesión de escritorio; Steam de escritorio se
+  cierra con ella):
+  ```bash
+  pocknix-desktop-select plasma --now         # Plasma de escritorio
+  pocknix-desktop-select plasma-mobile --now  # Plasma Mobile
+  ```
+- Solo fijar la preferencia (se aplica al siguiente arranque): sin `--now`.
+
+Notas:
+
+- Un sabor solo aparece en `list` si su *shell* está instalado. Plasma de escritorio necesita
+  el paquete **`plasma-desktop`**; si no está, el selector lo oculta y se queda en Mobile.
+- Cambiar de sabor **corta las sesiones SSH abiertas** de `deck` (el supervisor limpia los
+  procesos de la sesión anterior). Reconecta y sigue.
+- El ajuste vive en `~/.config/pocknix/desktop-session`.
+
 ## Almacenamiento y red
 
 - La **SD** se monta en `/opt` (juegos, DeckStation, WProton, ROMs). La **UFS
