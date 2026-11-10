@@ -1,0 +1,100 @@
+#!/bin/bash
+# pocknix-desktop-select - which wayland session desktop mode starts. The launcher asks
+# `current` too, so the picker and what actually starts can never disagree.
+set -u
+
+SESSIONS=/usr/share/wayland-sessions
+PICK="${XDG_CONFIG_HOME:-${HOME}/.config}/pocknix/desktop-session"
+PIDFILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pocknix-desktop.pid"
+DEFAULT=plasma-mobile
+
+usage() {
+  echo "usage: pocknix-desktop-select [list|current|reset|<name> [--now]]" >&2
+  exit 2
+}
+
+# Session files have a single [Desktop Entry] group, so the first unlocalised key is the one.
+key() { sed -n "s/^$2=//p" "$1" | head -1; }
+
+# plasma.desktop belongs to plasma-workspace, which Plasma Mobile needs too, so it outlives
+# the desktop shell; started without it, kwin comes up with no shell and no way out.
+needs() {
+  case "$1" in
+    plasma) echo /usr/share/plasma/shells/org.kde.plasma.desktop ;;
+  esac
+}
+
+usable() {
+  local f="${SESSIONS}/$1.desktop" try req
+  [ -r "${f}" ] || return 1
+  [ -n "$(key "${f}" Exec)" ] || return 1
+  [ "$(key "${f}" Hidden)" != true ] || return 1
+  try="$(key "${f}" TryExec)"
+  [ -z "${try}" ] || command -v "${try}" >/dev/null 2>&1 || return 1
+  req="$(needs "$1")"
+  [ -z "${req}" ] || [ -e "${req}" ]
+}
+
+list_usable() {
+  local f n
+  for f in "${SESSIONS}"/*.desktop; do
+    n="$(basename "${f}" .desktop)"
+    usable "${n}" && echo "${n}"
+  done
+}
+
+# Never "first file in wayland-sessions": which one sorts first depends on the locale.
+resolve() {
+  local pick all
+  pick="$(cat "${PICK}" 2>/dev/null)"
+  if [ -n "${pick}" ]; then
+    usable "${pick}" && { echo "${pick}"; return 0; }
+    echo "pocknix-desktop-select: '${pick}' is no longer usable, using the default" >&2
+  fi
+  usable "${DEFAULT}" && { echo "${DEFAULT}"; return 0; }
+  mapfile -t all < <(list_usable)
+  [ "${#all[@]}" -eq 1 ] && { echo "${all[0]}"; return 0; }
+  return 1
+}
+
+# A logout lets apps save; the signal is for desktops without one. The switch marker arms
+# pocknix-session's straggler kill in case neither ends it.
+end_session() {
+  local pid
+  pid="$(cat "${PIDFILE}" 2>/dev/null)" || pid=""
+  if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+    touch "$(dirname "${PIDFILE}")/pocknix-session.switch"
+    case ":${XDG_CURRENT_DESKTOP:-}:" in
+      *:KDE:*) qdbus6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout 2>/dev/null && return 0 ;;
+    esac
+    kill -TERM "${pid}" && return 0
+  fi
+  # pocknix-session does not write the pidfile, so there is nothing to signal: end the session
+  # we can see and let the supervisor respawn with the new pick (its loop re-reads the state).
+  touch "$(dirname "${PIDFILE}")/pocknix-session.switch" 2>/dev/null || true
+  pkill -TERM -f '[s]tartplasma-wayland' 2>/dev/null && return 0
+  pkill -TERM -f '[s]tartplasmamobile' 2>/dev/null && return 0
+  return 0
+}
+
+case "${1:-}" in
+  list)
+    active="$(resolve 2>/dev/null)"
+    for n in $(list_usable); do
+      printf '%s\t%s\t%s\n' "${n}" "$(key "${SESSIONS}/${n}.desktop" Name)" \
+        "$([ "${n}" = "${active}" ] && echo active)"
+    done ;;
+  current)
+    resolve ;;
+  reset)
+    rm -f "${PICK}" ;;
+  ""|-*)
+    usage ;;
+  *)
+    case "${2:-}" in --now|"") ;; *) usage ;; esac
+    usable "$1" || { echo "pocknix-desktop-select: '$1' is not an installed, usable desktop" >&2; exit 1; }
+    mkdir -p "$(dirname "${PICK}")"
+    printf '%s\n' "$1" > "${PICK}"
+    [ "${2:-}" = --now ] && end_session
+    exit 0 ;;
+esac
