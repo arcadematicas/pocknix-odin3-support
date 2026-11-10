@@ -42,10 +42,13 @@ abl_item_label() {
 
 # the CLI keeps its own typed FLASH/REPAIR confirmation; never wire this into a hook
 do_abl() {
-  local st state ver
+  local st state ver kit name
   st="$(abl_status)"
   state="$(printf '%s\n' "${st}" | sed -n 's/^state=//p')"
   ver="$(printf '%s\n' "${st}" | sed -n 's/^shipped_version=//p')"
+  kit="$(printf '%s\n' "${st}" | sed -n 's/^kit=//p')"
+  # Kept generic on purpose: the same dialog serves the OpenABL kit and the older ROCKNIX one.
+  case "${kit}" in openabl) name="OpenABL" ;; rocknix_abl) name="ROCKNIX ABL" ;; *) name="ABL" ;; esac
   if [ "${state}" = uptodate ]; then
     kdialog --title "$TITLE" --msgbox "The bootloader already matches the version this Pocknix ships.\n\nNothing to do." || true
     return 0
@@ -58,7 +61,7 @@ do_abl() {
     return 0
   fi
   kdialog --title "$TITLE" --warningcontinuecancel \
-    "Replace the device bootloader (ABL) with the ROCKNIX ${ver} build Pocknix ships?\n\nThis rewrites both bootloader slots on internal storage. If it is interrupted the device will not boot and needs a PC to recover.\n\nKeep it plugged in. The current bootloader is backed up to the boot partition first, and each slot is verified after writing.\n\nYou will be asked to type FLASH in a terminal to confirm." \
+    "Replace the device bootloader (ABL) with ${name} ${ver}, the build Pocknix ships?\n\nThis rewrites both bootloader slots on internal storage. If it is interrupted the device will not boot and needs a PC to recover.\n\nKeep it plugged in. The current bootloader is backed up to the boot partition first, and each slot is verified after writing.\n\nYou will be asked to type FLASH in a terminal to confirm." \
     || return 0
   konsole_run "/usr/bin/pocknix-update-abl"
 }
