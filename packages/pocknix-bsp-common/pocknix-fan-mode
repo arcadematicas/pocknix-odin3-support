@@ -10,6 +10,17 @@
 #   pocknix-fan-mode moderate       # set a mode (quiet|moderate|performance|off)
 #   pocknix-fan-mode charging [0-255]   # minimum speed while charging, awake or asleep (0 = off)
 MODE_FILE=/var/lib/pocknix/fan-mode
+PANEL_MAIN="/home/deck/homebrew/plugins/Panel de Control/main.py"
+
+# El plugin "Panel de Control" manda sobre el ventilador cuando esta cargado (pocknix-fancontrol
+# se aparta). Avisamos para que nadie piense que el ajuste no se aplico.
+panel_active() {
+  [ -f "${PANEL_MAIN}" ] && pgrep -f "Panel de Control/main.py" >/dev/null 2>&1
+}
+warn_if_panel() {
+  panel_active && echo "pocknix-fan-mode: aviso: el ventilador lo gestiona Panel de Control; este ajuste no tendra efecto" >&2
+  return 0
+}
 CHARGING_FILE=/var/lib/pocknix/fan-charging
 DEFAULT=quiet
 
@@ -25,6 +36,7 @@ case "${1:-}" in
       echo "pocknix-fan-mode: cannot write ${MODE_FILE} (run as root)" >&2
       exit 1
     fi
+    warn_if_panel
     echo "fan mode: ${1}"
     ;;
   charging)
@@ -41,6 +53,7 @@ case "${1:-}" in
       echo "pocknix-fan-mode: cannot write ${CHARGING_FILE} (run as root)" >&2
       exit 1
     fi
+    warn_if_panel
     echo "minimum fan speed while charging: ${2}"
     ;;
   *)

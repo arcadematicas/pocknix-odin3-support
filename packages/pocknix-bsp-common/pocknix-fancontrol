@@ -53,6 +53,17 @@ for p in /sys/class/power_supply/*; do
   [ "$(cat "${p}/type" 2>/dev/null)" = Battery ] && { BATT_STATUS="${p}/status"; break; }
 done
 
+# El plugin "Panel de Control" (Hooandee) tambien mueve el PWM con su curva adaptativa y su
+# backend generic-pwm. Cuando esta cargado, MANDA EL: si los dos escribimos, el ventilador
+# oscila y ni su curva ni la nuestra se cumplen. Decidido por Fransis (10/11/2026): todo lo
+# nuestro se aparta. Este daemon se queda vivo pero sin escribir; si el panel desaparece
+# (plugin desinstalado/desactivado), recupera el control solo.
+PANEL_MAIN="/home/deck/homebrew/plugins/Panel de Control/main.py"
+panel_active() {
+  [ -f "${PANEL_MAIN}" ] || return 1
+  pgrep -f "Panel de Control/main.py" >/dev/null 2>&1
+}
+
 # PWM 0-255 against millidegC, highest first; only the thresholds differ per mode.
 # "off" (ROCKNIX UI + CLI, also accepted per-game) is implemented as thresholds no
 # temperature can cross, so the scan below never matches and PWM stays at 0 (the SPEED
@@ -93,8 +104,13 @@ level_for() {
 }
 
 # pwm1_enable: 1 = manual control, 0 = back to the hardware's automatic mode.
-[ -e "${FAN_EN}" ] && echo 1 > "${FAN_EN}" 2>/dev/null
-trap '[ -e "${FAN_EN}" ] && echo 0 > "${FAN_EN}" 2>/dev/null; exit 0' INT TERM
+YIELD=0
+if panel_active; then
+  YIELD=1
+  echo "pocknix-fancontrol: Panel de Control activo; le cedemos el ventilador" >&2
+fi
+[ "${YIELD}" = 0 ] && [ -e "${FAN_EN}" ] && echo 1 > "${FAN_EN}" 2>/dev/null
+trap '[ "${YIELD}" = 0 ] && [ -e "${FAN_EN}" ] && echo 0 > "${FAN_EN}" 2>/dev/null; exit 0' INT TERM
 
 # Start the ramp where the hardware already is, so the first tick does not yank the fan.
 CURR=0
@@ -108,6 +124,20 @@ fi
 
 EMA=""; LEVEL=""; LAST_OUT=""; LAST_SC=""
 while :; do
+  # El panel manda: sin escribir nada mientras este cargado (ver la nota de arriba).
+  if panel_active; then
+    if [ "${YIELD}" = 0 ]; then
+      YIELD=1
+      echo "pocknix-fancontrol: Panel de Control activo; le cedemos el ventilador" >&2
+    fi
+    sleep 3
+    continue
+  elif [ "${YIELD}" = 1 ]; then
+    YIELD=0
+    echo "pocknix-fancontrol: Panel de Control fuera; recuperamos el ventilador" >&2
+    [ -e "${FAN_EN}" ] && echo 1 > "${FAN_EN}" 2>/dev/null
+  fi
+
   # Charging floor: hand it to the kernel once per change (it holds it through s2idle) and keep
   # it out of the curve value, so an unplug never leaves a stale floor behind.
   SC="$(cat "${CHARGING_FILE}" 2>/dev/null)"
