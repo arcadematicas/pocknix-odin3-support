@@ -441,3 +441,12 @@
 		};
 	};
 };
+
+/*
+ * Dock USB-C: aceptar el rol de sumidero para cargar desde el dock/hub.
+ * Lo pide el puerto, no el cargador: sin esto el conector negocia "dual" y
+ * algunos docks no dan corriente. Del PR ROCKNIX #3509.
+ */
+&{/pmic-glink/connector@0} {
+	try-power-role = "sink";
+};
