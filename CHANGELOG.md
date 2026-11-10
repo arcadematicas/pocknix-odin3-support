@@ -14,6 +14,20 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10 de noviembre 2026 (noche, 5) — El Panel de Control manda sobre el ventilador
+
+### ✅ Nuestro daemon se aparta (`pocknix-bsp-common` 0.1.0-28)
+- El **plugin "Panel de Control" (Hooandee)** también mueve el PWM (curva adaptativa, backend
+  generic-pwm). Con nuestro `pocknix-fancontrol` escribiendo a la vez, el ventilador oscilaba y
+  **ninguna de las dos curvas se cumplía** (medido: 0/6/11/14 en segundos).
+- Decisión de Fransis: **el Panel de Control manda**. Nuestro daemon se queda vivo pero **no
+  escribe** mientras detecte su proceso; si el plugin desaparece, recupera el control solo.
+- El suelo de carga y `pocknix-fan-mode` avisan de que no tienen efecto en ese caso.
+- Verificado en la consola: el servicio arranca, registra "le cedemos el ventilador" y deja de
+  escribir (el PWM lo mueve el panel).
+
+---
+
 ## 📅 10 de noviembre 2026 (noche, 4) — Elegir escritorio desde el QAM
 
 ### 🚀 PocknixControl 0.1.0-70: sección "Escritorio"
