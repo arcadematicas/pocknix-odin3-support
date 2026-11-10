@@ -49,3 +49,28 @@ at boot or update time, unlike ROCKNIX's updateabl which their bootloader
 update.sh calls on every OS update. Its backup goes to /flash/rocknix_abl with
 the kit's own filenames and is never overwritten, so a stock backup made the
 Android way survives and restore_backup_abl.sh keeps working.
+
+# openabl kit (SM8750)
+
+abl_signed-SM8750.elf is NOT committed here — the PKGBUILD fetches it from the
+OpenABL v1.2 release, pinned by tag + sha512:
+
+  release:  https://github.com/OpenHandheldCollective/OpenABL/releases/tag/v1.2
+  asset:    openabl-v1.2.tar.gz (one folder per chipset)
+  tarball sha512: 41f8b0460bc5c2cbbec312911377e52c41eda7c4dcd365bc76486d81cf4da0e9
+                  072df00edaf3afacb87565d856487d0aac3c8b5506d46b9ea6c901c319635492
+  tarball layout used: openabl-v1.2/SM8750/abl_signed-SM8750.elf (+ .sha256 sidecar)
+  SM8750/abl_signed-SM8750.elf sha256 (release's own sidecar, re-checked in prepare()):
+                  0dba7b90d1a36e13977c00fec87f4f5ccc8f49b98864ad495a1ed04d35e33c3a
+
+OpenABL boots Boot Loader Spec entries (loader/entries/*.conf, /Image, /dtbs)
+written by pocknix-bls-deploy, NOT the Android /KERNEL the ROCKNIX ABL reads.
+It is GPL-3.0 (corresponding source on the same release).
+
+The four kit scripts are the same dd wrappers as the rocknix_abl kit, with
+%DEVICE% -> SM8750 and /sdcard/rocknix_abl -> /sdcard/openabl (the folder the
+user copies to Android internal storage). The ROCKNIX kit's copies are left
+byte-identical to what it shipped.
+
+Nothing flashes it automatically. The in-OS path is pocknix-update-abl, which
+prefers openabl/ and falls back to rocknix_abl/ only when openabl/ is absent.

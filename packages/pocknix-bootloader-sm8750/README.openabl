@@ -1,0 +1,10 @@
+- This is the OpenABL 1.2 kit. It boots Boot Loader Spec entries (/loader/entries/*.conf,
+  /Image, /dtbs/*.dtb) that pocknix already writes to the boot FAT, NOT the Android /KERNEL.
+- Only flash it once those files are present and Pocknix boots with the ROCKNIX ABL.
+- Copy the openabl folder from the SD card to the root of Android Internal Storage
+- Execute as root the backup_abl.sh script from the Internal Storage to backup your current ABL
+- After backup, execute as root the flash_abl.sh script to flash OpenABL
+- Reboot your device holding Vol - key to enter fastboot menu
+- Select "Change boot mode" option using Vol -/+ key, and hit Power button
+- First start: OpenABL asks for the Device model. Set it (or the screen stays black), then Start.
+- Going back: restore_backup_abl.sh puts the original bootloader back (abl_a.img / abl_b.img).

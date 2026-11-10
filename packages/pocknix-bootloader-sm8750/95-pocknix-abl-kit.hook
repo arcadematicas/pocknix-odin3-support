@@ -1,12 +1,14 @@
-# Keeps the kit on /flash matching the shipped ABL, so provisioning another device from this card
-# uses it. Copies FILES only — never flash the bootloader from a hook (ROCKNIX's update.sh does).
+# Keeps the kit(s) on /flash matching the shipped ABLs, so provisioning another device from this
+# card uses them. Copies FILES only — never flash the bootloader from a hook (ROCKNIX's update.sh
+# does). Both kits are refreshed when present: openabl (migration target) and rocknix_abl (fallback).
 [Trigger]
 Operation = Install
 Operation = Upgrade
 Type = Path
+Target = usr/share/pocknix/bootloader/openabl/*
 Target = usr/share/pocknix/bootloader/rocknix_abl/*
 
 [Action]
-Description = pocknix: refreshing the ABL install kit on /flash (no bootloader is written)...
+Description = pocknix: refreshing the ABL install kits on /flash (no bootloader is written)...
 When = PostTransaction
 Exec = /usr/bin/pocknix-refresh-abl-kit
