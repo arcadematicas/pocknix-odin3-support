@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=CalvOS desktop layout
+Comment=Fondo CalvOS y dock con los iconos del escritorio movil (primera vez)
+Exec=/usr/bin/pocknix-desktop-layout
+OnlyShowIn=KDE;
+X-KDE-autostart-after=panel
+NoDisplay=true
