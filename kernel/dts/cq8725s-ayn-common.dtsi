@@ -118,7 +118,11 @@
 			gpios = <&pm8550_gpios 6 GPIO_ACTIVE_LOW>;
 			debounce-interval = <15>;
 			linux,can-disable;
-			wakeup-source;
+			/* NO wakeup-source: solo el botón de encendido despierta. Con Volume Up
+			 * marcado como wakeup, la consola se encendía sola en la mochila al
+			 * rozar la tecla y se comía la batería. Lo quitaron también pocknix
+			 * (sm8250/sm8550) y armada (Odin 3 Portal). Para el menú de OpenABL
+			 * las teclas las lee el propio bootloader, no el kernel. */
 		};
 	};
 
