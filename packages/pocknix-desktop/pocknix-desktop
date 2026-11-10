@@ -68,4 +68,14 @@ if [ -n "${POCKNIX_TOUCH2_NAME:-}" ]; then
   fi
 fi
 
-exec startplasmamobile
+# Which desktop: pocknix-desktop-select decides (plasma-mobile is the default, plasma is the
+# full desktop). The picker already refuses a flavour whose shell is not installed, so an
+# unset/broken pick falls back to Plasma Mobile instead of leaving the session black.
+pick="$(pocknix-desktop-select current 2>/dev/null || true)"
+case "${pick}" in
+  plasma)
+    # Same environment as mobile: kwin needs seatd here too, and the X11 socket was fixed above.
+    exec /usr/lib/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland ;;
+  *)
+    exec startplasmamobile ;;
+esac

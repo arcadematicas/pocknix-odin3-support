@@ -1,0 +1,41 @@
+# DE-neutral half of the desktop layer; the DE itself comes from a pocknix-desktop-flavour
+# provider. Build with ./nodeps: the flavour dep would drag a whole DE into the chroot.
+pkgname=pocknix-desktop
+pkgver=0.1.0
+pkgrel=33
+pkgdesc="pocknix desktop session launcher, Flathub seeding and flatpak fixes"
+arch=('any')
+url="https://github.com/shuuri-labs/pocknix-os"
+license=('GPL-2.0-or-later')
+# pocknix-desktop-full: the same pre-meta catch-up cycle as pocknix-steam -> pocknix-steam-full.
+# >= -2: steamos-session-select moved there from -26, so the file never goes missing mid-upgrade.
+depends=('bash' 'pocknix-session>=0.1.0-2' 'pocknix-desktop-flavour'
+         'pocknix-bsp-common>=0.1.0-22'  # owns the SDL d-pad fix the launcher used to export
+         'pocknix-desktop-full')
+optdepends=('pocknix-desktop-plasma-mobile: Plasma Mobile flavour (default)'
+            'pocknix-desktop-plasma: desktop Plasma flavour')
+install='pocknix-desktop.install'
+source=('pocknix-desktop' 'pocknix-desktop-select' 'return-to-gamemode.desktop'
+        'pocknix-flathub-setup' 'pocknix-flathub.service' 'pocknix-flathub-dispatcher'
+        'pocknix-x11.conf'
+        'pocknix-fontcache-prune' '99-pocknix-fontcache.hook')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/pocknix-desktop"          "${pkgdir}/usr/bin/pocknix-desktop"
+  install -Dm755 "${srcdir}/pocknix-desktop-select"   "${pkgdir}/usr/bin/pocknix-desktop-select"
+  install -Dm644 "${srcdir}/return-to-gamemode.desktop" \
+    "${pkgdir}/usr/share/applications/return-to-gamemode.desktop"
+  # Not enabled: the NM dispatcher starts it once a link is up.
+  install -Dm755 "${srcdir}/pocknix-flathub-setup"    "${pkgdir}/usr/bin/pocknix-flathub-setup"
+  install -Dm644 "${srcdir}/pocknix-flathub.service" \
+    "${pkgdir}/usr/lib/systemd/system/pocknix-flathub.service"
+  # Dispatcher scripts must be root-owned and not group/world writable or NM refuses to run them.
+  install -Dm755 "${srcdir}/pocknix-flathub-dispatcher" \
+    "${pkgdir}/etc/NetworkManager/dispatcher.d/50-pocknix-flathub"
+  # No xorg-server in the base to create /tmp/.X11-unix for XWayland.
+  install -Dm644 "${srcdir}/pocknix-x11.conf"         "${pkgdir}/usr/lib/tmpfiles.d/pocknix-x11.conf"
+  install -Dm755 "${srcdir}/pocknix-fontcache-prune" "${pkgdir}/usr/bin/pocknix-fontcache-prune"
+  install -Dm644 "${srcdir}/99-pocknix-fontcache.hook" \
+    "${pkgdir}/usr/share/libalpm/hooks/99-pocknix-fontcache.hook"
+}
