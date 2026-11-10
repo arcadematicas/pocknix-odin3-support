@@ -1,0 +1,14 @@
+# Writes the files OpenABL boots (/Image, /dtbs, loader/entries) whenever the kernel or the BSP
+# lands. Inert on a device that still boots through the ROCKNIX ABL: that ABL ignores them, and
+# the script exits 0 when /flash is not mounted (build chroot) or when /boot/Image is absent.
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Path
+Target = boot/Image
+Target = boot/dtbs/*
+
+[Action]
+Description = pocknix: writing OpenABL boot files (/Image, dtbs, loader entries)...
+When = PostTransaction
+Exec = /usr/lib/pocknix/pocknix-bls-deploy

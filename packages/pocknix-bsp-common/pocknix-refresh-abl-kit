@@ -1,24 +1,52 @@
 #!/bin/bash
-# pocknix-refresh-abl-kit — copy the ABL kit from the package tree onto /flash.
+# pocknix-refresh-abl-kit — copy the ABL kit(s) from the package tree onto /flash.
 #
 # DOES NOT FLASH. Refreshes inert files only; the bootloader is written solely
 # by pocknix-update-abl. Do not grow this into ROCKNIX's updateabl.
 # Needed because pacman owns nothing on /flash, so that copy would otherwise
 # stay at the image's version - and users provision a SECOND device from it.
+# Two kits can be installed (openabl and the pre-OpenABL rocknix_abl); both are
+# refreshed when present, and missing one is not an error.
 set -euo pipefail
 
 FLASH="${FLASH:-/flash}"
-KIT=/usr/share/pocknix/bootloader/rocknix_abl
+BASE="${POCKNIX_ABL_BASE:-/usr/share/pocknix/bootloader}"
 
-[ -d "${KIT}" ] || { echo "pocknix-refresh-abl-kit: no ${KIT} — nothing to do"; exit 0; }
+[ -d "${BASE}/openabl" ] || [ -d "${BASE}/rocknix_abl" ] \
+  || { echo "pocknix-refresh-abl-kit: no ABL kit under ${BASE} — nothing to do"; exit 0; }
 # build-sd-image.sh populates the FAT itself; /flash is not a mount there.
 mountpoint -q "${FLASH}" || { echo "pocknix-refresh-abl-kit: ${FLASH} not mounted — skipping (build chroot?)"; exit 0; }
 
 mount -o remount,rw "${FLASH}" 2>/dev/null || true
-mkdir -p "${FLASH}/rocknix_abl"
-# Copy, never mirror: the stock-ABL backups live in this same directory and
+
+# Copy, never mirror: the stock-ABL backups live in these same directories and
 # an rsync --delete would destroy them.
-cp -f "${KIT}"/* "${FLASH}/rocknix_abl/"
+copy_kit() {  # $1 = kit name
+  local src="${BASE}/$1" dst="${FLASH}/$1" f
+  [ -d "${src}" ] || return 0
+  mkdir -p "${dst}"
+  for f in "${src}"/*; do
+    [ -e "$f" ] || continue
+    cp -f "$f" "${dst}/"
+  done
+}
+
+# openabl first: its backups are the ones pocknix-update-abl reads now.
+copy_kit openabl
+if [ -d "${FLASH}/openabl" ]; then
+  # Backups made by the pre-OpenABL kit move over (never onto one already there).
+  for f in abl_a.img abl_b.img; do
+    [ -f "${FLASH}/rocknix_abl/${f}" ] && [ ! -e "${FLASH}/openabl/${f}" ] \
+      && mv "${FLASH}/rocknix_abl/${f}" "${FLASH}/openabl/${f}"
+  done
+fi
+# The old kit is kept too: it is the fallback bootloader and the way back.
+copy_kit rocknix_abl
 sync
 
-echo "pocknix-refresh-abl-kit: refreshed ${FLASH}/rocknix_abl (v$(cat "${KIT}/version" 2>/dev/null || echo unknown); backups kept)"
+msg=""
+[ -d "${BASE}/openabl" ] \
+  && msg+=" openabl v$(cat "${BASE}/openabl/version" 2>/dev/null || echo unknown)"
+[ -d "${BASE}/rocknix_abl" ] \
+  && msg+=" rocknix_abl v$(cat "${BASE}/rocknix_abl/version" 2>/dev/null || echo unknown)"
+echo "pocknix-refresh-abl-kit: refreshed${msg} on ${FLASH} (backups kept)"

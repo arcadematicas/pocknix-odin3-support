@@ -6,7 +6,7 @@ pkgver=0.1.0
 # 22 (16/10): pocknix-desktop (>=0.1.0-22) exige pocknix-bsp-common>=0.1.0-22; sin este bump
 # la dep no resuelve y pocknix-desktop-0.1.0-31 queda sin poder publicarse. Va junto con el
 # resto del cierre de publicacion del 16/10 (ver docs/CIERRE-20261016-PUBLICACION.md §4).
-pkgrel=25
+pkgrel=26
 pkgdesc="pocknix shared board support: sleep.d dispatcher, suspend hooks, power-key policy, session udev rules, wheel sudo, fan/scheduler daemons, ABL updater, second-screen touch policy, suspend display hook"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -30,10 +30,11 @@ source=('pocknix-sleep' 'sdam-debug-pre' 'sdam-debug-post'
         'pocknix-fancontrol.service' 'pocknix-scx.service' 'pocknix-game-mode.conf'
         'pocknix-update-abl' '52-pocknix-abl.rules' 'pocknix-gpt-abl'
         'pocknix-refresh-abl-kit'
+        'pocknix-bls-deploy' '91-pocknix-bls.hook'
         'pocknix-gamepad-target' 'pocknix-gamepad-target.service'
         'pocknix-second-screen' 'pocknix-second-screen.service'
         'iwd-wait-wlan0.conf')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   install -Dm755 "${srcdir}/pocknix-sleep" \
@@ -96,6 +97,10 @@ package() {
   # Not in PATH: it writes a partition table, and has exactly one caller.
   install -Dm755 "${srcdir}/pocknix-gpt-abl" "${pkgdir}/usr/lib/pocknix/pocknix-gpt-abl"
   install -Dm755 "${srcdir}/pocknix-refresh-abl-kit" "${pkgdir}/usr/bin/pocknix-refresh-abl-kit"
+  # Writes OpenABL's /Image, dtbs and loader entries; harmless while the ROCKNIX ABL boots.
+  install -Dm755 "${srcdir}/pocknix-bls-deploy" "${pkgdir}/usr/lib/pocknix/pocknix-bls-deploy"
+  install -Dm644 "${srcdir}/91-pocknix-bls.hook" \
+    "${pkgdir}/usr/share/libalpm/hooks/91-pocknix-bls.hook"
   install -Dm644 "${srcdir}/52-pocknix-abl.rules" \
     "${pkgdir}/usr/share/polkit-1/rules.d/52-pocknix-abl.rules"
 
