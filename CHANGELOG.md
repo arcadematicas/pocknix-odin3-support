@@ -14,6 +14,27 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 10 de noviembre 2026 (tarde) — Arranque OpenABL en marcha y ajustes de energía
+
+### ✅ OpenABL v1.2 flasheado y en uso
+- Slots `abl_a`/`abl_b` a OpenABL 1.2 con backup previo del 1.1.8. Arranca por BLS
+  (`root=PARTUUID` en `/proc/cmdline`), ESRT informa 1.2, reinicio normal entra solo.
+- Cada actualización de kernel escribe ya `/Image`, `Image.bak` y la entrada
+  **Pocknix (previous kernel)**: probado con el kernel del día.
+
+### ✅ Volume Up ya no despierta (`linux-pocknix-sm8750`)
+- Fuera `wakeup-source` del `key-volume-up` en el DTS. Solo despierta el botón de
+  encendido; coincide con pocknix (sm8250/sm8550) y armada (Odin 3 Portal).
+- Verificado tras reiniciar: el nodo desaparece de `/proc/device-tree`.
+
+### 🚀 Suelo de ventilador al cargar (`pocknix-bsp-common` 0.1.0-27)
+- `pocknix-fan-mode charging [0-255]` fija un mínimo de PWM mientras la batería
+  carga, despierto y dormido (dormido lo sostiene `pwm1_sleep_charging`).
+- Aviso medido: despierto el control térmico del kernel sigue reescribiendo el PWM
+  y se come el suelo; su valor real es **durmiendo**, que es donde hace falta.
+
+---
+
 ## 📅 10 de noviembre 2026 — Preparado el paso a OpenABL (sin tocar el arranque)
 
 ### 🚀 Escritor de entradas BLS (`pocknix-bsp-common` 0.1.0-26)

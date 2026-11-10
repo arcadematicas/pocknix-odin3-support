@@ -104,6 +104,17 @@ dock-check                      # ¿detecta la capturadora HDMI/DP? ¿hay audio?
 - Si al despertar la pantalla queda negra: hook `004-display` (ya instalado); si
   pasa, `../SUSPEND-ISSUE.md`.
 
+## Ventilador
+
+- La curva la lleva `pocknix-fancontrol` (quiet por defecto); se cambia al vuelo:
+  `pocknix-fan-mode quiet|moderate|performance|off`.
+- **Suelo mientras carga**: `pocknix-fan-mode charging 60` mantiene el ventilador
+  al menos a esa velocidad (0-255) mientras la batería dice que carga, también
+  **dormida** (el kernel lo sostiene en s2idle). `pocknix-fan-mode charging`
+  sin número dice el valor actual; `0` lo desactiva (por defecto).
+- Volume Up **ya no despierta** la consola: solo el botón de encendido. Era la
+  causa de encendidos accidentales en la mochila (kernel 7.2.15, 10/11/2026).
+
 ## Almacenamiento y red
 
 - La **SD** se monta en `/opt` (juegos, DeckStation, WProton, ROMs). La **UFS
