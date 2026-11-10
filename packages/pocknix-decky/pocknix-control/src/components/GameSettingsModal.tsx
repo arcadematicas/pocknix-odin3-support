@@ -1,7 +1,8 @@
 import { ModalRoot, ToggleField } from "@decky/ui";
 import { useEffect, useState } from "react";
-import { getConfig, saveTweaks } from "../backend";
+import { getConfig, patchTweaks } from "../backend";
 import { fexSteamString, syncFexLaunchOption } from "../lib/launchOptions";
+import { diffFields } from "../lib/diffTweaks";
 import { clone } from "../lib/util";
 import type { Config } from "../types";
 import { ConfigSection } from "./ConfigSection";
@@ -26,7 +27,20 @@ export function GameSettingsModal({ appid, name, closeModal }: { appid: string; 
     const next = clone(config);
     mutate(next);
     setConfig(next);
-    saveTweaks(next.tweaks).catch(() => {});
+    const globalDiff = diffFields(config.tweaks.global, next.tweaks.global);
+    const gameDiff = diffFields(config.tweaks.games[appid], next.tweaks.games[appid]);
+    // The modal only edits `games[appid]`; `global` is sent too in case it ever changes, so a
+    // whole-object write can't clobber the QAM's edits (and vice versa).
+    const sendGlobal = Object.keys(globalDiff).length ? patchTweaks("", globalDiff) : Promise.resolve(null);
+    sendGlobal
+      .then(() => patchTweaks(appid, gameDiff))
+      .then((returned) => {
+        setConfig((current) => {
+          if (!current || JSON.stringify(current.tweaks) !== JSON.stringify(next.tweaks)) return current;
+          return { ...current, ...returned };
+        });
+      })
+      .catch(() => {});
   };
   const patch = (fields: Record<string, any>) =>
     update((next) => {

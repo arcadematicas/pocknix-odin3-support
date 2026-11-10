@@ -2,7 +2,7 @@ import { Field, PanelSection, Tabs } from "@decky/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { getConfig, saveTweaks } from "./backend";
-import { useDebouncedSave } from "./hooks/useDebouncedSave";
+import { usePatchTweaks } from "./hooks/usePatchTweaks";
 import { tabIcons } from "./icons";
 import { currentGame } from "./lib/games";
 import { styles } from "./styles";
@@ -56,7 +56,7 @@ export function Content() {
       window.clearInterval(timer);
     };
   }, [!!config]);
-  useDebouncedSave({ config, field: "tweaks", snapshot: savedTweaksSnapshot, save: saveTweaks, setConfig, onError: load });
+  usePatchTweaks({ config, field: "tweaks", snapshot: savedTweaksSnapshot, save: saveTweaks, setConfig, onError: load });
 
   if (!config) return <PanelSection title="CalvOS Control"><Field label={message} /></PanelSection>;
 

@@ -19,7 +19,7 @@ from pocknix_control.hdr import hdr_status, set_hdr
 from pocknix_control.sdcard import detect_sdcard, format_sdcard
 from pocknix_control.sharing import install_samba, set_share, share_status
 from pocknix_control.snapshots import reboot_system, snapshot_status, start_rollback
-from pocknix_control.tweaks import save_tweaks
+from pocknix_control.tweaks import patch_tweaks, save_tweaks
 from pocknix_control.updates import check_updates, start_update, update_status
 from pocknix_control.report import send_report as _send_report
 
@@ -65,6 +65,10 @@ class Plugin:
 
     async def save_tweaks(self, data):
         await asyncio.to_thread(save_tweaks, data)
+        return await self.get_config()
+
+    async def patch_tweaks(self, appid, fields):
+        await asyncio.to_thread(patch_tweaks, appid, fields)
         return await self.get_config()
 
     async def export_config(self, appid, name, basename, allow_overwrite):

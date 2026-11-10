@@ -29,6 +29,7 @@ const sendReport = (text, kind, areas) => call("send_report", text, kind, areas)
 const setScxScheduler = (scheduler) => call("set_scx_scheduler", scheduler);
 const setScxMode = (mode) => call("set_scx_mode", mode);
 const saveTweaks = (data) => call("save_tweaks", data);
+const patchTweaks = (appid, fields) => call("patch_tweaks", appid, fields);
 const exportConfig = (appid, name, basename, allowOverwrite) => call("export_config", appid, name, basename, allowOverwrite);
 const configDir = () => call("config_dir");
 const readConfig = (path) => call("read_config", path);
@@ -56,6 +57,22 @@ const snapshotStatus = () => call("snapshot_status");
 const startRollback = (id) => call("start_rollback", id);
 const rebootSystem = () => call("reboot_system");
 const makoStatus = () => call("mako_status");
+
+/** Campos que difieren entre dos objetos planos. Una clave que desaparece se manda como null. */
+function diffFields(prev, next) {
+    const out = {};
+    const p = prev || {};
+    const n = next || {};
+    for (const key of new Set([...Object.keys(p), ...Object.keys(n)])) {
+        if (!(key in n)) {
+            out[key] = null;
+            continue;
+        }
+        if (JSON.stringify(p[key]) !== JSON.stringify(n[key]))
+            out[key] = n[key];
+    }
+    return out;
+}
 
 function useDebouncedSave(options) {
     const { config, field, snapshot, save, setConfig, onError, delay = 900 } = options;
@@ -99,6 +116,42 @@ function useDebouncedSave(options) {
     // QAM panels unmount the moment the menu closes, and the cleanup above clears the only
     // pending timer: without this flush, any edit made <delay ms before closing is dropped.
     SP_REACT.useEffect(() => () => void flushRef.current(), []);
+}
+
+/** Same debounce/unmount-flush lifecycle as useDebouncedSave, but sends only the fields that
+ *  changed since the last acknowledged state so the QAM and the library modal don't clobber
+ *  each other's edits. */
+function usePatchTweaks(options) {
+    const { config, field, snapshot, save: saveWhole = saveTweaks, setConfig, onError, delay } = options;
+    const save = SP_REACT.useCallback(async (next) => {
+        let prev;
+        try {
+            prev = JSON.parse(snapshot.current);
+        }
+        catch (error) {
+            prev = { global: {}, games: {} };
+        }
+        const prevGames = prev?.games || {};
+        const nextGames = next?.games || {};
+        const ids = new Set([...Object.keys(prevGames), ...Object.keys(nextGames)]);
+        // A whole game disappears (rare): a field patch can't express that, so fall back to one
+        // full save rather than leaving a stale profile behind.
+        if ([...ids].some((id) => !(id in nextGames)))
+            return saveWhole(next);
+        let result = null;
+        const globalDiff = diffFields(prev?.global, next?.global);
+        if (Object.keys(globalDiff).length)
+            result = await patchTweaks("", globalDiff);
+        for (const id of ids) {
+            const gameDiff = diffFields(prevGames[id], nextGames[id]);
+            if (Object.keys(gameDiff).length)
+                result = await patchTweaks(id, gameDiff);
+        }
+        // Nothing field-level changed (e.g. only key order differs): re-read so the snapshot
+        // matches what is actually stored.
+        return result ?? (await getConfig());
+    }, [snapshot, saveWhole]);
+    useDebouncedSave({ config, field, snapshot, save, setConfig, onError, delay });
 }
 
 function Icon({ path }) {
@@ -1521,7 +1574,7 @@ function Content() {
             window.clearInterval(timer);
         };
     }, [!!config]);
-    useDebouncedSave({ config, field: "tweaks", snapshot: savedTweaksSnapshot, save: saveTweaks, setConfig, onError: load });
+    usePatchTweaks({ config, field: "tweaks", snapshot: savedTweaksSnapshot, save: saveTweaks, setConfig, onError: load });
     if (!config)
         return SP_JSX.jsx(DFL.PanelSection, { title: "CalvOS Control", children: SP_JSX.jsx(DFL.Field, { label: message }) });
     const tabContent = (content) => (SP_JSX.jsx("div", { className: "pocknix-control-tab-content", children: content }));
@@ -1556,7 +1609,21 @@ function GameSettingsModal({ appid, name, closeModal }) {
         const next = clone(config);
         mutate(next);
         setConfig(next);
-        saveTweaks(next.tweaks).catch(() => { });
+        const globalDiff = diffFields(config.tweaks.global, next.tweaks.global);
+        const gameDiff = diffFields(config.tweaks.games[appid], next.tweaks.games[appid]);
+        // The modal only edits `games[appid]`; `global` is sent too in case it ever changes, so a
+        // whole-object write can't clobber the QAM's edits (and vice versa).
+        const sendGlobal = Object.keys(globalDiff).length ? patchTweaks("", globalDiff) : Promise.resolve(null);
+        sendGlobal
+            .then(() => patchTweaks(appid, gameDiff))
+            .then((returned) => {
+            setConfig((current) => {
+                if (!current || JSON.stringify(current.tweaks) !== JSON.stringify(next.tweaks))
+                    return current;
+                return { ...current, ...returned };
+            });
+        })
+            .catch(() => { });
     };
     const patch = (fields) => update((next) => {
         const existing = next.tweaks.games[appid] || {};

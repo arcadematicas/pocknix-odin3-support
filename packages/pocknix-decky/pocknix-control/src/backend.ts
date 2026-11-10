@@ -10,6 +10,8 @@ export const setLavdMode = (mode: string) => call<[string], Config>("set_lavd_mo
 export const setScxScheduler = (scheduler: string) => call<[string], Config>("set_scx_scheduler", scheduler);
 export const setScxMode = (mode: string) => call<[string], Config>("set_scx_mode", mode);
 export const saveTweaks = (data: Tweaks) => call<[Tweaks], Config>("save_tweaks", data);
+export const patchTweaks = (appid: string, fields: Record<string, any>) =>
+  call<[string, Record<string, any>], Config>("patch_tweaks", appid, fields);
 export const exportConfig = (appid: string, name: string, basename: string, allowOverwrite: boolean) =>
   call<[string, string, string, boolean], ConfigExportResult>("export_config", appid, name, basename, allowOverwrite);
 export const configDir = () => call<[], string>("config_dir");

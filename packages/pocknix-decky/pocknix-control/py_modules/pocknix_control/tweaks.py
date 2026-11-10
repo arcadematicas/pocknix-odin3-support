@@ -1,6 +1,7 @@
 import copy
 import json
 import re
+import threading
 from pathlib import Path
 
 from .system import atomically_write
@@ -12,6 +13,10 @@ FEX_PROFILES_CONFIG = Path("/usr/share/pocknix/fex-profiles.json")
 PLUGIN_FEX_PROFILES_CONFIG = Path(__file__).resolve().parent.parent.parent / "fex-profiles.json"
 TURNIP_DIRS = {"arm": Path("/usr/share/pocknix/vk-arm"), "x86": Path("/usr/share/pocknix/vk-x86")}
 CONTAINER_VK_LIST = Path("/usr/share/fex-emu/vk-x86-container.list")
+
+# Serialises read-modify-write cycles: patch_tweaks merges into the on-disk file, so two
+# concurrent patches (QAM debounce + library modal) would otherwise drop one of them.
+_write_lock = threading.Lock()
 
 
 # "26.2.3" -> one entry per series ("26.2"); the wrapper resolves the point release per Proton
@@ -139,3 +144,23 @@ def sanitize_tweaks(data):
 
 def save_tweaks(data):
     atomically_write(TWEAKS_CONFIG, json.dumps(sanitize_tweaks(data), indent=2, sort_keys=True) + "\n", 0o644)
+
+
+def patch_tweaks(appid, fields):
+    # Merges only the changed fields: the QAM panel and the library modal each hold their own
+    # copy, so writing a whole object back clobbers the other's edits. None removes a key.
+    appid = str(appid or "")
+    if appid and not appid.isdigit():
+        raise ValueError(f"bad appid: {appid!r}")
+    if not isinstance(fields, dict):
+        raise ValueError("fields must be an object")
+    with _write_lock:
+        data = load_tweaks()
+        target = data["games"].setdefault(appid, {}) if appid else data["global"]
+        for key, value in fields.items():
+            if value is None:
+                target.pop(key, None)
+            else:
+                target[key] = value
+        save_tweaks(data)
+        return data
