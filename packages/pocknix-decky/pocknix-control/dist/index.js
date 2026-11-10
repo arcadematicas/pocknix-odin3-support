@@ -40,6 +40,10 @@ const setLedLinked = (linked) => call("set_led_linked", linked);
 const setLedEnabled = (enabled) => call("set_led_enabled", enabled);
 const setLedSides = (sides) => call("set_led_sides", sides);
 const systemStatus = () => call("system_status");
+// Escritorio: sabor de Plasma que se abre al salir del modo juego (plasma |
+// plasma-mobile). El switch cierra Steam, asi que la UI no debe esperar nada mas.
+const desktopFlavour = () => call("desktop_flavour");
+const switchToDesktop = (name) => call("switch_to_desktop", name);
 const cleanupScan = () => call("cleanup_scan");
 const cleanupRun = (ids) => call("cleanup_run", ids);
 const cleanupBiggest = () => call("cleanup_biggest");
@@ -370,6 +374,11 @@ function Cleanup() {
                                     : "Marca alguna categoría", onClick: run, children: "Limpiar seleccionadas" }) }), message ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: message }) })) : null, error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }), biggest.length > 0 && (SP_JSX.jsx(DFL.PanelSection, { title: "QU\u00C9 OCUPA M\u00C1S", children: biggest.map((entry) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: human(entry.size), description: entry.path.replace(/^\/home\/[^/]+/, "~") }) }, entry.path))) }))] }));
 }
 
+// Sabores de escritorio instalados en la consola (backend: py_modules/desktop.py).
+const SABORES = {
+    plasma: "Plasma de escritorio",
+    "plasma-mobile": "Plasma Mobile",
+};
 // Areas del informe. "logs" es la pesada: apagada por defecto para que enviar sea rapido.
 const AREAS = [
     ["sistema", "Sistema", "kernel, BSP, versiones, bateria, termicas"],
@@ -408,11 +417,31 @@ function System() {
             on[id] = id !== "logs";
         return on;
     });
+    const [sabor, setSabor] = SP_REACT.useState("");
+    const [cambiando, setCambiando] = SP_REACT.useState(false);
+    const [fallo, setFallo] = SP_REACT.useState("");
     SP_REACT.useEffect(() => {
         systemStatus()
             .then(setStatus)
             .catch((err) => setError(String(err)));
+        desktopFlavour()
+            .then(setSabor)
+            .catch(() => setSabor(""));
     }, []);
+    // Al cambiar de escritorio Steam se cierra y este plugin muere con el: no hay
+    // "listo" que mostrar, solo el aviso de que se esta cerrando.
+    const cambiarAEscritorio = async (name) => {
+        setCambiando(true);
+        setFallo("");
+        try {
+            await switchToDesktop(name);
+            setSabor(name);
+        }
+        catch (err) {
+            setFallo(String(err));
+            setCambiando(false);
+        }
+    };
     const b = status?.battery;
     const detalle = b?.available
         ? [b.status, b.health, b.cycles != null ? `${b.cycles} ciclos` : null, amperios(b.currentNow), voltios(b.voltageNow)]
@@ -432,7 +461,9 @@ function System() {
             setEnviando(false);
         }
     };
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null, SP_JSX.jsxs(DFL.PanelSection, { title: "INFORME", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que quieres mandar:" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("bug"), children: (kind === "bug" ? "● " : "○ ") + "Reportar un problema" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("idea"), children: (kind === "idea" ? "● " : "○ ") + "Sugerir una mejora" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que incluyo:" }) }), AREAS.map(([id, label, desc]) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: label, description: desc, checked: !!areas[id], onChange: (v) => setAreas({ ...areas, [id]: v }) }) }, id))), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Descripcion (opcional)", value: texto, onChange: (e) => setTexto(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: enviarInforme, disabled: enviando || !Object.values(areas).some(Boolean), children: enviando ? "Enviando..." : "Enviar informe" }) }), informe ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: informe.ok ? "Informe enviado" : "No se pudo enviar", description: informe.ok ? (informe.issue || "") : [informe.error, informe.detail].filter(Boolean).join(" — ") }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "Se envia a nuestro GitHub (arcadematicas/calvOS-reports). El informe se redacta antes de salir: sin rutas de usuario, hostname, IP, MAC ni claves." }) })] })] }));
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), SP_JSX.jsxs(DFL.PanelSection, { title: "ESCRITORIO", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: sabor ? `Ahora: ${SABORES[sabor] || sabor}` : "Ahora: …", description: "El escritorio que se abre al salir del modo juego." }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => cambiarAEscritorio("plasma"), disabled: cambiando, children: "Cambiar a Plasma (escritorio)" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => cambiarAEscritorio("plasma-mobile"), disabled: cambiando, children: "Cambiar a Plasma Mobile" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: cambiando
+                                ? "Cerrando el modo juego…"
+                                : "Steam se cerrará y la consola abrirá el escritorio elegido." }) }), fallo ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "No se pudo cambiar", description: fallo }) })) : null] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null, SP_JSX.jsxs(DFL.PanelSection, { title: "INFORME", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que quieres mandar:" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("bug"), children: (kind === "bug" ? "● " : "○ ") + "Reportar un problema" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("idea"), children: (kind === "idea" ? "● " : "○ ") + "Sugerir una mejora" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que incluyo:" }) }), AREAS.map(([id, label, desc]) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: label, description: desc, checked: !!areas[id], onChange: (v) => setAreas({ ...areas, [id]: v }) }) }, id))), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Descripcion (opcional)", value: texto, onChange: (e) => setTexto(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: enviarInforme, disabled: enviando || !Object.values(areas).some(Boolean), children: enviando ? "Enviando..." : "Enviar informe" }) }), informe ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: informe.ok ? "Informe enviado" : "No se pudo enviar", description: informe.ok ? (informe.issue || "") : [informe.error, informe.detail].filter(Boolean).join(" — ") }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "Se envia a nuestro GitHub (arcadematicas/calvOS-reports). El informe se redacta antes de salir: sin rutas de usuario, hostname, IP, MAC ni claves." }) })] })] }));
 }
 
 // Drives the same state as Steam's own per-game compatibility dropdown (SpecifyCompatTool +

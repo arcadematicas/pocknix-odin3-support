@@ -13,6 +13,8 @@ from pocknix_control.led import (restore_led, set_led, set_led_enabled, set_led_
 from pocknix_control.mako import mako_status
 from pocknix_control.modes import set_fan_mode, set_lavd_mode, set_scx_mode, set_scx_scheduler
 from pocknix_control.cleanup import clean, scan, biggest
+from pocknix_control.desktop import (desktop_flavour, set_desktop_flavour,
+                                     switch_to_desktop)
 from pocknix_control.system_info import system_status
 from pocknix_control.oled_care import oled_care_status, run_refresher
 from pocknix_control.hdr import hdr_status, set_hdr
@@ -102,6 +104,17 @@ class Plugin:
 
     async def system_status(self):
         return await asyncio.to_thread(system_status)
+
+    # Escritorio: que sabor de Plasma se abre al salir del modo juego. El switch
+    # termina gamescope (y con el este plugin), asi que va desacoplado.
+    async def desktop_flavour(self):
+        return await asyncio.to_thread(desktop_flavour)
+
+    async def set_desktop_flavour(self, name):
+        return await asyncio.to_thread(set_desktop_flavour, name)
+
+    async def switch_to_desktop(self, name):
+        return await asyncio.to_thread(switch_to_desktop, name)
 
     async def send_report(self, text: str = "", kind: str = "bug", areas=None):
         # Recoge + redacta + envia al colector propio (calvos-doctor); bloqueante -> hilo.

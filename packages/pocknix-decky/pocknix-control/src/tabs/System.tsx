@@ -1,7 +1,13 @@
 import { Button, Field, PanelSection, PanelSectionRow, TextField, ToggleField } from "@decky/ui";
 import { useEffect, useState } from "react";
-import { sendReport, systemStatus } from "../backend";
+import { desktopFlavour, sendReport, switchToDesktop, systemStatus } from "../backend";
 import type { SystemStatus } from "../backend";
+
+// Sabores de escritorio instalados en la consola (backend: py_modules/desktop.py).
+const SABORES: Record<string, string> = {
+  plasma: "Plasma de escritorio",
+  "plasma-mobile": "Plasma Mobile",
+};
 
 // Areas del informe. "logs" es la pesada: apagada por defecto para que enviar sea rapido.
 const AREAS: [string, string, string][] = [
@@ -42,12 +48,32 @@ export function System() {
     for (const [id] of AREAS) on[id] = id !== "logs";
     return on;
   });
+  const [sabor, setSabor] = useState("");
+  const [cambiando, setCambiando] = useState(false);
+  const [fallo, setFallo] = useState("");
 
   useEffect(() => {
     systemStatus()
       .then(setStatus)
       .catch((err) => setError(String(err)));
+    desktopFlavour()
+      .then(setSabor)
+      .catch(() => setSabor(""));
   }, []);
+
+  // Al cambiar de escritorio Steam se cierra y este plugin muere con el: no hay
+  // "listo" que mostrar, solo el aviso de que se esta cerrando.
+  const cambiarAEscritorio = async (name: "plasma" | "plasma-mobile") => {
+    setCambiando(true);
+    setFallo("");
+    try {
+      await switchToDesktop(name);
+      setSabor(name);
+    } catch (err) {
+      setFallo(String(err));
+      setCambiando(false);
+    }
+  };
 
   const b = status?.battery;
   const detalle = b?.available
@@ -83,6 +109,39 @@ export function System() {
             description="El perfil de potencia está en el menú de Steam (⋯ → Rendimiento). El brillo, en los controles nativos."
           />
         </PanelSectionRow>
+      </PanelSection>
+
+      <PanelSection title="ESCRITORIO">
+        <PanelSectionRow>
+          <Field
+            label={sabor ? `Ahora: ${SABORES[sabor] || sabor}` : "Ahora: …"}
+            description="El escritorio que se abre al salir del modo juego."
+          />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <Button onClick={() => cambiarAEscritorio("plasma")} disabled={cambiando}>
+            Cambiar a Plasma (escritorio)
+          </Button>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <Button onClick={() => cambiarAEscritorio("plasma-mobile")} disabled={cambiando}>
+            Cambiar a Plasma Mobile
+          </Button>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <Field
+            description={
+              cambiando
+                ? "Cerrando el modo juego…"
+                : "Steam se cerrará y la consola abrirá el escritorio elegido."
+            }
+          />
+        </PanelSectionRow>
+        {fallo ? (
+          <PanelSectionRow>
+            <Field label="No se pudo cambiar" description={fallo} />
+          </PanelSectionRow>
+        ) : null}
       </PanelSection>
 
       {error ? (
