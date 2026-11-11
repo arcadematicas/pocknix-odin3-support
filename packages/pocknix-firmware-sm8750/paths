@@ -22,6 +22,10 @@ qcom/sm8750/ayn/odin3/battmgr.jsn
 qcom/sm8750/ayn/odin3/cdsp.mbn
 qcom/sm8750/ayn/odin3/cdsp_dtb.mbn
 qcom/sm8750/ayn/odin3/cdspr.jsn
+qcom/sm8750/ayn/odin3portal/adsp.mbn
+qcom/sm8750/ayn/odin3portal/adsp_dtb.mbn
+qcom/sm8750/ayn/odin3portal/aw883xx_acf.bin
+qcom/sm8750/ayn/odin3portal/soccp.mbn
 qcom/sm8750/gen80000_zap.mbn
 qcom/sm8750/konkr/pfe/adsp.mbn
 qcom/sm8750/konkr/pfe/adsp_dtb.mbn

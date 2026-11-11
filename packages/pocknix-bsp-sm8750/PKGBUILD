@@ -54,7 +54,7 @@ pkgver=0.2.0
 #   (antes iba en la esquina inferior derecha), algo mas pequeno. Mismas 240 frames, 46,4 MB.
 # -14 (17/10): se vuelve a la ESQUINA (como el diseno anterior), calvOS algo mas pequeno (100px)
 #   y con FUNDIDO de entrada (frames 70-120) para que aparezca despues de "ODIN 3". 48,4 MB.
-pkgrel=51
+pkgrel=52
 pkgdesc="pocknix board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 install=pocknix-bsp-sm8750.install
 arch=('any')
@@ -93,8 +93,9 @@ backup=('etc/sudoers.d/90-pocknix-steamos-manager'
 source=('device.conf'
         'ayn_mcu.yaml' '01-ayn-controller.yaml'
         'AYN-Odin3.conf' 'HiFi.conf' 'HiFi-Dock.conf'
+        'AYN-Odin3Portal.conf' '50-ayn_odin3portal.yaml'
         'kernel-cmdline' 'pocknix-bsp-sm8750.install')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 build() {
   # Compile the OLED pixel refresher. It is tiny (~17 KB) but it MUST be built here: the
@@ -123,6 +124,11 @@ package() {
     "${pkgdir}/usr/share/inputplumber/devices/01-ayn-controller.yaml"
   install -Dm644 "${srcdir}/ayn_mcu.yaml" \
     "${pkgdir}/usr/share/inputplumber/capability_maps/ayn_mcu.yaml"
+  # AYN Odin 3 Portal: solo se activa con el DT de la Portal (compatible
+  # ayn,odin3portal en /sys/firmware/devicetree/base), asi que puede convivir
+  # con el mapa de la Odin 3 en la misma imagen.
+  install -Dm644 "${srcdir}/50-ayn_odin3portal.yaml" \
+    "${pkgdir}/usr/share/inputplumber/devices/50-ayn_odin3portal.yaml"
 
   # --- ALSA UCM --------------------------------------------------------------
   # The Odin 3 card reports longname "SM8750-AYN". The codec include sequences (/lib,
@@ -135,6 +141,16 @@ package() {
   install -Dm644 "${srcdir}/HiFi-Dock.conf" "${ucm}/AYN/Odin3/HiFi-Dock.conf"
   install -d "${ucm}/conf.d/sm8750"
   ln -sf "../../AYN/Odin3/AYN-Odin3.conf" "${ucm}/conf.d/sm8750/SM8750-AYN.conf"
+
+  # AYN Odin 3 Portal: mismo codec, HiFi compartido con la Odin 3 (symlink, como en
+  # Armada), hasta que la unidad permita medir diferencias. El DTS le pone al card
+  # el modelo "SM8750-AYN-Portal", asi que ese es el match real en nuestro kernel;
+  # el nombre legado "ayn-AYNOdin3Portal-" (el que instala Armada para sus kernels)
+  # se deja tambien por compatibilidad. Sin esta UCM el card cae en el perfil nulo.
+  install -Dm644 "${srcdir}/AYN-Odin3Portal.conf" "${ucm}/AYN/Odin3Portal/AYN-Odin3Portal.conf"
+  ln -sf "../Odin3/HiFi.conf" "${ucm}/AYN/Odin3Portal/HiFi.conf"
+  ln -sf "../../AYN/Odin3Portal/AYN-Odin3Portal.conf" "${ucm}/conf.d/sm8750/SM8750-AYN-Portal.conf"
+  ln -sf "../../AYN/Odin3Portal/AYN-Odin3Portal.conf" "${ucm}/conf.d/sm8750/ayn-AYNOdin3Portal-.conf"
 
   # --- family kernel cmdline -------------------------------------------------
   # For the on-device /flash/KERNEL rebuild (pocknix-build-bootimg); build-packages.sh asserts it
