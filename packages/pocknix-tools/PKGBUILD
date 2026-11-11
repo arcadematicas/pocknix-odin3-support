@@ -2,7 +2,7 @@
 # which live here rather than in the image overlay so fixes reach fielded SDs on -Syu (#34).
 pkgname=pocknix-tools
 pkgver=0.1.0
-pkgrel=24
+pkgrel=25
 pkgdesc="Pocknix maintenance app: snapshot rollback, base mode switch, internal install, SSH + file sharing toggles, emulation layer, desktop picker"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -14,9 +14,9 @@ source=('pocknix-tools' 'pocknix-tools.desktop' 'pocknix-installer-gui'
         'pocknix-internal-boot-rename' 'pocknix-internal-boot-rename.service'
         'pocknix-ssh' '53-pocknix-ssh.rules' '10-pocknix-no-root-login.conf'
         'pocknix-share' '55-pocknix-share.rules' 'smb.conf' 'pocknix-smb.service'
-        'pocknix-layer' '56-pocknix-layer.rules')
+        'pocknix-layer' '56-pocknix-layer.rules' 'pocknix-game-wrapper')
 sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
-            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+            'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 backup=('etc/ssh/sshd_config.d/10-pocknix-no-root-login.conf'
         'etc/samba/smb.conf')
 
@@ -51,6 +51,9 @@ package() {
     "${pkgdir}/etc/avahi/services/pocknix-smb.service"
 
   install -Dm755 "${srcdir}/pocknix-layer" "${pkgdir}/usr/bin/pocknix-layer"
+  # Envoltorio de lanzamiento para juegos NATIVOS: aplica el mesaVersion por juego de
+  # /etc/pocknix/game-tweaks.json (Steam pone SteamAppId tambien en los shortcuts).
+  install -Dm755 "${srcdir}/pocknix-game-wrapper" "${pkgdir}/usr/lib/pocknix/pocknix-game-wrapper"
   install -Dm644 "${srcdir}/56-pocknix-layer.rules" \
     "${pkgdir}/usr/share/polkit-1/rules.d/56-pocknix-layer.rules"
 }

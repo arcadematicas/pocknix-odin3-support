@@ -23,7 +23,7 @@ from pocknix_control.sharing import install_samba, set_share, share_status
 from pocknix_control.snapshots import reboot_system, snapshot_status, start_rollback
 from pocknix_control.tweaks import patch_tweaks, save_tweaks
 from pocknix_control.updates import check_updates, start_update, update_status
-from pocknix_control.report import send_report as _send_report
+from pocknix_control.report import collect_report as _collect_report, send_report as _send_report
 
 
 class Plugin:
@@ -119,6 +119,10 @@ class Plugin:
     async def send_report(self, text: str = "", kind: str = "bug", areas=None):
         # Recoge + redacta + envia al colector propio (calvos-doctor); bloqueante -> hilo.
         return await asyncio.to_thread(_send_report, text, kind, areas)
+
+    async def collect_report(self, text: str = "", areas=None):
+        # Solo recoge y guarda el tar.gz (calvos-doctor sin --send); bloqueante -> hilo.
+        return await asyncio.to_thread(_collect_report, text, areas)
 
     async def cleanup_scan(self):
         return await asyncio.to_thread(scan)

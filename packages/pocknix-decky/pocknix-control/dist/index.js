@@ -26,6 +26,7 @@ const definePlugin = (fn) => {
 
 const getConfig = () => call("get_config");
 const sendReport = (text, kind, areas) => call("send_report", text, kind, areas);
+const collectReport = (text, areas) => call("collect_report", text, areas);
 const setScxScheduler = (scheduler) => call("set_scx_scheduler", scheduler);
 const setScxMode = (mode) => call("set_scx_mode", mode);
 const saveTweaks = (data) => call("save_tweaks", data);
@@ -34,26 +35,13 @@ const exportConfig = (appid, name, basename, allowOverwrite) => call("export_con
 const configDir = () => call("config_dir");
 const readConfig = (path) => call("read_config", path);
 const applyConfig = (path, sourceAppid, targetAppid, targetName) => call("apply_config", path, sourceAppid, targetAppid, targetName);
-const setLed = (side, r, g, b, brightness) => call("set_led", side, r, g, b, brightness);
-const setLedSideEnabled = (side, enabled) => call("set_led_side_enabled", side, enabled);
-const setLedLinked = (linked) => call("set_led_linked", linked);
-const setLedEnabled = (enabled) => call("set_led_enabled", enabled);
-const setLedSides = (sides) => call("set_led_sides", sides);
 const systemStatus = () => call("system_status");
 // Escritorio: sabor de Plasma que se abre al salir del modo juego (plasma |
 // plasma-mobile). El switch cierra Steam, asi que la UI no debe esperar nada mas.
 const desktopFlavour = () => call("desktop_flavour");
 const switchToDesktop = (name) => call("switch_to_desktop", name);
-const cleanupScan = () => call("cleanup_scan");
-const cleanupRun = (ids) => call("cleanup_run", ids);
-const cleanupBiggest = () => call("cleanup_biggest");
 const oledCareStatus = () => call("oled_care_status");
 const runOledRefresher = (duration, passes) => call("run_oled_refresher", duration, passes);
-const detectSdcard = () => call("detect_sdcard");
-const formatSdcard = (label) => call("format_sdcard", label);
-const shareStatus = () => call("share_status");
-const setShare = (on) => call("set_share", on);
-const installSamba = () => call("install_samba");
 const checkUpdates = () => call("check_updates");
 const startUpdate = () => call("start_update");
 const updateStatus = () => call("update_status");
@@ -301,171 +289,6 @@ const styles = `
       }
     `;
 
-// Bytes -> texto corto (MB o GB), que es como se lee bien en el QAM.
-const human = (bytes) => {
-    if (bytes >= 1024 ** 3)
-        return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
-    if (bytes >= 1024 ** 2)
-        return `${(bytes / 1024 ** 2).toFixed(0)} MB`;
-    if (bytes >= 1024)
-        return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${bytes} B`;
-};
-function Cleanup() {
-    const [data, setData] = SP_REACT.useState(null);
-    const [selected, setSelected] = SP_REACT.useState({});
-    const [biggest, setBiggest] = SP_REACT.useState([]);
-    const [showAdvanced, setShowAdvanced] = SP_REACT.useState(false);
-    const [busy, setBusy] = SP_REACT.useState(false);
-    const [message, setMessage] = SP_REACT.useState("");
-    const [error, setError] = SP_REACT.useState("");
-    const refresh = () => {
-        cleanupScan()
-            .then((next) => {
-            setData(next);
-            // Por defecto marcamos todo lo NO avanzado: es lo que se puede borrar sin
-            // pensar. Lo avanzado (p.ej. la caché de pacman) se deja sin marcar.
-            setSelected((current) => {
-                const out = {};
-                for (const item of next.items)
-                    out[item.id] = current[item.id] ?? !item.advanced;
-                return out;
-            });
-        })
-            .catch((err) => setError(String(err)));
-    };
-    SP_REACT.useEffect(() => {
-        refresh();
-        cleanupBiggest().then(setBiggest).catch(() => { });
-    }, []);
-    const selectedIds = data ? data.items.filter((i) => selected[i.id]).map((i) => i.id) : [];
-    const selectedSize = data ? data.items.filter((i) => selected[i.id]).reduce((a, i) => a + i.size, 0) : 0;
-    const run = () => {
-        if (!selectedIds.length)
-            return;
-        DFL.showModal(SP_JSX.jsx(DFL.ConfirmModal, { strTitle: "Limpiar cach\u00E9s", strDescription: `Se borrarán ${selectedIds.length} categoría(s), unos ${human(selectedSize)}. Solo son cachés y logs: se regeneran solos. No se tocan partidas ni configuraciones.`, strOKButtonText: "Limpiar", strCancelButtonText: "Cancelar", onOK: async () => {
-                setBusy(true);
-                setError("");
-                setMessage("");
-                try {
-                    const result = await cleanupRun(selectedIds);
-                    setMessage(result.errors.length
-                        ? `Liberado ${human(result.freed)}. ${result.errors.length} aviso(s): ${result.errors.slice(0, 2).join(" · ")}`
-                        : `Liberado ${human(result.freed)}.`);
-                    refresh();
-                    cleanupBiggest().then(setBiggest).catch(() => { });
-                }
-                catch (err) {
-                    setError(String(err));
-                }
-                finally {
-                    setBusy(false);
-                }
-            } }));
-    };
-    const items = data?.items ?? [];
-    const shown = items.filter((i) => showAdvanced || !i.advanced);
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSection, { title: "ESPACIO", children: SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Libre", description: data
-                            ? `${human(data.free)} libres de ${human(data.diskTotal)}${data.total ? ` · ${human(data.total)} en cachés` : ""}`
-                            : "…" }) }) }), SP_JSX.jsxs(DFL.PanelSection, { title: "CACH\u00C9S Y LOGS", children: [shown.map((item) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: `${item.label} — ${human(item.size)}`, description: item.description, checked: !!selected[item.id], disabled: busy || item.size === 0, onChange: (value) => setSelected((cur) => ({ ...cur, [item.id]: value })) }) }, item.id))), items.some((i) => i.advanced) && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Mostrar opciones avanzadas", description: "Categor\u00EDas que conviene borrar con cuidado (p. ej. la cach\u00E9 de paquetes).", checked: showAdvanced, onChange: setShowAdvanced }) })), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: busy || !selectedIds.length, description: busy
-                                ? "Limpiando…"
-                                : selectedIds.length
-                                    ? `Borrar ${selectedIds.length} categoría(s) · ${human(selectedSize)}`
-                                    : "Marca alguna categoría", onClick: run, children: "Limpiar seleccionadas" }) }), message ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: message }) })) : null, error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null] }), biggest.length > 0 && (SP_JSX.jsx(DFL.PanelSection, { title: "QU\u00C9 OCUPA M\u00C1S", children: biggest.map((entry) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: human(entry.size), description: entry.path.replace(/^\/home\/[^/]+/, "~") }) }, entry.path))) }))] }));
-}
-
-// Sabores de escritorio instalados en la consola (backend: py_modules/desktop.py).
-const SABORES = {
-    plasma: "Plasma de escritorio",
-    "plasma-mobile": "Plasma Mobile",
-};
-// Areas del informe. "logs" es la pesada: apagada por defecto para que enviar sea rapido.
-const AREAS = [
-    ["sistema", "Sistema", "kernel, BSP, versiones, bateria, termicas"],
-    ["energia", "Energia y ventilador", "perfil, governor, limites, curva"],
-    ["audio", "Audio", "sinks, UCM, amplificadores, jack"],
-    ["mando", "Mando", "inputplumber, compuesto, calibracion"],
-    ["fex", "FEX", "version, binfmt, rootfs"],
-    ["wproton", "wproton / Proton", "version, prefijos, herramientas"],
-    ["emulacion", "Emulacion", "DeckStation, RetroArch, apps"],
-    ["qam", "QAM / Decky", "plugins, loader, errores"],
-    ["red", "Red", "wifi, direcciones, DNS, MTU"],
-    ["logs", "Logs largos", "journal y dmesg completos (pesa)"],
-];
-const voltios = (uv) => (uv == null ? null : `${(uv / 1000000).toFixed(2)} V`);
-const amperios = (ua) => (ua == null ? null : `${(ua / 1000000).toFixed(2)} A`);
-// NOTA: aqui NO hay selector de perfil de potencia ni control de brillo A PROPOSITO.
-//   - El perfil de potencia ya esta en el QAM NATIVO de Steam: su shim
-//     (pocknix-steamos-manager) traduce low-power/balanced/performance a nuestro
-//     `pocknix-power-profile`. Duplicarlo aqui solo confundia (avisado por Fransis).
-//   - El brillo ya lo controla Steam de forma nativa.
-// Lo de la bateria es solo LECTURA: lo que Steam no enseña (salud y ciclos, voltaje
-// y corriente reales).
-// El HDR ya NO se controla desde aqui: lo gobierna el plugin "Panel de Control"
-// (Hooandee) en QAM -> Panel de Control -> Pantalla (desde 15/10/2026, decision de
-// Fransis: un unico dueño por funcion).
-function System() {
-    const [status, setStatus] = SP_REACT.useState(null);
-    const [error, setError] = SP_REACT.useState("");
-    const [texto, setTexto] = SP_REACT.useState("");
-    const [enviando, setEnviando] = SP_REACT.useState(false);
-    const [informe, setInforme] = SP_REACT.useState(null);
-    const [kind, setKind] = SP_REACT.useState("bug");
-    const [areas, setAreas] = SP_REACT.useState(() => {
-        const on = {};
-        for (const [id] of AREAS)
-            on[id] = id !== "logs";
-        return on;
-    });
-    const [sabor, setSabor] = SP_REACT.useState("");
-    const [cambiando, setCambiando] = SP_REACT.useState(false);
-    const [fallo, setFallo] = SP_REACT.useState("");
-    SP_REACT.useEffect(() => {
-        systemStatus()
-            .then(setStatus)
-            .catch((err) => setError(String(err)));
-        desktopFlavour()
-            .then(setSabor)
-            .catch(() => setSabor(""));
-    }, []);
-    // Al cambiar de escritorio Steam se cierra y este plugin muere con el: no hay
-    // "listo" que mostrar, solo el aviso de que se esta cerrando.
-    const cambiarAEscritorio = async (name) => {
-        setCambiando(true);
-        setFallo("");
-        try {
-            await switchToDesktop(name);
-            setSabor(name);
-        }
-        catch (err) {
-            setFallo(String(err));
-            setCambiando(false);
-        }
-    };
-    const b = status?.battery;
-    const detalle = b?.available
-        ? [b.status, b.health, b.cycles != null ? `${b.cycles} ciclos` : null, amperios(b.currentNow), voltios(b.voltageNow)]
-            .filter(Boolean)
-            .join(" · ")
-        : "no disponible en este equipo";
-    const enviarInforme = async () => {
-        setEnviando(true);
-        setInforme(null);
-        try {
-            setInforme(await sendReport(texto, kind, Object.keys(areas).filter((k) => areas[k])));
-        }
-        catch (err) {
-            setInforme({ ok: false, error: String(err) });
-        }
-        finally {
-            setEnviando(false);
-        }
-    };
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), SP_JSX.jsxs(DFL.PanelSection, { title: "ESCRITORIO", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: sabor ? `Ahora: ${SABORES[sabor] || sabor}` : "Ahora: …", description: "El escritorio que se abre al salir del modo juego." }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => cambiarAEscritorio("plasma"), disabled: cambiando, children: "Cambiar a Plasma (escritorio)" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => cambiarAEscritorio("plasma-mobile"), disabled: cambiando, children: "Cambiar a Plasma Mobile" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: cambiando
-                                ? "Cerrando el modo juego…"
-                                : "Steam se cerrará y la consola abrirá el escritorio elegido." }) }), fallo ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "No se pudo cambiar", description: fallo }) })) : null] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null, SP_JSX.jsxs(DFL.PanelSection, { title: "INFORME", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que quieres mandar:" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("bug"), children: (kind === "bug" ? "● " : "○ ") + "Reportar un problema" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("idea"), children: (kind === "idea" ? "● " : "○ ") + "Sugerir una mejora" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que incluyo:" }) }), AREAS.map(([id, label, desc]) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: label, description: desc, checked: !!areas[id], onChange: (v) => setAreas({ ...areas, [id]: v }) }) }, id))), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Descripcion (opcional)", value: texto, onChange: (e) => setTexto(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: enviarInforme, disabled: enviando || !Object.values(areas).some(Boolean), children: enviando ? "Enviando..." : "Enviar informe" }) }), informe ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: informe.ok ? "Informe enviado" : "No se pudo enviar", description: informe.ok ? (informe.issue || "") : [informe.error, informe.detail].filter(Boolean).join(" — ") }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "Se envia a nuestro GitHub (arcadematicas/calvOS-reports). El informe se redacta antes de salir: sin rutas de usuario, hostname, IP, MAC ni claves." }) })] })] }));
-}
-
 // Drives the same state as Steam's own per-game compatibility dropdown (SpecifyCompatTool +
 // app details), so never store a shadow copy: the two UIs stay in sync by construction.
 
@@ -683,110 +506,38 @@ async function syncMakoLaunchOption(appid, enabled) {
     if (next !== current.trim())
         apps.SetAppLaunchOptions(Number(appid), next);
 }
+// Native games have no Proton wrapper, so a per-game Mesa pick would never reach them. The
+// generic wrapper reads SteamAppId -> /etc/pocknix/game-tweaks.json at launch and exports the
+// chosen ICD; putting it in the launch options once is enough, and later version changes in
+// the panel apply without touching Steam again. Same channel and token discipline as MAKO:
+// only our token is rewritten, everything else in the string survives.
+const GAME_WRAPPER = "/usr/lib/pocknix/pocknix-game-wrapper";
+const GAME_WRAPPER_TOKEN = /\/usr\/lib\/pocknix\/pocknix-game-wrapper\s*/g;
+/** Add or remove the native Mesa wrapper, preserving every other launch-option token. */
+async function syncGameWrapperLaunchOption(appid, enabled) {
+    const apps = window.SteamClient?.Apps;
+    if (!apps?.SetAppLaunchOptions)
+        return;
+    const current = await getLaunchOptions(appid);
+    if (current === null)
+        return;
+    const stripped = current.replace(GAME_WRAPPER_TOKEN, "").trim();
+    let next;
+    if (enabled) {
+        next = stripped.includes("%command%")
+            ? stripped.replace("%command%", `${GAME_WRAPPER} %command%`)
+            : [stripped, `${GAME_WRAPPER} %command%`].filter(Boolean).join(" ");
+    }
+    else {
+        next = stripped === "%command%" ? "" : stripped;
+    }
+    if (next !== current.trim())
+        apps.SetAppLaunchOptions(Number(appid), next);
+}
 
 function SelectEdit({ label, value, options, onChange }) {
     const rgOptions = options.map((option) => (typeof option === "string" ? { data: option, label: option } : option));
     return (SP_JSX.jsx(DFL.PanelSectionRow, { children: label === undefined ? (SP_JSX.jsx(DFL.Dropdown, { selectedOption: value, rgOptions: rgOptions, onChange: (option) => onChange(option.data) })) : (SP_JSX.jsx(DFL.DropdownItem, { label: label, selectedOption: value, rgOptions: rgOptions, onChange: (option) => onChange(option.data) })) }));
-}
-
-function ExportNameModal({ game, base, onDone, closeModal }) {
-    const [value, setValue] = SP_REACT.useState(base);
-    const [busy, setBusy] = SP_REACT.useState(false);
-    const overwriting = value.trim() === base;
-    const submit = async () => {
-        if (busy || !value.trim())
-            return;
-        setBusy(true);
-        try {
-            const result = await exportConfig(game.appid, game.name, value.trim(), true);
-            onDone(result.path);
-        }
-        catch (error) {
-            toaster.toast({ title: "Export failed", body: String(error) });
-        }
-        closeModal?.();
-    };
-    return (SP_JSX.jsx(DFL.ConfirmModal, { strTitle: "Config Already Exists", strDescription: `${base}.pocknix.json exists. Change the name to save a new config (e.g. ${base}-2 or ${base}-fast), or keep it to overwrite.`, strOKButtonText: busy ? "Saving…" : overwriting ? "Overwrite" : "Save New", bOKDisabled: busy || !value.trim(), onCancel: () => closeModal?.(), onOK: submit, children: SP_JSX.jsx(DFL.TextField, { label: "Name", value: value, disabled: busy, onChange: (event) => setValue(event.target.value) }) }));
-}
-function ImportModal({ path, preview, game, onDone, closeModal }) {
-    const profiles = preview.games;
-    const [source, setSource] = SP_REACT.useState(profiles[0]?.appid || "");
-    const [busy, setBusy] = SP_REACT.useState(false);
-    const from = [preview.device, preview.exported].filter(Boolean).join(", ");
-    const profileOptions = profiles.map((profile) => ({ data: profile.appid, label: profile.name || profile.appid }));
-    const submit = async () => {
-        if (busy || !source)
-            return;
-        setBusy(true);
-        try {
-            const result = await applyConfig(path, source, game.appid, game.name);
-            try {
-                const cfg = await getConfig();
-                const profile = result.enabled ? String(result.fexProfile || cfg.tweaks.global.fexProfile || "") : "";
-                await syncFexLaunchOption(game.appid, fexSteamString(profile, cfg.fexProfiles));
-            }
-            catch (error) {
-            }
-            if (result.protonTool) {
-                const tools = await availableCompatTools(game.appid);
-                const resolved = resolveCompatTool(result.protonTool, tools);
-                if (resolved.tool) {
-                    setCompatTool(game.appid, resolved.tool);
-                    if (resolved.fallback) {
-                        toaster.toast({ title: "Proton fallback", body: `${result.protonTool} not available, using ${resolved.tool}` });
-                    }
-                }
-                else {
-                    toaster.toast({ title: "Proton pick skipped", body: `${result.protonTool} not available here` });
-                }
-            }
-            toaster.toast({ title: "Config applied", body: game.name || game.appid });
-        }
-        catch (error) {
-            toaster.toast({ title: "Import failed", body: String(error) });
-        }
-        closeModal?.();
-        onDone();
-    };
-    return (SP_JSX.jsx(DFL.ConfirmModal, { strTitle: "Import Game Config", strDescription: (from ? `Exported from ${from}. ` : "") + `Settings for ${game.name || game.appid} will be overwritten.`, strOKButtonText: busy ? "Applying…" : "Apply", bOKDisabled: busy || !source, onCancel: () => closeModal?.(), onOK: submit, children: profiles.length > 1 ? (SP_JSX.jsx(SelectEdit, { label: "Profile", value: source, options: profileOptions, onChange: (id) => setSource(String(id)) })) : (SP_JSX.jsxs("div", { className: "pocknix-note", children: ["Profile: ", profiles[0]?.name || profiles[0]?.appid] })) }));
-}
-/** Per-game config export/import; rendered only when a game's per-game settings are enabled. */
-function ConfigSection({ game, reload }) {
-    const doExport = async () => {
-        try {
-            const result = await exportConfig(game.appid, game.name || "", "", false);
-            if (result.exists) {
-                DFL.showModal(SP_JSX.jsx(ExportNameModal, { game: { appid: game.appid, name: game.name || "" }, base: result.base, onDone: (path) => toaster.toast({ title: "Game config exported", body: path }) }));
-                return;
-            }
-            toaster.toast({ title: "Game config exported", body: result.path });
-        }
-        catch (error) {
-            toaster.toast({ title: "Export failed", body: String(error) });
-        }
-    };
-    const doImport = async () => {
-        let path = "";
-        try {
-            const dir = await configDir().catch(() => "/home/deck");
-            // 0 = FileSelectionType.FILE (same const-enum note as AddGame).
-            const picked = await openFilePicker(0, dir, true, true);
-            path = picked?.path || "";
-        }
-        catch (error) {
-            return; // picker closed without a selection
-        }
-        if (!path)
-            return;
-        try {
-            const preview = await readConfig(path);
-            DFL.showModal(SP_JSX.jsx(ImportModal, { path: path, preview: preview, game: game, onDone: reload }));
-        }
-        catch (error) {
-            toaster.toast({ title: "Import failed", body: String(error) });
-        }
-    };
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "CONFIG", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: doExport, children: "Export Game Config" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: doImport, children: "Import Game Config" }) }), SP_JSX.jsx("div", { className: "pocknix-note", children: "Per-game tweaks and Proton pick; defaults stay local" })] }));
 }
 
 // Audio buffer (PULSE_LATENCY_MSEC): absorbs FEX-mixer overruns (SFX-burst crackle) at the
@@ -890,499 +641,37 @@ function TweakFields({ config, appid, values, patch }) {
                 } }), SP_JSX.jsx(SelectEdit, { label: "Audio Buffer", value: audioValue, options: audioLatencyOptions, onChange: (id) => patch({ audioLatency: id }) }), SP_JSX.jsx(SelectEdit, { label: "Mesa Version", value: mesaValue, options: mesaOptions, onChange: (id) => patch({ mesaVersion: id }) }), SP_JSX.jsx(EnvVarsButton, { value: String(values.envVars ?? ""), onSave: (next) => patch({ envVars: next }) })] }));
 }
 
-/** Per-game MAKO (Lossless Scaling frame generation) switch.
- *
- *  MAKO keeps no config blob of its own here: it activates entirely through the game's launch
- *  options, which Steam owns. The switch therefore reads the string back instead of holding a
- *  shadow copy the two UIs could disagree about. It stays hidden until the wrapper exists, so
- *  it is never offered on a device where the Renderer was not installed.
- */
-function MakoToggle({ appid }) {
-    const [installed, setInstalled] = SP_REACT.useState(false);
-    const [on, setOn] = SP_REACT.useState(false);
-    SP_REACT.useEffect(() => {
-        let cancelled = false;
-        setInstalled(false);
-        setOn(false);
-        makoStatus()
-            .then((status) => {
-            if (!cancelled)
-                setInstalled(status.installed);
-        })
-            .catch(() => { });
-        readLaunchOptions(appid)
-            .then((options) => {
-            if (!cancelled)
-                setOn(options ? makoEnabledIn(options) : false);
-        })
-            .catch(() => { });
-        return () => {
-            cancelled = true;
-        };
-    }, [appid]);
-    if (!installed)
-        return null;
-    return (SP_JSX.jsx(DFL.ToggleField, { label: "MAKO (Lossless Scaling frame gen)", checked: on, onChange: (next) => {
-            setOn(next);
-            // Steam owns the string, so roll the toggle back if the write is refused.
-            syncMakoLaunchOption(appid, next).catch(() => setOn(!next));
-        } }));
-}
-
-function clone(obj) {
-    return JSON.parse(JSON.stringify(obj));
-}
-
-function Games({ config, setConfig, reload }) {
-    const runtimeGame = config.game;
-    const games = availableGames(config);
-    const game = config.selectedGame || runtimeGame || null;
-    const tweaks = config.tweaks;
-    const gameSettings = game?.appid ? tweaks.games[game.appid] || {} : {};
-    const editingDefault = !game?.appid;
-    const perGameEnabled = !!(game?.appid && gameSettings.enabled === true);
-    const values = editingDefault || !perGameEnabled ? tweaks.global : { ...tweaks.global, ...gameSettings };
-    const patchSettings = (patch) => {
-        setConfig((current) => {
-            if (!current)
-                return current;
-            const next = clone(current);
-            if (editingDefault) {
-                Object.assign(next.tweaks.global, patch);
-            }
-            else if (perGameEnabled) {
-                const existing = next.tweaks.games[game.appid] || {};
-                next.tweaks.games[game.appid] = { ...existing, enabled: true, name: game.name || "", ...patch };
-            }
-            return next;
-        });
-    };
-    const setPerGameEnabled = (enabled) => {
-        if (!game?.appid)
-            return;
-        setConfig((current) => {
-            if (!current)
-                return current;
-            const next = clone(current);
-            next.tweaks.games[game.appid] = {
-                ...(next.tweaks.games[game.appid] || {}),
-                enabled,
-                name: game.name || "",
-            };
-            return next;
-        });
-        // Token policy mirrors the wrapper's merge: enabled = own-or-global profile, disabled = none.
-        const stored = tweaks.games[game.appid] || {};
-        const profile = enabled ? String(stored.fexProfile ?? tweaks.global.fexProfile ?? "") : "";
-        syncFexLaunchOption(game.appid, fexSteamString(profile, config.fexProfiles));
-    };
-    // "" is the explicit Default target, not "nothing selected"; store a sentinel
-    // so it doesn't fall back to the running game in the selectedGame derivation.
-    const setSelectedGame = (appid) => {
-        const id = String(appid);
-        if (!id) {
-            setConfig((current) => (current ? { ...current, selectedGame: { appid: "", name: "Default" } } : current));
-            return;
-        }
-        const saved = games.find((candidate) => candidate.appid === id);
-        setConfig((current) => (current ? { ...current, selectedGame: saved || null } : current));
-    };
-    // Default target: FEX/audio/env edit tweaks.global; scheduler is the LIVE system
-    // mode, applied immediately through the backend.
-    const applyMode = async (setter, mode) => {
-        try {
-            const next = await setter(mode);
-            setConfig((current) => (current ? { ...current, lavdMode: next.lavdMode, scxScheduler: next.scxScheduler, scxMode: next.scxMode } : current));
-        }
-        catch (error) {
-            reload();
-        }
-    };
-    const presets = config.fexProfiles || {};
-    const storedProfile = values.fexProfile;
-    const fexValue = storedProfile && presets[storedProfile] ? storedProfile : "default";
-    const fexOptions = Object.entries(presets).map(([id, profile]) => ({ data: id, label: profile.label }));
-    const storedLatency = String(values.audioLatency ?? "");
-    const audioValue = audioLatencyOptions.some((option) => option.data === storedLatency) ? storedLatency : "";
-    const showFields = editingDefault || perGameEnabled;
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "PERFORMANCE & GAME TWEAKS", children: [SP_JSX.jsx(SelectEdit, { label: "Game", value: game?.appid || "", options: editTargetOptions(config), onChange: setSelectedGame }), !editingDefault ? SP_JSX.jsx(DFL.ToggleField, { label: "Use Per-Game Settings", checked: perGameEnabled, onChange: setPerGameEnabled }) : null, !editingDefault && game?.appid ? SP_JSX.jsx(MakoToggle, { appid: game.appid }) : null] }), showFields ? (SP_JSX.jsx(DFL.PanelSection, { title: "PERFORMANCE", children: editingDefault ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(SelectEdit, { label: "Scheduler", value: config.scxScheduler, options: scxSchedulerOptions, onChange: (s) => applyMode(setScxScheduler, s) }), config.scxScheduler === "auto" ? (SP_JSX.jsxs("div", { className: "pocknix-note", children: ["Scheduler activo: ", config.scxEffective || "—"] })) : null, config.scxScheduler !== "auto" ? (SP_JSX.jsx(SelectEdit, { label: "Scheduler Mode", value: config.scxMode, options: scxModeOptions[config.scxScheduler] || scxModeOptions.lavd, onChange: (m) => applyMode(setScxMode, m) })) : null] })) : (SP_JSX.jsx(PerfFields, { values: values, patch: patchSettings })) })) : null, showFields ? (SP_JSX.jsxs(DFL.PanelSection, { title: "GAME TWEAKS", children: [SP_JSX.jsx("div", { className: "pocknix-note", children: "Changes apply on next game launch" }), editingDefault ? (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(SelectEdit, { label: "FEX Preset", value: fexValue, options: fexOptions, onChange: (id) => {
-                                    patchSettings({ fexProfile: id });
-                                    // Enabled games without their own profile inherit this pick; resync their tokens.
-                                    for (const [appid, entry] of Object.entries(tweaks.games)) {
-                                        if (entry?.enabled === true && !entry.fexProfile) {
-                                            syncFexLaunchOption(appid, fexSteamString(String(id), presets));
-                                        }
-                                    }
-                                } }), SP_JSX.jsx(SelectEdit, { label: "Audio Buffer", value: audioValue, options: audioLatencyOptions, onChange: (id) => patchSettings({ audioLatency: id }) }), SP_JSX.jsx(EnvVarsButton, { value: String(values.envVars ?? ""), onSave: (next) => patchSettings({ envVars: next }) })] })) : (SP_JSX.jsx(TweakFields, { config: config, appid: game.appid, values: values, patch: patchSettings }))] })) : null, !editingDefault && perGameEnabled ? (SP_JSX.jsx(ConfigSection, { game: { appid: game.appid, name: game.name || "" }, reload: reload })) : null] }));
-}
-
-// Replaces the stock "Add a Non-Steam Game" flow: Steam's file browser cannot open a new
-// window under the Plasma Mobile X11 session, so Decky's in-UI picker feeds this instead.
-const WINDOWS_EXE = /\.(exe|bat|msi)$/i;
-// Constant internal name from proton-cachyos' compatibilitytool.vdf; survives version bumps.
-const PROTON_TOOL = "proton-cachyos";
-function isWindowsExe(path) {
-    return WINDOWS_EXE.test(path);
-}
-function defaultShortcutName(path) {
-    const base = path.split("/").pop() || path;
-    const cleaned = base.replace(/\.[^.]+$/, "").replace(/_+/g, " ").trim();
-    return cleaned || base;
-}
-const quote = (value) => `"${value.replace(/"/g, '\\"')}"`;
-async function addShortcut(name, path, useProton) {
-    const apps = window.SteamClient?.Apps;
-    if (!apps?.AddShortcut)
-        throw new Error("Steam shortcut API unavailable");
-    const dir = path.slice(0, path.lastIndexOf("/") + 1) || "/";
-    const appId = await apps.AddShortcut(name, path, "", "");
-    if (typeof appId !== "number" || !appId)
-        throw new Error("Steam refused to create the shortcut");
-    apps.SetShortcutName?.(appId, name);
-    apps.SetShortcutExe?.(appId, quote(path));
-    apps.SetShortcutStartDir?.(appId, quote(dir));
-    if (useProton)
-        apps.SpecifyCompatTool?.(appId, PROTON_TOOL);
-    return appId;
-}
-
-function AddGameModal({ path, closeModal }) {
-    const [name, setName] = SP_REACT.useState(defaultShortcutName(path));
-    const [proton, setProton] = SP_REACT.useState(isWindowsExe(path));
-    const [busy, setBusy] = SP_REACT.useState(false);
-    const submit = async () => {
-        if (busy || !name.trim())
-            return;
-        setBusy(true);
-        try {
-            await addShortcut(name.trim(), path, proton);
-            toaster.toast({ title: "Added to library", body: name.trim() });
-            closeModal?.();
-        }
-        catch (error) {
-            toaster.toast({ title: "Could not add game", body: String(error) });
-            setBusy(false);
-        }
-    };
-    return (SP_JSX.jsxs(DFL.ConfirmModal, { strTitle: "Add Non-Steam Game", strDescription: path, strOKButtonText: busy ? "Adding…" : "Add to Library", bOKDisabled: busy || !name.trim(), onCancel: () => closeModal?.(), onOK: submit, children: [SP_JSX.jsx(DFL.TextField, { label: "Name", value: name, disabled: busy, onChange: (event) => setName(event.target.value) }), SP_JSX.jsx(DFL.ToggleField, { label: "Launch with Proton", description: "Needed for Windows games (.exe)", checked: proton, disabled: busy, onChange: setProton })] }));
-}
-function AddGameSection() {
-    const pick = async () => {
-        try {
-            // 0 = FileSelectionType.FILE (const enum in @decky/api typings, no runtime export).
-            const result = await openFilePicker(0, "/home/deck", true, true);
-            if (result?.path)
-                DFL.showModal(SP_JSX.jsx(AddGameModal, { path: result.path }));
-        }
-        catch (error) {
-            // Picker closed without a selection.
-        }
-    };
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "LIBRARY", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: pick, children: "Add Non-Steam Game" }) }), SP_JSX.jsx("div", { className: "pocknix-note", children: "Pick an executable to add it to your Steam library" })] }));
-}
-
-// The share is guest-writable and covers the whole home folder, so the trade is spelled out
-// rather than buried: same warning the Pocknix Tools menu shows before it flips the switch.
-function ShareConfirmModal({ onConfirm, closeModal }) {
-    const [running, setRunning] = SP_REACT.useState(false);
-    const runningRef = SP_REACT.useRef(false);
-    runningRef.current = running;
-    const start = async () => {
-        if (runningRef.current)
-            return;
-        setRunning(true);
-        await onConfirm();
-        closeModal?.();
-    };
-    return (SP_JSX.jsx(DFL.ConfirmModal, { strTitle: "Share Files Over The Network", strDescription: running
-            ? "Starting…"
-            : "Anyone on the same network can read and write every file in your home folder - games, saves and emulator settings, but also your Steam login and SSH keys. There is no password. Only turn this on at home.", strOKButtonText: running ? "Starting…" : "Turn On Sharing", bDestructiveWarning: true, bOKDisabled: running, bCancelDisabled: running, bDisableBackgroundDismiss: true, onCancel: () => {
-            if (!runningRef.current)
-                closeModal?.();
-        }, onOK: start }));
-}
-function FileSharing() {
-    const [share, setShareState] = SP_REACT.useState(null);
-    const [busy, setBusy] = SP_REACT.useState(false);
-    const [status, setStatus] = SP_REACT.useState("");
-    const busyRef = SP_REACT.useRef(false);
-    busyRef.current = busy;
-    SP_REACT.useEffect(() => {
-        let cancelled = false;
-        const refresh = async () => {
-            if (busyRef.current)
-                return;
-            try {
-                const next = await shareStatus();
-                if (!cancelled && !busyRef.current)
-                    setShareState(next);
-            }
-            catch (error) {
-                if (!cancelled)
-                    setStatus(String(error));
-            }
-        };
-        refresh();
-        const timer = window.setInterval(refresh, 5000);
-        return () => {
-            cancelled = true;
-            window.clearInterval(timer);
-        };
-    }, []);
-    const run = async (action) => {
-        if (busyRef.current)
-            return;
-        setBusy(true);
-        setStatus("");
-        try {
-            setShareState(await action());
-        }
-        catch (error) {
-            setStatus(String(error));
-        }
-        finally {
-            setBusy(false);
-        }
-    };
-    const summary = () => {
-        if (status)
-            return status;
-        if (!share)
-            return "Checking…";
-        if (!share.installed)
-            return "Samba is not installed (7.4 MB download)";
-        if (share.on)
-            return "On - open smb://calvos.local and connect as Guest";
-        return "Off - your home folder is not shared";
-    };
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "FILE SHARING", children: [SP_JSX.jsx(DFL.Field, { label: "Network share", description: summary() }), share && !share.installed ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: busy, onClick: () => run(installSamba), children: busy ? "Installing…" : "Install Samba" }) })) : (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Share my home folder", description: "Drag files straight onto the device from another computer", checked: !!share?.on, disabled: busy || !share?.installed, onChange: (on) => {
-                        if (busyRef.current)
-                            return;
-                        if (on)
-                            DFL.showModal(SP_JSX.jsx(ShareConfirmModal, { onConfirm: () => run(() => setShare(true)) }));
-                        else
-                            run(() => setShare(false));
-                    } }) }))] }));
-}
-
-function cardSummary(card) {
-    if (!card)
-        return "Checking…";
-    if (!card.present)
-        return "No SD card detected";
-    if (card.bootDisk)
-        return "Booted from this card - formatting disabled";
-    const size = card.sizeBytes ? `${(card.sizeBytes / 1e9).toFixed(1)} GB` : "";
-    const state = card.fstype === "ext4" ? (card.mountpoint ? "mounted" : "") : "not formatted for Steam";
-    return [card.label || "unlabeled", size, card.fstype || "no filesystem", state].filter(Boolean).join(" · ");
-}
-// closeModal must not be forwarded to ConfirmModal: its OK handler would close the dialog
-// at once, and it has to stay open until the format finishes.
-function FormatConfirmModal({ summary, onConfirm, closeModal }) {
-    const [text, setText] = SP_REACT.useState("");
-    const [running, setRunning] = SP_REACT.useState(false);
-    const armedRef = SP_REACT.useRef(false);
-    const runningRef = SP_REACT.useRef(false);
-    armedRef.current = text.trim().toLowerCase() === "format";
-    runningRef.current = running;
-    const start = async () => {
-        if (!armedRef.current || runningRef.current)
-            return;
-        setRunning(true);
-        await onConfirm();
-        closeModal?.();
-    };
-    return (SP_JSX.jsx(DFL.ConfirmModal, { strTitle: "Format SD Card", strDescription: running
-            ? "Formatting… This can take a minute. Do not remove the card."
-            : `This erases ALL data on the card (${summary}) and formats it for Steam. Type "format" and press Enter to confirm.`, strOKButtonText: running ? "Formatting…" : "Erase and Format", bDestructiveWarning: true, bOKDisabled: !armedRef.current || running, bCancelDisabled: running, bDisableBackgroundDismiss: true, bHideCloseIcon: true, onCancel: () => {
-            if (!runningRef.current)
-                closeModal?.();
-        }, onOK: start, children: !running ? (SP_JSX.jsx(DFL.TextField, { value: text, focusOnMount: true, onChange: (event) => setText(event.target.value), onKeyDown: (event) => {
-                if (event.key === "Enter")
-                    start();
-            } })) : null }));
-}
-function SdCard() {
-    const [card, setCard] = SP_REACT.useState(null);
-    const [label, setLabel] = SP_REACT.useState("SDCARD");
-    const [busy, setBusy] = SP_REACT.useState(false);
-    const [status, setStatus] = SP_REACT.useState("");
-    const busyRef = SP_REACT.useRef(false);
-    busyRef.current = busy;
-    SP_REACT.useEffect(() => {
-        let cancelled = false;
-        const refresh = async () => {
-            if (busyRef.current)
-                return;
-            try {
-                const next = await detectSdcard();
-                if (!cancelled && !busyRef.current)
-                    setCard(next);
-            }
-            catch (error) {
-                if (!cancelled)
-                    setStatus(String(error));
-            }
-        };
-        refresh();
-        const timer = window.setInterval(refresh, 5000);
-        return () => {
-            cancelled = true;
-            window.clearInterval(timer);
-        };
-    }, []);
-    const runFormat = async () => {
-        if (busyRef.current)
-            return;
-        setBusy(true);
-        setStatus("");
-        try {
-            const next = await formatSdcard(label);
-            setCard(next);
-        }
-        catch (error) {
-            setStatus(String(error));
-        }
-        finally {
-            setBusy(false);
-        }
-    };
-    const confirmFormat = () => DFL.showModal(SP_JSX.jsx(FormatConfirmModal, { summary: cardSummary(card), onConfirm: runFormat }));
-    return (SP_JSX.jsxs(DFL.PanelSection, { title: "SD CARD", children: [SP_JSX.jsx(DFL.Field, { label: "Card", description: cardSummary(card) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Label", value: label, disabled: busy || !!card?.bootDisk, onChange: (event) => setLabel(event.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 16)) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", disabled: !card?.present || busy || !!card?.bootDisk, onClick: confirmFormat, children: busy ? "Formatting…" : "Format SD Card" }) }), status ? SP_JSX.jsx(DFL.Field, { label: "", description: status }) : null] }));
-}
-
-// SD card last: the only destructive action, kept away from the casual toggles
-function Library() {
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(AddGameSection, {}), SP_JSX.jsx(FileSharing, {}), SP_JSX.jsx(SdCard, {})] }));
-}
-
-// SliderField has only onChange, so commits are debounced. The pending value lives in
-// a ref so the unmount flush always sees the latest edit, not a stale first-render one.
-const COMMIT_DELAY = 350;
-// Hardware brightness is 0-255; the slider shows percent so it reads like the other two.
-const briToPercent = (bri) => Math.round((bri / 255) * 100);
-const percentToBri = (percent) => Math.round((percent / 100) * 255);
-function ColorControls({ zone, hsv, brightness, onCommit }) {
-    const [hue, saturation] = hsv;
-    const [localH, setLocalH] = SP_REACT.useState(hsv[0]);
-    const [localS, setLocalS] = SP_REACT.useState(hsv[1]);
-    const [localBri, setLocalBri] = SP_REACT.useState(brightness);
-    const pending = SP_REACT.useRef(null);
-    const onCommitRef = SP_REACT.useRef(onCommit);
-    onCommitRef.current = onCommit;
-    // A commit response landing mid-drag would otherwise snap the slider backwards.
-    SP_REACT.useEffect(() => { if (!pending.current)
-        setLocalH(hsv[0]); }, [hue]);
-    SP_REACT.useEffect(() => { if (!pending.current)
-        setLocalS(hsv[1]); }, [saturation]);
-    SP_REACT.useEffect(() => { if (!pending.current)
-        setLocalBri(brightness); }, [brightness]);
-    const schedule = (h, s, bri) => {
-        setLocalH(h);
-        setLocalS(s);
-        setLocalBri(bri);
-        pending.current = { hsv: [h, s, 100], bri };
-    };
-    SP_REACT.useEffect(() => {
-        if (pending.current === null)
-            return;
-        const snapshot = pending.current;
-        const timer = window.setTimeout(() => {
-            pending.current = null;
-            onCommitRef.current(snapshot.hsv, snapshot.bri);
-        }, COMMIT_DELAY);
-        return () => window.clearTimeout(timer);
-    }, [localH, localS, localBri]);
-    // QAM unmounts on close; flush any edit still in the debounce window.
-    SP_REACT.useEffect(() => () => {
-        if (pending.current !== null) {
-            const snapshot = pending.current;
-            pending.current = null;
-            onCommitRef.current(snapshot.hsv, snapshot.bri);
-        }
-    }, []);
-    const setHue = (h) => schedule(h, localS, localBri);
-    const setSaturation = (s) => schedule(localH, s, localBri);
-    const setBrightness = (b) => schedule(localH, localS, b);
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.SliderField, { label: "Hue", value: localH, min: 0, max: 359, step: 1, showValue: true, validValues: "range", valueSuffix: "\u00B0", bottomSeparator: "thick", className: `pocknix-led-${zone}-h`, onChange: setHue }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.SliderField, { label: "Saturation", value: localS, min: 0, max: 100, step: 1, showValue: true, validValues: "range", valueSuffix: "%", bottomSeparator: "thick", className: `pocknix-led-${zone}-s`, onChange: setSaturation }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.SliderField, { label: "Brightness", value: briToPercent(localBri), min: 0, max: 100, step: 1, showValue: true, validValues: "range", valueSuffix: "%", bottomSeparator: "thick", className: `pocknix-led-${zone}-v`, onChange: (percent) => setBrightness(percentToBri(percent)) }) }), SP_JSX.jsx("style", { children: `
-        .pocknix-led-${zone}-h .${DFL.gamepadSliderClasses.SliderTrack} {
-          background: linear-gradient(to right,
-            hsl(0,100%,50%), hsl(60,100%,50%), hsl(120,100%,50%),
-            hsl(180,100%,50%), hsl(240,100%,50%), hsl(300,100%,50%), hsl(360,100%,50%)) !important;
-          --left-track-color: #0000 !important;
-          --colored-toggles-main-color: #0000 !important;
-        }
-        .pocknix-led-${zone}-s .${DFL.gamepadSliderClasses.SliderTrack} {
-          background: linear-gradient(to right, hsl(0,0%,100%), hsl(${localH},100%,50%)) !important;
-          --left-track-color: #0000 !important;
-          --colored-toggles-main-color: #0000 !important;
-        }
-        .pocknix-led-${zone}-v .${DFL.gamepadSliderClasses.SliderTrack} {
-          background: linear-gradient(to right, hsl(0,0%,0%), hsl(${localH},${localS}%,50%)) !important;
-          --left-track-color: #0000 !important;
-          --colored-toggles-main-color: #0000 !important;
-        }
-      ` })] }));
-}
-
-function hsvToRgb(h, s, v) {
-    const hh = ((h % 360) + 360) % 360;
-    const ss = Math.max(0, Math.min(100, s)) / 100;
-    const vv = Math.max(0, Math.min(100, v)) / 100;
-    const c = vv * ss;
-    const x = c * (1 - Math.abs(((hh / 60) % 2) - 1));
-    const m = vv - c;
-    let r = 0;
-    let g = 0;
-    let b = 0;
-    if (hh < 60)
-        [r, g, b] = [c, x, 0];
-    else if (hh < 120)
-        [r, g, b] = [x, c, 0];
-    else if (hh < 180)
-        [r, g, b] = [0, c, x];
-    else if (hh < 240)
-        [r, g, b] = [0, x, c];
-    else if (hh < 300)
-        [r, g, b] = [x, 0, c];
-    else
-        [r, g, b] = [c, 0, x];
-    return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
-}
-function rgbToHsv(r, g, b) {
-    const rr = r / 255;
-    const gg = g / 255;
-    const bb = b / 255;
-    const max = Math.max(rr, gg, bb);
-    const min = Math.min(rr, gg, bb);
-    const delta = max - min;
-    let h = 0;
-    let s = 0;
-    const v = max;
-    if (delta !== 0) {
-        s = delta / max;
-        if (max === rr)
-            h = ((gg - bb) / delta + (gg < bb ? 6 : 0)) / 6;
-        else if (max === gg)
-            h = ((bb - rr) / delta + 2) / 6;
-        else
-            h = ((rr - gg) / delta + 4) / 6;
-    }
-    return [Math.round(h * 360), Math.round(s * 100), Math.round(v * 100)];
-}
-
-// Stored RGB holds the full-value color; the kernel multicolor class scales each
-// channel by brightness/max_brightness, so dimming is linear and the color survives.
-function commit(side, hsv, brightness, setConfig, reload) {
-    const [r, g, b] = hsvToRgb(hsv[0], hsv[1], 100);
-    setLed(side, r, g, b, brightness)
-        .then((next) => setConfig((cur) => (cur ? { ...cur, led: next } : cur)))
-        .catch(() => reload());
-}
-function sideHsv(side) {
-    return rgbToHsv(side.r, side.g, side.b);
-}
-// "hace 3 min" / "hace 2 h" — para que se vea que el OLED care trabaja de verdad.
+// Sabores de escritorio instalados en la consola (backend: py_modules/desktop.py).
+const SABORES = {
+    plasma: "Plasma de escritorio",
+    "plasma-mobile": "Plasma Mobile",
+};
+// Areas del informe. "logs" es la pesada: apagada por defecto para que enviar sea rapido.
+const AREAS = [
+    ["sistema", "Sistema", "kernel, BSP, versiones, bateria, termicas"],
+    ["energia", "Energia y ventilador", "perfil, governor, limites, curva"],
+    ["audio", "Audio", "sinks, UCM, amplificadores, jack"],
+    ["mando", "Mando", "inputplumber, compuesto, calibracion"],
+    ["fex", "FEX", "version, binfmt, rootfs"],
+    ["wproton", "wproton / Proton", "version, prefijos, herramientas"],
+    ["emulacion", "Emulacion", "DeckStation, RetroArch, apps"],
+    ["qam", "QAM / Decky", "plugins, loader, errores"],
+    ["red", "Red", "wifi, direcciones, DNS, MTU"],
+    ["logs", "Logs largos", "journal y dmesg completos (pesa)"],
+];
+const voltios = (uv) => (uv == null ? null : `${(uv / 1000000).toFixed(2)} V`);
+const amperios = (ua) => (ua == null ? null : `${(ua / 1000000).toFixed(2)} A`);
+// NOTA: aqui NO hay selector de perfil de potencia ni control de brillo A PROPOSITO.
+//   - El perfil de potencia ya esta en el QAM NATIVO de Steam: su shim
+//     (pocknix-steamos-manager) traduce low-power/balanced/performance a nuestro
+//     `pocknix-power-profile`. Duplicarlo aqui solo confundia (avisado por Fransis).
+//   - El brillo ya lo controla Steam de forma nativa.
+// Lo de la bateria es solo LECTURA: lo que Steam no enseña (salud y ciclos, voltaje
+// y corriente reales).
+// El HDR ya NO se controla desde aqui: lo gobierna el plugin "Panel de Control"
+// (Hooandee) en QAM -> Panel de Control -> Pantalla (desde 15/10/2026, decision de
+// Fransis: un unico dueño por funcion).
+// "hace 3 min" / "hace 2 h": que se vea que el OLED care trabaja de verdad.
 function hace(ts) {
     if (!ts)
         return "todavía no";
@@ -1393,46 +682,194 @@ function hace(ts) {
         return `hace ${Math.floor(s / 60)} min`;
     return `hace ${Math.floor(s / 3600)} h`;
 }
-function Lighting({ config, setConfig, reload }) {
-    const led = config.led;
-    const leftHsv = sideHsv(led.left);
-    const rightHsv = sideHsv(led.right);
-    const [refresherMsg, setRefresherMsg] = SP_REACT.useState(null);
+function System({ config, setConfig }) {
+    const [status, setStatus] = SP_REACT.useState(null);
+    const [error, setError] = SP_REACT.useState("");
+    const [texto, setTexto] = SP_REACT.useState("");
+    const [enviando, setEnviando] = SP_REACT.useState(false);
+    const [informe, setInforme] = SP_REACT.useState(null);
+    const [kind, setKind] = SP_REACT.useState("bug");
+    const [areas, setAreas] = SP_REACT.useState(() => {
+        const on = {};
+        for (const [id] of AREAS)
+            on[id] = id !== "logs";
+        return on;
+    });
+    const [sabor, setSabor] = SP_REACT.useState("");
+    const [cambiando, setCambiando] = SP_REACT.useState(false);
+    const [fallo, setFallo] = SP_REACT.useState("");
+    const [guardando, setGuardando] = SP_REACT.useState(false);
+    const [guardado, setGuardado] = SP_REACT.useState(null);
     const [oled, setOled] = SP_REACT.useState(null);
-    const refrescarEstado = () => {
-        oledCareStatus().then(setOled).catch(() => setOled(null));
+    const [refresherMsg, setRefresherMsg] = SP_REACT.useState(null);
+    SP_REACT.useEffect(() => {
+        systemStatus()
+            .then(setStatus)
+            .catch((err) => setError(String(err)));
+        desktopFlavour()
+            .then(setSabor)
+            .catch(() => setSabor(""));
+        oledCareStatus()
+            .then(setOled)
+            .catch(() => setOled(null));
+    }, []);
+    // El scheduler es estado VIVO del sistema, no un ajuste de perfil: se aplica al momento.
+    const applyMode = async (setter, mode) => {
+        try {
+            const next = await setter(mode);
+            setConfig((current) => (current ? { ...current, lavdMode: next.lavdMode, scxScheduler: next.scxScheduler, scxMode: next.scxMode } : current));
+        }
+        catch (err) {
+            setError(String(err));
+        }
     };
-    SP_REACT.useEffect(refrescarEstado, []);
-    const commitLeft = (hsv, brightness) => commit("left", hsv, brightness, setConfig, reload);
-    const commitRight = (hsv, brightness) => commit("right", hsv, brightness, setConfig, reload);
-    const commitBoth = (hsv, brightness) => commit("both", hsv, brightness, setConfig, reload);
-    // Apagado individual de un stick (como en Android): conserva color y brillo.
-    const toggleSide = (side, value) => setLedSideEnabled(side, value)
-        .then((next) => setConfig((cur) => (cur ? { ...cur, led: next } : cur)))
-        .catch(() => reload());
     const runRefresher = () => {
         setRefresherMsg("Refreshing pixels…");
         runOledRefresher()
-            .then((status) => {
-            setOled(status);
-            setRefresherMsg(status.running ? "Pixel refresh in progress (~9s)." : "Pixel refresh finished.");
-            window.setTimeout(refrescarEstado, 12000);
+            .then((next) => {
+            setOled(next);
+            setRefresherMsg("Listo.");
         })
-            .catch((error) => setRefresherMsg(String(error)));
+            .catch((err) => setRefresherMsg(String(err)));
     };
-    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "STICK LIGHTS", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Enable", checked: led.enabled, onChange: (value) => setLedEnabled(value)
-                                .then((next) => setConfig((cur) => (cur ? { ...cur, led: next } : cur)))
-                                .catch(() => reload()) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Link Left & Right", description: "Match both sticks to the same color.", checked: led.linked, disabled: !led.enabled, onChange: (value) => setLedLinked(value)
-                                .then((next) => setConfig((cur) => (cur ? { ...cur, led: next } : cur)))
-                                .catch(() => reload()) }) }), led.sidesAvailable && (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Side Lights", description: "Match the side lighting to the sticks.", checked: led.sides, disabled: !led.enabled, onChange: (value) => setLedSides(value)
-                                .then((next) => setConfig((cur) => (cur ? { ...cur, led: next } : cur)))
-                                .catch(() => reload()) }) }))] }), led.enabled && (led.linked ? (SP_JSX.jsx(DFL.PanelSection, { title: "BOTH STICKS", children: SP_JSX.jsx(ColorControls, { zone: "both", hsv: leftHsv, brightness: led.left.brightness, onCommit: commitBoth }) })) : (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "LEFT STICK", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Enable", description: "Turn this stick off on its own (keeps its color).", checked: led.left.enabled, onChange: (value) => toggleSide("left", value) }) }), led.left.enabled && (SP_JSX.jsx(ColorControls, { zone: "left", hsv: leftHsv, brightness: led.left.brightness, onCommit: commitLeft }))] }), SP_JSX.jsxs(DFL.PanelSection, { title: "RIGHT STICK", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: "Enable", description: "Turn this stick off on its own (keeps its color).", checked: led.right.enabled, onChange: (value) => toggleSide("right", value) }) }), led.right.enabled && (SP_JSX.jsx(ColorControls, { zone: "right", hsv: rightHsv, brightness: led.right.brightness, onCommit: commitRight }))] })] }))), SP_JSX.jsxs(DFL.PanelSection, { title: "OLED CARE", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: "Run the anti image-retention pixel refresh (fullscreen noise, ~9s).", onClick: runRefresher, children: "Run Pixel Refresher" }) }), refresherMsg ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: refresherMsg }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Automatic", description: oled && !oled.available
-                                ? "Not available on this device."
+    // Al cambiar de escritorio Steam se cierra y este plugin muere con el: no hay
+    // "listo" que mostrar, solo el aviso de que se esta cerrando.
+    const cambiarAEscritorio = async (name) => {
+        setCambiando(true);
+        setFallo("");
+        try {
+            await switchToDesktop(name);
+            setSabor(name);
+        }
+        catch (err) {
+            setFallo(String(err));
+            setCambiando(false);
+        }
+    };
+    const b = status?.battery;
+    const detalle = b?.available
+        ? [b.status, b.health, b.cycles != null ? `${b.cycles} ciclos` : null, amperios(b.currentNow), voltios(b.voltageNow)]
+            .filter(Boolean)
+            .join(" · ")
+        : "no disponible en este equipo";
+    const guardarInforme = async () => {
+        setGuardando(true);
+        setGuardado(null);
+        try {
+            setGuardado(await collectReport(texto, Object.keys(areas).filter((k) => areas[k])));
+        }
+        catch (err) {
+            setGuardado({ ok: false, error: String(err) });
+        }
+        finally {
+            setGuardando(false);
+        }
+    };
+    const enviarInforme = async () => {
+        setEnviando(true);
+        setInforme(null);
+        try {
+            setInforme(await sendReport(texto, kind, Object.keys(areas).filter((k) => areas[k])));
+        }
+        catch (err) {
+            setInforme({ ok: false, error: String(err) });
+        }
+        finally {
+            setEnviando(false);
+        }
+    };
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "RENDIMIENTO", children: [SP_JSX.jsx(SelectEdit, { label: "Scheduler", value: config.scxScheduler || "auto", options: scxSchedulerOptions, onChange: (mode) => applyMode(setScxScheduler, mode) }), config.scxScheduler === "auto" ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Scheduler activo", description: config.scxEffective || "—" }) })) : (SP_JSX.jsx(SelectEdit, { label: "Scheduler Mode", value: config.scxMode, options: scxModeOptions[config.scxScheduler || ""] || lavdOptions, onChange: (mode) => applyMode(setScxMode, mode) }))] }), SP_JSX.jsxs(DFL.PanelSection, { title: "OLED CARE", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", description: "Refresco anti retenci\u00F3n (ruido a pantalla completa, ~9 s).", onClick: runRefresher, children: "Run Pixel Refresher" }) }), refresherMsg ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: refresherMsg }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Autom\u00E1tico", description: oled && !oled.available
+                                ? "No disponible en este equipo."
                                 : oled && !oled.daemonUp
-                                    ? "Daemon not running (no state yet)."
+                                    ? "Daemon parado (sin estado todavía)."
                                     : oled
-                                        ? `Every ${Math.round(oled.idleSeconds / 60)} min idle · last: ${hace(oled.lastRefresh)} (${oled.count})`
-                                        : "…" }) }), oled?.lastSkip ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Last skip", description: oled.lastSkip }) })) : null] })] }));
+                                        ? `Cada ${Math.round(oled.idleSeconds / 60)} min inactivo · último: ${hace(oled.lastRefresh)} (${oled.count})`
+                                        : "…" }) }), oled?.lastSkip ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "\u00DAltimo omitido", description: oled.lastSkip }) })) : null] }), SP_JSX.jsxs(DFL.PanelSection, { title: "BATER\u00CDA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: b?.capacity != null ? `${b.capacity}%` : "…", description: detalle || "…" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "El perfil de potencia est\u00E1 en el men\u00FA de Steam (\u22EF \u2192 Rendimiento). El brillo, en los controles nativos." }) })] }), SP_JSX.jsxs(DFL.PanelSection, { title: "ESCRITORIO", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: sabor ? `Ahora: ${SABORES[sabor] || sabor}` : "Ahora: …", description: "El escritorio que se abre al salir del modo juego." }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => cambiarAEscritorio("plasma"), disabled: cambiando, children: "Cambiar a Plasma (escritorio)" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => cambiarAEscritorio("plasma-mobile"), disabled: cambiando, children: "Cambiar a Plasma Mobile" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: cambiando
+                                ? "Cerrando el modo juego…"
+                                : "Steam se cerrará y la consola abrirá el escritorio elegido." }) }), fallo ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "No se pudo cambiar", description: fallo }) })) : null] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null, SP_JSX.jsxs(DFL.PanelSection, { title: "INFORME", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que quieres mandar:" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("bug"), children: (kind === "bug" ? "● " : "○ ") + "Reportar un problema" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("idea"), children: (kind === "idea" ? "● " : "○ ") + "Sugerir una mejora" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que incluyo:" }) }), AREAS.map(([id, label, desc]) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: label, description: desc, checked: !!areas[id], onChange: (v) => setAreas({ ...areas, [id]: v }) }) }, id))), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Descripcion (opcional)", value: texto, onChange: (e) => setTexto(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: guardarInforme, disabled: guardando || !Object.values(areas).some(Boolean), children: guardando ? "Recogiendo..." : "Guardar informe (sin enviar)" }) }), guardado ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: guardado.ok ? "Informe guardado" : "No se pudo recoger", description: guardado.ok ? (guardado.path || "") : [guardado.error, guardado.detail].filter(Boolean).join(" — ") }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: enviarInforme, disabled: enviando || !Object.values(areas).some(Boolean), children: enviando ? "Enviando..." : "Enviar informe" }) }), informe ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: informe.ok ? "Informe enviado" : "No se pudo enviar", description: informe.ok ? (informe.issue || "") : [informe.error, informe.detail].filter(Boolean).join(" — ") }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "Se envia a nuestro GitHub (arcadematicas/calvOS-reports). El informe se redacta antes de salir: sin rutas de usuario, hostname, IP, MAC ni claves." }) })] })] }));
+}
+
+function clone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+// Pestana Juegos: solo la seleccion de Mesa por juego. El scheduler vive en Sistema y el
+// resto de ajustes (FEX, audio, env) se retiraron de la UI el 11/11/2026: no se usaban y
+// hacian que este plugin pareciese un segundo panel de control.
+function Games({ config, setConfig }) {
+    const runtimeGame = config.game;
+    const games = availableGames(config);
+    const game = config.selectedGame || runtimeGame || null;
+    const appid = game?.appid || "";
+    const tweaks = config.tweaks;
+    const settings = appid ? tweaks.games[appid] || {} : {};
+    const perGameEnabled = !!(appid && settings.enabled === true);
+    // Un juego es "nativo" cuando Steam no le asigna herramienta de compatibilidad. Solo en
+    // ese caso tiene sentido meter el wrapper: a un juego de Proton le pondriamos un ICD de
+    // ARM y lo dejariamos sin driver (el wrapper de Proton ya resuelve su Mesa). "known"
+    // evita decidir con el valor inicial vacio antes de que Steam conteste.
+    const [known, setKnown] = SP_REACT.useState(false);
+    const [native, setNative] = SP_REACT.useState(false);
+    SP_REACT.useEffect(() => {
+        setKnown(false);
+        setNative(false);
+        if (!appid)
+            return;
+        let live = true;
+        // Llamada redundante a proposito: fuerza la carga del hook de Steam y, si el callback
+        // no llega, dejamos known=false y no tocamos las launch options.
+        availableCompatTools(appid).catch(() => { });
+        const unregister = registerForCompatTool(appid, (tool) => {
+            if (!live)
+                return;
+            setNative(tool === "");
+            setKnown(true);
+        });
+        return () => {
+            live = false;
+            unregister();
+        };
+    }, [appid]);
+    const mesa = String(settings.mesaVersion ?? "");
+    const mesaOptions = [{ data: "", label: "System default" }, ...(config.mesaVersions || [])];
+    const patchMesa = (value) => {
+        setConfig((current) => {
+            if (!current || !appid)
+                return current;
+            const next = clone(current);
+            next.tweaks.games[appid] = { ...(next.tweaks.games[appid] || {}), enabled: true, name: game?.name || "", mesaVersion: value };
+            return next;
+        });
+        if (known && native)
+            void syncGameWrapperLaunchOption(appid, value !== "");
+    };
+    const setPerGameEnabled = (enabled) => {
+        if (!appid)
+            return;
+        setConfig((current) => {
+            if (!current)
+                return current;
+            const next = clone(current);
+            next.tweaks.games[appid] = { ...(next.tweaks.games[appid] || {}), enabled, name: game?.name || "" };
+            return next;
+        });
+        if (known && native)
+            void syncGameWrapperLaunchOption(appid, enabled && mesa !== "");
+    };
+    // "" is the explicit Default target, not "nothing selected"; store a sentinel so it does
+    // not fall back to the running game in the selectedGame derivation.
+    const setSelectedGame = (value) => {
+        const id = String(value);
+        if (!id) {
+            setConfig((current) => (current ? { ...current, selectedGame: { appid: "", name: "Default" } } : current));
+            return;
+        }
+        const saved = games.find((candidate) => candidate.appid === id);
+        setConfig((current) => (current ? { ...current, selectedGame: saved || null } : current));
+    };
+    return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "JUEGO", children: [SP_JSX.jsx(SelectEdit, { label: "Game", value: appid, options: editTargetOptions(config), onChange: setSelectedGame }), appid ? (SP_JSX.jsx(DFL.ToggleField, { label: "Usar ajustes por juego", checked: perGameEnabled, onChange: setPerGameEnabled })) : null] }), !appid ? (SP_JSX.jsx(DFL.PanelSection, { title: "MESA (VULKAN)", children: SP_JSX.jsx("div", { className: "pocknix-note", children: "Elige un juego para asignarle una versi\u00F3n de Mesa." }) })) : perGameEnabled ? (SP_JSX.jsxs(DFL.PanelSection, { title: "MESA (VULKAN)", children: [SP_JSX.jsx(SelectEdit, { label: "Mesa Version", value: mesa, options: mesaOptions, onChange: patchMesa }), SP_JSX.jsx("div", { className: "pocknix-note", children: known && !native
+                            ? "Este juego usa Proton: su Mesa se elige en el wrapper de Proton."
+                            : "Se aplica al arrancar el juego (AppImage, .sh o binario)." })] })) : (SP_JSX.jsx(DFL.PanelSection, { title: "MESA (VULKAN)", children: SP_JSX.jsx("div", { className: "pocknix-note", children: "Activa \"Usar ajustes por juego\" para elegir la versi\u00F3n de Mesa." }) }))] }));
 }
 
 const SHOWN_UPDATES = 8;
@@ -1609,17 +1046,154 @@ function Content() {
     if (!config)
         return SP_JSX.jsx(DFL.PanelSection, { title: "CalvOS Control", children: SP_JSX.jsx(DFL.Field, { label: message }) });
     const tabContent = (content) => (SP_JSX.jsx("div", { className: "pocknix-control-tab-content", children: content }));
+    // Tres pestanas y nada mas (11/11/2026): Juegos (Mesa por juego), Sistema (scheduler,
+    // OLED care, calvos-doctor) y Actualizar (update + rollback). Library/Cleanup/LED siguen
+    // en el repo, solo dejan de mostrarse.
     const tabs = [
-        { id: "Games", title: tabIcons.Games, content: tabContent(SP_JSX.jsx(Games, { config: config, setConfig: setConfig, reload: load })) },
-        { id: "Library", title: tabIcons.Library, content: tabContent(SP_JSX.jsx(Library, {})) },
-        ...(config.led.available
-            ? [{ id: "Lighting", title: tabIcons.Lighting, content: tabContent(SP_JSX.jsx(Lighting, { config: config, setConfig: setConfig, reload: load })) }]
-            : []),
-        { id: "System", title: tabIcons.System, content: tabContent(SP_JSX.jsx(System, {})) },
-        { id: "Cleanup", title: tabIcons.Cleanup, content: tabContent(SP_JSX.jsx(Cleanup, {})) },
+        { id: "Games", title: tabIcons.Games, content: tabContent(SP_JSX.jsx(Games, { config: config, setConfig: setConfig })) },
+        { id: "System", title: tabIcons.System, content: tabContent(SP_JSX.jsx(System, { config: config, setConfig: setConfig })) },
         { id: "Updater", title: tabIcons.Updater, content: tabContent(SP_JSX.jsx(Updater, {})) },
     ];
     return (SP_JSX.jsxs("div", { className: "pocknix-control-tabs", children: [SP_JSX.jsx("style", { children: styles }), SP_JSX.jsx(DFL.Tabs, { activeTab: tab, onShowTab: setTab, tabs: tabs })] }));
+}
+
+function ExportNameModal({ game, base, onDone, closeModal }) {
+    const [value, setValue] = SP_REACT.useState(base);
+    const [busy, setBusy] = SP_REACT.useState(false);
+    const overwriting = value.trim() === base;
+    const submit = async () => {
+        if (busy || !value.trim())
+            return;
+        setBusy(true);
+        try {
+            const result = await exportConfig(game.appid, game.name, value.trim(), true);
+            onDone(result.path);
+        }
+        catch (error) {
+            toaster.toast({ title: "Export failed", body: String(error) });
+        }
+        closeModal?.();
+    };
+    return (SP_JSX.jsx(DFL.ConfirmModal, { strTitle: "Config Already Exists", strDescription: `${base}.pocknix.json exists. Change the name to save a new config (e.g. ${base}-2 or ${base}-fast), or keep it to overwrite.`, strOKButtonText: busy ? "Saving…" : overwriting ? "Overwrite" : "Save New", bOKDisabled: busy || !value.trim(), onCancel: () => closeModal?.(), onOK: submit, children: SP_JSX.jsx(DFL.TextField, { label: "Name", value: value, disabled: busy, onChange: (event) => setValue(event.target.value) }) }));
+}
+function ImportModal({ path, preview, game, onDone, closeModal }) {
+    const profiles = preview.games;
+    const [source, setSource] = SP_REACT.useState(profiles[0]?.appid || "");
+    const [busy, setBusy] = SP_REACT.useState(false);
+    const from = [preview.device, preview.exported].filter(Boolean).join(", ");
+    const profileOptions = profiles.map((profile) => ({ data: profile.appid, label: profile.name || profile.appid }));
+    const submit = async () => {
+        if (busy || !source)
+            return;
+        setBusy(true);
+        try {
+            const result = await applyConfig(path, source, game.appid, game.name);
+            try {
+                const cfg = await getConfig();
+                const profile = result.enabled ? String(result.fexProfile || cfg.tweaks.global.fexProfile || "") : "";
+                await syncFexLaunchOption(game.appid, fexSteamString(profile, cfg.fexProfiles));
+            }
+            catch (error) {
+            }
+            if (result.protonTool) {
+                const tools = await availableCompatTools(game.appid);
+                const resolved = resolveCompatTool(result.protonTool, tools);
+                if (resolved.tool) {
+                    setCompatTool(game.appid, resolved.tool);
+                    if (resolved.fallback) {
+                        toaster.toast({ title: "Proton fallback", body: `${result.protonTool} not available, using ${resolved.tool}` });
+                    }
+                }
+                else {
+                    toaster.toast({ title: "Proton pick skipped", body: `${result.protonTool} not available here` });
+                }
+            }
+            toaster.toast({ title: "Config applied", body: game.name || game.appid });
+        }
+        catch (error) {
+            toaster.toast({ title: "Import failed", body: String(error) });
+        }
+        closeModal?.();
+        onDone();
+    };
+    return (SP_JSX.jsx(DFL.ConfirmModal, { strTitle: "Import Game Config", strDescription: (from ? `Exported from ${from}. ` : "") + `Settings for ${game.name || game.appid} will be overwritten.`, strOKButtonText: busy ? "Applying…" : "Apply", bOKDisabled: busy || !source, onCancel: () => closeModal?.(), onOK: submit, children: profiles.length > 1 ? (SP_JSX.jsx(SelectEdit, { label: "Profile", value: source, options: profileOptions, onChange: (id) => setSource(String(id)) })) : (SP_JSX.jsxs("div", { className: "pocknix-note", children: ["Profile: ", profiles[0]?.name || profiles[0]?.appid] })) }));
+}
+/** Per-game config export/import; rendered only when a game's per-game settings are enabled. */
+function ConfigSection({ game, reload }) {
+    const doExport = async () => {
+        try {
+            const result = await exportConfig(game.appid, game.name || "", "", false);
+            if (result.exists) {
+                DFL.showModal(SP_JSX.jsx(ExportNameModal, { game: { appid: game.appid, name: game.name || "" }, base: result.base, onDone: (path) => toaster.toast({ title: "Game config exported", body: path }) }));
+                return;
+            }
+            toaster.toast({ title: "Game config exported", body: result.path });
+        }
+        catch (error) {
+            toaster.toast({ title: "Export failed", body: String(error) });
+        }
+    };
+    const doImport = async () => {
+        let path = "";
+        try {
+            const dir = await configDir().catch(() => "/home/deck");
+            // 0 = FileSelectionType.FILE (same const-enum note as AddGame).
+            const picked = await openFilePicker(0, dir, true, true);
+            path = picked?.path || "";
+        }
+        catch (error) {
+            return; // picker closed without a selection
+        }
+        if (!path)
+            return;
+        try {
+            const preview = await readConfig(path);
+            DFL.showModal(SP_JSX.jsx(ImportModal, { path: path, preview: preview, game: game, onDone: reload }));
+        }
+        catch (error) {
+            toaster.toast({ title: "Import failed", body: String(error) });
+        }
+    };
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "CONFIG", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: doExport, children: "Export Game Config" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: doImport, children: "Import Game Config" }) }), SP_JSX.jsx("div", { className: "pocknix-note", children: "Per-game tweaks and Proton pick; defaults stay local" })] }));
+}
+
+/** Per-game MAKO (Lossless Scaling frame generation) switch.
+ *
+ *  MAKO keeps no config blob of its own here: it activates entirely through the game's launch
+ *  options, which Steam owns. The switch therefore reads the string back instead of holding a
+ *  shadow copy the two UIs could disagree about. It stays hidden until the wrapper exists, so
+ *  it is never offered on a device where the Renderer was not installed.
+ */
+function MakoToggle({ appid }) {
+    const [installed, setInstalled] = SP_REACT.useState(false);
+    const [on, setOn] = SP_REACT.useState(false);
+    SP_REACT.useEffect(() => {
+        let cancelled = false;
+        setInstalled(false);
+        setOn(false);
+        makoStatus()
+            .then((status) => {
+            if (!cancelled)
+                setInstalled(status.installed);
+        })
+            .catch(() => { });
+        readLaunchOptions(appid)
+            .then((options) => {
+            if (!cancelled)
+                setOn(options ? makoEnabledIn(options) : false);
+        })
+            .catch(() => { });
+        return () => {
+            cancelled = true;
+        };
+    }, [appid]);
+    if (!installed)
+        return null;
+    return (SP_JSX.jsx(DFL.ToggleField, { label: "MAKO (Lossless Scaling frame gen)", checked: on, onChange: (next) => {
+            setOn(next);
+            // Steam owns the string, so roll the toggle back if the write is refused.
+            syncMakoLaunchOption(appid, next).catch(() => setOn(!next));
+        } }));
 }
 
 /** Standalone per-game settings, opened from the library context menu. Saves on each change

@@ -5,6 +5,9 @@ export const getConfig = () => call<[], Config>("get_config");
 export const sendReport = (text: string, kind: "bug" | "idea", areas: string[]) =>
   call<[string, string, string[]], { ok: boolean; issue?: string; error?: string; detail?: string }>(
     "send_report", text, kind, areas);
+export const collectReport = (text: string, areas: string[]) =>
+  call<[string, string[]], { ok: boolean; path?: string; error?: string; detail?: string }>(
+    "collect_report", text, areas);
 export const setFanMode = (mode: string) => call<[string], Config>("set_fan_mode", mode);
 export const setLavdMode = (mode: string) => call<[string], Config>("set_lavd_mode", mode);
 export const setScxScheduler = (scheduler: string) => call<[string], Config>("set_scx_scheduler", scheduler);

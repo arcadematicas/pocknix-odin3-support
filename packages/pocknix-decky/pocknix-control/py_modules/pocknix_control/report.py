@@ -15,6 +15,64 @@ import subprocess
 
 # `calvos-doctor` imprime "  issue: https://github.com/..." cuando el envio va bien.
 _ISSUE = re.compile(r"issue:\s*(\S+)")
+# ...y "  guardado   : /home/.../calvos-report-*.tar.gz" cuando solo recoge.
+_SAVED = re.compile(r"guardado\s*:\s*(\S+)")
+
+
+def _doctor_path() -> str:
+    """Ruta real del script del BSP (Decky corre como root con un PATH propio)."""
+    for cand in ("/usr/local/bin/calvos-doctor", "/usr/bin/calvos-doctor"):
+        if os.path.exists(cand):
+            return cand
+    return shutil.which("calvos-doctor") or ""
+
+
+def _env() -> dict:
+    return {
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "HOME": os.environ.get("HOME", "/root"),
+        "USER": os.environ.get("USER", "root"),
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "TERM": "dumb",
+    }
+
+
+def _run_doctor(args, timeout: int):
+    """systemd-run (host nativo, fuera de FEX) con caida a ejecucion directa."""
+    base = ["/usr/bin/python3", _doctor_path()] + args
+    unit = "pocknix-report-{}".format(os.getpid())
+    runner = ["systemd-run", "--quiet", "--collect", "--wait", "--pipe", "--unit", unit]
+    try:
+        return subprocess.run(runner + base, capture_output=True, timeout=timeout, env=_env())
+    except FileNotFoundError:
+        pass
+    except subprocess.TimeoutExpired:
+        return None
+    try:
+        return subprocess.run(base, capture_output=True, timeout=timeout, env=_env())
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def collect_report(text: str = "", areas=None, timeout: int = 180) -> dict:
+    """Recoge y guarda el informe SIN enviarlo. Devuelve `{ok, path}` o `{ok: False, ...}`."""
+    if not _doctor_path():
+        return {"ok": False, "error": "calvos-doctor no esta instalado"}
+    args = ["--no-qr"]
+    if areas:
+        args += ["--areas", ",".join(a for a in areas if isinstance(a, str))]
+    t = (text or "").strip()
+    if t:
+        args += ["--text", t[:1000]]
+    proc = _run_doctor(args, timeout)
+    if proc is None:
+        return {"ok": False, "error": "timeout ({}s): el informe tarda mas de lo normal".format(timeout)}
+    out = ((proc.stdout or b"") + (proc.stderr or b"")).decode("utf-8", "replace")
+    saved = _SAVED.search(out)
+    if saved:
+        return {"ok": True, "path": saved.group(1)}
+    return {"ok": False, "error": "no se pudo generar (rc={})".format(proc.returncode), "detail": out[-400:]}
 
 
 def send_report(text: str = "", kind: str = "bug", areas=None, timeout: int = 180) -> dict:
@@ -24,13 +82,7 @@ def send_report(text: str = "", kind: str = "bug", areas=None, timeout: int = 18
     """
     # El BSP lo instala en /usr/local/bin (no en /usr/bin). Probamos las rutas reales antes
     # de fiarnos de PATH: el backend de Decky corre como root con un PATH propio.
-    exe = ""
-    for cand in ("/usr/local/bin/calvos-doctor", "/usr/bin/calvos-doctor"):
-        if os.path.exists(cand):
-            exe = cand
-            break
-    if not exe:
-        exe = shutil.which("calvos-doctor") or ""
+    exe = _doctor_path()
     if not exe:
         return {"ok": False, "error": "calvos-doctor no esta instalado"}
 

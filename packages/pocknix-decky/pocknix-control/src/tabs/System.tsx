@@ -1,7 +1,22 @@
-import { Button, Field, PanelSection, PanelSectionRow, TextField, ToggleField } from "@decky/ui";
+import { Button, ButtonItem, Field, PanelSection, PanelSectionRow, TextField, ToggleField } from "@decky/ui";
+import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useState } from "react";
-import { desktopFlavour, sendReport, switchToDesktop, systemStatus } from "../backend";
+import {
+  collectReport,
+  desktopFlavour,
+  oledCareStatus,
+  runOledRefresher,
+  sendReport,
+  setLavdMode,
+  setScxMode,
+  setScxScheduler,
+  switchToDesktop,
+  systemStatus,
+} from "../backend";
 import type { SystemStatus } from "../backend";
+import { lavdOptions, scxModeOptions, scxSchedulerOptions } from "../components/GameFields";
+import { SelectEdit } from "../components/widgets";
+import type { Config, OledCareStatus } from "../types";
 
 // Sabores de escritorio instalados en la consola (backend: py_modules/desktop.py).
 const SABORES: Record<string, string> = {
@@ -36,7 +51,19 @@ const amperios = (ua: number | null | undefined) => (ua == null ? null : `${(ua 
 // El HDR ya NO se controla desde aqui: lo gobierna el plugin "Panel de Control"
 // (Hooandee) en QAM -> Panel de Control -> Pantalla (desde 15/10/2026, decision de
 // Fransis: un unico dueño por funcion).
-export function System() {
+// "hace 3 min" / "hace 2 h": que se vea que el OLED care trabaja de verdad.
+function hace(ts: number | null | undefined): string {
+  if (!ts) return "todavía no";
+  const s = Math.max(0, Math.floor(Date.now() / 1000) - ts);
+  if (s < 60) return `hace ${s} s`;
+  if (s < 3600) return `hace ${Math.floor(s / 60)} min`;
+  return `hace ${Math.floor(s / 3600)} h`;
+}
+
+export function System({ config, setConfig }: {
+  config: Config;
+  setConfig: Dispatch<SetStateAction<Config | null>>;
+}) {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [error, setError] = useState("");
   const [texto, setTexto] = useState("");
@@ -51,6 +78,10 @@ export function System() {
   const [sabor, setSabor] = useState("");
   const [cambiando, setCambiando] = useState(false);
   const [fallo, setFallo] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [guardado, setGuardado] = useState<{ ok: boolean; path?: string; error?: string; detail?: string } | null>(null);
+  const [oled, setOled] = useState<OledCareStatus | null>(null);
+  const [refresherMsg, setRefresherMsg] = useState<string | null>(null);
 
   useEffect(() => {
     systemStatus()
@@ -59,7 +90,30 @@ export function System() {
     desktopFlavour()
       .then(setSabor)
       .catch(() => setSabor(""));
+    oledCareStatus()
+      .then(setOled)
+      .catch(() => setOled(null));
   }, []);
+
+  // El scheduler es estado VIVO del sistema, no un ajuste de perfil: se aplica al momento.
+  const applyMode = async (setter: (mode: string) => Promise<Config>, mode: string) => {
+    try {
+      const next = await setter(mode);
+      setConfig((current) => (current ? { ...current, lavdMode: next.lavdMode, scxScheduler: next.scxScheduler, scxMode: next.scxMode } : current));
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
+  const runRefresher = () => {
+    setRefresherMsg("Refreshing pixels…");
+    runOledRefresher()
+      .then((next) => {
+        setOled(next);
+        setRefresherMsg("Listo.");
+      })
+      .catch((err) => setRefresherMsg(String(err)));
+  };
 
   // Al cambiar de escritorio Steam se cierra y este plugin muere con el: no hay
   // "listo" que mostrar, solo el aviso de que se esta cerrando.
@@ -82,6 +136,18 @@ export function System() {
         .join(" · ")
     : "no disponible en este equipo";
 
+  const guardarInforme = async () => {
+    setGuardando(true);
+    setGuardado(null);
+    try {
+      setGuardado(await collectReport(texto, Object.keys(areas).filter((k) => areas[k])));
+    } catch (err) {
+      setGuardado({ ok: false, error: String(err) });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   const enviarInforme = async () => {
     setEnviando(true);
     setInforme(null);
@@ -96,6 +162,63 @@ export function System() {
 
   return (
     <>
+      <PanelSection title="RENDIMIENTO">
+        <SelectEdit
+          label="Scheduler"
+          value={config.scxScheduler || "auto"}
+          options={scxSchedulerOptions}
+          onChange={(mode) => applyMode(setScxScheduler, mode)}
+        />
+        {config.scxScheduler === "auto" ? (
+          <PanelSectionRow>
+            <Field label="Scheduler activo" description={config.scxEffective || "—"} />
+          </PanelSectionRow>
+        ) : (
+          <SelectEdit
+            label="Scheduler Mode"
+            value={config.scxMode}
+            options={scxModeOptions[config.scxScheduler || ""] || lavdOptions}
+            onChange={(mode) => applyMode(setScxMode, mode)}
+          />
+        )}
+      </PanelSection>
+
+      <PanelSection title="OLED CARE">
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
+            description="Refresco anti retención (ruido a pantalla completa, ~9 s)."
+            onClick={runRefresher}
+          >
+            Run Pixel Refresher
+          </ButtonItem>
+        </PanelSectionRow>
+        {refresherMsg ? (
+          <PanelSectionRow>
+            <Field label="" description={refresherMsg} />
+          </PanelSectionRow>
+        ) : null}
+        <PanelSectionRow>
+          <Field
+            label="Automático"
+            description={
+              oled && !oled.available
+                ? "No disponible en este equipo."
+                : oled && !oled.daemonUp
+                  ? "Daemon parado (sin estado todavía)."
+                  : oled
+                    ? `Cada ${Math.round(oled.idleSeconds / 60)} min inactivo · último: ${hace(oled.lastRefresh)} (${oled.count})`
+                    : "…"
+            }
+          />
+        </PanelSectionRow>
+        {oled?.lastSkip ? (
+          <PanelSectionRow>
+            <Field label="Último omitido" description={oled.lastSkip} />
+          </PanelSectionRow>
+        ) : null}
+      </PanelSection>
+
       <PanelSection title="BATERÍA">
         <PanelSectionRow>
           <Field
@@ -184,6 +307,19 @@ export function System() {
             onChange={(e) => setTexto(e.target.value)}
           />
         </PanelSectionRow>
+        <PanelSectionRow>
+          <Button onClick={guardarInforme} disabled={guardando || !Object.values(areas).some(Boolean)}>
+            {guardando ? "Recogiendo..." : "Guardar informe (sin enviar)"}
+          </Button>
+        </PanelSectionRow>
+        {guardado ? (
+          <PanelSectionRow>
+            <Field
+              label={guardado.ok ? "Informe guardado" : "No se pudo recoger"}
+              description={guardado.ok ? (guardado.path || "") : [guardado.error, guardado.detail].filter(Boolean).join(" — ")}
+            />
+          </PanelSectionRow>
+        ) : null}
         <PanelSectionRow>
           <Button onClick={enviarInforme} disabled={enviando || !Object.values(areas).some(Boolean)}>
             {enviando ? "Enviando..." : "Enviar informe"}

@@ -6,11 +6,8 @@ import { usePatchTweaks } from "./hooks/usePatchTweaks";
 import { tabIcons } from "./icons";
 import { currentGame } from "./lib/games";
 import { styles } from "./styles";
-import { Cleanup } from "./tabs/Cleanup";
 import { System } from "./tabs/System";
 import { Games } from "./tabs/Games";
-import { Library } from "./tabs/Library";
-import { Lighting } from "./tabs/Lighting";
 import { Updater } from "./tabs/Updater";
 import type { Config } from "./types";
 
@@ -63,14 +60,12 @@ export function Content() {
   const tabContent = (content: ReactNode) => (
     <div className="pocknix-control-tab-content">{content}</div>
   );
+  // Tres pestanas y nada mas (11/11/2026): Juegos (Mesa por juego), Sistema (scheduler,
+  // OLED care, calvos-doctor) y Actualizar (update + rollback). Library/Cleanup/LED siguen
+  // en el repo, solo dejan de mostrarse.
   const tabs = [
-    { id: "Games", title: tabIcons.Games, content: tabContent(<Games config={config} setConfig={setConfig} reload={load} />) },
-    { id: "Library", title: tabIcons.Library, content: tabContent(<Library />) },
-    ...(config.led.available
-      ? [{ id: "Lighting", title: tabIcons.Lighting, content: tabContent(<Lighting config={config} setConfig={setConfig} reload={load} />) }]
-      : []),
-    { id: "System", title: tabIcons.System, content: tabContent(<System />) },
-    { id: "Cleanup", title: tabIcons.Cleanup, content: tabContent(<Cleanup />) },
+    { id: "Games", title: tabIcons.Games, content: tabContent(<Games config={config} setConfig={setConfig} />) },
+    { id: "System", title: tabIcons.System, content: tabContent(<System config={config} setConfig={setConfig} />) },
     { id: "Updater", title: tabIcons.Updater, content: tabContent(<Updater />) },
   ];
   return (
