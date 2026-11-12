@@ -513,10 +513,15 @@ async function syncMakoLaunchOption(appid, enabled) {
 // only our token is rewritten, everything else in the string survives.
 const GAME_WRAPPER = "/usr/lib/pocknix/pocknix-game-wrapper";
 const GAME_WRAPPER_TOKEN = /\/usr\/lib\/pocknix\/pocknix-game-wrapper\s*/g;
+function launchSetter(apps) {
+    const fn = apps?.SetShortcutLaunchOptions ?? apps?.SetAppLaunchOptions;
+    return typeof fn === "function" ? fn.bind(apps) : null;
+}
 /** Add or remove the native Mesa wrapper, preserving every other launch-option token. */
 async function syncGameWrapperLaunchOption(appid, enabled) {
     const apps = window.SteamClient?.Apps;
-    if (!apps?.SetAppLaunchOptions)
+    const set = launchSetter(apps);
+    if (!set)
         return;
     const current = await getLaunchOptions(appid);
     if (current === null)
@@ -532,7 +537,7 @@ async function syncGameWrapperLaunchOption(appid, enabled) {
         next = stripped === "%command%" ? "" : stripped;
     }
     if (next !== current.trim())
-        apps.SetAppLaunchOptions(Number(appid), next);
+        set(Number(appid), next);
 }
 
 function SelectEdit({ label, value, options, onChange }) {
@@ -832,6 +837,13 @@ function Games({ config, setConfig }) {
     }, [appid]);
     const mesa = String(settings.mesaVersion ?? "");
     const mesaOptions = [{ data: "", label: "System default" }, ...(config.mesaVersions || [])];
+    // Self-heal: the token must be there when the tab opens, not only after the dropdown changes
+    // (a game can already have a Mesa pick from an older build, and Steam may have dropped it).
+    SP_REACT.useEffect(() => {
+        if (!known || !native || !appid)
+            return;
+        void syncGameWrapperLaunchOption(appid, perGameEnabled && mesa !== "");
+    }, [known, native, appid, perGameEnabled, mesa]);
     const patchMesa = (value) => {
         setConfig((current) => {
             if (!current || !appid)

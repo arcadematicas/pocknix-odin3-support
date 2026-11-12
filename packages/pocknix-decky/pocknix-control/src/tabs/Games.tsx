@@ -51,6 +51,13 @@ export function Games({ config, setConfig }: {
   const mesa = String(settings.mesaVersion ?? "");
   const mesaOptions = [{ data: "", label: "System default" }, ...(config.mesaVersions || [])];
 
+  // Self-heal: the token must be there when the tab opens, not only after the dropdown changes
+  // (a game can already have a Mesa pick from an older build, and Steam may have dropped it).
+  useEffect(() => {
+    if (!known || !native || !appid) return;
+    void syncGameWrapperLaunchOption(appid, perGameEnabled && mesa !== "");
+  }, [known, native, appid, perGameEnabled, mesa]);
+
   const patchMesa = (value: string) => {
     setConfig((current) => {
       if (!current || !appid) return current;
