@@ -92,7 +92,22 @@ fijos y sin DSC/PPS ni selección de refresco. Para la Portal falta:
 - supplies de la Portal (`tvdd`),
 - calibración de frame length (parche 1305).
 
-### Opción A (recomendada): traer el driver `-cog`
+### Estado (12/11/2026): driver ya integrado ✅
+
+El driver COG **ya está en el kernel** y compila:
+
+- `2157-drm-panel-visionox-vtdr6130-cog.patch` — el driver (de ArmadaOS `0104`, GPL-2.0,
+  autor Teguh Sobirin) + Kconfig (`default y`) + Makefile.
+- `2158-...-add-sm8250.patch` y `2159-...-add-pocket-duo.patch` — variantes sm8250 y Duo que
+  el `of_match` de la Portal necesita como contexto.
+- `2160-...-add-odin3portal.patch` — compatible `vtdr6130,o3p`, modos 60/120 Hz, init, DSC y
+  supplies (vddio + tvdd), `off_in_lpm`.
+- Verificado en el build: `CONFIG_DRM_PANEL_VISIONOX_VTDR6130_COG=y`, el `.o` compila,
+  `vtdr6130_odin3portal_desc` está en `System.map` y el DTB lleva `compatible = "vtdr6130,o3p"`.
+- **Pendiente**: `2161` (calibracion de frame length) queda en `pending/` porque depende de la
+  interfaz RP6 de ROCKNIX; no hace falta para encender el panel.
+
+### Opción A (contexto historico): traer el driver `-cog`
 - Origen: kernel de ROCKNIX/Armada (GPL-2.0), versión base 7.2.6; el nuestro es 7.2.15.
 - Aplicar encima los parches `1304` (o3p) y `1305` (frame length), que ya están en
   `kernel/patches/20-sm8750/pending/`.
