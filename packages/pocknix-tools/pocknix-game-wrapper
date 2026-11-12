@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""pocknix-game-wrapper — ajustes por juego para lanzamientos NATIVOS.
+
+Steam pone `SteamAppId` en el entorno de cualquier juego, tambien de los shortcuts
+no-Steam (AppImage, .sh, binario). Este envoltorio lee `/etc/pocknix/game-tweaks.json`
+y aplica el `mesaVersion` (y las variables de entorno) del juego antes de `exec`.
+
+Lo escribe CalvOS Control (pestana Juegos) en las Launch Options del juego como
+`/usr/lib/pocknix/pocknix-game-wrapper %command%`, una sola vez: cambiar de version
+en el panel despues no necesita tocar Steam, porque esto se relee en cada arranque.
+
+Reglas:
+  - Sin `SteamAppId`, o sin entrada activa del juego, se usa la seccion `global`.
+  - Si el juego ya trae `VK_DRIVER_FILES`/`VK_ICD_FILENAMES` en el entorno (Launch
+    Options propias, o un script que los exporta), mandan ellos: no pisamos nada.
+  - Nunca se pone un ICD de ARM a un ejecutable x86_64: dejaria el juego sin driver
+    bajo FEX. En ese caso se avisa y se lanza igual.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import pathlib
+import re
+import shlex
+import sys
+
+TWEAKS = pathlib.Path("/etc/pocknix/game-tweaks.json")
+VK_ARM = pathlib.Path("/usr/share/pocknix/vk-arm")
+VK_X86 = pathlib.Path("/usr/share/pocknix/vk-x86")
+
+# Igual que pocknix-proton-wrapper: SERIE ("25.2") o nombre completo de payload
+# ("27.0.0devel"), con prefijo de arquitectura opcional.
+_MESA = re.compile(r"(?:(arm|x86):)?([0-9][0-9A-Za-z.+_~-]*)")
+
+_ARM_ELF = 0xB7          # EM_AARCH64
+_X86_64_ELF = 0x3E       # EM_X86_64
+
+
+def _note(msg: str) -> None:
+    print(f"pocknix-game: {msg}", file=sys.stderr)
+
+
+def load_settings():
+    try:
+        data = json.loads(TWEAKS.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    appid = os.environ.get("SteamAppId", "").strip()
+    games = data.get("games")
+    entry = games.get(appid) if isinstance(games, dict) and appid else None
+    if isinstance(entry, dict) and entry.get("enabled") is True:
+        return entry
+    glob = data.get("global")
+    return glob if isinstance(glob, dict) and glob else None
+
+
+def elf_machine(path: str):
+    """e_machine del ELF, o None si no es un ELF legible."""
+    try:
+        with open(path, "rb") as fh:
+            head = fh.read(20)
+    except OSError:
+        return None
+    if len(head) < 20 or head[:4] != b"\x7fELF" or head[5] != 1:  # little-endian
+        return None
+    return int.from_bytes(head[18:20], "little")
+
+
+def resolve_payload(version: str):
+    """Devuelve (base, nombre_payload) o None, replicando el criterio del wrapper de Proton."""
+    m = _MESA.fullmatch(version)
+    if not m:
+        return None
+    arch, ver = m.groups()
+    base = VK_X86 if arch == "x86" else VK_ARM
+    try:
+        names = [
+            p.name
+            for p in base.iterdir()
+            if (p.name == ver or p.name.startswith(ver + ".")) and (p / "icd.json").is_file()
+        ]
+    except OSError:
+        return None
+    if not names:
+        return None
+    # La mas alta gana ("26.2" -> 26.2.8, no 26.2.1).
+    picked = max(names, key=lambda v: tuple(int(x) for x in re.findall(r"[0-9]+", v)))
+    return base, picked
+
+
+def apply_mesa(settings) -> None:
+    version = str(settings.get("mesaVersion") or "").strip()
+    if not version:
+        return
+    if "VK_DRIVER_FILES" in os.environ or "VK_ICD_FILENAMES" in os.environ:
+        return
+    target = sys.argv[1] if len(sys.argv) > 1 else ""
+    if target:
+        machine = elf_machine(target)
+        if machine == _X86_64_ELF:
+            _note(f"'{target}' es x86_64: no aplico un ICD de ARM (mesa {version})")
+            return
+        if machine not in (None, _ARM_ELF):
+            _note(f"'{target}' no es aarch64: no aplico el ICD de ARM (mesa {version})")
+            return
+    resolved = resolve_payload(version)
+    if not resolved:
+        _note(f"no hay payload de mesa '{version}' en vk-arm/vk-x86: uso el driver por defecto")
+        return
+    base, picked = resolved
+    icd = str(base / picked / "icd.json")
+    os.environ["VK_DRIVER_FILES"] = icd
+    os.environ["VK_ICD_FILENAMES"] = icd
+
+
+def apply_env_vars(settings) -> None:
+    raw = settings.get("envVars")
+    if not isinstance(raw, str) or not raw.strip():
+        return
+    try:
+        tokens = shlex.split(raw)
+    except ValueError:
+        return
+    for token in tokens:
+        key, sep, value = token.partition("=")
+        if sep and key.isidentifier():
+            os.environ.setdefault(key, value)
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        _note("uso: pocknix-game-wrapper <comando> [args...]")
+        return 2
+    settings = load_settings()
+    if settings:
+        apply_mesa(settings)
+        apply_env_vars(settings)
+    try:
+        os.execvp(sys.argv[1], sys.argv[1:])
+    except OSError as exc:
+        _note(f"no puedo ejecutar {sys.argv[1]}: {exc}")
+        return 127
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

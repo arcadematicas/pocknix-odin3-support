@@ -1,62 +1,81 @@
 import { PanelSection, ToggleField } from "@decky/ui";
 import type { Dispatch, SetStateAction } from "react";
-import { setLavdMode, setScxMode, setScxScheduler } from "../backend";
-import { ConfigSection } from "../components/ConfigSection";
-import { EnvVarsButton, PerfFields, TweakFields, audioLatencyOptions, lavdOptions, scxModeOptions, scxSchedulerOptions } from "../components/GameFields";
-import { MakoToggle } from "../components/MakoToggle";
+import { useEffect, useState } from "react";
+import { availableCompatTools, registerForCompatTool } from "../lib/compat";
+import { syncGameWrapperLaunchOption } from "../lib/launchOptions";
 import { SelectEdit } from "../components/widgets";
 import { availableGames, editTargetOptions } from "../lib/games";
-import { fexSteamString, syncFexLaunchOption } from "../lib/launchOptions";
 import { clone } from "../lib/util";
 import type { Config } from "../types";
 
-export function Games({ config, setConfig, reload }: {
+// Pestana Juegos: solo la seleccion de Mesa por juego. El scheduler vive en Sistema y el
+// resto de ajustes (FEX, audio, env) se retiraron de la UI el 11/11/2026: no se usaban y
+// hacian que este plugin pareciese un segundo panel de control.
+export function Games({ config, setConfig }: {
   config: Config;
   setConfig: Dispatch<SetStateAction<Config | null>>;
-  reload: () => void;
 }) {
   const runtimeGame = config.game;
   const games = availableGames(config);
   const game = config.selectedGame || runtimeGame || null;
+  const appid = game?.appid || "";
   const tweaks = config.tweaks;
-  const gameSettings = game?.appid ? tweaks.games[game.appid] || {} : {};
-  const editingDefault = !game?.appid;
-  const perGameEnabled = !!(game?.appid && gameSettings.enabled === true);
-  const values = editingDefault || !perGameEnabled ? tweaks.global : { ...tweaks.global, ...gameSettings };
-  const patchSettings = (patch: Record<string, any>) => {
+  const settings: Record<string, any> = appid ? (tweaks.games[appid] as Record<string, any>) || {} : {};
+  const perGameEnabled = !!(appid && settings.enabled === true);
+  // Un juego es "nativo" cuando Steam no le asigna herramienta de compatibilidad. Solo en
+  // ese caso tiene sentido meter el wrapper: a un juego de Proton le pondriamos un ICD de
+  // ARM y lo dejariamos sin driver (el wrapper de Proton ya resuelve su Mesa). "known"
+  // evita decidir con el valor inicial vacio antes de que Steam conteste.
+  const [known, setKnown] = useState(false);
+  const [native, setNative] = useState(false);
+
+  useEffect(() => {
+    setKnown(false);
+    setNative(false);
+    if (!appid) return;
+    let live = true;
+    // Llamada redundante a proposito: fuerza la carga del hook de Steam y, si el callback
+    // no llega, dejamos known=false y no tocamos las launch options.
+    availableCompatTools(appid).catch(() => {});
+    const unregister = registerForCompatTool(appid, (tool) => {
+      if (!live) return;
+      setNative(tool === "");
+      setKnown(true);
+    });
+    return () => {
+      live = false;
+      unregister();
+    };
+  }, [appid]);
+
+  const mesa = String(settings.mesaVersion ?? "");
+  const mesaOptions = [{ data: "", label: "System default" }, ...(config.mesaVersions || [])];
+
+  const patchMesa = (value: string) => {
     setConfig((current) => {
-      if (!current) return current;
+      if (!current || !appid) return current;
       const next = clone(current);
-      if (editingDefault) {
-        Object.assign(next.tweaks.global, patch);
-      } else if (perGameEnabled) {
-        const existing = next.tweaks.games[game!.appid] || {};
-        next.tweaks.games[game!.appid] = { ...existing, enabled: true, name: game!.name || "", ...patch };
-      }
+      next.tweaks.games[appid] = { ...(next.tweaks.games[appid] || {}), enabled: true, name: game?.name || "", mesaVersion: value };
       return next;
     });
+    if (known && native) void syncGameWrapperLaunchOption(appid, value !== "");
   };
+
   const setPerGameEnabled = (enabled: boolean) => {
-    if (!game?.appid) return;
+    if (!appid) return;
     setConfig((current) => {
       if (!current) return current;
       const next = clone(current);
-      next.tweaks.games[game.appid] = {
-        ...(next.tweaks.games[game.appid] || {}),
-        enabled,
-        name: game.name || "",
-      };
+      next.tweaks.games[appid] = { ...(next.tweaks.games[appid] || {}), enabled, name: game?.name || "" };
       return next;
     });
-    // Token policy mirrors the wrapper's merge: enabled = own-or-global profile, disabled = none.
-    const stored = tweaks.games[game.appid] || {};
-    const profile = enabled ? String(stored.fexProfile ?? tweaks.global.fexProfile ?? "") : "";
-    syncFexLaunchOption(game.appid, fexSteamString(profile, config.fexProfiles));
+    if (known && native) void syncGameWrapperLaunchOption(appid, enabled && mesa !== "");
   };
-  // "" is the explicit Default target, not "nothing selected"; store a sentinel
-  // so it doesn't fall back to the running game in the selectedGame derivation.
-  const setSelectedGame = (appid: any) => {
-    const id = String(appid);
+
+  // "" is the explicit Default target, not "nothing selected"; store a sentinel so it does
+  // not fall back to the running game in the selectedGame derivation.
+  const setSelectedGame = (value: any) => {
+    const id = String(value);
     if (!id) {
       setConfig((current) => (current ? { ...current, selectedGame: { appid: "", name: "Default" } } : current));
       return;
@@ -65,80 +84,33 @@ export function Games({ config, setConfig, reload }: {
     setConfig((current) => (current ? { ...current, selectedGame: saved || null } : current));
   };
 
-  // Default target: FEX/audio/env edit tweaks.global; scheduler is the LIVE system
-  // mode, applied immediately through the backend.
-  const applyMode = async (setter: (mode: string) => Promise<Config>, mode: string) => {
-    try {
-      const next = await setter(mode);
-      setConfig((current) => (current ? { ...current, lavdMode: next.lavdMode, scxScheduler: next.scxScheduler, scxMode: next.scxMode } : current));
-    } catch (error) {
-      reload();
-    }
-  };
-  const presets = config.fexProfiles || {};
-  const storedProfile = values.fexProfile as string | undefined;
-  const fexValue = storedProfile && presets[storedProfile] ? storedProfile : "default";
-  const fexOptions = Object.entries(presets).map(([id, profile]) => ({ data: id, label: profile.label }));
-  const storedLatency = String(values.audioLatency ?? "");
-  const audioValue = audioLatencyOptions.some((option) => option.data === storedLatency) ? storedLatency : "";
-
-  const showFields = editingDefault || perGameEnabled;
   return (
     <>
-      <PanelSection title="PERFORMANCE & GAME TWEAKS">
-        <SelectEdit label="Game" value={game?.appid || ""} options={editTargetOptions(config)} onChange={setSelectedGame} />
-        {!editingDefault ? <ToggleField label="Use Per-Game Settings" checked={perGameEnabled} onChange={setPerGameEnabled} /> : null}
-        {/* MAKO is a launch-option switch, not a tweak: it stays available whether or not the
-            per-game profile is on, so it sits next to the game picker. */}
-        {!editingDefault && game?.appid ? <MakoToggle appid={game.appid} /> : null}
+      <PanelSection title="JUEGO">
+        <SelectEdit label="Game" value={appid} options={editTargetOptions(config)} onChange={setSelectedGame} />
+        {appid ? (
+          <ToggleField label="Usar ajustes por juego" checked={perGameEnabled} onChange={setPerGameEnabled} />
+        ) : null}
       </PanelSection>
-      {showFields ? (
-        <PanelSection title="PERFORMANCE">
-          {editingDefault ? (
-            <>
-              <SelectEdit label="Scheduler" value={config.scxScheduler} options={scxSchedulerOptions} onChange={(s) => applyMode(setScxScheduler, s)} />
-              {config.scxScheduler === "auto" ? (
-                <div className="pocknix-note">Scheduler activo: {config.scxEffective || "—"}</div>
-              ) : null}
-              {config.scxScheduler !== "auto" ? (
-                <SelectEdit label="Scheduler Mode" value={config.scxMode} options={scxModeOptions[config.scxScheduler] || scxModeOptions.lavd} onChange={(m) => applyMode(setScxMode, m)} />
-              ) : null}
-            </>
-          ) : (
-            <PerfFields values={values} patch={patchSettings} />
-          )}
+
+      {!appid ? (
+        <PanelSection title="MESA (VULKAN)">
+          <div className="pocknix-note">Elige un juego para asignarle una versión de Mesa.</div>
         </PanelSection>
-      ) : null}
-      {showFields ? (
-        <PanelSection title="GAME TWEAKS">
-          <div className="pocknix-note">Changes apply on next game launch</div>
-          {editingDefault ? (
-            <>
-              <SelectEdit
-                label="FEX Preset"
-                value={fexValue}
-                options={fexOptions}
-                onChange={(id) => {
-                  patchSettings({ fexProfile: id });
-                  // Enabled games without their own profile inherit this pick; resync their tokens.
-                  for (const [appid, entry] of Object.entries(tweaks.games)) {
-                    if (entry?.enabled === true && !entry.fexProfile) {
-                      syncFexLaunchOption(appid, fexSteamString(String(id), presets));
-                    }
-                  }
-                }}
-              />
-              <SelectEdit label="Audio Buffer" value={audioValue} options={audioLatencyOptions} onChange={(id) => patchSettings({ audioLatency: id })} />
-              <EnvVarsButton value={String(values.envVars ?? "")} onSave={(next) => patchSettings({ envVars: next })} />
-            </>
-          ) : (
-            <TweakFields config={config} appid={game!.appid} values={values} patch={patchSettings} />
-          )}
+      ) : perGameEnabled ? (
+        <PanelSection title="MESA (VULKAN)">
+          <SelectEdit label="Mesa Version" value={mesa} options={mesaOptions} onChange={patchMesa} />
+          <div className="pocknix-note">
+            {known && !native
+              ? "Este juego usa Proton: su Mesa se elige en el wrapper de Proton."
+              : "Se aplica al arrancar el juego (AppImage, .sh o binario)."}
+          </div>
         </PanelSection>
-      ) : null}
-      {!editingDefault && perGameEnabled ? (
-        <ConfigSection game={{ appid: game!.appid, name: game!.name || "" }} reload={reload} />
-      ) : null}
+      ) : (
+        <PanelSection title="MESA (VULKAN)">
+          <div className="pocknix-note">Activa "Usar ajustes por juego" para elegir la versión de Mesa.</div>
+        </PanelSection>
+      )}
     </>
   );
 }
