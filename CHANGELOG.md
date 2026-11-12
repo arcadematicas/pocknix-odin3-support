@@ -1362,6 +1362,21 @@ presenta el soporte del Odin 3.
 - Ajustes de sesión para el sonido, el control de ficheros abiertos, el mapeo de mandos y
   la red (WiFi).
 
+## 2026-11-12
+
+- **CalvOS Control**: selector de **Mesa por juego tambien para juegos nativos** (AppImage, `.sh`, binario).
+  El panel escribe `/usr/lib/pocknix/pocknix-game-wrapper %command%` una vez en las Launch Options y el
+  envoltorio lee `SteamAppId` -> `/etc/pocknix/game-tweaks.json` en cada arranque (`VK_DRIVER_FILES`/
+  `VK_ICD_FILENAMES`). Seguridad: no pone un ICD de ARM a un ejecutable x86_64 y respeta `VK_*` ya
+  presentes. Solo se anade a juegos sin herramienta de compatibilidad (los de Proton siguen por su wrapper).
+- **CalvOS Control** reducido a 3 pestanas: **Juegos** (Mesa por juego), **Sistema** (scheduler, OLED care,
+  calvos-doctor) y **Actualizar** (update + rollback). Library, Cleanup, LED, FEX, audio, env vars y MAKO
+  dejan de mostrarse (el codigo sigue en el repo).
+- `calvos-doctor` en el panel: nuevo **Guardar informe (sin enviar)**, ademas de Enviar.
+- Paquetes: `pocknix-decky 0.1.0-71`, `pocknix-tools 0.1.0-25` (wrapper nuevo); instalados en la Odin.
+- **Odin 3 Portal** (rama `portal-wip`): DTS, dispatch por modelo, UCM, InputPlumber y firmware listos;
+  pendiente el driver del panel (`panel-visionox-vtdr6130-cog` + parches 1304/1305 + Kconfig).
+
 ## 2026-11-09
 
 - `libretro-hakux` 0.23.0 -> **0.25.2** (prebuilt `hakux-0.25.2-aarch64`, sha256 `2dedbe1e…`); publicado en R2 `shared`.
