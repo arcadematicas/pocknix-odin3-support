@@ -2,25 +2,25 @@
 # provider. Build with ./nodeps: the flavour dep would drag a whole DE into the chroot.
 pkgname=pocknix-desktop
 pkgver=0.1.0
-pkgrel=34
+pkgrel=35
 pkgdesc="pocknix desktop session launcher, Flathub seeding and flatpak fixes"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
 license=('GPL-2.0-or-later')
 # pocknix-desktop-full: the same pre-meta catch-up cycle as pocknix-steam -> pocknix-steam-full.
 # >= -2: steamos-session-select moved there from -26, so the file never goes missing mid-upgrade.
-depends=('bash' 'pocknix-session>=0.1.0-2' 'pocknix-desktop-flavour'
+depends=('bash' 'qt6-tools' 'pocknix-session>=0.1.0-2' 'pocknix-desktop-flavour'
          'pocknix-bsp-common>=0.1.0-22'  # owns the SDL d-pad fix the launcher used to export
          'pocknix-desktop-full')
 optdepends=('pocknix-desktop-plasma-mobile: Plasma Mobile flavour (default)'
             'pocknix-desktop-plasma: desktop Plasma flavour')
 install='pocknix-desktop.install'
-source=('pocknix-desktop' 'pocknix-desktop-select' 'pocknix-desktop-layout'
+source=('pocknix-desktop' 'pocknix-desktop-select' 'pocknix-desktop-layout' 'pocknix-desktop-layout-force.desktop'
         'pocknix-desktop-layout.desktop' 'return-to-gamemode.desktop'
         'pocknix-flathub-setup' 'pocknix-flathub.service' 'pocknix-flathub-dispatcher'
         'pocknix-x11.conf'
         'pocknix-fontcache-prune' '99-pocknix-fontcache.hook')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   install -Dm755 "${srcdir}/pocknix-desktop"          "${pkgdir}/usr/bin/pocknix-desktop"
@@ -31,6 +31,9 @@ package() {
     "${pkgdir}/etc/xdg/autostart/pocknix-desktop-layout.desktop"
   install -Dm644 "${srcdir}/return-to-gamemode.desktop" \
     "${pkgdir}/usr/share/applications/return-to-gamemode.desktop"
+  # Visible: reaplica fondo + dock sin reiniciar sesion (util tras cambiar de sabor o theme).
+  install -Dm644 "${srcdir}/pocknix-desktop-layout-force.desktop" \
+    "${pkgdir}/usr/share/applications/pocknix-desktop-layout-force.desktop"
   # Not enabled: the NM dispatcher starts it once a link is up.
   install -Dm755 "${srcdir}/pocknix-flathub-setup"    "${pkgdir}/usr/bin/pocknix-flathub-setup"
   install -Dm644 "${srcdir}/pocknix-flathub.service" \

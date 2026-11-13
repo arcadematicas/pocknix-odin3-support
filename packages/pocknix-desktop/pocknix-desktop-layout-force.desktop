@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Reaplicar diseño CalvOS
+Comment=Fondo CalvOS y dock con Moonlight, DeckStation, Dolphin y volver al juego
+Exec=/usr/bin/pocknix-desktop-layout --force
+Icon=preferences-desktop-theme
+OnlyShowIn=KDE;
+NoDisplay=false
+Categories=Settings;

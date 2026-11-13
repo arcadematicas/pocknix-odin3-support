@@ -1,60 +1,78 @@
 #!/bin/bash
-# pocknix-desktop-layout — deja el Plasma de escritorio "de casa" la primera vez:
-# fondo CalvOS y un dock abajo con los mismos iconos que tenía Plasma Mobile.
+# pocknix-desktop-layout — deja el Plasma de escritorio "de casa": fondo CalvOS y un dock con
+# los mismos iconos que tenía Plasma Mobile (Moonlight, DeckStation, Dolphin, volver al juego).
 #
-# Solo actúa en el sabor `plasma` (en Mobile el escritorio ya viene configurado) y solo una
-# vez (marca en ~/.config/pocknix/desktop-layout.done), para no pisar lo que el usuario
-# cambie después. Corre como autostart de la sesión, no como root.
+# Solo actúa en el sabor `plasma`, una vez (marca ~/.config/pocknix/desktop-layout.done).
+# Con --force se vuelve a aplicar (entrada "Reaplicar diseño CalvOS").
+# Se puede desactivar creando ~/.config/pocknix/desktop-layout.off.
+#
+# Historia: la primera versión ponía el fondo pero, si ya existía un panel (el de Plasma por
+# defecto), NO añadía los iconos: el dock se quedaba sin lanzadores. Ahora configura el
+# icontasks existente y, si no hay panel, crea el dock.
 set -u
 
 HOME_DIR="${HOME:-/home/deck}"
 MARK="${HOME_DIR}/.config/pocknix/desktop-layout.done"
-[ -e "${MARK}" ] && exit 0
+OFF="${HOME_DIR}/.config/pocknix/desktop-layout.off"
+FORCE=0
+[ "${1:-}" = "--force" ] && FORCE=1
 
-# Sabor activo: si es Mobile, nada que hacer (y no marcamos, por si luego cambia).
+log() { echo "pocknix-desktop-layout: $*" >&2; }
+
+[ -e "${OFF}" ] && { log "desactivado por ${OFF}"; exit 0; }
+if [ "${FORCE}" != 1 ] && [ -e "${MARK}" ]; then exit 0; fi
+
 pick="$(pocknix-desktop-select current 2>/dev/null || true)"
-[ "${pick}" = "plasma" ] || exit 0
+[ "${pick}" = "plasma" ] || { log "sabor '${pick}': nada que hacer"; exit 0; }
 
-# plasmashell tarda un poco en exponer su D-Bus tras el login.
-for _ in 1 2 3 4 5 6 7 8 9 10; do
+# plasmashell tarda en exponer su D-Bus tras el login (hasta 30 s).
+for _ in $(seq 1 30); do
   qdbus6 org.kde.plasmashell >/dev/null 2>&1 && break
   sleep 1
 done
-qdbus6 org.kde.plasmashell >/dev/null 2>&1 || exit 0
+qdbus6 org.kde.plasmashell >/dev/null 2>&1 || { log "plasmashell no responde a D-Bus"; exit 0; }
 
-# Los cuatro iconos que tenía el escritorio móvil (favoritos de Plasma Mobile).
 LAUNCHERS="applications:com.moonlight_stream.Moonlight.desktop,applications:deckstation.desktop,applications:org.kde.dolphin.desktop,applications:return-to-gamemode.desktop"
 WALL="file:///usr/share/wallpapers/PocknixOS/contents/images/1920x1080.png"
 
 read -r -d '' SCRIPT <<JS
-var d = desktops()[0];
-if (d) {
-    d.wallpaperPlugin = "org.kde.image";
-    d.currentConfigGroup = ["Wallpaper", "org.kde.image", "General"];
-    d.writeConfig("Image", "${WALL}");
+var out = [];
+var ds = desktops();
+for (var i = 0; i < ds.length; i++) {
+    ds[i].wallpaperPlugin = "org.kde.image";
+    ds[i].currentConfigGroup = ["Wallpaper", "org.kde.image", "General"];
+    ds[i].writeConfig("Image", "${WALL}");
 }
-var dock = null;
+var tag = "none";
 var ps = panels();
 for (var i = 0; i < ps.length; i++) {
-    if (ps[i].type === "dock" || ps[i].location === "bottom") { dock = ps[i]; break; }
+    if (ps[i].type === "dock" || ps[i].location === "bottom") { tag = "existing"; break; }
 }
-if (!dock) {
-    dock = new Panel("bottom");
-    try { dock.alignment = "center"; } catch (e) {}
-    try { dock.lengthMode = "fit"; } catch (e) {}
-    try { dock.floating = true; } catch (e) {}
-    try { dock.height = 48; } catch (e) {}
-    var w = dock.addWidget("org.kde.plasma.icontasks");
-    w.currentConfigGroup = ["General"];
-    w.writeConfig("launchers", "${LAUNCHERS}");
-    w.writeConfig("showOnlyCurrentDesktop", false);
-    w.writeConfig("showOnlyCurrentScreen", false);
+var panel = (tag === "existing") ? ps[i] : null;
+if (!panel) {
+    panel = new Panel("bottom");
+    try { panel.alignment = "center"; } catch (e) {}
+    try { panel.lengthMode = "fit"; } catch (e) {}
+    try { panel.floating = true; } catch (e) {}
+    try { panel.height = 48; } catch (e) {}
+    tag = "created";
 }
-print("layout ok: " + (dock ? "dock" : "sin dock"));
+var tasks = null;
+var ws = panel.widgets();
+for (var j = 0; j < ws.length; j++) {
+    if (ws[j].type === "org.kde.plasma.icontasks") { tasks = ws[j]; break; }
+}
+if (!tasks) { tasks = panel.addWidget("org.kde.plasma.icontasks"); tag += "+icontasks"; }
+tasks.currentConfigGroup = ["General"];
+tasks.writeConfig("launchers", "${LAUNCHERS}");
+tasks.writeConfig("showOnlyCurrentDesktop", false);
+tasks.writeConfig("showOnlyCurrentScreen", false);
+print("layout ok: " + tag);
 JS
 
 out="$(qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "${SCRIPT}" 2>&1)"
+log "${out}"
 case "${out}" in
   *"layout ok"*) mkdir -p "$(dirname "${MARK}")"; : > "${MARK}" ;;
-  *) echo "pocknix-desktop-layout: ${out}" >&2; exit 1 ;;
+  *) exit 1 ;;
 esac
