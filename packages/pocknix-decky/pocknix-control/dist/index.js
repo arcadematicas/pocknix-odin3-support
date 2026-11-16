@@ -794,6 +794,71 @@ function System({ config, setConfig }) {
                                 : "Steam se cerrará y la consola abrirá el escritorio elegido." }) }), fallo ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "No se pudo cambiar", description: fallo }) })) : null] }), error ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "Error", description: error }) })) : null, SP_JSX.jsxs(DFL.PanelSection, { title: "INFORME", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que quieres mandar:" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("bug"), children: (kind === "bug" ? "● " : "○ ") + "Reportar un problema" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: () => setKind("idea"), children: (kind === "idea" ? "● " : "○ ") + "Sugerir una mejora" }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { description: "Que incluyo:" }) }), AREAS.map(([id, label, desc]) => (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ToggleField, { label: label, description: desc, checked: !!areas[id], onChange: (v) => setAreas({ ...areas, [id]: v }) }) }, id))), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.TextField, { label: "Descripcion (opcional)", value: texto, onChange: (e) => setTexto(e.target.value) }) }), SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: guardarInforme, disabled: guardando || !Object.values(areas).some(Boolean), children: guardando ? "Recogiendo..." : "Guardar informe (sin enviar)" }) }), guardado ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: guardado.ok ? "Informe guardado" : "No se pudo recoger", description: guardado.ok ? (guardado.path || "") : [guardado.error, guardado.detail].filter(Boolean).join(" — ") }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Button, { onClick: enviarInforme, disabled: enviando || !Object.values(areas).some(Boolean), children: enviando ? "Enviando..." : "Enviar informe" }) }), informe ? (SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: informe.ok ? "Informe enviado" : "No se pudo enviar", description: informe.ok ? (informe.issue || "") : [informe.error, informe.detail].filter(Boolean).join(" — ") }) })) : null, SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.Field, { label: "", description: "Se envia a nuestro GitHub (arcadematicas/calvOS-reports). El informe se redacta antes de salir: sin rutas de usuario, hostname, IP, MAC ni claves." }) })] })] }));
 }
 
+// Replaces the stock "Add a Non-Steam Game" flow: Steam's file browser cannot open a new
+// window under the Plasma Mobile X11 session, so Decky's in-UI picker feeds this instead.
+const WINDOWS_EXE = /\.(exe|bat|msi)$/i;
+// Constant internal name from proton-cachyos' compatibilitytool.vdf; survives version bumps.
+const PROTON_TOOL = "proton-cachyos";
+function isWindowsExe(path) {
+    return WINDOWS_EXE.test(path);
+}
+function defaultShortcutName(path) {
+    const base = path.split("/").pop() || path;
+    const cleaned = base.replace(/\.[^.]+$/, "").replace(/_+/g, " ").trim();
+    return cleaned || base;
+}
+const quote = (value) => `"${value.replace(/"/g, '\\"')}"`;
+async function addShortcut(name, path, useProton) {
+    const apps = window.SteamClient?.Apps;
+    if (!apps?.AddShortcut)
+        throw new Error("Steam shortcut API unavailable");
+    const dir = path.slice(0, path.lastIndexOf("/") + 1) || "/";
+    const appId = await apps.AddShortcut(name, path, "", "");
+    if (typeof appId !== "number" || !appId)
+        throw new Error("Steam refused to create the shortcut");
+    apps.SetShortcutName?.(appId, name);
+    apps.SetShortcutExe?.(appId, quote(path));
+    apps.SetShortcutStartDir?.(appId, quote(dir));
+    if (useProton)
+        apps.SpecifyCompatTool?.(appId, PROTON_TOOL);
+    return appId;
+}
+
+function AddGameModal({ path, closeModal }) {
+    const [name, setName] = SP_REACT.useState(defaultShortcutName(path));
+    const [proton, setProton] = SP_REACT.useState(isWindowsExe(path));
+    const [busy, setBusy] = SP_REACT.useState(false);
+    const submit = async () => {
+        if (busy || !name.trim())
+            return;
+        setBusy(true);
+        try {
+            await addShortcut(name.trim(), path, proton);
+            toaster.toast({ title: "Añadido a la biblioteca", body: name.trim() });
+            closeModal?.();
+        }
+        catch (error) {
+            toaster.toast({ title: "No se pudo añadir el juego", body: String(error) });
+            setBusy(false);
+        }
+    };
+    return (SP_JSX.jsxs(DFL.ConfirmModal, { strTitle: "Añadir juego externo", strDescription: path, strOKButtonText: busy ? "Añadiendo…" : "Añadir a la biblioteca", bOKDisabled: busy || !name.trim(), onCancel: () => closeModal?.(), onOK: submit, children: [SP_JSX.jsx(DFL.TextField, { label: "Nombre", value: name, disabled: busy, onChange: (event) => setName(event.target.value) }), SP_JSX.jsx(DFL.ToggleField, { label: "Lanzar con Proton", description: "Necesario para juegos de Windows (.exe)", checked: proton, disabled: busy, onChange: setProton })] }));
+}
+function AddGameSection() {
+    const pick = async () => {
+        try {
+            // 0 = FileSelectionType.FILE (const enum in @decky/api typings, no runtime export).
+            const result = await openFilePicker(0, "/home/deck", true, true);
+            if (result?.path)
+                DFL.showModal(SP_JSX.jsx(AddGameModal, { path: result.path }));
+        }
+        catch (error) {
+            // Picker closed without a selection.
+        }
+    };
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "BIBLIOTECA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: pick, children: "Añadir juego externo a Steam" }) }), SP_JSX.jsx("div", { className: "pocknix-note", children: "Elige un ejecutable para añadirlo a tu biblioteca de Steam." })] }));
+}
+
 function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
@@ -881,7 +946,7 @@ function Games({ config, setConfig }) {
     };
     return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "JUEGO", children: [SP_JSX.jsx(SelectEdit, { label: "Game", value: appid, options: editTargetOptions(config), onChange: setSelectedGame }), appid ? (SP_JSX.jsx(DFL.ToggleField, { label: "Usar ajustes por juego", checked: perGameEnabled, onChange: setPerGameEnabled })) : null] }), !appid ? (SP_JSX.jsx(DFL.PanelSection, { title: "MESA (VULKAN)", children: SP_JSX.jsx("div", { className: "pocknix-note", children: "Elige un juego para asignarle una versi\u00F3n de Mesa." }) })) : perGameEnabled ? (SP_JSX.jsxs(DFL.PanelSection, { title: "MESA (VULKAN)", children: [SP_JSX.jsx(SelectEdit, { label: "Mesa Version", value: mesa, options: mesaOptions, onChange: patchMesa }), SP_JSX.jsx("div", { className: "pocknix-note", children: known && !native
                             ? "Este juego usa Proton: su Mesa se elige en el wrapper de Proton."
-                            : "Se aplica al arrancar el juego (AppImage, .sh o binario)." })] })) : (SP_JSX.jsx(DFL.PanelSection, { title: "MESA (VULKAN)", children: SP_JSX.jsx("div", { className: "pocknix-note", children: "Activa \"Usar ajustes por juego\" para elegir la versi\u00F3n de Mesa." }) }))] }));
+                            : "Se aplica al arrancar el juego (AppImage, .sh o binario)." })] })) : (SP_JSX.jsx(DFL.PanelSection, { title: "MESA (VULKAN)", children: SP_JSX.jsx("div", { className: "pocknix-note", children: "Activa \"Usar ajustes por juego\" para elegir la versi\u00F3n de Mesa." }) })), SP_JSX.jsx(AddGameSection, {})] }));
 }
 
 const SHOWN_UPDATES = 8;

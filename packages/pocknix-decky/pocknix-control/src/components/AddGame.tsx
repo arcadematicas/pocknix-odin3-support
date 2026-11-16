@@ -12,26 +12,26 @@ function AddGameModal({ path, closeModal }: { path: string; closeModal?: () => v
     setBusy(true);
     try {
       await addShortcut(name.trim(), path, proton);
-      toaster.toast({ title: "Added to library", body: name.trim() });
+      toaster.toast({ title: "Añadido a la biblioteca", body: name.trim() });
       closeModal?.();
     } catch (error) {
-      toaster.toast({ title: "Could not add game", body: String(error) });
+      toaster.toast({ title: "No se pudo añadir el juego", body: String(error) });
       setBusy(false);
     }
   };
   return (
     <ConfirmModal
-      strTitle="Add Non-Steam Game"
+      strTitle={"Añadir juego externo"}
       strDescription={path}
-      strOKButtonText={busy ? "Adding…" : "Add to Library"}
+      strOKButtonText={busy ? "Añadiendo…" : "Añadir a la biblioteca"}
       bOKDisabled={busy || !name.trim()}
       onCancel={() => closeModal?.()}
       onOK={submit}
     >
-      <TextField label="Name" value={name} disabled={busy} onChange={(event) => setName(event.target.value)} />
+      <TextField label="Nombre" value={name} disabled={busy} onChange={(event) => setName(event.target.value)} />
       <ToggleField
-        label="Launch with Proton"
-        description="Needed for Windows games (.exe)"
+        label="Lanzar con Proton"
+        description="Necesario para juegos de Windows (.exe)"
         checked={proton}
         disabled={busy}
         onChange={setProton}
@@ -51,11 +51,12 @@ export function AddGameSection() {
     }
   };
   return (
-    <PanelSection title="LIBRARY">
+    <PanelSection title="BIBLIOTECA">
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={pick}>Add Non-Steam Game</ButtonItem>
+        {/* Expression containers keep the accents literal in the built dist (TS escapes JSX text). */}
+        <ButtonItem layout="below" onClick={pick}>{"Añadir juego externo a Steam"}</ButtonItem>
       </PanelSectionRow>
-      <div className="pocknix-note">Pick an executable to add it to your Steam library</div>
+      <div className="pocknix-note">{"Elige un ejecutable para añadirlo a tu biblioteca de Steam."}</div>
     </PanelSection>
   );
 }

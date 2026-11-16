@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useState } from "react";
 import { availableCompatTools, registerForCompatTool } from "../lib/compat";
 import { syncGameWrapperLaunchOption } from "../lib/launchOptions";
+import { AddGameSection } from "../components/AddGame";
 import { SelectEdit } from "../components/widgets";
 import { availableGames, editTargetOptions } from "../lib/games";
 import { clone } from "../lib/util";
@@ -118,6 +119,8 @@ export function Games({ config, setConfig }: {
           <div className="pocknix-note">Activa "Usar ajustes por juego" para elegir la versión de Mesa.</div>
         </PanelSection>
       )}
+
+      <AddGameSection />
     </>
   );
 }
