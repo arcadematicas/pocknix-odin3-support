@@ -7,6 +7,7 @@ import { SelectEdit } from "../components/widgets";
 import { availableGames, editTargetOptions } from "../lib/games";
 import { clone } from "../lib/util";
 import type { Config } from "../types";
+import { AddGameSection } from "../components/AddGame";
 
 // Pestana Juegos: solo la seleccion de Mesa por juego. El scheduler vive en Sistema y el
 // resto de ajustes (FEX, audio, env) se retiraron de la UI el 11/11/2026: no se usaban y
@@ -118,6 +119,7 @@ export function Games({ config, setConfig }: {
           <div className="pocknix-note">Activa "Usar ajustes por juego" para elegir la versión de Mesa.</div>
         </PanelSection>
       )}
+      <AddGameSection />
     </>
   );
 }

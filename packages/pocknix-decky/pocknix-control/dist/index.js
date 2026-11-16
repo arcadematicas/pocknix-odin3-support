@@ -798,6 +798,71 @@ function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
+// Replaces the stock "Add a Non-Steam Game" flow: Steam's file browser cannot open a new
+// window under the Plasma Mobile X11 session, so Decky's in-UI picker feeds this instead.
+const WINDOWS_EXE = /\.(exe|bat|msi)$/i;
+// Constant internal name from proton-cachyos' compatibilitytool.vdf; survives version bumps.
+const PROTON_TOOL = "proton-cachyos";
+function isWindowsExe(path) {
+    return WINDOWS_EXE.test(path);
+}
+function defaultShortcutName(path) {
+    const base = path.split("/").pop() || path;
+    const cleaned = base.replace(/\.[^.]+$/, "").replace(/_+/g, " ").trim();
+    return cleaned || base;
+}
+const quote = (value) => `"${value.replace(/"/g, '\\"')}"`;
+async function addShortcut(name, path, useProton) {
+    const apps = window.SteamClient?.Apps;
+    if (!apps?.AddShortcut)
+        throw new Error("Steam shortcut API unavailable");
+    const dir = path.slice(0, path.lastIndexOf("/") + 1) || "/";
+    const appId = await apps.AddShortcut(name, path, "", "");
+    if (typeof appId !== "number" || !appId)
+        throw new Error("Steam refused to create the shortcut");
+    apps.SetShortcutName?.(appId, name);
+    apps.SetShortcutExe?.(appId, quote(path));
+    apps.SetShortcutStartDir?.(appId, quote(dir));
+    if (useProton)
+        apps.SpecifyCompatTool?.(appId, PROTON_TOOL);
+    return appId;
+}
+
+function AddGameModal({ path, closeModal }) {
+    const [name, setName] = SP_REACT.useState(defaultShortcutName(path));
+    const [proton, setProton] = SP_REACT.useState(isWindowsExe(path));
+    const [busy, setBusy] = SP_REACT.useState(false);
+    const submit = async () => {
+        if (busy || !name.trim())
+            return;
+        setBusy(true);
+        try {
+            await addShortcut(name.trim(), path, proton);
+            toaster.toast({ title: "Añadido a la biblioteca", body: name.trim() });
+            closeModal?.();
+        }
+        catch (error) {
+            toaster.toast({ title: "No se pudo añadir el juego", body: String(error) });
+            setBusy(false);
+        }
+    };
+    return (SP_JSX.jsxs(DFL.ConfirmModal, { strTitle: "A\u00F1adir juego externo", strDescription: path, strOKButtonText: busy ? "Añadiendo…" : "Añadir a la biblioteca", bOKDisabled: busy || !name.trim(), onCancel: () => closeModal?.(), onOK: submit, children: [SP_JSX.jsx(DFL.TextField, { label: "Nombre", value: name, disabled: busy, onChange: (event) => setName(event.target.value) }), SP_JSX.jsx(DFL.ToggleField, { label: "Lanzar con Proton", description: "Necesario para juegos de Windows (.exe)", checked: proton, disabled: busy, onChange: setProton })] }));
+}
+function AddGameSection() {
+    const pick = async () => {
+        try {
+            // 0 = FileSelectionType.FILE (const enum in @decky/api typings, no runtime export).
+            const result = await openFilePicker(0, "/home/deck", true, true);
+            if (result?.path)
+                DFL.showModal(SP_JSX.jsx(AddGameModal, { path: result.path }));
+        }
+        catch (error) {
+            // Picker closed without a selection.
+        }
+    };
+    return (SP_JSX.jsxs(DFL.PanelSection, { title: "BIBLIOTECA", children: [SP_JSX.jsx(DFL.PanelSectionRow, { children: SP_JSX.jsx(DFL.ButtonItem, { layout: "below", onClick: pick, children: "A\u00F1adir juego externo a Steam" }) }), SP_JSX.jsx("div", { className: "pocknix-note", children: "Elige un ejecutable para a\u00F1adirlo a tu biblioteca de Steam." })] }));
+}
+
 // Pestana Juegos: solo la seleccion de Mesa por juego. El scheduler vive en Sistema y el
 // resto de ajustes (FEX, audio, env) se retiraron de la UI el 11/11/2026: no se usaban y
 // hacian que este plugin pareciese un segundo panel de control.
@@ -881,7 +946,7 @@ function Games({ config, setConfig }) {
     };
     return (SP_JSX.jsxs(SP_JSX.Fragment, { children: [SP_JSX.jsxs(DFL.PanelSection, { title: "JUEGO", children: [SP_JSX.jsx(SelectEdit, { label: "Game", value: appid, options: editTargetOptions(config), onChange: setSelectedGame }), appid ? (SP_JSX.jsx(DFL.ToggleField, { label: "Usar ajustes por juego", checked: perGameEnabled, onChange: setPerGameEnabled })) : null] }), !appid ? (SP_JSX.jsx(DFL.PanelSection, { title: "MESA (VULKAN)", children: SP_JSX.jsx("div", { className: "pocknix-note", children: "Elige un juego para asignarle una versi\u00F3n de Mesa." }) })) : perGameEnabled ? (SP_JSX.jsxs(DFL.PanelSection, { title: "MESA (VULKAN)", children: [SP_JSX.jsx(SelectEdit, { label: "Mesa Version", value: mesa, options: mesaOptions, onChange: patchMesa }), SP_JSX.jsx("div", { className: "pocknix-note", children: known && !native
                             ? "Este juego usa Proton: su Mesa se elige en el wrapper de Proton."
-                            : "Se aplica al arrancar el juego (AppImage, .sh o binario)." })] })) : (SP_JSX.jsx(DFL.PanelSection, { title: "MESA (VULKAN)", children: SP_JSX.jsx("div", { className: "pocknix-note", children: "Activa \"Usar ajustes por juego\" para elegir la versi\u00F3n de Mesa." }) }))] }));
+                            : "Se aplica al arrancar el juego (AppImage, .sh o binario)." })] })) : (SP_JSX.jsx(DFL.PanelSection, { title: "MESA (VULKAN)", children: SP_JSX.jsx("div", { className: "pocknix-note", children: "Activa \"Usar ajustes por juego\" para elegir la versi\u00F3n de Mesa." }) })), SP_JSX.jsx(AddGameSection, {})] }));
 }
 
 const SHOWN_UPDATES = 8;
