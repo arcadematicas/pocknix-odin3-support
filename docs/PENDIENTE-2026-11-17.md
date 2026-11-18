@@ -114,3 +114,14 @@ WiFi (`ath12k ... mhi POWER_ON`, -110). Probar en SD antes que en la interna.
   PKGBUILD que copian binarios (libretro-cores-pocknix, libretro-azahar, libretro-bsnes-hd,
   libretro-hakux, deckstation-arm, dolphin-emu, cemu, es-de, inputplumber, gtk2…) **antes** de
   publicarlos, o el dispositivo recibirá ficheros con dueño incorrecto por `-Syu`.
+- **Dos huecos de imagen detectados el 19/11 (Odin actualizada a la base 20261118):**
+  1. Falta el symlink **`/usr/sbin -> bin`** (imagen merged-usr incompleta). Rompe cualquier
+     paquete cuyo unit use `/usr/sbin/...`: pasó con **tailscale** (`ExecStart=/usr/sbin/tailscaled`,
+     status 203/EXEC). Workaround aplicado en la Odin: `ln -sfn bin /usr/sbin`. Arreglar en la
+     imagen (lo normal es que lo traiga `filesystem`).
+  2. **tailscale no viene instalado** en la imagen; se instaló a mano (`1.104.7`) para poder
+     acceder a la consola fuera de casa. Decidir si entra en la lista de paquetes.
+  Nota: el `pocknix-base.db` publicado **no incluye `glibc`** (el gate de publicación se quedó sin
+  universo base); para publicar se usó el db de `base-prev` como caché. Revisar el snapshot.
+- **`pocknix-base-lock 20261118-1` publicado** (shared, firmado) e instalado en la Odin: cierra el
+  cabo suelto de la tanda 0.
