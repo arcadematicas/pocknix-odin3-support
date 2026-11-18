@@ -89,3 +89,11 @@ WiFi (`ath12k ... mhi POWER_ON`, -110). Probar en SD antes que en la interna.
 4. `check-published` limpio antes de dar una tanda por cerrada.
 5. Probar en **SD** antes que en la interna.
 6. Anotar cada cierre en `CHANGELOG.md`.
+
+## Notas de la tanda 0 (18/11)
+- **`libssc` 0.4.4-2 falla al recompilar** en el chroot nuevo: meson aborta con
+  `Dependency 'gobject-introspection-1.0' tool variable 'g_ir_scanner' contains erroneous
+  value: '/usr/bin/g-ir-scanner'` (gobject-introspection 1.86.0). No es fatal: el script
+  conserva la compilación anterior de `shared`. Revisar `makedepends` o esperar corrección
+  en ALARM antes de dar por buena una versión nueva de libssc.
+- `make build` rc=0 (17/11 21:00) y `make packages` rc=0 (18/11 05:28).
