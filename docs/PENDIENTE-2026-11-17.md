@@ -97,3 +97,10 @@ WiFi (`ath12k ... mhi POWER_ON`, -110). Probar en SD antes que en la interna.
   conserva la compilación anterior de `shared`. Revisar `makedepends` o esperar corrección
   en ALARM antes de dar por buena una versión nueva de libssc.
 - `make build` rc=0 (17/11 21:00) y `make packages` rc=0 (18/11 05:28).
+- **Lección de la tanda 0 (18/11, tarde):** `make snapshot` abortó con checksum de
+  `inputplumber`. Causa: tres builds distintos con el MISMO `0.84.0-1` (2.687.592 B del 5/11 en la
+  caché del chroot, 2.800.256 B del 16/11 en la caché del rootfs, 2.802.596 B del 17/11 en
+  `localrepo`). El rootfs se quedó con el viejo porque la versión no cambió, así que pacman no
+  reinstala → la imagen habría llevado binarios viejos sin que ningún `-Syu` los arreglara.
+  **Regla nueva: si se recompila un paquete y cambian los bytes, hay que subir `pkgrel`.** Se subió
+  `inputplumber` a `0.84.0-2` y se relanzó build + snapshot.
