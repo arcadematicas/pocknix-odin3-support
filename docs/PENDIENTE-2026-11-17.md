@@ -104,3 +104,13 @@ WiFi (`ath12k ... mhi POWER_ON`, -110). Probar en SD antes que en la interna.
   reinstala → la imagen habría llevado binarios viejos sin que ningún `-Syu` los arreglara.
   **Regla nueva: si se recompila un paquete y cambian los bytes, hay que subir `pkgrel`.** Se subió
   `inputplumber` a `0.84.0-2` y se relanzó build + snapshot.
+- **Deuda de empaquetado detectada con la imagen (18/11, noche):** `make sd-image` abortó con
+  `host-owned (uid/gid 1000) path leaked into the image: /usr/lib/libretro/2048_libretro.so`.
+  Causa: `libretro-cores-pocknix` (y otros que instalan binarios vendorizados con `cp -a`) dejan
+  ficheros con dueño `alarm:alarm` en el paquete, y al instalarse en el rootfs quedan `1000:1000`.
+  En el rootfs solo afectaba a **32 ficheros, todos en `/usr/lib/libretro`**; se corrigieron con
+  `chown -R root:root` y la imagen siguió.
+  **Pendiente de verdad:** añadir `chown -R root:root "$pkgdir"` al final de `package()` en los
+  PKGBUILD que copian binarios (libretro-cores-pocknix, libretro-azahar, libretro-bsnes-hd,
+  libretro-hakux, deckstation-arm, dolphin-emu, cemu, es-de, inputplumber, gtk2…) **antes** de
+  publicarlos, o el dispositivo recibirá ficheros con dueño incorrecto por `-Syu`.
