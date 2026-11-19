@@ -1,0 +1,256 @@
+#!/usr/bin/env python3
+"""pocknix-power-profiles — puente entre power-profiles-daemon y los perfiles pocknix.
+
+El escritorio (applet "Battery and Brightness" de Plasma, powerprofilesctl) habla el
+API org.freedesktop.UPower.PowerProfiles, mientras que Pocknix (Game Mode / QAM,
+Panel de Control) usa el helper propio con tres niveles:
+
+    PPD (D-Bus)        pocknix (fichero + helper)
+    power-saver   <->  bajo
+    balanced      <->  medio
+    performance   <->  alto
+
+Este servicio mantiene ambos lados sincronizados en las DOS direcciones:
+
+  * si cambia ActiveProfile en el daemon (selector del escritorio) -> llama a
+    /usr/local/bin/pocknix-power-profile <bajo|medio|alto>;
+  * si cambia /var/lib/pocknix/power-profile (lo escribe el Game Mode o el Panel)
+    -> powerprofilesctl set <power-saver|balanced|performance>.
+
+El helper ya persiste el fichero, asi que NO se duplica esa escritura: se deja que
+sea el helper quien lo escriba. La convergencia es idempotente (guarda anti-bucle):
+un eco del propio cambio no encuentra nada que hacer y el bucle se corta solo.
+
+No toca el ventilador (eso es del Panel de Control / Hooandee) ni pocknix-fan-mode.
+"""
+
+import signal
+import subprocess
+import sys
+
+import gi
+
+gi.require_version("Gio", "2.0")
+from gi.repository import Gio, GLib  # noqa: E402
+
+BUS_NAME = "org.freedesktop.UPower.PowerProfiles"
+OBJ_PATH = "/org/freedesktop/UPower/PowerProfiles"
+IFACE = "org.freedesktop.UPower.PowerProfiles"
+
+PROFILE_FILE = "/var/lib/pocknix/power-profile"
+HELPER = "/usr/local/bin/pocknix-power-profile"
+PPDCTL = "/usr/bin/powerprofilesctl"
+
+PPD_TO_POCKNIX = {
+    "power-saver": "bajo",
+    "balanced": "medio",
+    "performance": "alto",
+}
+POCKNIX_TO_PPD = {v: k for k, v in PPD_TO_POCKNIX.items()}
+
+POLL_MS = 1000          # cadencia de lectura del fichero (inotify no es fiable aqui)
+HELPER_TIMEOUT = 40     # el helper reintenta; un set normal tarda <2 s
+CMD_TIMEOUT = 30
+
+PREFIX = "pocknix-power-profiles:"
+
+
+def log(msg):
+    print(f"{PREFIX} {msg}", file=sys.stderr, flush=True)
+
+
+def read_saved_profile():
+    """Perfil pocknix guardado, o None si no existe / no es valido."""
+    try:
+        with open(PROFILE_FILE, "r", encoding="utf-8") as fh:
+            value = fh.read().strip()
+    except OSError as exc:
+        if getattr(read_saved_profile, "_warned", False) is False:
+            log(f"no se pudo leer {PROFILE_FILE}: {exc}")
+            read_saved_profile._warned = True
+        return None
+    if value not in POCKNIX_TO_PPD:
+        if value:
+            log(f"perfil ignorado en {PROFILE_FILE}: {value!r}")
+        return None
+    return value
+
+
+class Bridge:
+    def __init__(self):
+        self.bus = None
+        self.proxy = None
+        self.ppd_profile = None
+        self.last_file = None
+
+    # -- PPD (bus de sistema) ------------------------------------------------
+    def connect_ppd(self):
+        try:
+            self.bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+            self.proxy = Gio.DBusProxy.new_sync(
+                self.bus,
+                Gio.DBusProxyFlags.NONE,
+                None,
+                BUS_NAME,
+                OBJ_PATH,
+                IFACE,
+                None,
+            )
+        except GLib.Error as exc:
+            log(f"el daemon PPD no responde todavia ({exc.message}); reintento en 2 s")
+            GLib.timeout_add_seconds(2, self.connect_ppd)
+            return False
+
+        self.proxy.connect("g-properties-changed", self.on_ppd_properties)
+        self.ppd_profile = self.get_ppd_profile()
+        log(f"conectado a {BUS_NAME} (ActiveProfile={self.ppd_profile})")
+        self.initial_sync()
+        return False  # no repetir el timer
+
+    def get_ppd_profile(self, live=False):
+        """ActiveProfile. live=True evita el cache del proxy (justo tras un set)."""
+        try:
+            if live:
+                res = self.proxy.call_sync(
+                    "org.freedesktop.DBus.Properties.Get",
+                    GLib.Variant("(ss)", (IFACE, "ActiveProfile")),
+                    Gio.DBusCallFlags.NONE,
+                    3000,
+                    None,
+                )
+                return res.unpack()[0]
+            value = self.proxy.get_cached_property("ActiveProfile")
+        except GLib.Error as exc:
+            log(f"no se pudo leer ActiveProfile: {exc.message}")
+            return None
+        return value.get_string() if value is not None else None
+
+    def set_ppd_profile(self, ppd_profile):
+        """powerprofilesctl set <perfil> (la misma ruta que usa el escritorio)."""
+        log(f"fichero -> daemon: powerprofilesctl set {ppd_profile}")
+        try:
+            proc = subprocess.run(
+                [PPDCTL, "set", ppd_profile],
+                capture_output=True,
+                text=True,
+                timeout=CMD_TIMEOUT,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            log(f"fallo ejecutando {PPDCTL}: {exc}")
+            return False
+        if proc.returncode != 0:
+            detail = (proc.stderr or proc.stdout or "").strip()
+            log(f"{PPDCTL} set {ppd_profile} fallo (rc={proc.returncode}): {detail}")
+            return False
+        self.ppd_profile = self.get_ppd_profile(live=True)
+        log(f"daemon ahora en {self.ppd_profile}")
+        return True
+
+    # -- Helper pocknix ------------------------------------------------------
+    def apply_pocknix_profile(self, pocknix_profile):
+        """Aplica un perfil pocknix; el helper es quien escribe el fichero."""
+        log(f"daemon -> helper: pocknix-power-profile {pocknix_profile}")
+        try:
+            proc = subprocess.run(
+                [HELPER, pocknix_profile],
+                capture_output=True,
+                text=True,
+                timeout=HELPER_TIMEOUT,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            log(f"fallo ejecutando {HELPER}: {exc}")
+            return False
+        out = (proc.stdout or "").strip()
+        err = (proc.stderr or "").strip()
+        if out:
+            log(f"helper: {out}")
+        if proc.returncode != 0:
+            log(f"helper {pocknix_profile} devolvio rc={proc.returncode}: {err}")
+        # El helper persiste el fichero: damos el valor por leido para no
+        # re-accionar sobre nuestro propio eco.
+        saved = read_saved_profile()
+        if saved is not None:
+            self.last_file = saved
+        return proc.returncode == 0
+
+    # -- Sincronizacion ------------------------------------------------------
+    def on_ppd_properties(self, _proxy, changed, _invalidated):
+        changed_map = changed.unpack() if changed is not None else {}
+        if "ActiveProfile" not in changed_map:
+            return
+        self.ppd_profile = changed_map["ActiveProfile"]
+        log(f"ActiveProfile cambio a {self.ppd_profile}")
+        self.sync_from_ppd()
+
+    def sync_from_ppd(self):
+        """daemon -> fichero/helper."""
+        ppd_profile = self.get_ppd_profile(live=True)
+        if ppd_profile not in PPD_TO_POCKNIX:
+            log(f"perfil PPD desconocido ({ppd_profile!r}); no se toca nada")
+            return
+        wanted = PPD_TO_POCKNIX[ppd_profile]
+        if read_saved_profile() == wanted:
+            log(f"ya sincronizado: {ppd_profile} <-> {wanted}")
+            return
+        self.apply_pocknix_profile(wanted)
+
+    def sync_from_file(self):
+        """fichero -> daemon. Se llama periodicamente; solo actua al cambiar."""
+        saved = read_saved_profile()
+        if saved == self.last_file:
+            return
+        previous = self.last_file
+        self.last_file = saved
+        if saved is None:
+            return
+        if isinstance(previous, str) and previous != saved:
+            log(f"{PROFILE_FILE} cambio: {previous} -> {saved}")
+        else:
+            log(f"{PROFILE_FILE}: {saved}")
+        if self.ppd_profile == POCKNIX_TO_PPD[saved]:
+            return
+        self.set_ppd_profile(POCKNIX_TO_PPD[saved])
+
+    def tick(self):
+        try:
+            self.sync_from_file()
+        except Exception as exc:  # noqa: BLE001 - el bucle nunca debe morir
+            log(f"error en el bucle: {exc}")
+        return True
+
+    # -- Arranque ------------------------------------------------------------
+    def initial_sync(self):
+        saved = read_saved_profile()
+        if saved is None:
+            # Sin fichero: manda el daemon; lo adoptamos y lo persistimos.
+            if self.ppd_profile in PPD_TO_POCKNIX:
+                saved = PPD_TO_POCKNIX[self.ppd_profile]
+                log(f"sin perfil guardado; adoptando el del daemon ({saved})")
+                self.apply_pocknix_profile(saved)
+        else:
+            log(f"arranque: perfil guardado {saved}")
+            if self.ppd_profile != POCKNIX_TO_PPD[saved]:
+                self.set_ppd_profile(POCKNIX_TO_PPD[saved])
+            # Re-aplicar es idempotente y cubre reinicios del servicio o del
+            # daemon posteriores al boot (pocknix-power-profile.service ya lo
+            # aplico al arrancar; esto solo reafirma los mismos topes).
+            self.apply_pocknix_profile(saved)
+        self.last_file = read_saved_profile()
+        log("vigilando ActiveProfile (system bus) y " + PROFILE_FILE)
+
+
+def main():
+    signal.signal(signal.SIGTERM, lambda *_: loop.quit())
+    signal.signal(signal.SIGINT, lambda *_: loop.quit())
+    bridge = Bridge()
+    bridge.connect_ppd()
+    GLib.timeout_add(POLL_MS, bridge.tick)
+    loop.run()
+
+
+loop = GLib.MainLoop()
+
+if __name__ == "__main__":
+    main()

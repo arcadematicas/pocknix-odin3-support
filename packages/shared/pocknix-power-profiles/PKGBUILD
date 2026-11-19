@@ -1,0 +1,64 @@
+# pocknix-power-profiles — puente entre power-profiles-daemon (selector "Power Profile" del
+# escritorio Plasma) y los perfiles pocknix (bajo|medio|alto) que ya usan el Game Mode/QAM
+# (pocknix-steamos-manager) y el Panel de Control.
+#
+# Por que existe: en el escritorio no habia forma de cambiar bajo/medio/alto. Plasma lo hace
+# por el API org.freedesktop.UPower.PowerProfiles, pero ppd no conoce el helper de Pocknix.
+# Este paquete trae el puente (fichero <-> daemon, en las dos direcciones) y la config para
+# que ppd anuncie los tres perfiles.
+#
+# Contexto del Odin 3 (SM8750, mainline): no hay /sys/firmware/acpi/platform_profile, asi que
+# ppd caeria en su driver "placeholder" y solo ofreceria power-saver + balanced (Plasma
+# dibujaria dos opciones). Por eso se carga el backend "fake" de ppd con una lista explicita
+# de tres perfiles (pocknix-profiles.ini + drop-in). ppd NO toca el hardware con ese backend:
+# los topes reales de CPU/GPU los sigue aplicando /usr/local/bin/pocknix-power-profile.
+#
+# NO se toca el ventilador (lo manda el Panel de Control / Hooandee) ni pocknix-fan-mode.
+#
+# Nota sobre el applet: "Battery and Brightness" (org.kde.plasma.battery) con su selector
+# "Power Profile" ya viene en plasma (plugin C++ de powerdevil, /usr/lib/qt6/plugins/plasma/
+# applets/org.kde.plasma.battery.so) y ya esta en la bandeja del panel. No existe un paquete
+# plasma-battery en ALARM, no hay nada que instalar aparte: el selector aparece en cuanto
+# power-profiles-daemon esta disponible.
+pkgname=pocknix-power-profiles
+pkgver=0.1.0
+pkgrel=2
+pkgdesc="pocknix power profiles bridge: power-profiles-daemon (Plasma Power Profile) <-> bajo/medio/alto"
+arch=('any')
+url="https://github.com/arcadematicas/pocknix-odin3-support"
+license=('GPL2')
+depends=('python'                       # el puente es python3 + PyGObject (Gio/GLib)
+         'python-gobject'               # Gio.DBusProxy; tambien lo necesita powerprofilesctl
+         'power-profiles-daemon'        # el API D-Bus que consume el applet de Plasma
+         'pocknix-bsp')                 # aporta /usr/local/bin/pocknix-power-profile
+install=pocknix-power-profiles.install
+backup=('etc/power-profiles-daemon/pocknix-profiles.ini')
+source=('pocknix-power-profiles'
+        'pocknix-power-profiles.service'
+        'pocknix-profiles.ini'
+        '50-pocknix-profiles.conf')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+package() {
+  # Igual que el resto de herramientas propias (pocknix-bsp instala ahi el helper).
+  install -Dm755 "${srcdir}/pocknix-power-profiles" \
+    "${pkgdir}/usr/local/bin/pocknix-power-profiles"
+  install -Dm644 "${srcdir}/pocknix-power-profiles.service" \
+    "${pkgdir}/usr/lib/systemd/system/pocknix-power-profiles.service"
+
+  # ppd: lista de tres perfiles + drop-in que la activa. En /usr/lib (no /etc): es politica
+  # de distro, no un override de administrador.
+  install -Dm644 "${srcdir}/pocknix-profiles.ini" \
+    "${pkgdir}/etc/power-profiles-daemon/pocknix-profiles.ini"
+  install -Dm644 "${srcdir}/50-pocknix-profiles.conf" \
+    "${pkgdir}/usr/lib/systemd/system/power-profiles-daemon.service.d/50-pocknix-profiles.conf"
+
+  # Habilitado estaticamente (mismo patron que pocknix-bsp): el puente debe arrancar sin
+  # depender de que nadie haga `systemctl enable` a mano.
+  install -d "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants"
+  ln -s ../pocknix-power-profiles.service \
+    "${pkgdir}/usr/lib/systemd/system/multi-user.target.wants/pocknix-power-profiles.service"
+  install -d "${pkgdir}/usr/lib/systemd/system/graphical.target.wants"
+  ln -s ../power-profiles-daemon.service \
+    "${pkgdir}/usr/lib/systemd/system/graphical.target.wants/power-profiles-daemon.service"
+}

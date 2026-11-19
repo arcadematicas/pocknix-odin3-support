@@ -1,0 +1,20 @@
+# La unidad ya viene habilitada por symlink estatico (multi-user.target.wants), asi que aqui
+# solo hace falta que un -Syu con puente nuevo no espere al siguiente arranque. En el chroot
+# del build systemctl no tiene manager: los || true lo dejan pasar sin romper la transaccion.
+post_install() {
+  systemctl daemon-reload >/dev/null 2>&1 || true
+  systemctl try-restart power-profiles-daemon.service >/dev/null 2>&1 || true
+  systemctl start pocknix-power-profiles.service >/dev/null 2>&1 || true
+}
+
+post_upgrade() {
+  post_install
+}
+
+pre_remove() {
+  systemctl disable --now pocknix-power-profiles.service >/dev/null 2>&1 || true
+}
+
+post_remove() {
+  systemctl daemon-reload >/dev/null 2>&1 || true
+}

@@ -1,0 +1,15 @@
+[Unit]
+Description=pocknix power profiles bridge (power-profiles-daemon <-> bajo/medio/alto)
+Documentation=file:///usr/local/bin/pocknix-power-profiles
+After=power-profiles-daemon.service local-fs.target
+Wants=power-profiles-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/pocknix-power-profiles
+Restart=always
+RestartSec=2
+Nice=5
+
+[Install]
+WantedBy=graphical.target
