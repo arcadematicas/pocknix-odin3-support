@@ -146,3 +146,39 @@ WiFi (`ath12k ... mhi POWER_ON`, -110). Probar en SD antes que en la interna.
   `pocknix-base` (0.2.0-10 vs -8), `pocknix-bsp-sm8750` (-52 vs -51). Re-sincronizar árbol.
 - La Odin ve ya **7 actualizaciones** por repo (inputplumber, decky, desktop-kde,
   turnip-x86, suyu + 2 de base). Pendiente de aplicar/probar.
+
+## Tanda 2 — realidad (19/11/2026, mañana)
+
+Lo que el plan llamaba "bumps de pkgrel de upstream" **no existe como tal**: `lepton` y
+`origin/main` han divergido. Un merge de `origin/main` sobre `lepton` da **97 conflictos**,
+incluidos parches nuestros (decky/pocknix-control, branding, mesa, gamescope, fex, turnip).
+Por eso la actualización se hace **paquete a paquete por el centro** (`sync-to-os.sh`).
+
+### Bug de flujo encontrado y corregido
+
+`sync-to-os.sh` copia `config/pocknix.conf` del centro al árbol. El pin `POCKNIX_BASE_SNAPSHOT`
+estaba **solo en el árbol** (lo escribe `make snapshot`), así que el primer sync lo borró y el
+build pasó a hacerse contra **ALARM en vivo** en vez de contra la base congelada.
+- Corregido: pin `20261118` escrito en el **centro** (`config/pocknix.conf`) y sincronizado.
+- Pendiente de arreglar de raíz: `make snapshot` debería escribir el pin en el centro, no en el árbol.
+
+### Publicado
+
+- `pocknix-steam-full 0.1.0-5` — porta de upstream: `license` GPL-2.0-or-later, `pkgdesc` con
+  Lepton. Mantiene `pocknix-turnip-x86`, `pocknix-vk-valve`, `gamescope-session-steam`.
+  Divergencias documentadas en el PKGBUILD: **sin** `steamos-manager` (lo instala el BSP) y
+  **sin** `pocknix-lepton` (arrastra `android-tools`, que no está en nuestra base).
+- `pocknix-session 0.1.0-7`, `pocknix-homescreen 0.1.0-3`, `pocknix-sdcard-automount 0.1.0-8`,
+  `pocknix-gamepad-calibration 0.1.0-5` — alineados con upstream (sin delta propio; solo
+  comentarios y el arranque de `pocknix-game-session.target` antes de Steam).
+
+### Aparcados a propósito
+
+- `pocknix-snapshots` 6→10: exige `pocknix-bsp-common>=0.1.0-37` y nosotros vamos por **-28**
+  (con parches propios). Va con la tanda del BSP.
+- `pocknix-lock-migrate` 4→6: exige `pocknix-snapshots>=0.1.0-8`, o sea, depende del anterior.
+- `pocknix-steamos-shim` 9→10: **divergencia consciente**. Nuestra 9 trae el OOBE marker y los
+  stubs `steamos-mandatory-update`/`jupiter-initial-firmware-update` que upstream no tiene;
+  su 10 solo reañade `steamos-priv-write` + regla polkit. Revisar cuando se sepa qué arregla.
+- `pocknix-steam` 76→80 y `pocknix-tools` 25→26: cientos de líneas en la capa de Steam; sesión
+  dedicada con pruebas.
