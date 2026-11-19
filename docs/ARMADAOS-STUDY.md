@@ -308,7 +308,7 @@ problema de KScreen/Plasma.
 - `armada-installer`, `armada-abl-update` + `armada-abl-finalize` (ABLs firmados por SoC en
   `/usr/lib/armada/abl/`), `armada-bootimg-update`/`-finalize`, `armada-esp-rename`
   (renombra el ESP de `ROCKNIX` a `ARMADA`).
-- Pocknix tiene `pocknix-install-internal` y usa el ABL de ROCKNIX.
+- Pocknix tiene `pocknix-install-internal`. **Corregido (19/11/2026):** la Odin 3 **ya usa OpenABL** desde hace tiempo, no el ABL de ROCKNIX.
 
 ---
 

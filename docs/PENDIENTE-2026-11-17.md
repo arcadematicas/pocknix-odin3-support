@@ -182,3 +182,20 @@ build pasó a hacerse contra **ALARM en vivo** en vez de contra la base congelad
   su 10 solo reañade `steamos-priv-write` + regla polkit. Revisar cuando se sepa qué arregla.
 - `pocknix-steam` 76→80 y `pocknix-tools` 25→26: cientos de líneas en la capa de Steam; sesión
   dedicada con pruebas.
+
+## Corrección importante (19/11/2026): OpenABL
+
+La Odin 3 y el sistema **usan OpenABL desde hace tiempo**. Queda obsoleto cualquier análisis que
+diga "seguimos con el ABL de ROCKNIX / Fase 2 pendiente" y lo use como bloqueo del BSP.
+Consecuencia: el hook `00-pocknix-abl-gate.hook` de `bsp-common` (aborta si `needs_openabl!=0`)
+**no debería bloquear** nuestra cadena de actualización. El resto del riesgo del BSP sigue en pie
+(`pocknix-boot-deploy` reensambla `/flash/KERNEL` y `pocknix-repo-line` reescribe `pacman.conf`).
+
+### Estado de la tanda 2 (cierre)
+
+Publicado hoy: `pocknix-steam-full 0.1.0-5`, `pocknix-session 0.1.0-7`,
+`pocknix-homescreen 0.1.0-3`, `pocknix-sdcard-automount 0.1.0-8`,
+`pocknix-gamepad-calibration 0.1.0-5`, `pocknix-steam 0.1.0-77` (backports de wrapper).
+Reparado y pendiente de build: `pocknix-emulation 0.1.0-18` (7 ficheros restaurados).
+Bloqueos reales detectados: `pocknix-tools` 25→28 exige `pocknix-ui`, que **no está publicado**;
+`bsp-common` 28→41 es reescritura de arranque (reasignar parches propios, no copiar).

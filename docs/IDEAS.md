@@ -82,7 +82,7 @@ repos de la org con ideas:
 |---|---|---|
 | **rocknix-joypad** | Mapeo de gamepads específico de ROCKNIX. | 🟡 Comparar con nuestro InputPlumber |
 | **ImageBurner** | Herramienta para grabar imágenes en SD/USB. | 🟢 Útil para que los compañeros flasheen la imagen |
-| **abl** | Bootloader ABL customizado. | 🟡 Ya usamos el ABL de ROCKNIX en la imagen |
+| **abl** | Bootloader ABL customizado. | ✅ **OpenABL** en uso desde hace tiempo (actualizado 19/11/2026) |
 | **distribution-nightly** | Builds nocturnos. | 🟡 Referencia de CI/CD |
 
 ---
