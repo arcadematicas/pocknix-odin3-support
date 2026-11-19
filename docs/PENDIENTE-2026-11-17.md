@@ -125,3 +125,24 @@ WiFi (`ath12k ... mhi POWER_ON`, -110). Probar en SD antes que en la interna.
   universo base); para publicar se usó el db de `base-prev` como caché. Revisar el snapshot.
 - **`pocknix-base-lock 20261118-1` publicado** (shared, firmado) e instalado en la Odin: cierra el
   cabo suelto de la tanda 0.
+## Tanda 1 — estado 19/11
+- ✅ **Publicados en `shared`**: `inputplumber 0.84.0-2`, `pocknix-decky 0.1.0-73`,
+  `pocknix-desktop-kde 0.1.0-4`, `pocknix-power-profiles 0.1.0-1` (primera vez),
+  `pocknix-turnip-x86 -2`, `suyu-libretro 0.0.4-2`, `retroarch-autoconfig -4`,
+  `retroarch-shaders -4`.
+- ✅ **Kernel publicado** en `sm8750`: `linux-pocknix-sm8750 7.2.15-4`.
+- ❌ **`pocknix-emulation 0.1.0-17` bloqueado (rama)**: en la rama `lepton` el PKGBUILD
+  referencia ficheros (`eden-qt-config.ini.in`, `pocknix-cemu-profile`,
+  `cemu-controller0.xml.in`, `dolphin-Dolphin.ini.in`, `dolphin-GCPadNew.ini.in`,
+  `retroarch-mGBA-gba.cfg/.slangp`) que se movieron en el refactor `4f9f0950`
+  ("split glue into pocknix-emu-*"). En `main` va por **pkgrel 24**. Hay que decidir rama
+  antes de publicar emulación. Los paquetes de emulación además se saltan salvo
+  `POCKNIX_EMULATION=1`.
+- ⚠️ **Gate de publicación**: el `pocknix-base.db` nuevo **no trae glibc** y el de
+  `base-prev` no trae los paquetes nuevos (`power-profiles-daemon`). Solución usada: fusionar
+  por **%NAME%** (no por directorio) ambos dbs en `build/stage/.dbcache/base.db`.
+  Arreglar el snapshot para que el db no pierda paquetes que vienen del tarball.
+- ⚠️ **Tres al revés** (repo más nuevo que árbol): `gamescope` (-3 vs -1),
+  `pocknix-base` (0.2.0-10 vs -8), `pocknix-bsp-sm8750` (-52 vs -51). Re-sincronizar árbol.
+- La Odin ve ya **7 actualizaciones** por repo (inputplumber, decky, desktop-kde,
+  turnip-x86, suyu + 2 de base). Pendiente de aplicar/probar.
