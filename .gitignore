@@ -18,3 +18,6 @@ __pycache__/
 
 # dependencias npm del frontend del plugin (95 MB; se reinstalan con npm ci)
 node_modules/
+
+# sourcemaps de builds de decky (artefacto)
+packages/pocknix-decky/pocknix-control/dist/*.map

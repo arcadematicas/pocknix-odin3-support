@@ -23,7 +23,10 @@
 #   con -Werror, aborta el build. Se desactiva con -Wno-maybe-uninitialized.
 pkgname=suyu-libretro
 pkgver=0.0.4
-pkgrel=1
+# -2: linux-api-headers 7.1 renombro el guard de ensamblador (__ASSEMBLY__ ->
+#     __ASSEMBLER__) y asm-generic/signal.h ya no se saltaba el typedef sigset_t:
+#     choque con glibc en arm_nce.h/k_process.cpp. Ver suyu-asmguard.patch.
+pkgrel=2
 pkgdesc="Nintendo Switch emulator (Suyu) libretro core for aarch64"
 arch=('aarch64')
 url="https://suyu.dev"
@@ -54,8 +57,10 @@ source=(
     "git+https://github.com/suyu-emu/suyu-v0.0.4.git#branch=main"
     "suyu_libretro.info"
     "suyu-language.patch"
+    "suyu-asmguard.patch"
 )
 sha256sums=('SKIP'
+            'SKIP'
             'SKIP'
             'SKIP')
 
@@ -69,6 +74,9 @@ prepare() {
     # los juegos salian en ingles. Con el parche: RetroArch > Opciones del core
     # > Suyu > Console Language > Spanish.
     patch -p1 -d "${srcdir}/suyu-v0.0.4" < "${srcdir}/suyu-language.patch"
+    # sigset_t de asm-generic/signal.h vs glibc (linux-api-headers 7.1 + glibc 2.4x).
+    # Mantiene struct sigcontext (<asm/sigcontext.h>) intacto.
+    patch -Np1 -d "${srcdir}/suyu-v0.0.4" < "${srcdir}/suyu-asmguard.patch"
 }
 
 build() {

@@ -156,6 +156,13 @@ fi
 overlay "packages/pocknix-desktop" "packages/shared/pocknix-desktop"
 overlay "packages/pocknix-desktop-kde" "packages/shared/pocknix-desktop-kde"
 
+# --- pocknix-power-profiles: puente power-profiles-daemon <-> perfiles pocknix ----
+# El selector "Power Profile" del escritorio (applet de bateria de Plasma) habla el API
+# de power-profiles-daemon; este paquete lo puentea con bajo|medio|alto (el fichero que
+# escriben el Game Mode y el Panel de Control) en las dos direcciones. pocknix-desktop-kde
+# -4 lo declara en depends=. Sin el, en el escritorio solo se pueden cambiar por el QAM.
+overlay "packages/shared/pocknix-power-profiles" "packages/shared/pocknix-power-profiles"
+
 # --- gamescope: our patches + our PKGBUILD -----------------------------------
 # NO tiene bloque propio: lo cubre el bucle `packages/soc-overrides/*` de arriba.
 # gamescope es un paquete packages/soc/, asi que el centro solo puede sobrescribirlo

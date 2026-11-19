@@ -2,7 +2,12 @@
 # Build with ./nodeps: makepkg -s would drag all of KDE/Qt into the chroot for a data package.
 pkgname=pocknix-desktop-kde
 pkgver=0.1.0
-pkgrel=3
+# -4: perfiles de energia en el escritorio. power-profiles-daemon da el API D-Bus que Plasma
+#     usa para el selector "Power Profile" de la bandeja, y pocknix-power-profiles lo puentea
+#     con los perfiles de Pocknix (bajo|medio|alto) y con el fichero que escribe el Game Mode.
+#     El applet "Battery and Brightness" (org.kde.plasma.battery) no es un paquete aparte en
+#     ALARM (no existe plasma-battery): ya viene como plugin de plasma/powerdevil.
+pkgrel=4
 pkgdesc="pocknix KDE defaults shared by the Plasma desktop flavours"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -13,7 +18,11 @@ depends=('bash'
          'powerdevil'
          'kscreen'           # kscreen-doctor drives the rotated-DSI transform
          'plasma-nm'
-         'bluedevil')
+         'bluedevil'
+         # Selector "Power Profile" del applet de bateria: ppd pone el API D-Bus y el puente
+         # lo sincroniza con /var/lib/pocknix/power-profile (Game Mode / Panel de Control).
+         'power-profiles-daemon'
+         'pocknix-power-profiles')
 # These files lived in pocknix-desktop up to -26; a lone install against that would collide.
 conflicts=('pocknix-desktop<0.1.0-27')
 source=('pocknix-desktop-rotate' 'pocknix-desktop-rotate.desktop'

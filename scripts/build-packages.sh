@@ -44,6 +44,15 @@ SHARED_REPO_DB="pocknix-shared.db.tar.gz"
 # Editarlo en el ARBOL no sirve: el siguiente sync lo revierte.
 POCKNIX_EMULATION_PKGS="armsx2-bin azahar cemu dolphin-emu eden-bin es-de pocknix-emulation pocknix-emulation-full retroarch-autoconfig-pocknix retroarch-shaders-pocknix rpcs3-bin vita3k-bin wxwidgets-pocknix xemu-bin"
 
+# Plasma Mobile queda FUERA del build y del publish (16/11/2026). plasma-mobile 6.7.4 es el
+# rebuild de Arch 6.7.4-1 contra el Qt del snapshot viejo; con Qt 6.12 ya no compila (Qt6Qml) y
+# no hay rebuild sin portar el shell de Plasma 6.12 — no se invierte la noche en eso porque la
+# Odin usa Plasma de ESCRITORIO (pocknix-desktop-kde), no Mobile. El artefacto que esta LIVE se
+# queda como esta: `make stage` solo sustituye lo que se nombra, asi que no se republica nada
+# viejo. Para reintentarlo: POCKNIX_PLASMA_MOBILE=1.
+#   - pocknix-desktop-plasma-mobile: metapaquete del sabor Mobile, depende de plasma-mobile.
+POCKNIX_PLASMA_MOBILE_PKGS="plasma-mobile pocknix-desktop-plasma-mobile"
+
 cleanup() { chroot_umount "${BROOT}" 2>/dev/null || true
             mountpoint -q "${BROOT}/localrepo" && umount "${BROOT}/localrepo" 2>/dev/null || true
             mountpoint -q "${BROOT}/localrepo-shared" && umount "${BROOT}/localrepo-shared" 2>/dev/null || true; }
@@ -82,6 +91,9 @@ setup_chroot() {
     # is frozen at its creation date and LAGS devices (a user's -Syu gets a new
     # soname our binaries were never linked against). Pinned base: no-op.
     chroot_mount "${BROOT}"
+    # A stale gpg-agent from a previous failed run keeps the old crypto engine and
+    # makes every signature check fail ("Invalid crypto engine") — kill it first.
+    chroot "${BROOT}" gpgconf --kill all >/dev/null 2>&1 || true
     # A PINNED base is frozen, so a chroot already stamped with that pin cannot be stale
     # and a failed -Syu just means offline. On live/unpinned bases the drift is real, and
     # building against a chroot that missed it is exactly what this guard exists to stop.
@@ -110,7 +122,12 @@ setup_chroot() {
     chroot_mount "${BROOT}"
     chroot "${BROOT}" pacman-key --init
     chroot "${BROOT}" pacman-key --populate archlinuxarm
-    chroot "${BROOT}" pacman -Syu --noconfirm --needed base-devel sudo
+    if ! chroot "${BROOT}" pacman -Syu --noconfirm --needed base-devel sudo; then
+      warn "base-devel group not available in this base — installing the toolchain explicitly"
+      chroot "${BROOT}" pacman -S --noconfirm --needed \
+        autoconf automake binutils bison fakeroot file flex gawk gcc gettext groff gzip \
+        libtool m4 make patch pkgconf sed sudo texinfo which
+    fi
     chroot_umount "${BROOT}"
     printf '%s\n' "${want_base}" > "${BROOT}/.base-snapshot"
   fi
@@ -126,6 +143,15 @@ setup_chroot() {
   fi
   printf 'builder ALL=(ALL) NOPASSWD: ALL\n' > "${BROOT}/etc/sudoers.d/builder"
   chmod 0440 "${BROOT}/etc/sudoers.d/builder"
+
+  # makepkg without fakeroot/gcc fails BUT build_one keeps the previous artifact in
+  # localrepo, so the image silently ships STALE binaries (seen 16/11: 18 packages
+  # "rebuilt" against the old base). Refuse to continue without the toolchain.
+  local t
+  for t in fakeroot gcc make; do
+    chroot "${BROOT}" test -x "/usr/bin/${t}" \
+      || die "build chroot lacks /usr/bin/${t} — install the toolchain before building (pacman -S fakeroot gcc make ...)"
+  done
 
   # Build with EVERY core. The ALARM base ships makepkg.conf with MAKEFLAGS commented out, so
   # `make` runs SERIAL and a full image build takes hours instead of minutes — measured on a
@@ -438,6 +464,15 @@ main() {
       case " ${POCKNIX_EMULATION_PKGS} " in
         *" ${name} "*)
           log "skip: ${name} (emulation layer not requested — POCKNIX_EMULATION=1 builds it)"
+          continue
+          ;;
+      esac
+    fi
+    # Plasma Mobile no compila contra Qt 6.12; ver POCKNIX_PLASMA_MOBILE_PKGS arriba.
+    if [ "${POCKNIX_PLASMA_MOBILE:-0}" != "1" ]; then
+      case " ${POCKNIX_PLASMA_MOBILE_PKGS} " in
+        *" ${name} "*)
+          log "skip: ${name} (Plasma Mobile out of the build: does not compile against Qt 6.12 — POCKNIX_PLASMA_MOBILE=1 retries)"
           continue
           ;;
       esac

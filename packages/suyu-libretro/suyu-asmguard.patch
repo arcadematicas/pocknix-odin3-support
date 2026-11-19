@@ -1,0 +1,28 @@
+Fix: linux-api-headers >= 6.x renamed the "am I being assembled?" guard from
+__ASSEMBLY__ to __ASSEMBLER__. arm_nce_asm_definitions.h still defines
+__ASSEMBLY__, so asm-generic/signal.h no longer takes its assembly branch and
+typedefs its own sigset_t. glibc's sigset_t (bits/types/sigset_t.h, pulled in
+by <random>/<stdlib.h> before this header in e.g. k_process.cpp) is already
+declared -> "conflicting declaration 'typedef struct sigset_t sigset_t'".
+
+Defining the modern guard as well restores the original intent of the header
+(it only ships SIGxxx/NRxxx constants and offsets; every UAPI struct it used
+to leak is provided by glibc in C++ TUs). struct sigcontext is untouched: it
+lives in <asm/sigcontext.h>, a different header.
+
+--- a/src/core/arm/nce/arm_nce_asm_definitions.h
++++ b/src/core/arm/nce/arm_nce_asm_definitions.h
+@@ -3,7 +3,13 @@
+ 
+ #pragma once
+ 
+ #define __ASSEMBLY__
++
++/* linux-api-headers >= 6.x: the guard is __ASSEMBLER__ now. Without this the
++   UAPI sigset_t/sigaction below collide with glibc's in every C++ TU. */
++#ifndef __ASSEMBLER__
++#define __ASSEMBLER__ 1
++#endif
+ 
+ #include <asm-generic/signal.h>
+ #include <asm-generic/unistd.h>

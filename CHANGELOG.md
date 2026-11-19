@@ -14,6 +14,68 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 19 de noviembre 2026 — tanda 2, re-sync de la cadena y Odin verificada
+
+### 🚀 Paquetes publicados
+- `pocknix-steam-full 0.1.0-5` — porte de upstream (license GPL-2.0-or-later, Lepton en la
+  descripción). Mantiene `pocknix-turnip-x86`, `pocknix-vk-valve` y `gamescope-session-steam`;
+  **sin** `steamos-manager` (lo instala el BSP) y **sin** `pocknix-lepton` (arrastra `android-tools`).
+- `pocknix-steam 0.1.0-77` — backports del wrapper: las `envVars` del perfil Default se
+  anteponen a las del juego (gana el juego), y `/run/pocknix/game-mode` se escribe **siempre**
+  para que el Panel de Control reajuste al cerrar el juego.
+- `pocknix-session 0.1.0-7`, `pocknix-homescreen 0.1.0-3`, `pocknix-sdcard-automount 0.1.0-8`,
+  `pocknix-gamepad-calibration 0.1.0-5` — alineados con upstream (arranque de
+  `pocknix-game-session.target` antes de Steam; sin delta propio).
+- `pocknix-emulation 0.1.0-18` — **reparado**: 7 ficheros que el split de upstream movió a
+  `pocknix-emu-*` y que nuestra rama perdió al reintroducir el paquete. Restaurados desde
+  `c4444e01^`; el paquete vuelve a compilar con `POCKNIX_EMULATION=1`.
+
+### 🔧 Re-sync de la cadena (árbol atrasado respecto al repo)
+- `gamescope -3`: había un cambio sin commitear que bajaba el `pkgrel` publicado.
+- `pocknix-base -10`: la publicada vivía en `sync/upstream-20261108`; es nuestro **CalvOS Updater**.
+- `pocknix-bsp-sm8750 -53` y `pocknix-firmware-sm8750 -5`: la `-52` publicada venía del commit del
+  **Odin 3 Portal** (`portal-wip`), nunca fusionado. Cherry-pick sobre el trabajo posterior de
+  dock/DP y subida de `pkgrel` (el contenido resultante difiere del `-52` ya publicado).
+
+### 🐛 `pocknix-power-profiles 0.1.0-2` — no arrancaba
+`WantedBy=multi-user.target` + `After=power-profiles-daemon` (que va tras `multi-user`) creaba un
+ciclo de ordenación y systemd lo resolvía **matando el bridge**: el selector de perfiles del
+escritorio no sincronizaba con bajo/medio/alto. Ahora cuelga de `graphical.target`.
+
+### ✅ Odin 3 verificada tras reiniciar
+Arranque ~55 s, **0 servicios fallidos**, **0 ciclos**, `pocknix-game-session.target` activo,
+bridge sincronizado (`balanced ↔ medio`), audio `PipeWire 1.6.11`, BSP reconstruyó `/flash/KERNEL`
+con `KERNEL.bak` conservado.
+
+### 🔎 Pendiente de vigilar
+- Errores `geni_i2c a94000.i2c` / `gpi a00000.dma-controller` (18 por arranque). El journal solo
+  conserva 2 arranques: no se puede comparar con antes; kernel idéntico 7.2.15.
+- El stack `pipewire -2` no está en `pocknix-base` (se resolvió forzando `extra` en la Odin).
+
+---
+
+## 📅 16 de noviembre 2026 (noche) — perfiles de energía en el escritorio, suyu y Plasma Mobile
+
+### 🚀 `pocknix-power-profiles` (nuevo) — selector "Power Profile" de Plasma
+- Puente bidireccional entre `power-profiles-daemon` (API D-Bus que usa el applet de
+  batería de Plasma) y los perfiles **bajo|medio|alto** de Pocknix (el mismo fichero que
+  escriben el Game Mode y el Panel de Control). `pocknix-desktop-kde -4` lo declara en
+  `depends=` y añade `power-profiles-daemon`, así que el escritorio ya puede cambiar el
+  perfil sin pasar por el QAM.
+
+### ✅ `suyu-libretro` — vuelve a compilar con `linux-api-headers` 7.1
+- `linux-api-headers` >= 6.x renombró el guard de ensamblador (`__ASSEMBLY__` →
+  `__ASSEMBLER__`), así que `asm-generic/signal.h` dejaba de saltarse el `typedef sigset_t`
+  y chocaba con glibc en `arm_nce.h`/`k_process.cpp`. `suyu-asmguard.patch` define también
+  el guard moderno (mantiene `struct sigcontext`, que vive en `<asm/sigcontext.h>`).
+
+### 🧹 Plasma Mobile fuera de build y publish
+- `plasma-mobile` (rebuild de Arch 6.7.4 contra Qt 6.11) **no compila contra Qt 6.12**
+  (`Qt6Qml`) y no hay rebuild sin portar el shell. La Odin usa Plasma de **escritorio**,
+  así que se salta en `build-packages.sh` y no se publica (`docs/DECISION-2026-11-16-plasma-mobile.md`).
+
+---
+
 ## 📅 10 de noviembre 2026 (noche, 6) — InputPlumber 0.84
 
 ### 🚀 InputPlumber 0.84.0 (upstream, prebuilt)

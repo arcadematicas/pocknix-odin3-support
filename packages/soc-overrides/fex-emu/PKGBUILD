@@ -55,6 +55,19 @@ prepare() {
   # git source does not recurse them.
   git submodule update --init --recursive
 
+  # CMake's install() has NO DEPENDS keyword (only CODE/SCRIPT/MODULE/FILES/DIRECTORY/... and
+  # COMPONENT/EXCLUDE_FROM_ALL/OPTIONAL/RENAME), so FEX's two install(CODE ...) blocks — the
+  # ones that drive the guest-libs/guest-libs-32 ExternalProject installs — abort configure
+  # with: install CODE given unknown argument: "DEPENDS". Both ExternalProject targets are part
+  # of ALL, so the plain `ninja` in build() has already built them before `ninja install` runs;
+  # drop the invalid argument. The grep below keeps this honest: if upstream moves the keyword
+  # inline (or renames the target) prepare fails here instead of shipping an unpatched tree.
+  sed -i -E '/^[[:space:]]*DEPENDS[[:space:]]+guest-libs(-32)?[[:space:]]*$/d' CMakeLists.txt
+  if grep -qE 'DEPENDS[[:space:]]+guest-libs' CMakeLists.txt; then
+    error "CMakeLists.txt: install(CODE ...) DEPENDS pattern changed upstream — re-check the fix"
+    return 1
+  fi
+
   msg2 "assembling x86 dev sysroot from pinned Arch x86_64 + lib32 packages"
   rm -rf "${srcdir}/sysroot"; mkdir -p "${srcdir}/sysroot"
   local pkg
@@ -79,24 +92,48 @@ build() {
   # TUNE_CPU tunes only FEX's own engine (the JIT output is tuned to the real CPU at runtime),
   # so the one shared build targets the weakest little core of any supported device (an A55,
   # armv8.2). Never an armv9 core: the build runs its own host tools and would SIGILL.
-  cmake -G Ninja -S . -B build \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DCMAKE_INSTALL_LIBDIR=lib \
-    -DTUNE_CPU=cortex-a55 \
-    -DUSE_LINKER=lld \
-    -DENABLE_OFFLINE_TELEMETRY=OFF \
-    -DBUILD_TESTING=OFF \
-    -DBUILD_FEX_LINUX_TESTS=OFF \
-    -DBUILD_THUNKS=ON \
-    -DENABLE_CLANG_THUNKS=ON \
-    -DBUILD_FEXCONFIG=OFF \
-    -DX86_DEV_ROOTFS="${srcdir}/sysroot" \
-    -DX86_64_TOOLCHAIN_FILE="${srcdir}/toolchain_x86_64.cmake" \
-    -DX86_32_TOOLCHAIN_FILE="${srcdir}/toolchain_x86_32.cmake" \
-    -DCMAKE_DISABLE_FIND_PACKAGE_fmt=ON \
-    -DCMAKE_DISABLE_FIND_PACKAGE_xxhash=ON \
+  # FMT_MODULE=OFF: with CMake>=3.28 + clang>=16 + Ninja>=1.11 fmt (External/fmt) defaults to
+  # building a C++20 module library on top of CMake's synthesized `import std` module. FEX only
+  # consumes fmt as a normal library, so keep it that way and skip that whole std-module path.
+  local cmake_flags=(-G Ninja -S . -B build
+    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_INSTALL_PREFIX=/usr
+    -DCMAKE_INSTALL_LIBDIR=lib
+    -DTUNE_CPU=cortex-a55
+    -DUSE_LINKER=lld
+    -DENABLE_OFFLINE_TELEMETRY=OFF
+    -DBUILD_TESTING=OFF
+    -DBUILD_FEX_LINUX_TESTS=OFF
+    -DBUILD_THUNKS=ON
+    -DENABLE_CLANG_THUNKS=ON
+    -DBUILD_FEXCONFIG=OFF
+    -DX86_DEV_ROOTFS="${srcdir}/sysroot"
+    -DX86_64_TOOLCHAIN_FILE="${srcdir}/toolchain_x86_64.cmake"
+    -DX86_32_TOOLCHAIN_FILE="${srcdir}/toolchain_x86_32.cmake"
+    -DCMAKE_DISABLE_FIND_PACKAGE_fmt=ON
+    -DCMAKE_DISABLE_FIND_PACKAGE_xxhash=ON
     -DCMAKE_DISABLE_FIND_PACKAGE_Catch2=ON
+    -DFMT_MODULE=OFF)
+  if ! cmake "${cmake_flags[@]}"; then
+    # CMake 4.5 stores clang's `-print-file-name=libstdc++.modules.json` verbatim, and clang 23
+    # in this chroot answers /lib/libstdc++.modules.json (/lib is a symlink to usr/lib). The
+    # std-module sources inside that JSON are relative ("../include/c++/<ver>/bits/std.cc"), so
+    # CMake resolves them against /lib and Generate dies with
+    #   Cannot find source file: /include/c++/16.1.1/bits/std.cc
+    # Repoint the recorded path at the real file and re-run configure; the file is only used to
+    # synthesize the C++23 `std` module, which clang compiles fine from /usr/include.
+    local ccfile patched=0
+    for ccfile in build/CMakeFiles/*/CMakeCXXCompiler.cmake; do
+      [ -f "${ccfile}" ] || continue
+      if grep -q 'CMAKE_CXX_STDLIB_MODULES_JSON "/lib/' "${ccfile}"; then
+        msg2 "fixing CMake's libstdc++ modules.json path: /lib/... -> /usr/lib/..."
+        sed -i 's|\(CMAKE_CXX_STDLIB_MODULES_JSON "\)/lib/|\1/usr/lib/|' "${ccfile}"
+        patched=1
+      fi
+    done
+    [ "${patched}" -eq 1 ] || return 1
+    cmake -S . -B build
+  fi
   # FEXCore's OpcodeDispatcher TUs peak at ~2-3 GB RSS each, so an unbounded ninja OOMs the
   # build VM — systemd-oomd reaps the cgroup and makepkg reports "subcommand failed" with no
   # compiler error. -j2 fits ~7-8 GB; raise FEX_NINJA_JOBS on a bigger host.
