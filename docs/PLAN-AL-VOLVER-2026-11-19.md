@@ -89,3 +89,20 @@ Todo lo de hoy está publicado en R2 y **la Odin está actualizada y verificada*
 - `systemctl enable` puede dejar symlinks en `/usr/lib/systemd/system/*.wants` además de `/etc`;
   si un ciclo de ordenación reaparece, mirar **los dos** sitios.
 - Un paquete recompilado con bytes distintos **exige** subir `pkgrel`.
+
+---
+
+## 5. Estado del árbol `pocknix-os` (a propósito, sin commitear)
+
+`git status` del árbol da **421 cambios**, y se quedan así a conciencia:
+- ~305 son copias de `sync-to-os.sh` (el centro es la fuente; `check-sync` está en OK).
+- Hay **artefactos de build** entre ellos: `bootanimation-odin3.zip` (105 MB), `dist/index.js`
+  y `ryzenadj` del Panel de Control. Commitearlos engordaría el repo sin aportar nada.
+- Lo único que no vive en el centro es el resultado de compilaciones (localrepo, chroot, stage),
+  todo regenerable.
+
+**Cómo reconstruir el árbol si algo se estropea:** `tools/sync-to-os.sh` (centro → árbol) y
+`make packages`. Nada del estado importante vive solo ahí.
+
+Si en el futuro quieres un checkpoint del árbol, que sea en una rama aparte y con los artefactos
+en `.gitignore` primero.
