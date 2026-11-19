@@ -228,3 +228,5 @@ Hubo que borrar ambos; con solo el paquete corregido el ciclo persistia.
 - Errores `geni_i2c a94000.i2c` + `gpi a00000.dma-controller` (18 cada uno por arranque). Solo hay 2
   arranques en el journal, no se puede comparar con antes; kernel identico 7.2.15. Vigilar.
 - `pipewire -2` sigue sin estar en `pocknix-base` (se resolvio forzando `extra` en la Odin).
+
+> **Retomar por aquí:** `docs/PLAN-AL-VOLVER-2026-11-19.md` (estado verificado, orden de trabajo y riesgos).
