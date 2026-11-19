@@ -199,3 +199,32 @@ Publicado hoy: `pocknix-steam-full 0.1.0-5`, `pocknix-session 0.1.0-7`,
 Reparado y pendiente de build: `pocknix-emulation 0.1.0-18` (7 ficheros restaurados).
 Bloqueos reales detectados: `pocknix-tools` 25→28 exige `pocknix-ui`, que **no está publicado**;
 `bsp-common` 28→41 es reescritura de arranque (reasignar parches propios, no copiar).
+
+## Cierre 19/11/2026 (tarde): re-sync + Odin reiniciada y verificada
+
+### Re-sync de los tres paquetes atrasados
+- `gamescope`: el árbol tenía un cambio sin commitear que bajaba `pkgrel 3 -> 1`. Restaurado HEAD (-3, el publicado).
+- `pocknix-base`: la version publicada (-10) vivia solo en la rama `sync/upstream-20261108`; es nuestro
+  **branding CalvOS Updater**. Traida al árbol.
+- `pocknix-bsp-sm8750`: la -52 publicada venia del commit del **Portal** (`21f42fa`, rama `portal-wip`),
+  nunca fusionado. Cherry-pick sobre master (sin conflictos) + `pkgrel 53` y `pocknix-firmware-sm8750 5`,
+  porque el contenido resultante difiere del -52 ya publicado (mismo numero con distintos bytes esta prohibido).
+
+### Bug real encontrado: pocknix-power-profiles no arrancaba
+`WantedBy=multi-user.target` + `After=power-profiles-daemon` (que va tras multi-user) creaba un ciclo de
+ordenacion; systemd lo rompia **matando el bridge**, asi que el selector de perfiles del escritorio no
+sincronizaba con bajo/medio/alto. Corregido a `WantedBy=graphical.target` (`0.1.0-2`).
+**Trampa**: en la Odin quedaban DOS restos del despliegue manual del 16/11: la unidad en
+`/etc/systemd/system/` y un symlink de enable en `/usr/lib/systemd/system/multi-user.target.wants/`.
+Hubo que borrar ambos; con solo el paquete corregido el ciclo persistia.
+
+### Estado de la Odin tras reiniciar (verificado)
+- Arranque ~55 s, **0 servicios fallidos**, **0 ciclos de ordenacion**.
+- `pocknix-game-session.target` **activo** -> el flujo nuevo de `pocknix-session 7` funciona de verdad.
+- Bridge activo y sincronizado (`balanced <-> medio`); audio `PipeWire 1.6.11` OK; gamescope + Steam arriba.
+- `/flash/KERNEL` reconstruido por el BSP (18M, `KERNEL.bak` conservado), sin incidencias de arranque.
+
+### Pendiente / sin confirmar
+- Errores `geni_i2c a94000.i2c` + `gpi a00000.dma-controller` (18 cada uno por arranque). Solo hay 2
+  arranques en el journal, no se puede comparar con antes; kernel identico 7.2.15. Vigilar.
+- `pipewire -2` sigue sin estar en `pocknix-base` (se resolvio forzando `extra` en la Odin).
