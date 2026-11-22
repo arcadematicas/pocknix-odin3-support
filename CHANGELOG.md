@@ -14,6 +14,20 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 22 de noviembre 2026 — escritorio: Plasma de escritorio por defecto
+
+### 🐛 El modo escritorio solo mostraba el fondo
+`pocknix-desktop` arrancaba **Plasma Mobile** por defecto, y `plasma-mobile 6.7.4` está roto
+contra **Qt 6.12** (se compiló contra 6.11): `plasmashell` fallaba y quedaba solo el fondo.
+`pocknix-desktop 0.1.0-36` cambia el `DEFAULT` a **`plasma`** (escritorio). El selector sigue
+permitiendo elegir Mobile a mano.
+
+> Nota: `plasma-mobile` sigue instalado porque lo arrastran `pocknix-homescreen` (dependencia
+> directa) y `pocknix-desktop-full`. Quitarlo del todo exige romper esas dos dependencias o
+> recompilarlo contra Qt 6.12.
+
+---
+
 ## 📅 19 de noviembre 2026 — tanda 2, re-sync de la cadena y Odin verificada
 
 ### 🚀 Paquetes publicados
