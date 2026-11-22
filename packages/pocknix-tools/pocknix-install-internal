@@ -357,6 +357,18 @@ ${BOOT_ID}  /flash  vfat  rw,noatime,nofail   0 2
 EOF
 fi
 
+# OpenABL boots BLS entries, not KERNEL. Write them now so the internal install is bootable
+# without a second pass (installer used to leave a flashing cursor on OpenABL systems).
+if [ -x /usr/lib/pocknix/pocknix-bls-deploy ]; then
+  ROOT_PARTUUID="${ROOT_PARTUUID:-$(blkid -s PARTUUID -o value "$ROOT_PART")}"
+  if FLASH="$BMNT" SRCROOT="$RMNT" ROOT_PARTUUID="$ROOT_PARTUUID" \
+       /usr/lib/pocknix/pocknix-bls-deploy; then
+    say "BLS entries written for OpenABL (root=PARTUUID=$ROOT_PARTUUID)"
+  else
+    warn "could not write BLS entries — OpenABL would not boot this install until they exist"
+  fi
+fi
+
 sync
 cleanup_mnt; trap - ERR
 say "Done. New layout on $DEVICE:"

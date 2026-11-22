@@ -44,8 +44,8 @@ entry() {  # $1 = title, $2 = kernel path, $3 = version (none: Image.bak's is no
   [ -n "${3:-}" ] && printf 'version %s\n' "$3"
   printf 'linux   %s\noptions %s\n' "$2" "$options"
 }
-entry "Pocknix" /Image "$kver" > "$tmp/pocknix.conf"
-entry "Pocknix (previous kernel)" /Image.bak > "$tmp/pocknix-previous.conf"
+entry "CalvOS" /Image "$kver" > "$tmp/pocknix.conf"
+entry "CalvOS (previous kernel)" /Image.bak > "$tmp/pocknix-previous.conf"
 # The default is named: without it the sort could put the previous entry first.
 printf 'default pocknix.conf\n' > "$tmp/loader.conf"
 
