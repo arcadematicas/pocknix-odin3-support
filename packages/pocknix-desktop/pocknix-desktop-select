@@ -6,7 +6,7 @@ set -u
 SESSIONS=/usr/share/wayland-sessions
 PICK="${XDG_CONFIG_HOME:-${HOME}/.config}/pocknix/desktop-session"
 PIDFILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/pocknix-desktop.pid"
-DEFAULT=plasma-mobile
+DEFAULT=plasma
 
 usage() {
   echo "usage: pocknix-desktop-select [list|current|reset|<name> [--now]]" >&2
