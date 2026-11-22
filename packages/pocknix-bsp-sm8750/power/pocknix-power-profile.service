@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix power profile (restore saved pseudo-TDP CPU/GPU frequency caps at boot)
+Description=CalvOS power profile (restore saved pseudo-TDP CPU/GPU frequency caps at boot)
 After=local-fs.target
 
 [Service]

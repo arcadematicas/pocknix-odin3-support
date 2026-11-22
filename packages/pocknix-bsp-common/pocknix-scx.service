@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix sched_ext scheduler (scx_lavd / scx_bpfland / scx_rusty)
+Description=CalvOS sched_ext scheduler (scx_lavd / scx_bpfland / scx_rusty)
 Documentation=https://github.com/sched-ext/scx
 # Do NOT order after multi-user.target: it pulls in the Steam session bring-up, which can
 # settle late and leave this start job queued forever. The guards below hold from kernel init.

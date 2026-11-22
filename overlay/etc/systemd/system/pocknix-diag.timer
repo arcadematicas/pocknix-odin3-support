@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix first-boot diagnostic dump (runs once, after boot has settled)
+Description=CalvOS first-boot diagnostic dump (runs once, after boot has settled)
 # Timer, NOT a boot-transaction service. The old unit was WantedBy=multi-user.target
 # with After=multi-user.target, which kept multi-user.target in `activating` for the
 # whole 30s sleep + dump — delaying the boot AND the Steam session launch (verified

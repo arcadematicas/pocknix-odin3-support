@@ -120,9 +120,9 @@ def _load_payload(path):
         raise ValueError("file too large")
     data = json.loads(p.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or not isinstance(data.get("pocknixConfig"), int):
-        raise ValueError("not a Pocknix config export")
+        raise ValueError("not a CalvOS config export")
     if data["pocknixConfig"] > SCHEMA_VERSION:
-        raise ValueError("config from a newer Pocknix version")
+        raise ValueError("config from a newer CalvOS version")
     clean_games = {}
     if isinstance(data.get("games"), dict):
         for appid, entry in data["games"].items():

@@ -4,8 +4,8 @@
 # reads as one surface instead of three unrelated screens).
 pkgname=pocknix-branding
 pkgver=0.1.0
-pkgrel=6
-pkgdesc="Pocknix OS branding: plymouth boot theme, Plasma splash, wallpaper"
+pkgrel=7
+pkgdesc="CalvOS branding: plymouth boot theme, Plasma splash, wallpaper"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
 license=('GPL-2.0-or-later')

@@ -23,7 +23,7 @@ fi
 if ! "$PY" -c "import pygame, requests" 2>/dev/null; then
     echo "🚨 Faltan dependencias de Python."
     echo "   Instala:  sudo pacman -S python-pygame python-requests"
-    echo "   (o desde Pocknix Tools -> descargar DeckStation)"
+    echo "   (o desde CalvOS Tools -> descargar DeckStation)"
     exit 1
 fi
 

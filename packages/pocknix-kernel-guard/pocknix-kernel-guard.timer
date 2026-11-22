@@ -1,5 +1,5 @@
 [Unit]
-Description=Run the pocknix kernel guard shortly after boot
+Description=Run the CalvOS kernel guard shortly after boot
 
 [Timer]
 OnBootSec=75s

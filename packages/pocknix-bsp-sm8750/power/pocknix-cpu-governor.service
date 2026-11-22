@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix CPU governor (restore saved cpufreq scaling governor at boot)
+Description=CalvOS CPU governor (restore saved cpufreq scaling governor at boot)
 After=local-fs.target
 
 [Service]

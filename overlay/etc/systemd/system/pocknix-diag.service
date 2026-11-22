@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix first-boot diagnostic dump (writes pocknix-diag.txt to the boot partition)
+Description=CalvOS first-boot diagnostic dump (writes pocknix-diag.txt to the boot partition)
 # Started by pocknix-diag.timer (OnBootSec=45s), NOT by the boot transaction. This unit
 # used to be WantedBy=multi-user.target with After=multi-user.target, which kept
 # multi-user.target in `activating` for the whole 30s sleep + dump and delayed the boot

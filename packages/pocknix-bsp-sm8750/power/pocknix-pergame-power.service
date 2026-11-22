@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix per-game cpu-governor / power-profile (aplica y restaura segun el juego activo)
+Description=CalvOS per-game cpu-governor / power-profile (aplica y restaura segun el juego activo)
 After=multi-user.target pocknix-power-profile.service
 
 [Service]

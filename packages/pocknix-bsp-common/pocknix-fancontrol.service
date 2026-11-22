@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix fan curve (hwmon pwm auto-discovery)
+Description=CalvOS fan curve (hwmon pwm auto-discovery)
 After=multi-user.target
 
 [Service]

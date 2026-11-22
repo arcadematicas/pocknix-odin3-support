@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=pocknix places
+Name=CalvOS places
 Comment=Add DeckStation and WProton to Dolphin's Places panel
 Exec=/usr/bin/pocknix-places
 # Solo tiene sentido dentro de una sesion de Plasma (escribe los marcadores de Dolphin).

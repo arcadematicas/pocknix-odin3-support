@@ -1,5 +1,5 @@
 [Unit]
-Description=Pocknix: mantiene el audio en el dispositivo correcto al conmutar el jack
+Description=CalvOS: mantiene el audio en el dispositivo correcto al conmutar el jack
 Documentation=https://github.com/arcadematicas/pocknix-odin3-support
 After=pipewire.service wireplumber.service
 Wants=pipewire.service

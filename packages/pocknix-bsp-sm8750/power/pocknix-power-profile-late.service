@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix power profile (re-apply once the GPU devfreq is up)
+Description=CalvOS power profile (re-apply once the GPU devfreq is up)
 # El adreno registra su devfreq y carga los firmwares ~10 s despues del probe, asi que
 # pocknix-power-profile.service (After=local-fs.target) se quedaba sin nodo donde escribir
 # y la GPU arrancaba en su OPP por defecto (389 MHz) en vez del tope del perfil.

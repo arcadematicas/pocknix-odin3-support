@@ -7,8 +7,8 @@ pkgver=0.1.0
 #     con los perfiles de Pocknix (bajo|medio|alto) y con el fichero que escribe el Game Mode.
 #     El applet "Battery and Brightness" (org.kde.plasma.battery) no es un paquete aparte en
 #     ALARM (no existe plasma-battery): ya viene como plugin de plasma/powerdevil.
-pkgrel=4
-pkgdesc="pocknix KDE defaults shared by the Plasma desktop flavours"
+pkgrel=5
+pkgdesc="CalvOS KDE defaults shared by the Plasma desktop flavours"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
 license=('GPL-2.0-or-later')

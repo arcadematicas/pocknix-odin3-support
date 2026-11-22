@@ -14,7 +14,7 @@
 #                         /flash el md5 y el tar de modulos de ESE build (y limpia los viejos).
 pkgname=pocknix-kernel-guard
 pkgver=1.0.0
-pkgrel=4
+pkgrel=5
 pkgdesc="Detecta y repara solo un desajuste kernel/modulos usando el par guardado en /flash"
 arch=('any')
 install=pocknix-kernel-guard.install

@@ -1,5 +1,5 @@
 [Unit]
-Description=Re-assert the pocknix session gamepad target
+Description=Re-assert the CalvOS session gamepad target
 # InputPlumber always comes back on the YAML default; see pocknix-gamepad-target.
 After=inputplumber.service
 BindsTo=inputplumber.service

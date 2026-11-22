@@ -1,5 +1,5 @@
 [Unit]
-Description=Pocknix Fake Suspend for SM8750
+Description=CalvOS Fake Suspend for SM8750
 Before=systemd-suspend.service
 StopWhenUnneeded=yes
 

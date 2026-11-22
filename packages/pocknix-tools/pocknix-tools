@@ -4,7 +4,7 @@
 # (the session has no polkit agent, see dev/desktop.md).
 set -euo pipefail
 
-TITLE="Pocknix Tools"
+TITLE="CalvOS Tools"
 command -v kdialog >/dev/null 2>&1 || { echo "kdialog not installed" >&2; exit 1; }
 
 [ -r /usr/lib/pocknix/device.conf ] && . /usr/lib/pocknix/device.conf
@@ -50,7 +50,7 @@ do_abl() {
   # Kept generic on purpose: the same dialog serves the OpenABL kit and the older ROCKNIX one.
   case "${kit}" in openabl) name="OpenABL" ;; rocknix_abl) name="ROCKNIX ABL" ;; *) name="ABL" ;; esac
   if [ "${state}" = uptodate ]; then
-    kdialog --title "$TITLE" --msgbox "The bootloader already matches the version this Pocknix ships.\n\nNothing to do." || true
+    kdialog --title "$TITLE" --msgbox "The bootloader already matches the version this CalvOS ships.\n\nNothing to do." || true
     return 0
   fi
   if [ "${state}" = gptrepair ]; then
@@ -61,7 +61,7 @@ do_abl() {
     return 0
   fi
   kdialog --title "$TITLE" --warningcontinuecancel \
-    "Replace the device bootloader (ABL) with ${name} ${ver}, the build Pocknix ships?\n\nThis rewrites both bootloader slots on internal storage. If it is interrupted the device will not boot and needs a PC to recover.\n\nKeep it plugged in. The current bootloader is backed up to the boot partition first, and each slot is verified after writing.\n\nYou will be asked to type FLASH in a terminal to confirm." \
+    "Replace the device bootloader (ABL) with ${name} ${ver}, the build CalvOS ships?\n\nThis rewrites both bootloader slots on internal storage. If it is interrupted the device will not boot and needs a PC to recover.\n\nKeep it plugged in. The current bootloader is backed up to the boot partition first, and each slot is verified after writing.\n\nYou will be asked to type FLASH in a terminal to confirm." \
     || return 0
   konsole_run "/usr/bin/pocknix-update-abl"
 }
@@ -115,7 +115,7 @@ do_ssh() {
     return 0
   fi
   kdialog --title "$TITLE" --warningcontinuecancel \
-    "Allow SSH logins to this device?\n\nAnyone on the same network can then log in with an account password, and Pocknix ships a well-known default one. If you have not changed it, do that first: open Konsole and run passwd (then sudo passwd root).\n\nIt stays on, across reboots, until you turn it off here." \
+    "Allow SSH logins to this device?\n\nAnyone on the same network can then log in with an account password, and CalvOS ships a well-known default one. If you have not changed it, do that first: open Konsole and run passwd (then sudo passwd root).\n\nIt stays on, across reboots, until you turn it off here." \
     || return 0
   out="$(pkexec /usr/bin/pocknix-ssh on 2>&1)" || rc=$?
   if [ "${rc}" -ne 0 ]; then
@@ -185,7 +185,7 @@ do_defaults() {
   [ -n "${rows}" ] || { gui_err "No emulators are installed."; return 0; }
   while IFS=$'\t' read -r name label; do args+=("${name}" "${label}"); done <<< "${rows}"
   args+=(all "Everything above")
-  choice="$(kdialog --title "$TITLE" --menu "Restore the Pocknix default settings for:" "${args[@]}")" || return 0
+  choice="$(kdialog --title "$TITLE" --menu "Restore the CalvOS default settings for:" "${args[@]}")" || return 0
   [ -n "${choice}" ] || return 0
   kdialog --title "$TITLE" --warningcontinuecancel \
     "Restore the default settings for ${choice}?\n\nThe current settings file is kept next to the new one as a .bak-<date> copy. Games, saves and controller profiles are not touched." \
@@ -202,12 +202,12 @@ do_mode() {
   case "$(base_mode)" in
     locked)
       kdialog --title "$TITLE" --warningcontinuecancel \
-        "Rolling mode is NOT recommended.\n\nIt switches this device from the tested Pocknix package base to live Arch Linux ARM. Any upstream update can then break the Steam session, graphics, or boot until the next Pocknix release.\n\nIt exists for people who want to manage packages with pacman themselves, and it is unsupported.\n\nContinue to the final confirmation in a terminal?" \
+        "Rolling mode is NOT recommended.\n\nIt switches this device from the tested CalvOS package base to live Arch Linux ARM. Any upstream update can then break the Steam session, graphics, or boot until the next CalvOS release.\n\nIt exists for people who want to manage packages with pacman themselves, and it is unsupported.\n\nContinue to the final confirmation in a terminal?" \
         || return 0
       konsole_run "/usr/bin/pocknix-base rolling" ;;
     rolling)
       kdialog --title "$TITLE" --warningcontinuecancel \
-        "Return this device to the supported locked base?\n\nEvery base package converges back to the Pocknix snapshot (downgrades included). Software installed while rolling may block this — the terminal names it if so." \
+        "Return this device to the supported locked base?\n\nEvery base package converges back to the CalvOS snapshot (downgrades included). Software installed while rolling may block this — the terminal names it if so." \
         || return 0
       konsole_run "/usr/bin/pocknix-base locked" ;;
     *) gui_err "Cannot tell the current mode from /etc/pacman.conf." ;;
@@ -298,7 +298,7 @@ while :; do
     locked)  items+=(mode "Switch to rolling mode (not recommended)...") ;;
     rolling) items+=(mode "Return to locked mode (recommended)...") ;;
   esac
-  items+=(installer "Install or remove internal Pocknix...")
+  items+=(installer "Install or remove internal CalvOS...")
   items+=(deckstation "Install DeckStation (emulators)...")
   items+=(wproton "Set up WProton (Windows games)...")
   items+=(mako-dll "Install Lossless Scaling DLL (MAKO)...")

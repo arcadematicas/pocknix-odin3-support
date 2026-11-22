@@ -1,5 +1,5 @@
 [Unit]
-Description=pocknix kernel/modules coherence guard
+Description=CalvOS kernel/modules coherence guard
 ConditionPathIsMountPoint=/flash
 After=local-fs.target
 
