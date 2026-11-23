@@ -28,7 +28,7 @@ AppWindow {
     readonly property var sectionIcons: ({
         emulation: "input-gamepad-symbolic", compatibility: "system-run-symbolic",
         network: "network-vpn-symbolic", streaming: "media-playback-start-symbolic",
-        desktop: "monitor-symbolic"
+        desktop: "monitor-symbolic", tools: "applications-utilities-symbolic"
     })
 
     function refresh() {

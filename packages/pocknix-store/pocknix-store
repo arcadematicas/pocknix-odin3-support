@@ -31,7 +31,8 @@ EMU = re.compile(r"pocknix-emu-[a-z0-9-]+")
 ID = re.compile(r"[a-z0-9][a-z0-9-]*")
 UNIT = re.compile(r"[a-z0-9][a-z0-9@._-]*\.(service|socket)")
 SECTIONS = {"emulation": "Emulation", "compatibility": "Compatibility",
-            "network": "Network", "streaming": "Streaming", "desktop": "Desktop mode"}
+            "network": "Network", "streaming": "Streaming", "desktop": "Desktop mode",
+            "tools": "Herramientas"}
 GENERIC_ICON = "applications-games"
 OK, ERROR, USAGE, BUSY = 0, 1, 2, 3
 
