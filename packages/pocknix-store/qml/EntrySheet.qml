@@ -19,6 +19,11 @@ Sheet {
 
 
     onOpened: {
+        // Mando: si se puede instalar, el foco arranca en Instalar (A lo activa).
+        Qt.callLater(() => {
+            if (primary.visible)
+                primary.forceActiveFocus()
+        })
         tileError = ""
         if (entry && entry.tile) {
             tileState = "loading"
@@ -119,6 +124,7 @@ Sheet {
                 }
             }
             Button {
+                id: primary
                 visible: sheet.entry && !sheet.entry.installed
                 enabled: !sheet.locked
                 text: qsTr("Install")

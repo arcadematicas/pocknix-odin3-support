@@ -50,19 +50,36 @@ AppWindow {
     function padPressed(key) {
         const page = padPage()
         if (!page) return
-        if (key === Qt.Key_PageUp) { currentIndex = Math.max(0, currentIndex - 1); return }
-        if (key === Qt.Key_PageDown) { currentIndex = Math.min(Math.max(0, sections.length - 1), currentIndex + 1); return }
-        if (key === Qt.Key_Escape) { if (sheet.opened) sheet.close(); return }
-        if (key === Qt.Key_Return) {
-            const item = activeFocusItem
-            if (item && item.clicked) item.clicked()
+        const inSheet = dialogOpen || sheet.opened
+        if (key === Qt.Key_Escape) {
+            if (dialogOpen)
+                closeDialog()
+            else if (sheet.opened)
+                sheet.close()
             return
         }
+        if (key === Qt.Key_Return || key === Qt.Key_Space) {
+            const item = activeFocusItem
+            if (item && item.clicked)
+                item.clicked()
+            return
+        }
+        if (inSheet) {
+            if (key === Qt.Key_Left || key === Qt.Key_Right || key === Qt.Key_Up || key === Qt.Key_Down) {
+                const cur = activeFocusItem
+                if (cur && cur.nextItemInFocusChain) {
+                    const forward = (key === Qt.Key_Right || key === Qt.Key_Down)
+                    cur.nextItemInFocusChain(forward).forceActiveFocus()
+                }
+            }
+            return
+        }
+        if (key === Qt.Key_PageUp) { currentIndex = Math.max(0, currentIndex - 1); return }
+        if (key === Qt.Key_PageDown) { currentIndex = Math.min(Math.max(0, sections.length - 1), currentIndex + 1); return }
         if (key === Qt.Key_Left || key === Qt.Key_Right || key === Qt.Key_Up || key === Qt.Key_Down) {
             if (page.padNav) page.padNav(key)
         }
     }
-
 
     function act(kind, ids, title) {
         if (actionJob.running)
