@@ -80,10 +80,17 @@ def fix_links(plugged):
         if src not in graph:
             return changed
         dst = f"{target}:playback_{ch}"
+        alt = f"{other}:playback_{ch}"
         if dst in graph:
             continue
-        run(["pw-link", "-d", src, f"{other}:playback_{ch}"])
-        run(["pw-link", src, dst])
+        if alt in graph:
+            run(["pw-link", "-d", src, alt])
+        # Solo cuenta si el enlace SE CREA: al enchufar, el sink de auriculares puede
+        # tardar un momento en aparecer y `pw-link` falla; antes se daba por hecho y no
+        # se reintentaba, dejando el audio en el altavoz con los cascos puestos.
+        r = subprocess.run(["pw-link", src, dst], capture_output=True)
+        if r.returncode != 0:
+            continue
         changed = True
     return changed
 
@@ -171,6 +178,11 @@ def main():
             time.sleep(POLL)
             if jack_plugged() != LAST_JACK["plugged"]:
                 apply_all(reason="poll")
+            elif LAST_JACK["plugged"] is not None and fix_links(LAST_JACK["plugged"]):
+                # Enlaces rehechos: el sink de destino no estaba cuando se enchufo.
+                print(f"{time.strftime('%H:%M:%S')} enlaces rehechos "
+                      f"jack={'on' if LAST_JACK['plugged'] else 'off'}", flush=True)
+                fix_default(LAST_JACK["plugged"])
     except KeyboardInterrupt:
         pass
 
