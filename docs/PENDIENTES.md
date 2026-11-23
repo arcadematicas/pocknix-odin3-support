@@ -42,10 +42,15 @@ Orden aproximado de prioridad. Dueño: (A) Alfred / (F) Fransis.
 14. Super Mario 3D Land: compilado + pack HD en el PC (`~/games/SuperMario3DLand`); falta decidir
     atajo de Steam y copia al disco de 16 TB.
 
-## Samba (cerrado, por si acaso)
-15. **Hecho**: usuario Samba `deck`/`pocknix` (el invitado era solo lectura), `/mnt/odin` montado en
-    el PC con automount. La **raiz de `/opt`** sigue siendo `root:root` (no escribible); sus
-    subcarpetas si. Solo tocar si Fransis quiere crear carpetas nuevas en la raiz de `/opt`.
+## Samba (cerrado, con causa documentada)
+15. **Regresion nuestra, no del sistema**: la entrada SMB de la tienda habilitaba `smb.service` sin
+    ejecutar `pocknix-share on`, que es quien crea la entrada de passdb de `deck`; sin ella el
+    invitado no puede escribir (`smb2_create` -> ACCESS_DENIED). Ver
+    `docs/INCIDENCIA-2026-11-23-SAMBA.md`.
+    - Arreglado en el dispositivo (`pocknix-share on`) y en el motor (`pocknix-store 7`, paso
+      `share-passdb`; repara con `sudo pocknix-store setup samba`).
+    - PC: `/mnt/odin` montado como **guest** con automount (sin fichero de credenciales).
+    - Unico limite que queda: la **raiz de `/opt`** es `root:root`; sus subcarpetas si se escriben.
 
 ## Como retomar
 - Build de referencia: `make packages PKG="..."` en el chroot (uno a la vez), `make stage PKG="..."`,
