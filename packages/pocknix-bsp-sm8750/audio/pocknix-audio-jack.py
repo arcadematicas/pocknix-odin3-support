@@ -36,8 +36,9 @@ HW = {
     True: "alsa_output.platform-sound.HiFi__Headphones__sink",
     False: "alsa_output.platform-sound.HiFi__Speaker__sink",
 }
-TICK = 10.0                            # red de seguridad (el camino rapido es por eventos)
-SETTLE = 0.20                      # deja que PulseAudio/PipeWire asiente tras el evento
+TICK = 3.0                            # red de seguridad (el camino rapido es por eventos)
+SETTLE = 0.20
+LAST_JACK = {"plugged": None}   # ultimo estado aplicado (ver watch_events)                      # deja que PulseAudio/PipeWire asiente tras el evento
 
 
 def run(cmd, timeout=8):
@@ -111,6 +112,7 @@ def apply_all(reason=""):
     amps = False   # no se tocan los amps del altavoz: su volumen es atenuacion (0 = maximo)
     comp = ensure_comp_off(plugged)
     dt_ms = (time.monotonic() - t0) * 1000.0
+    LAST_JACK["plugged"] = plugged
     if links or default or amps or comp:
         acciones = ",".join(
             n for n, v in (("links", links), ("default", default), ("amps", amps), ("comp", comp)) if v
@@ -142,6 +144,13 @@ def watch_events(stop):
                 low = line.lower()
                 if " on card " in low or " on sink " in low or " on server " in low:
                     time.sleep(SETTLE)
+                    # El evento de tarjeta llega ANTES de que amixer vea el jack en su
+                    # estado nuevo: sin esta espera se aplica el estado viejo, no cambia
+                    # nada y el cambio real se pospone al tick (de ahi los "2-10 s").
+                    for _ in range(12):
+                        if jack_plugged() != LAST_JACK["plugged"]:
+                            break
+                        time.sleep(0.15)
                     apply_all(reason="evento")
         finally:
             try:
