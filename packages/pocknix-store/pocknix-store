@@ -409,8 +409,24 @@ def setup_tailscale_operator() -> None:
     raise Fail("tailscale set --operator failed")
 
 
+# Samba escribe como invitado, pero el token Guest conserva el SID Guest y la ACL sintetizada
+# solo da escritura al SID propietario: sin una entrada de deck en passdb, smb2_create responde
+# ACCESS_DENIED a cualquier creacion o borrado. pocknix-share la crea con una contrasena
+# aleatoria que se descarta, y deja smb/avahi habilitados. Habilitar el servicio a pelo (lo que
+# hacia la primera version de la entrada) deja el recurso en solo lectura.
+def setup_share_passdb() -> None:
+    share = "/usr/bin/pocknix-share"
+    if not os.path.exists(share):
+        raise Fail("pocknix-share no esta disponible (pocknix-tools)")
+    r = subprocess.run([share, "on"], capture_output=True, text=True)
+    for line in (r.stdout or "").splitlines():
+        out(line)
+    if r.returncode != 0:
+        raise Fail(f"pocknix-share on: {(r.stderr or '').strip() or r.returncode}")
+
+
 # The only steps a catalogue entry can ask for: the file names one, never a command.
-SETUP = {"tailscale-operator": setup_tailscale_operator}
+SETUP = {"tailscale-operator": setup_tailscale_operator, "share-passdb": setup_share_passdb}
 
 
 def services(ids: list[str], found: dict, on: bool) -> None:
