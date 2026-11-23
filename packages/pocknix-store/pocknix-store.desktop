@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=CalvOS Store
+Comment=Instala y quita emuladores y extras de CalvOS
+Exec=/usr/bin/pocknix-ui store
+TryExec=/usr/bin/pocknix-ui
+Icon=system-software-install
+Terminal=false
+Categories=System;PackageManager;
+Keywords=emulador;emulacion;instalar;quitar;tienda;calvos;
