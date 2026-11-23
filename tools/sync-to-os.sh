@@ -154,6 +154,7 @@ fi
 # boot transaction, which stalls multi-user.target for the whole >300 MB flatpak seed. Ours is
 # started only by the NM dispatcher once a link is really up (odin3-pr e574b2a).
 overlay "packages/pocknix-desktop" "packages/shared/pocknix-desktop"
+overlay "packages/pocknix-store" "packages/shared/pocknix-store"
 overlay "packages/pocknix-desktop-kde" "packages/shared/pocknix-desktop-kde"
 
 # --- pocknix-power-profiles: puente power-profiles-daemon <-> perfiles pocknix ----
