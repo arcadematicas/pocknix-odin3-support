@@ -57,3 +57,13 @@ Orden aproximado de prioridad. Dueño: (A) Alfred / (F) Fransis.
   `make publish DEVICE=sm8750`. Gate: nombres nuevos necesitan depender de una raiz.
 - Paquete nuevo nuestro = `calvos-*` (`docs/CONVENCIONES-PAQUETES.md`).
 - Catalogo AppImages: `tools/gen-appman-catalogue.py ~/.local/share/AM/aarch64-appimages`.
+
+## Cierre 23/11 23:59 — estado exacto
+- **`pocknix-store 0.1.0-7` PUBLICADO** en `r2:pocknix/sm8750` (paso `share-passdb` para Samba), pero
+  **NO instalado en la Odin**: al ir a instalarlo, la Odin ya no respondia (apagada o sin red).
+- Mañana, lo primero:
+  1. Encender la Odin y `sudo pacman -Syu` (instala store 7).
+  2. Probar la reparacion: `sudo pdbedit -x deck` y luego `sudo pocknix-store setup samba`;
+     comprobar con `smbclient //127.0.0.1/opt -N -c 'cd decomps; mkdir zz-test'` y borrar.
+  3. Comprobar que `/mnt/odin` del PC sigue escribiendo como invitado (ya se probo el 23/11).
+- El PC de sobremesa quedo **apagado** al cierre.
