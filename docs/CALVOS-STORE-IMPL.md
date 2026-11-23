@@ -111,3 +111,20 @@ asistente de Steam. **Nunca bloquea**: si falla, se registra y se relanza desde 
 - ¿La tienda va de serie (metapaquete) o es opcional?
 - ¿Qué más entra en el catálogo? (candidatos: RetroArch autocfg/shaders, Samba, Decky, ES-DE themes)
 - ¿El asistente comparte catálogo con la tienda o tiene sus propias acciones?
+
+## Publicacion en el repo (2026-11-23)
+
+`pocknix-ui` y `pocknix-store` cuelgan ahora de la raiz **`pocknix-desktop-full`** (pkgrel 4), que es
+lo que exige el gate para nombres nuevos. Asi entran en cualquier instalacion de escritorio y el
+`stage-check` las resuelve sin tocar la lista de raices.
+
+- `pocknix-store 0.1.0-3`: navegacion por foco (flechas entre tiles, RePag/AvPag por seccion) y
+  seccion **Herramientas** (SSH, SMB, Flatpak/Flathub). Catalogo: 12 entradas, 5 secciones.
+- Ojo: `flatpak` ya entra como dependencia de `pocknix-desktop-full`, asi que esa entrada aparece
+  como instalada aunque el servicio `pocknix-flathub` no este activo.
+
+### Trampa del dia
+`make packages` regenera el indice completo del repo bajo qemu (varios minutos) y **deja `.db.tar.gz.lck`**
+si se interrumpe. Dos builds a la vez = dos repo-add peleando por el lock y DB a medias. Antes de
+relanzar: `pgrep -af repo-add` vacio y borrar los `.lck` a mano (la DB se comprueba con
+`bsdtar -tf pocknix-*.db.tar.gz`).
