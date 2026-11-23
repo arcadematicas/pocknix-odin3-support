@@ -1,0 +1,4942 @@
+[
+{
+"id": "0xfx",
+"name": "0xfx",
+"description": "Guitar amp simulator & effects pedalboard — open source, cross-platform (CLAP/VST3).",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "2ship2harkinian",
+"name": "2ship2harkinian",
+"description": "2ship2harkinian. A PC port of The Legend of Zelda: Majora's Mask based on a decompilation project.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "6502-emulator",
+"name": "6502-emulator",
+"description": "Emulator for the AC6502 family of computers.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "86box",
+"name": "86box",
+"description": "Emulator of x86-based machines based on PCem.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "8b",
+"name": "8b",
+"description": "Create, read and edit controller profiles for 8BitDo devices on Linux.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "abracadabra",
+"name": "abracadabra",
+"description": "A DAB and DAB+ Software Defined Radio (SDR) application.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "absotui",
+"name": "absotui",
+"description": "\"ABS\" (Audiobookshelf) + \"TUI\" (terminal user interface) — read it like \"absolutely. A fun, fast, and intuitive TUI client for Audiobookshelf — browse, play, and sync your audiobooks & podcasts, all in your terminal.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "activitywatch",
+"name": "activitywatch",
+"description": "The best free and open-source automated time tracker. Cross-platform, extensible, privacy-focused.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "adiman",
+"name": "adiman",
+"description": "A music player for Linux written in dart and rust using flutter inspired by namida.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "adventuremods",
+"name": "adventuremods",
+"description": "Set up mods for Sonic Adventure DX and Sonic Adventure 2 on Linux..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "aes-lacrima",
+"name": "aes-lacrima",
+"description": "Emulation frontend and multimedia created with Avalonia.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "aethersdr",
+"name": "aethersdr",
+"description": "Native amateur-radio workstation for FlexRadio (FLEX-6000/8000/Aurora) — Linux, macOS, Windows · Qt6 + C++20..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "agent-purge",
+"name": "agent-purge",
+"description": "One persona, many coding agents. Replace or inject system prompts across codex, claude, opencode, grok, omp, hermes, pi, zcode - with a local web console..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "agentshot",
+"name": "agentshot",
+"description": "Direct your video, AgentShot edits it. An open-source AI video editor: drop in footage, say what you want, point at the frame, and get a before/after for every change. Runs on your own computer, phone, or cloud worker.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "aigcpanel",
+"name": "aigcpanel",
+"description": "AIGCPanel is a simple and easy-to-use one-stop AI digital human system that supports video synthesis, sound synthesis, and sound cloning, simplifying local model management, and one-click import and use of AI models. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "aipixel",
+"name": "aipixel",
+"description": "AI pixel art - walking pictures, battle frames, special effects frames, background layers, sprite pictures, pixel pictures, frame animations, tile maps, AIPixel, Aseprite, RPG Maker materials, RPGツクールu200c, Pixel Game Maker, Godot, Action Game Maker, Unity, independent games, game development, game production...",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "airamusic",
+"name": "airamusic",
+"description": "The third-party NetEase Cloud music desktop client based on React and Electron supports independent multi-windows (comments, pictures, playlists, albums, settings), Agent, external MCP access, dynamic color selection, lyrics display, music spectrum, desktop lyrics, tray and other functions..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "akhenaten",
+"name": "akhenaten",
+"description": "Open-source engine for Pharaoh (+Cleopatra) city-building game.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "alacritty",
+"name": "alacritty",
+"description": "A modern terminal emulator that comes with sensible defaults, but allows for extensive configuration.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "alike-studio",
+"name": "alike-studio",
+"description": "Alike Studio is a 2D skeletal animation editor written from scratch in plain HTML5, JavaScript and WebGL. It has no dependencies and no build step..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "amarok",
+"name": "amarok",
+"description": "Powerful music player that lets you rediscover your music.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "amiberry",
+"name": "amiberry",
+"description": "Optimized Amiga emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "anibox",
+"name": "anibox",
+"description": "AniBox is a Windows desktop client customized for Feiniu Film and Television. It uses a React self-drawn interface to directly connect to its API, plays in an independent mpv process, and aggregates Bangumi/TMDB/AniList metadata, local barrage and other film and television experience enhancements, turning Feiniu Film and Television into a private theater on your desktop. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "anicraft",
+"name": "anicraft",
+"description": "AniCraft: An open-source 2D animation editor written from scratch in pure Rust..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "antigravity-manager",
+"name": "antigravity-manager",
+"description": "Professional Antigravity Account Manager & Switcher. One-click seamless account switching for Antigravity Tools. Built with Tauri v2 + React (Rust). Professional Antigravity account management and switching tool. Provide one-click seamless account switching function for Antigravity. ..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "any-listen-desktop",
+"name": "any-listen-desktop",
+"description": "A cross-platform private music playback service.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "aonsoku",
+"name": "aonsoku",
+"description": "A modern desktop client for Navidrome/Subsonic servers built with React and Electron.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "apps2samsung",
+"name": "apps2samsung",
+"description": "One-click app installer for Samsung TVs, projectors and smart monitors (Tizen) — Jellyfin, Moonlight, and the whole community catalog.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "argentum",
+"name": "argentum",
+"description": "Free, open-source RAW photo editor: Lightroom-like defaults, GPU-fast, AI masks, your camera's own lens corrections. Windows and macOS; Linux builds..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "arkarchive",
+"name": "arkarchive",
+"description": "An arknights story player. Can read stories without Internet..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "armgba",
+"name": "armgba",
+"description": "Game Boy Advance emulator built as a full recompiler, targeting speed and accuracy.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "arwing",
+"name": "arwing",
+"description": "Star Fox recompilation, PC port with quality of life improvements.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "arwing2",
+"name": "arwing2",
+"description": "PROJECT ARWING 2 - StarFox 2 recomp with quality of life improvements.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "asone",
+"name": "asone",
+"description": "Product photo editor for online shops: crop, margins, white background, local AI background removal, URL-friendly file names and metadata-free progressive JPEG.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "astraplay",
+"name": "astraplay",
+"description": "AstraPlay is an open-source PS4/5 Remote Play client for Android, Android TV, iOS, macOS, Windows, Linux, and Steam Deck with internet play, console discovery, and app-store installs..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "audacious",
+"name": "audacious",
+"description": "An open source audio and music player, descendant of XMMS.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "audacity",
+"name": "audacity",
+"description": "Multiplatform Audio Editor.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "audio-sharing",
+"name": "audio-sharing",
+"description": "Share audio from the desktop on local network using RTSP protocol.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "augustus",
+"name": "augustus",
+"description": "An open source re-implementation of the game Caesar III.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "backspace",
+"name": "backspace",
+"description": "Self-hosted, open-source Discord alternative: voice, HD video, screen share up to 4K/120fps, and server-to-server federation. TypeScript, AGPL-3.0.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "bakamusic",
+"name": "bakamusic",
+"description": "A plug-in, customizable, ad-free free music player..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "banjo-recompiled",
+"name": "banjo-recompiled",
+"description": "A static recompiled port of N64 Banjo-Kazooie for PC.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "basic256",
+"name": "basic256",
+"description": "A modern retro BASIC programming environment for learning coding and having fun.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "basiliskii",
+"name": "basiliskii",
+"description": "Classic Macintosh emulator BasiliskII.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "bedrud",
+"name": "bedrud",
+"description": "Self-hosted video meeting platform — a single binary that packages the web UI, REST API, and WebRTC media server into one deployable unit.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "betteryandexmusic",
+"name": "betteryandexmusic",
+"description": "Upgrade your Yandex Music: shared listening, new themes, song lyrics and much more.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "bigmoeonedge",
+"name": "bigmoeonedge",
+"description": "Run MoE models bigger than your RAM. Frontier-size MoE on a phone, laptop, edge. Lossless, on stock llama.cpp. An adaptive streaming optimizer. Any hardware, any OS, any model, any quantization, behind a local OpenAI-compatible server.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "bilimusic",
+"name": "bilimusic",
+"description": "Turn your bilibili into music player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "biu",
+"name": "biu",
+"description": "Bilibili music player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "blastcorps",
+"name": "blastcorps",
+"description": "A Blast Corps decompilation/port..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "blenderbase-public",
+"name": "blenderbase-public",
+"description": "Blenderbase public release repository, that hosts released installer files and documentation for Blenderbase - the Blender 3D version, addon and blend file manager.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "blue",
+"name": "blue",
+"description": "Blue - An Integrated Music Environment.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "blue-dove",
+"name": "blue-dove",
+"description": "A fast music player with an album browser and waveform seekbar.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "bookmark-dlp",
+"name": "bookmark-dlp",
+"description": "Small utility program for downloading bookmarked youtube links using yt-dlp.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "boxplayer",
+"name": "boxplayer",
+"description": "BoxPlayer – An all-in-one cloud drive manager and video aggregator.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "bridgeclip",
+"name": "bridgeclip",
+"description": "Open-source AI video clipping desktop app by BridgeMind.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "c-dogs-sdl",
+"name": "c-dogs-sdl",
+"description": "C-Dogs SDL. A modern SDL-based port of the classic overhead action game C-Dogs.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cadence",
+"name": "cadence",
+"description": "Floating Spotify lyrics overlay: synced lyrics, 3D holographic frames, album theming.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "caelo",
+"name": "caelo",
+"description": "Open-source desktop client for the xAI Grok API — chat, image & video generation, voice, and an agentic coding module with local file access. Bring your own key, no telemetry.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "cal-audio-analyzer",
+"name": "cal-audio-analyzer",
+"description": "Live sound and room acoustics analyzer: dual-channel transfer function, real-time spectrum, SPL metering, sweeps with RT60 and 3-D waterfall, alignment with crossover designer, EQ assistant with FIR export, feedback finder. Browser and desktop app for Windows, macOS and Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "canvast",
+"name": "canvast",
+"description": "Your references, drawings and notes, in one place. A creative workspace on an endless canvas: reference boards, vector drawing, comics, a library of your files and linked notes. Offline: one HTML file or a desktop app, no account, no network..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "carpocalypse2",
+"name": "carpocalypse2",
+"description": "Decompilation of Carmageddon 2. A decompilation project that brings the classic vehicular combat game to modern systems.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "carrier",
+"name": "carrier",
+"description": "Free, open-source Facebook Messenger desktop app - no Feed, Reels, or Facebook clutter. Tiny Tauri build with native notifications and auto-updates.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "cartridges",
+"name": "cartridges",
+"description": "Game launcher, which helps you visualize your game collection and easily launch games.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cassettecat-desktop",
+"name": "cassettecat-desktop",
+"description": "A music player for Windows, macOS and Linux. Plays your own files, Jellyfin and Navidrome/Subsonic servers, and internet radio, with synced lyrics, an equalizer and a mini player. Pairs with the Android app as a remote..",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "cataclysm-tlg",
+"name": "cataclysm-tlg",
+"description": "Cataclysm-TLG. A graphical frontend for the Cataclysm: Dark Days Ahead game engine.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cc-switch",
+"name": "cc-switch",
+"description": "A cross-platform desktop All-in-One assistant for Claude Code, Codex, OpenCode, OpenClaw, Grok Build & Hermes Agent. Only official website: ccswitch.io",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cc-switch-classic",
+"name": "cc-switch-classic",
+"description": "CC Switch's V3 classic interface branch (V4 core)/Classic V3-style UI on the cc-switch V4 core..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cc-switch-remote",
+"name": "cc-switch-remote",
+"description": "Cross-platform desktop all-in-one assistant for Claude Code, Codex, OpenCode, OpenClaw, Gemini CLI and Hermes Agent. Only official website: ccswitch.io.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cctvdl",
+"name": "cctvdl",
+"description": "Cross-platform CCTV video downloader: paste link, select resolution, batch save as MP4. Supports columns, albums, single videos, resumable downloads and Windows/macOS/Linux. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "cctvvideodownloader",
+"name": "cctvvideodownloader",
+"description": "A tool for parsing and processing online video streams from CCTV.com.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "cdj3k-emu",
+"name": "cdj3k-emu",
+"description": "An emulator for the CDJs in QEMU on Apple Silicon, with emulated SPI controls, jog LCD, USB, PC-LINK and Pro DJ Link network.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "cdogs-sdl",
+"name": "cdogs-sdl",
+"description": "Classic overhead run-and-gun game.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "chacrypt",
+"name": "chacrypt",
+"description": "Cross-platform offline-first file & streaming encryption powered by ChaCha20-Poly1305, featuring ChaBox (GUI) and ChaPose (CLI).",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "cheatbreaker",
+"name": "cheatbreaker",
+"description": "The free FPS boosting modpack for Minecraft 1.7 & 1.8.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "chiaki4deck",
+"name": "chiaki4deck",
+"description": "An open source PlayStation remote play project.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "chilpa",
+"name": "chilpa",
+"description": "Crossplatform Music Player HiFi, BitPerfect, Multi Source..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "clapper",
+"name": "clapper",
+"description": "A modern media player designed for simplicity and ease of use.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "clarity",
+"name": "clarity",
+"description": "Your Linux game library in one app. GOG, Epic, Steam and emulators in one place — desktop manager, install engine, and a gamepad-driven fullscreen mode for the TV. 93 themes, including retro-OS skins.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "classicube",
+"name": "classicube",
+"description": "Custom Minecraft Classic / ClassiCube client written in C from scratch",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "claude-vault",
+"name": "claude-vault",
+"description": "Keep Claude Desktop chats safe when switching accounts — local-first backup and restore for conversations.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "claw-switch",
+"name": "claw-switch",
+"description": "All-in-One Manager for OpenClaw.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "clk",
+"name": "clk",
+"description": "A latency hating emulator for 8 and 16 bit platforms.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cockpit-tools",
+"name": "cockpit-tools",
+"description": "🚀 Universal AI IDE account management tool: supports Antigravity / Codex / GitHub Copilot / Windsurf / Kiro / Cursor / Gemini-cli / CodeBuddy, multi-account switching, quota monitoring, automatic wake-up and multi-instance management. 🚀 Universal AI IDE account manager for Antigravity / Codex / GitHub Copilot / Windsurf / Kiro / Cursor / Gemini-cli / CodeBuddy, with multi-account switching, quota monitoring, wake-up automation, and multi-insta..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "codex-account-switch",
+"name": "codex-account-switch",
+"description": "Codex Switch is a local desktop account manager for the OpenAI Codex CLI.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "codex-auth-switch",
+"name": "codex-auth-switch",
+"description": "A local-only desktop app for managing and switching Codex ChatGPT sign-in profiles, with quota and token usage insights.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "codex-manager",
+"name": "codex-manager",
+"description": "A Codex cli account management and switching tool. Provide local gateway forwarding for Codex cli. ..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "colmap-openmvs-app",
+"name": "colmap-openmvs-app",
+"description": "One-click photogrammetry. Turn photos into 3D models using the latest COLMAP + OpenMVS — no command line needed.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "converta",
+"name": "converta",
+"description": "Convert images, audio, video, PDF, Office, 3D and CAD files from the File explorer right-click menu..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "converter432hz",
+"name": "converter432hz",
+"description": "432Hz Batch Converter. This application re-encodes your audio files while shifting the pitch to 432Hz. It uses a very high-quality pitch-shifting algorithm. By mysteryx93.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "copperline",
+"name": "copperline",
+"description": "An Amiga emulator written in Rust.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cordial",
+"name": "cordial",
+"description": "Open-source Roblox runtime for Linux. Cordial runs the Roblox client natively, no Wine, no Android emulator. Multi-instance launcher, customizable, GPL-3.0 and fully auditable. A direct alternative to Sober.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "crispy-doom",
+"name": "crispy-doom",
+"description": "A limit-removing enhanced-resolution Doom source port based on Chocolate Doom.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cromagrally",
+"name": "cromagrally",
+"description": "The wildest racing game since man invented the wheel!",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "crossgen",
+"name": "crossgen",
+"description": "Local-first AI image workspace for people and agents. Generate, edit, organize, and reuse images through the desktop app, JSON CLI, or MCP.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "cuberite",
+"name": "cuberite",
+"description": "A lightweight, fast and extensible game server for Minecraft.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cursor-token-manager",
+"name": "cursor-token-manager",
+"description": "Cursor token manager, manage multiple accounts, switch accounts, reset machine codes, clean conversation records..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "cutawan",
+"name": "cutawan",
+"description": "Free, open-source desktop video clipper for podcasts and long videos. Make captioned shorts with AI clip finding, speaker-aware reframing, and ChatGPT/Codex sign-in.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "cy-kaf-client",
+"name": "cy-kaf-client",
+"description": "Kafka manage console ui.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "daggerfall-js",
+"name": "daggerfall-js",
+"description": "Daggerfall JavaScript: a 1:1 port of The Elder Scrolls II: Daggerfall game to the browser, translated from Daggerfall Unity, on a hand-rolled WebGL2 renderer.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "darkplaces",
+"name": "darkplaces",
+"description": "The DarkPlaces Quake engine, created by LadyHavoc.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ddnet",
+"name": "ddnet",
+"description": "An actively maintained version of DDRace, a Teeworlds modification with a unique cooperative gameplay.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "dealers-choice",
+"name": "dealers-choice",
+"description": "A cross-platform, networked multiplayer poker game supporting draw, stud, and community-card variants, including Texas.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "debrify",
+"name": "debrify",
+"description": "Your personal media hub — browse, stream, and organize media from your own services and servers, with a cinematic built-in player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "decky-sunshine-res-helper",
+"name": "decky-sunshine-res-helper",
+"description": "A helper daemon for Decky Sunshine, that watches for a streaming connection and automatically matches the resolution and refresh rate requested by the client.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "deemix-remastered",
+"name": "deemix-remastered",
+"description": "Deemix Remastered: hi-res FLAC from Qobuz, the full Deezer catalog, Spotify link conversion, pro-grade tagging, and the Signal Deck interface. macOS, Windows, Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "deepseek-reasonix",
+"name": "deepseek-reasonix",
+"description": "A reliable coding agent for complex software engineering tasks.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "deskarcade",
+"name": "deskarcade",
+"description": "Mini-games that play on top of your desktop in a transparent overlay. Shoot hoops while a build, a deploy or Claude Code is working, and still see everything underneath.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "dethrace",
+"name": "dethrace",
+"description": "Reverse engineering the 1997 game \"Carmageddon\".",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "dhewm3",
+"name": "dhewm3",
+"description": "Doom 3 GPL source port.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "digicamwm",
+"name": "digicamwm",
+"description": "A powerful digital camera watermarking tool that adds professional-looking frames with camera information to your photos.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "dingusppc",
+"name": "dingusppc",
+"description": "DingusPPC. An experimental PowerPC Macintosh emulator designed to run classic Mac OS software.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "discord-quest-helper",
+"name": "discord-quest-helper",
+"description": "A cross-platform desktop application to complete Discord Quests automatically - supports video, stream, game and activity quests.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "discrakt",
+"name": "discrakt",
+"description": "The Trakt 🎥 Plex ▶️ Discord 🎮 Rich Presence that you didn't know you needed.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "display-dj",
+"name": "display-dj",
+"description": "A cross-platform desktop system tray app for controlling monitor brightness, contrast, dark mode, volume, keep-awake, window tiling, exposé, and layout presets -- all from one place. Works with both built-in laptop displays and external monitors via DDC/CI. Supports macOS, Windows, and Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "djmanager",
+"name": "djmanager",
+"description": "Your music library, built for DJs. Import tracks, analyse BPM and key automatically, build playlists, and prepare sets — all offline, all on your machine.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "dnzhrecomp",
+"name": "dnzhrecomp",
+"description": "A native port of Duke Nukem Zero Hour, statically recompiled.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "dolphin-emu-nightly",
+"name": "dolphin-emu-nightly",
+"description": "GameCube and Wii emulator, nightly development build.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "domios",
+"name": "domios",
+"description": "The OS for AI agents: a cross-platform terminal multiplexer where Claude, Codex and other agents live, work and coordinate across your machines. Mesh, memory and Blueprints built in..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "donkeykong64recomp",
+"name": "donkeykong64recomp",
+"description": "Donkey Kong 64 Recompiled. A modern recompilation of the Nintendo 64 classic Donkey Kong 64 for PC.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "doom64exultra",
+"name": "doom64exultra",
+"description": "A fork of DOOM64EX+ with new stuff and fixes.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "dopeiptv",
+"name": "dopeiptv",
+"description": "The Linux IPTV player — Xtream Codes & M3U with EPG, timeshift/catch-up, recording & multiview. Fast, open-source, native. Also on macOS & Windows.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "dosbox-x",
+"name": "dosbox-x",
+"description": "DOSBox-X is a cross-platform DOS emulator for running many MS-DOS games.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "downkyicore",
+"name": "downkyicore",
+"description": "Bili Download Ji (cross-platform version) downkyi, Bilibili website video download tool, supports batch downloads, supports 8K, HDR, Dolby Vision, and provides toolboxes (audio and video extraction, watermark removal, etc.). ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "downvid",
+"name": "downvid",
+"description": "A modern, open-source video downloader — download high-definition, watermark-free videos from across the web with a single click; a GUI for yt-dlp.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "dr-robotniks-ring-racers",
+"name": "dr-robotniks-ring-racers",
+"description": "Kart racing video game originally based on SRB2Kart.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "duckstation-gpl",
+"name": "duckstation-gpl",
+"description": "A backup of the last version of Duckstation that used GPL-3.0.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "easyeffects",
+"name": "easyeffects",
+"description": "Easy Effects. An audio effects application for PipeWire that provides equalizers, compressors, limiters, and other processing tools.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "echomusic",
+"name": "echomusic",
+"description": "EchoMusic — a minimalist, refined, and powerful third-party music player designed specifically for the desktop.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "echomusicnext",
+"name": "echomusicnext",
+"description": "🎉 Next generation EchoMusic..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "edconv",
+"name": "edconv",
+"description": "A user-friendly FFmpeg GUI.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "eglantine",
+"name": "eglantine",
+"description": "VERY experimental Nintendo Switch 2 emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "elastic",
+"name": "elastic",
+"description": "Visualize and design physics-based animation of objects.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "electroncapture",
+"name": "electroncapture",
+"description": "Playback video in a frameless electron app for screen-sharing and window capture.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "emotionalsense-p3",
+"name": "emotionalsense-p3",
+"description": "DJMAX Portable 3 (PSP, 2010 -- ULKS46236) statically recompiled to a native game for Linux and Windows (x86-64 and arm64) that a small launcher builds on your own computer from your own disc. Built on psprecomp.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "encodex",
+"name": "encodex",
+"description": "A cross-platform multimedia conversion tool with AI built on FFmpeg, React, TypeScript, and Electron.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "encounty",
+"name": "encounty",
+"description": "Free, open-source auto shiny counter for Pokémon shiny hunting. GPU-accelerated encounter detection, 60+ hunt methods with odds, OBS overlays, unlimited parallel hunts. Linux, Windows, macOS.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "eov",
+"name": "eov",
+"description": "A lightweight, cross-platform Whole Slide Image (WSI) viewer for digital pathology.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "erings",
+"name": "erings",
+"description": "A Sega Saturn Emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "extreme-infinitv",
+"name": "extreme-infinitv",
+"description": "Cross-platform IPTV player for Xtream Codes and M3U/M3U8 playlists. TV remote support, EPG, and offline downloads. Windows, macOS, Linux, Android and TV - on Microsoft Store, Google Play and Snap Store.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "extremegrecomp",
+"name": "extremegrecomp",
+"description": "Extreme-G Recompiled. A modern PC recompilation of the Nintendo 64 racing game Extreme-G.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "extremetuxracer",
+"name": "extremetuxracer",
+"description": "3D racing game with Tux, the Linux penguin.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "fasttail",
+"name": "fasttail",
+"description": "Next-generation ultra-fast multi-stream log monitor & tail viewer with Cyberpunk UI aesthetic.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "fathom",
+"name": "fathom",
+"description": "A modern desktop client for Jellyfin, with an optional built-in YouTube player and Seerr requests.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "featherplay",
+"name": "featherplay",
+"description": "A native Windows player for YouTube Music, light enough to forget it's running. Unofficial; Rust + Slint..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ferricone",
+"name": "ferricone",
+"description": "Ferricone Player: a media player for Linux on VLC's own engine, libVLC 4, with a new interface in Rust and Slint.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ffmpeg",
+"name": "ffmpeg",
+"description": "A complete, cross-platform solution to record, convert and stream audio and video.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "flashgbx",
+"name": "flashgbx",
+"description": "Reads and writes Game Boy and Game Boy Advance cartridge data. Supported hardware: GBxCart RW, GBFlash, Joey Jr, Game Bub.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "flipper-emulator",
+"name": "flipper-emulator",
+"description": "Universal Emulator for all flipperdevices Software..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "flow-desktop",
+"name": "flow-desktop",
+"description": "A modern, feature-rich YouTube  and YouTube  Music client with local recommendation for Desktop built with Rust and Tauri.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "flycast",
+"name": "flycast",
+"description": "A Sega Dreamcast, Naomi, Naomi 2 and Atomiswave emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "focus-island",
+"name": "focus-island",
+"description": "Focus Island - Maintain flow and improve concentration. Pomodoro list, memo, focus radio...",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "folderskin",
+"name": "folderskin",
+"description": "Give any folder a skin. A free, open-source folder icon changer for macOS, Windows and Linux: skins from community packs, your own photos, or folders painted by AI.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "fongmi-player",
+"name": "fongmi-player",
+"description": "A cross-platform desktop video resource player based on the film and television APP extension, parsing mainstream TVBox sources, free and beautiful..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "foobillardpp",
+"name": "foobillardpp",
+"description": "An OpenGL Billard Game based on foobillard 3.0a with patches and new features.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "foot",
+"name": "foot",
+"description": "A fast, lightweight and minimalistic Wayland terminal emulator (This AppImage can work on x11 as well).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "fooyin",
+"name": "fooyin",
+"description": "A customisable music player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "fotollection",
+"name": "fotollection",
+"description": "Free, offline app to cull a trip's photos and print them: best shots, retro date stamp, Lightroom presets and LUTs, print-size crops. Rust core. macOS, Windows, Linux..",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "foxsdr",
+"name": "foxsdr",
+"description": "FoxSDR - free SDR software (software-defined radio receiver) for Windows and Linux, with Android in testing: native RTL-SDR, HackRF, Airspy, SDRplay, RX888 and ADALM-Pluto drivers, spectrum and waterfall, 28 decoder plugins (ADS-B, AIS, APRS, ACARS, POCSAG, SSTV, weather satellites) and a browser remote. Free for noncommercial use.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "frame",
+"name": "frame",
+"description": "Fast FFmpeg GUI.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "frame-control",
+"name": "frame-control",
+"description": "Frame Control: a Mac app to manage a Valve Steam Frame over SSH, plus scripts and field notes.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "freac",
+"name": "freac",
+"description": "fre:ac, free audio converter and CD ripper for various encoders.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "freedv-gui",
+"name": "freedv-gui",
+"description": "GUI Application for FreeDV – open source digital voice for HF radio.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "freetube",
+"name": "freetube",
+"description": "An Open Source YouTube app for privacy.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "freight-fate",
+"name": "freight-fate",
+"description": "Audio-first trucking simulation for blind and low-vision players, with screen reader support.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "fretboard",
+"name": "fretboard",
+"description": "Application which helps you find your favorite guitar chord.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "fs-uae",
+"name": "fs-uae",
+"description": "FS-UAE. An Amiga emulator focused on accurate emulation and convenient configuration.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gamepad-io",
+"name": "gamepad-io",
+"description": "Exposes gamepad events over socket.io for use in other applications.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gamepadla-plus",
+"name": "gamepadla-plus",
+"description": "Gamepad Polling Rate and Latency Testing Tool (CLI & GUI).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gapless",
+"name": "gapless",
+"description": "Simple music player with blur and gapless playback.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "gba-studio",
+"name": "gba-studio",
+"description": "Just like GB Studio, but worse and for the GBA.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gearboy",
+"name": "gearboy",
+"description": "Game Boy / Gameboy Color emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gearcoleco",
+"name": "gearcoleco",
+"description": "ColecoVision emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "geargrafx",
+"name": "geargrafx",
+"description": "PC Engine / TurboGrafx-16 / SuperGrafx / PCE CD-ROM² emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gearlynx",
+"name": "gearlynx",
+"description": "Atari Lynx emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gearsystem",
+"name": "gearsystem",
+"description": "Sega Master System / Game Gear / SG-1000 emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gen1recomp",
+"name": "gen1recomp",
+"description": "Gen1Recomp - A native Lua / LÖVE2D recreation of Gen 1, 2, and 3 Poke.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "genieengine",
+"name": "genieengine",
+"description": "GenieEngine is an AI-powered game engine that lets you build commercial-quality video game with AI.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "ghostship",
+"name": "ghostship",
+"description": "Another definitive port of Super Mario 64.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gilbertcodex",
+"name": "gilbertcodex",
+"description": "A local-first desktop AI agent workspace with MCP servers, Skills, plugins, connected apps, workspace tools, image creation, research, review, and release work.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "glyph",
+"name": "glyph",
+"description": "A modern, customizable terminal emulator for Linux built with Rust, Tauri and xterm.js.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gnu-freedink",
+"name": "gnu-freedink",
+"description": "A portable and enhanced version of the Dink Smallwood game engine.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gog-conjure",
+"name": "gog-conjure",
+"description": "GOG Client for Downloading and Burning games.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gpui-memory-game",
+"name": "gpui-memory-game",
+"description": "A copy of kids-memory-game built with Rust and gpui.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "gradia",
+"name": "gradia",
+"description": "Screenshot/picture editor and uploader.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "grapefruit",
+"name": "grapefruit",
+"description": "A Rockbox and iPod Classic focused Music Manager with Plex Support.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "gthumb",
+"name": "gthumb",
+"description": "Image viewer and browser.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "gtty",
+"name": "gtty",
+"description": "RTTY (Radio Teletype) desktop application for Amateur Radio..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "gurushots-auto-vote",
+"name": "gurushots-auto-vote",
+"description": "Cross-platform Electron app for automated voting on GuruShots photography challenges. Features both GUI, android and CLI interfaces with mock mode for testing. Built with Node.js and modern web technologies.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "gwenview",
+"name": "gwenview",
+"description": "Fast and easy to use image viewer by KDE. ideal for displaying a collection of images.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "haruna",
+"name": "haruna",
+"description": "An open source media player built with Qt/QML and libmpv.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "hatari",
+"name": "hatari",
+"description": "An Atari ST and STE emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "hdrview",
+"name": "hdrview",
+"description": "A simple research-oriented image viewer with an emphasis on examining and comparing high-dynamic range (HDR) images.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "hermes-ide",
+"name": "hermes-ide",
+"description": "AI-native terminal emulator & IDE. Built with Tauri, React, and Rust.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "hexokit",
+"name": "hexokit",
+"description": "A remote, phone-first console for your tmux — agent-agnostic, no database. Spawn and watch coding agents in parallel worktrees, or anything else you run.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "hoard",
+"name": "hoard",
+"description": "Automatic, versioned game save sync across devices. Supports Steam, GOG, 20k+ games, emulators. Hoard-Cloud or Self-Host without account or telemetry. Open source (AGPL-3.0).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "homeflix",
+"name": "homeflix",
+"description": "Stream the movies on your Windows laptop to your iPad, phone or TV over home Wi-Fi..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "honghueasystudy",
+"name": "honghueasystudy",
+"description": "Honghu Yixue is a browser extension that helps college students complete online classes and assignments efficiently and free up time. It supports mainstream online course platforms such as Chaoxing, Wisdom Tree, Vocational Education Cloud, Rain Classroom, Chinese University MOOC, and U Campus, and has built-in AI question answering capabilities. It provides automatic learning, forced double-speed playback, homework assistance, AI answering questions, customized question bank configuration, and can be connected to mainstream large models. The latest version releases a desktop application, which supports automatic injection of extensions into multiple browsers, batch brushing of courses and questions, centralized management, and supports automatic anti-detection operations for Wisdom Tree/MOOC. Wisdom Tree/MOOC needs to install the desktop side to use all functions. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "hortensia",
+"name": "hortensia",
+"description": "Experimental Nintendo Switch 2 emulator for Windows, Linux and macOS: the best of the Eglantine forks (Lichii, Selevet, Orchid, SmileyTatsu, chuppatricky…) in one build.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "hpsdr-rs",
+"name": "hpsdr-rs",
+"description": "A Rust/egui desktop client for openHPSDR Protocol 1 and Protocol 2 radios (Metis/Ozy-style and Hermes/Orion-style boards), using WDSP for DSP.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "htcommander",
+"name": "htcommander",
+"description": "Multi-platform tool for the UV-Pro, GA-5WB, VR-N76, VR-N7500 HAM radios. Allows for easy control over your radio.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "hushpen",
+"name": "hushpen",
+"description": "AI powered desktop transcription app with real time speech recognition, file transcription, global hotkeys, and SRT subtitle export.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "hyperswitch",
+"name": "hyperswitch",
+"description": "A desktop configuration manager. Keep API providers and models in one place, then write them into each tool’s own config files—so you are not editing Claude Code, Codex, OpenCode, Grok, and the rest by hand.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ico-pc",
+"name": "ico-pc",
+"description": "PC, Android, iOS and macOS port of the ICO (PS2) decompilation (nathanialf/ico): Windows, Linux, Steam Deck, Android, iPhone via LiveContainer and Apple-silicon Mac (contributed). Contains no game data.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "identity",
+"name": "identity",
+"description": "Compare images and videos with one another to check for differences.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "iiviewer",
+"name": "iiviewer",
+"description": "Intermediate image viewer.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ima2-gen",
+"name": "ima2-gen",
+"description": "Local-first visual generation runtime and studio for people and coding agents, with reproducible image and video workflows across multiple providers.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "img2pdf",
+"name": "img2pdf",
+"description": "im2pdf. A command-line tool for converting images into PDF documents without unnecessary image recompression.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "imgo",
+"name": "imgo",
+"description": "Image optimization app.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "immage",
+"name": "immage",
+"description": "A raw photo editor with familiar panels, sliders and shortcuts, powered by darktable..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "impression",
+"name": "impression",
+"description": "Simple USB image writer application.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ioquake3",
+"name": "ioquake3",
+"description": "The de-facto OSS Quake 3 distribution.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ipollowork",
+"name": "ipollowork",
+"description": "Enterprise-grade, local-first Agent Workbench for people and agent teams. A unified multi-engine workspace for Codex Harness, DeepSeek Harness, and OpenCode, with unified plugins and Skills, multi-agent projects and tasks, and editable code, documents, presentations, design, and video.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "iris",
+"name": "iris",
+"description": "Sony PlayStation 2 games emulator for Windows, Linux and macOS.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "isobar",
+"name": "isobar",
+"description": "Cross-platform HF weather-fax (WEFAX) decoder — interoperable with KG-FAX. C++17 + FLTK + RtAudio. GPLv3+.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "itgmania",
+"name": "itgmania",
+"description": "A fork of StepMania 5.1, an advanced cross-platform rhythm game for home and arcade use.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "izum-storyflow",
+"name": "izum-storyflow",
+"description": "Izum StoryFlow is an open‑source cross‑platform ebook reader (Next.js/Tauri v2) supporting EPUB, PDF, MOBI, FB2, TXT, MD. Features: scroll/page modes, search, bookmarks, annotations, dictionaries/translation, split‑screen, themes, sync. Also TTS, audio sync, OPDS/Calibre, Yandex Books, and self‑hosted sync server.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "javinizer-go",
+"name": "javinizer-go",
+"description": "Javinizer written in Go and Svelte. This is a modern replacement for the original Javinizer. (NSFW) Organize your local Japanese Adult Video (JAV) library.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "jellyboxplayer",
+"name": "jellyboxplayer",
+"description": "A native desktop and mobile music player for Jellyfin and Emby with spotify-like playlists, playback handoff between devices and other useful features.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "jellytune",
+"name": "jellytune",
+"description": "JellyTune, Gnome audio client for Jellyfin.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "jubeat-chart-viewer",
+"name": "jubeat-chart-viewer",
+"description": "The locally running Jubeat chart confirming player (Jubeat Viewer): Browse the music library, replay charts on the 4x4 panel, and check judgment points using frame-by-frame animation of markers. It's useful for creating chart videos, checking charts, and reviewing rhythms before practicing.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kaeri",
+"name": "kaeri",
+"description": "A native anime client for Mac, iPhone, iPad, Android, Android TV, Windows, Linux and the terminal. Browses AniList, plays in mpv, syncs your lists..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kaffeine",
+"name": "kaffeine",
+"description": "Media player with support for digital television (DVB-C/S/S2/T, ATSC, CI/CAM).",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kanivet",
+"name": "kanivet",
+"description": "Kanivet AI is an open-source Kubernetes desktop application. Browse Kubernetes resources, troubleshoot pods, stream container logs, trace Crossplane resources, and manage Helm releases and Argo CD applications from a graphical interface using your existing kubeconfig credentials.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "karasu",
+"name": "karasu",
+"description": "A modern anime & manga tracker built exclusively for AniList.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kblocks",
+"name": "kblocks",
+"description": "KBlocks. A classic block-stacking puzzle game developed as part of the KDE Games collection.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "kcc",
+"name": "kcc",
+"description": "KCC (Kindle Comic Converter) is a comic and manga converter for ebook readers.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "keisho",
+"name": "keisho",
+"description": "A Sega Model 1, 2 & 3 emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "kid3",
+"name": "kid3",
+"description": "Efficient audio tagger that supports a large variety of file formats.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kikoplay",
+"name": "kikoplay",
+"description": "Full-Featured Danmu Player",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kiro-account-manager",
+"name": "kiro-account-manager",
+"description": "🚀 Intelligent management of Kiro IDE accounts, one-click switching, quota monitoring, official website: https://kiro-website-six.vercel.app..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "kittytunedesktop",
+"name": "kittytunedesktop",
+"description": "KittyTune Desktop is a complete, native desktop music player built from scratch with Kotlin 2.4.20, Compose Multiplatform, and Material 3 Expressive, designed primarily for Linux systems.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kliveide",
+"name": "kliveide",
+"description": "Versatile emulator and developer environment for all Sinclair machines, provided as Electron application using React and TypeScript.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "kmahjongg",
+"name": "kmahjongg",
+"description": "KMahjongg. A solitaire tile-matching game based on the traditional Mahjong layout.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "kmines",
+"name": "kmines",
+"description": "KMines. A classic Minesweeper-style puzzle game developed as part of KDE Games.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "knights",
+"name": "knights",
+"description": "KDE's chess game frontend.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "kotodama",
+"name": "kotodama",
+"description": "One desktop window for ChatGPT, Claude, Gemini, Grok, Perplexity, Qwen, DeepSeek and Z.ai. Fast, private, fully local. Built with Tauri and Rust.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kpat",
+"name": "kpat",
+"description": "KPatience. A collection of classic solitaire card games for the KDE desktop.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "kraken-player",
+"name": "kraken-player",
+"description": "Free and open-source music player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kronos",
+"name": "kronos",
+"description": "Sega Saturn emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "kugoumusic-net",
+"name": "kugoumusic-net",
+"description": "A lightweight cross-platform Kugou music client based on .NET 10 and Avalonia. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "kuiqr",
+"name": "kuiqr",
+"description": "Local, private QR-code scanner & opener. Chrome/Edge/Firefox extension + macOS/Windows desktop app. Scan from any image or selected screen region and open links instantly — no servers, no tracking.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "labelnazuki",
+"name": "labelnazuki",
+"description": "An image annotation tool created by a college student who was driven crazy by LabelImg’s outdated interface, laggy performance, and occasional mysterious bugs..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "lap",
+"name": "lap",
+"description": "An offline-first photo manager for large local libraries.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "lasrecomp",
+"name": "lasrecomp",
+"description": "Static recompilation of Link's Awakening (Switch).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "lastglance",
+"name": "lastglance",
+"description": "When did you last...? A privacy-first recency tracker for the chores and upkeep that don't fit a calendar, and for the people you mean to stay in touch with. Runs in your browser, with no account and no server unless you bring your own.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "lc-launcher",
+"name": "lc-launcher",
+"description": "Multi-platform launcher written in JS for Minecraft Legacy Console Edition forks.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "leapmux",
+"name": "leapmux",
+"description": "AI Coding Agent Multiplexer.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "leominigames",
+"name": "leominigames",
+"description": "LeoMiniGames is a modular, cross-platform Qt 6 / Qt Quick mini-game launcher, runtime and content ecosystem.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "leomoon-subfix",
+"name": "leomoon-subfix",
+"description": "A handy tool to fix the encoding on Persian subtitle files.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "lerxu",
+"name": "lerxu",
+"description": "A modern download manager powered by the in-house XferRust engine (native Rust implementation), optimized for Windows, macOS, Linux, and Android. Downloads run over HTTP(S), BitTorrent (including magnet links) and HLS (M3U8) playlists, with uTP transport, automatic port mapping, automatic tracker synchronization, task prioritization, batch manageme.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "libation",
+"name": "libation",
+"description": "Application for downloading and managing your Audible audiobooks.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "linguagacha",
+"name": "linguagacha",
+"description": "A next-generation text translator that uses AI capabilities to translate novels, games, subtitles and other text content with one click..",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "listenmoe",
+"name": "listenmoe",
+"description": "Listen to J-POP and K-POP, or pause and resume the live stream. Stream and metadata provided by LISTEN.moe.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "listexteditor",
+"name": "listexteditor",
+"description": "A cross-platform listening material editing and synthesis tool developed by the Yifang Operation and Maintenance Development Team. You can do listening if you know how to build building blocks. Compared with similar tools, it is more modern, visual, intelligent, autonomous and controllable. Support listening production in minor languages to meet the needs of the new college entrance examination. Supports Win/Mac/Linux (Xinchuang) three-terminal system. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "littleplanet",
+"name": "littleplanet",
+"description": "Sonic the Hedgehog CD recompilation.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "live-video-magnification",
+"name": "live-video-magnification",
+"description": "Real‑time Eulerian video magnification: amplify subtle motion & color from webcam or video.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "livi",
+"name": "livi",
+"description": "Native CarPlay & Android Auto head unit for Linux (ARM/x64) & macOS (ARM/x64). Multi-session wired + wireless projection, zero-copy hardware video decoding, low-latency audio.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "loukai",
+"name": "loukai",
+"description": "Loukai  karaoke player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ltx-desktop",
+"name": "ltx-desktop",
+"description": "An open-source desktop app for generating videos with LTX models.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "lumtub",
+"name": "lumtub",
+"description": "Cross-platform YouTube client with mpv playback, local recommendations, bilingual subtitles and live danmaku.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "m3u8quicker",
+"name": "m3u8quicker",
+"description": "Cross-platform HLS (M3U8 format)/DASH/MP4 video downloader and live broadcast recorder, supports multi-threaded download, breakpoint resume, broadcast while downloading, AES decryption, browser automatic scanning address one-click download..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "m88m",
+"name": "m88m",
+"description": "Modern cross-platform PC-8801 emulator based on M88.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "manga-typesetter",
+"name": "manga-typesetter",
+"description": "Desktop typesetting app for manga and webtoon scanlation. Balloon-aware lettering, gradient and pattern fills, bulk styling by tag, editable-layer PSD export. No Photoshop needed.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "manim-blocks",
+"name": "manim-blocks",
+"description": "Make Manim math animations like building blocks 🧊 Drag the blocks to generate Python code · Browser online trial · macOS / Windows / Linux desktop version works out of the box..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "marchen-player",
+"name": "marchen-player",
+"description": "Animation barrage player, open local videos, direct video links or dramas on Jellyfin, Emby, WebDAV, automatically match the barrage play. Supports macOS, Windows, Linux and web version. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mariokart64recomp",
+"name": "mariokart64recomp",
+"description": "A native port of MarioKart 64, statically recompiled.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "maskit",
+"name": "maskit",
+"description": "Data Mask Data Maskit - a local privacy desensitization gateway specially built for large models (request automatic coding, reply streaming restoration; supports Cursor, Claude Code, Codex, Pi and other configurable Base URL tools)..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "materialfy",
+"name": "materialfy",
+"description": "Native Spotify desktop client in Material 3 Expressive (Rust + librespot + Qt Quick).",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mcpelauncher-manifest",
+"name": "mcpelauncher-manifest",
+"description": "The Bedrock edition Minecraft launcher.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "mdcz",
+"name": "mdcz",
+"description": "JAV video metadata scraping and media library organization tool | JAV metadata scraper for Emby/Jellyfin/Kodi: NFO, auto-rename, Desktop + WebUI/Docker..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "meiro",
+"name": "meiro",
+"description": "Lightweight Youtube Music client in MyGo!!!!!.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "melee-pc",
+"name": "melee-pc",
+"description": "Native PC port of Super Smash Bros. Melee (NTSC-U 1.02), built from doldecomp/melee on aurora. No game data; bring your own disc.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "melodia",
+"name": "melodia",
+"description": "Melodia is a fast, lightweight cross-platform desktop music player build in rust and slint.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "melonds",
+"name": "melonds",
+"description": "DS emulator, sorta.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "meshtastic",
+"name": "meshtastic",
+"description": "The Meshtastic client app for communicating over open-source mesh radios.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "messenger",
+"name": "messenger",
+"description": "Free unofficial Facebook Messenger desktop client that fills the gap left by Meta's discontinued app. Tiny (just ~5 MB instead of 100-200 MB), fast, distraction-free. No feed, no reels, no marketplace. Just your conversations in a dedicated window. Built with ❤️ & Tauri for Windows, macOS and Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "messenger-desktop-client-unofficial",
+"name": "messenger-desktop-client-unofficial",
+"description": "A secure, feature-rich unofficial desktop client for Facebook Messenger.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "metrolist",
+"name": "metrolist",
+"description": "YouTube Music client.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mgba",
+"name": "mgba",
+"description": "Game Boy Advance Emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "mhgu-save-editor",
+"name": "mhgu-save-editor",
+"description": "Save editor for Monster Hunter Generations Ultimate (Switch, Ryujinx/emulator saves) for Linux, Windows, and Android, with the reverse-engineered save format notes and data it is built on..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "midi-captain-max",
+"name": "midi-captain-max",
+"description": "Bidirectional MIDI firmware for Paint Audio MIDI Captain foot controllers. Includes GUI Config Editor!.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mini-vmac",
+"name": "mini-vmac",
+"description": "A miniature Macintosh 68K emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "miniter",
+"name": "miniter",
+"description": "Rust based non-linear video editor for basic tasks.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "miosub",
+"name": "miosub",
+"description": "Traditional subtitle tools allow you to jump repeatedly between \"transcription\", \"translation\", \"proofreading\" and \"timeline\". .",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mitan",
+"name": "mitan",
+"description": "The \"Mitan\" (Secret Agent) penetration testing toolset includes features such as asset information gathering, subdomain brute-forcing, search syntax utilization, asset mapping (aggregating data from FOFA, Hunter, Quake, ZoomEye, DayDayMap, Censys, Shodan, and Lingling Xinan), fingerprinting, sensitive information collection, file and port scanning, weak password cracking, JWT secret/session key/heap dump brute-forcing, WeChat Mini Program analysis, password lists, random user generation, social engineering wordlists, and AI-driven penetration testing (MCP, code auditing).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "mivra",
+"name": "mivra",
+"description": "WYSIWYG Markdown editor for Windows 10/11. Fast Tauri/Rust desktop app for local .md files with source mode, Mermaid diagrams, themes, and S3 image uploads.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mixmusic",
+"name": "mixmusic",
+"description": "MixMusic: Spotify and YouTube Music in one player. Open-source desktop music player for macOS, Windows & Linux: one search, one queue, mixed playlists, synced lyrics, and equalizer with community themes and plugins. Using Native UI by MyGo.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mo-gallery-web",
+"name": "mo-gallery-web",
+"description": "A modern image gallery app with integrated frontend and backend, supporting several deployment methods and storage backends.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "modemu2k",
+"name": "modemu2k",
+"description": "A Hayes AT-command modem emulator that bridges a serial interface to TCP/Telnet.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "monbooru",
+"name": "monbooru",
+"description": "Self-hosted, booru-style gallery for a personal image collection.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "montally",
+"name": "montally",
+"description": "Pokémon Encounter Tracker: log encounter stats, estimate shiny probability, and optimize your shiny hunting strategy. A simple, intuitive tool for every Pokémon trainer. Works with PokeMMO and Pokemon Revolution Online.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "moon-lander",
+"name": "moon-lander",
+"description": "Moon Lander is a 2D game of gravity.  Land your ship on the lading pad.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "moonfold",
+"name": "moonfold",
+"description": "Multi-model AI coding workspace with seamless agent switching, shared context, and developer tools.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "mornye-desktop",
+"name": "mornye-desktop",
+"description": "Desktop music player for your personal library on macOS, Windows and Linux. Built with Flutter and Rust. Open source, no ads, no subscription.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mortar",
+"name": "mortar",
+"description": "Mod manager for Linux, Windows and SteamOS: a profile per playthrough, every mod site in one search, profiles shared as links.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "mpv-nightly",
+"name": "mpv-nightly",
+"description": "A free, open source, and cross-platform media player (nightly build).",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mpz",
+"name": "mpz",
+"description": "Folder player for big local music collections.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mq-studio",
+"name": "mq-studio",
+"description": "🚀 A local-first, cross-platform desktop client for every message queue — one pluggable driver model across RocketMQ, RabbitMQ, Kafka, Pulsar, Redis Stream, MQTT and more. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "msh3js",
+"name": "msh3js",
+"description": "A MSH file viewer for the 3D meshes of the original Star Wars Battlefront games ('04/'05).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "msr2ds",
+"name": "msr2ds",
+"description": "Metroid: Samus Returns as a single-screen PC game, built on the Azahar 3DS emulator. Bring your own dump.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "muon-pdf",
+"name": "muon-pdf",
+"description": "Touchscreen-first lightweight PDF reader with fast tap/swipe page turns, made for music sheets and books on tablets.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "musepi",
+"name": "musepi",
+"description": "MusePi — desktop-first AI coding assistant: Electron GUI + TUI/CLI + daemon + desktop companion. Native video understanding, MCP, advisor, memory, multi-domain skills; own update channel.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "music-assistant",
+"name": "music-assistant",
+"description": "The desktop companion app for Music Assistant.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "musike",
+"name": "musike",
+"description": "Open-source music player for YouTube Music's catalog, with genres, full albums and playlists. No account needed.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "muxel",
+"name": "muxel",
+"description": "Muxel is a GPUI-native multiplexer for coding agents.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "muxics",
+"name": "muxics",
+"description": "A Winamp-inspired cross-platform desktop music player and unofficial YouTube client supports streaming from YouTube as well as local music playback. Built with Electron & React.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "muxy",
+"name": "muxy",
+"description": "Lightweight and Memory efficient terminal multiplexer.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "mymcpp",
+"name": "mymcpp",
+"description": "Open-source PlayStation 2 memory card manager and save editor..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nanna-baby-monitor",
+"name": "nanna-baby-monitor",
+"description": "Baby monitor app with secure video and audio streaming, for Android and PC. Watch your baby, pets, plants, home, or anything else you want to securely and privately keep an eye on..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "nanosaur",
+"name": "nanosaur",
+"description": "Pangea Software’s game, adventure of a cybernetic dinosaur.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nativepi",
+"name": "nativepi",
+"description": "Free, open-source cross-platform desktop app for the Pi coding agent on Windows, macOS, and Linux. Projects, conversations, streamed tool activity, diffs, model controls, and graphical extensions in one native workspace.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "navibeat-linux",
+"name": "navibeat-linux",
+"description": "A native Linux desktop music player for Navidrome and OpenSubsonic. Release binaries and feedback for the NaviBeat Linux beta.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "neko-project-ii-kai",
+"name": "neko-project-ii-kai",
+"description": "A PC-9801 series emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "neoretro",
+"name": "neoretro",
+"description": "Retro is a modding tool for games using the OTR file format. Currently only Ship of Harkinian uses this format.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "neost",
+"name": "neost",
+"description": "NeoST : Atari ST/STE Emulator based on Moira.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "neostation-frontend",
+"name": "neostation-frontend",
+"description": "The Multiplatform Emulation Frontend.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nereussdr",
+"name": "nereussdr",
+"description": "Cross-platform OpenHPSDR SDR console — Qt6 + C++20, GPU-accelerated waterfall, multi-panadapter, full WDSP DSP.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nesd",
+"name": "nesd",
+"description": "Cross-platform NES Emulator built with Dart and Flutter.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nestopia",
+"name": "nestopia",
+"description": "Cross-platform Nestopia NES emulator core with a GUI.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "neteasemusicdownloader",
+"name": "neteasemusicdownloader",
+"description": "Yunyin Download Ji · Cross-platform NetEase Cloud Music batch downloader..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "neuro-karaoke-wrapper",
+"name": "neuro-karaoke-wrapper",
+"description": "Desktop wrapper for Neuro Karaoke website.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "newpipe",
+"name": "newpipe",
+"description": "NewPipe. A lightweight open-source media player and frontend for accessing online video and audio services without the official applications.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "nexen",
+"name": "nexen",
+"description": "Multi-system emulator (NES, SNES, GB, GBA, PCE, SMS/GG, WS).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nintendo-music-rpc",
+"name": "nintendo-music-rpc",
+"description": "Discord RPC for Nintendo Music.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "nixamp",
+"name": "nixamp",
+"description": "It really whips the terminal's ass. Open-source streaming platform: turn a folder into a live radio station, TV channel or film night anyone can tune into. Terminal player, web app and desktop app on one engine, with a public directory, rooms, live subtitles and x402 pay-to-listen. Nothing uploaded, no platform in the middle.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "no-land",
+"name": "no-land",
+"description": "Cloud gaming platform that provisions GPU-powered Linux PCs on demand, combining Rust, Tauri, Sunshine, Moonlight and low-latency networking.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nomacs",
+"name": "nomacs",
+"description": "Nomacs is a free, open source image viewer, which supports multiple platforms.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "nota",
+"name": "nota",
+"description": "Nota is a free cross-platform digital audio workstation (DAW). The audio engine and DSP are a portable C++20 core; the UI is Avalonia (.NET). Plugin hosting (VST3, plus AU on macOS) runs through JUCE, isolated in its own module so the engine core stays JUCE-free.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ns2bench",
+"name": "ns2bench",
+"description": "See, hear and drive a Nintendo Switch 2 from your computer, by hand or by AI agents. The console stays offline..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ntilde",
+"name": "ntilde",
+"description": "Cross-platform terminal emulator for deterministic rendering, VT correctness, GPU-accelerated performance, and modern SSH workflows.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nucleus",
+"name": "nucleus",
+"description": "Native desktop platform for the JVM. Compose Multiplatform apps with real OS integration — native window decorations, notifications, taskbar and dock, code signing, installers, auto-update — packaged for macOS, Windows and Linux from a single Gradle DSL. Runs on the JVM or as a GraalVM native image.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "nugget-doom",
+"name": "nugget-doom",
+"description": "Nugget Doom is a Doom game source port forked from Woof! with additional features.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nuvo",
+"name": "nuvo",
+"description": "The local-first music player for Linux, Windows and macOS. Plays YouTube, SoundCloud and your own files, with Scene visuals drawn to the beat, clip export, synced lyrics and a ten-band equalizer. No account and no Nuvo server: your library stays on your machine. Free and open source..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "nx-optimizer",
+"name": "nx-optimizer",
+"description": "NX-Optimizer (Known As TOTK-Optimizer) is a Mod Manager for UltraCam, a code injection mod for the following Games: The Legend of Zelda - Tears of the Kingdom, Breath Of The Wild, Echoes Of Wisdom, Link's Awakening and More.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "nxshell20",
+"name": "nxshell20",
+"description": "A modern, cross-platform terminal emulator and remote session manager built with Electron + Vue 3.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "octodo",
+"name": "octodo",
+"description": "A Terminal Complex for CLI-Maxing Developers.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "odamex",
+"name": "odamex",
+"description": "Online Multiplayer Doom port with a strong focus on the original gameplay while providing a breadth of enhancements.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "offline-translator",
+"name": "offline-translator",
+"description": "Qt based app for text and image translation completely offline using on-device Firefox translation models.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "olenro",
+"name": "olenro",
+"description": "Olenro is a desktop app that unifies provider switching, MCP & Skills, proxy failover and cost tracking for Claude Code, Codex, Gemini CLI, OpenCode, OpenClaw and more — no more hand-editing JSON or TOML.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "omf-2097-remastered",
+"name": "omf-2097-remastered",
+"description": "One Must Fall 2097, remastered: the 1994 robot fighting classic rebuilt in TypeScript and WebGL2, playing the original game files. HD artwork, widescreen arenas with depth, fight effects, a one-key classic/remastered switch, a training lab, replays, mods and the OMF Studio mod tools. Free, for Windows, macOS, Linux and the browser..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "omniget",
+"name": "omniget",
+"description": "Local MCP server that lets Claude Code, Codex, Cursor and Gemini CLI use your own computer and your own logged-in accounts: chats, feeds, browser, files and downloads. Also a downloader for video, music and the courses you bought. Everything stays on your machine.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "open-3d-viewer",
+"name": "open-3d-viewer",
+"description": "Open BIM Suite, the XYZ-everything BIM-app. A free 3D viewer for building models: it opens IFC, Revit, SketchUp, Tekla, Allplan, Archicad, Vertex BD, BTL, DWG/DXF, MicroStation DGN, STEP, IFC5 (IFCX), CityJSON, CityGML, GeoJSON, Shapefile, LandXML, glTF, USD, Rhino, COLLADA, 3MF, AMF, FBX, 3DS, VRML/X3D, OBJ, OFF, STL and PLY models, structural analysis models (sam-json), and LAS, LAZ, E57, PTS, PTX, PCD and ASCII XYZ point clouds, measures and sections them, saves them as IFC, and exports their floor plans, sections and sheets as DWG, DXF, IFCCAD, PDF, PNG and SVG, on the desktop and in the browser.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "open-doctrines",
+"name": "open-doctrines",
+"description": "A free, source-available grand strategy game — play in a browser, on desktop, or in a Discord call. 1641 provinces, six historical scenarios, a map editor and a WebAssembly mod SDK for thirteen languages.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "open-orpheus",
+"name": "open-orpheus",
+"description": "An open-source and cross-platform (Linux, macOS, Windows) implementation of Netease Cloud Music's Orpheus browser host. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "open-video-downloader",
+"name": "open-video-downloader",
+"description": "A cross-platform GUI for youtube-dl made in Rust with Tauri and Vue + Typescript.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "opencomic-nightly",
+"name": "opencomic-nightly",
+"description": "🚧 Development builds of OpenComic with the latest changes",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "openconverter",
+"name": "openconverter",
+"description": "A lightweight format conversion and decoding tool for audio workflow, supporting format decryption..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "opendeck",
+"name": "opendeck",
+"description": "Linux software for the Stream Deck with support for original Elgato Stream Deck plugins.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "openjazz",
+"name": "openjazz",
+"description": "Open-source version of the classic Jazz Jackrabbit™ games.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "openmohaa",
+"name": "openmohaa",
+"description": "OpenMoHAA. An open-source reimplementation of the Medal of Honor: Allied Assault game engine.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "openmsx",
+"name": "openmsx",
+"description": "The MSX emulator that aims for perfection.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "openplayer",
+"name": "openplayer",
+"description": "Beautiful, extensible, high-performance cross-platform media player built with Tauri, Rust, React, and libmpv.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "openq4",
+"name": "openq4",
+"description": "The modern way to play QUAKE 4.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "openquota",
+"name": "openquota",
+"description": "Open-source, cross-platform tracker for AI coding usage, limits, reset times, and spend.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "openrct2",
+"name": "openrct2",
+"description": "Re-implementation of RollerCoaster Tycoon 2 (RCT2), expanding the game with new features.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "openreader",
+"name": "openreader",
+"description": "An open-source read-along document reader server with high-quality TTS options, synchronized highlighting, and audiobook export for EPUB, PDF, DOCX, TXT, and MD.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "opensgolf",
+"name": "opensgolf",
+"description": "An open source game engine that plays Sid Meier’s SimGolf (2002).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "openswe1r",
+"name": "openswe1r",
+"description": "An open-source port of the 1999 game Star Wars Episode 1: Racer.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "openttd",
+"name": "openttd",
+"description": "An open source simulation game based upon Transport Tycoon Deluxe.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "optiimage",
+"name": "optiimage",
+"description": "Optimize your images with OptiImage, a useful image compressor that supports PNG, JPEG, WebP and SVG file types.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "orbitdeck",
+"name": "orbitdeck",
+"description": "OrbitDeck is a desktop application for satellite tracking and orbital analysis — a roomy UI with embedded plots, built for amateur-radio operators who work the birds. It is tracking and analysis only: radio (CAT) and rotator control are intentionally out of scope, since excellent dedicated tools already cover that.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "oryxis",
+"name": "oryxis",
+"description": "Rust SSH Client & Terminal Emulator with an encrypted vault, SFTP, port forwarding, cloud discovery, and P2P sync.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ottplay-foss",
+"name": "ottplay-foss",
+"description": "IPTV/OTT set-top-box player — HLS/DASH playback, EPG, M3U/Xtream/Stalker providers, webhook push commands.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "owncord",
+"name": "owncord",
+"description": "OwnCord is a self-hosted, open-source chat platform with text channels, voice/video chat, direct messages, and a desktop client.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "oxiguitar",
+"name": "oxiguitar",
+"description": "Guitar tablature and score viewer, editor and player, written in Rust.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "paint-rs",
+"name": "paint-rs",
+"description": "An open source, clean-room reimplementation of Paint.NET for Windows, macOS, Linux, and the web.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "pakkudesktop",
+"name": "pakkudesktop",
+"description": "The official GUI for Pakku, the multiplatform modpack manager for Minecraft: Java Edition.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "paneflow",
+"name": "paneflow",
+"description": "Native terminal multiplexer for coding agents. Persistent sessions, Git worktrees, diffs, and an integrated editor. Built with Rust and GPUI.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "panoply",
+"name": "panoply",
+"description": "Every file tool in one open-source app. PDF, image, video, audio, OCR and ID photos, on your device, offline, with nothing uploaded.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "paperback",
+"name": "paperback",
+"description": "An accessible, light-weight, cross-platform ebook and document reader.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "parson",
+"name": "parson",
+"description": "A local-first, self-hosted music app. Choose a folder. Start listening.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "pawse",
+"name": "pawse",
+"description": "A fast, native music player for your local library, built in Rust and GPUI, with a buttery-smooth, customizable 120+ fps interface, exclusive (bit-perfect) output, and a rich feature set.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "pcsx-redux",
+"name": "pcsx-redux",
+"description": "Modern fork of the pcsxr PlayStation 1 emulator focused on reverse engineering and homebrew development.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "pear-desktop",
+"name": "pear-desktop",
+"description": "An extension for music player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "pepomote",
+"name": "pepomote",
+"description": "Turn your phone into a motion controller for Dolphin, Cemu, Eden & RetroArch. Wii U second screen and local multiplayer. Free & open source by PepoTech.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "phase",
+"name": "phase",
+"description": "A rules engine and game client — Rust + WASM + React.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "photogimp",
+"name": "photogimp",
+"description": "Patch for GIMP that mimics the Adobe Photoshop user interface.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "photon-studio",
+"name": "photon-studio",
+"description": "Free, offline photo editor. Edit layered images, retouch photos, create designs, and open or save PSD files.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "photos-backup-desktop",
+"name": "photos-backup-desktop",
+"description": "PhotosBackup desktop app.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "photosplice",
+"name": "photosplice",
+"description": "A desktop image editor faithfully replicating classic Adobe Photoshop with 1:1 native PSD/PSB compatibility. Live WebApp at https://photosplice.com/web.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "photovault",
+"name": "photovault",
+"description": "Smriti — offline-first photo library for your drives. No server, no cloud. On-device face recognition, Google Photos Takeout import. Windows/macOS/Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "picasim",
+"name": "picasim",
+"description": "Flight simulator for radio-controlled planes..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "picasso-suite",
+"name": "picasso-suite",
+"description": "Non-linear video editor written in Rust (egui) with a DaVinci Resolve-style interface: Cut, Edit and Deliver pages, all-format support via FFmpeg, H.264/H.265 export and .drp project import. Windows, Linux and macOS.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "piclite",
+"name": "piclite",
+"description": "PicLite — privacy-first image and GIF compression for Web, Windows, macOS and Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "pico-store-lab",
+"name": "pico-store-lab",
+"description": "Download the PICO editions of VRChat, YouTube VR and more, with guides for installing without changing headset region.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "picsharp",
+"name": "picsharp",
+"description": "A modern, full-featured, high-performance, cross-platform image compression application with a modern UI, full-featured, high-performance, cross-platform image compression tool..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "pinepods",
+"name": "pinepods",
+"description": "Pinepods is a complete podcast management system that allows you to play, download, and keep track of podcasts you enjoy. All self hosted and enjoyed on your own server!.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "pioneer",
+"name": "pioneer",
+"description": "A game of lonely space adventure.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "pixelworld",
+"name": "pixelworld",
+"description": "Pixel World: A third-party Minecraft launcher, this project is a lightly used PCL repository.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "play",
+"name": "play",
+"description": "Play! is a PlayStation2 games emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "player432hz",
+"name": "player432hz",
+"description": "432Hz Player. Most music is recorded in 440Hz. Many people claim that 432Hz resonates more with the heart whereas 440Hz resonates more with the brain, and that 432Hz music feels better. Try it yourself. Play a music in 440Hz and in 432Hz, and see which one you prefer. By mysteryx93.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "plex-folder-playlist-creator",
+"name": "plex-folder-playlist-creator",
+"description": "Plex Folder Playlist Creator is a modern desktop application built with Electron JS that generates playlists for media files in a selected folder.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "plexo",
+"name": "plexo",
+"description": "Speed up downloads by combining multiple network connections in parallel.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "podlogs",
+"name": "podlogs",
+"description": "A modern, lightweight Kubernetes pod log viewer desktop app built with Tauri, React & Rust. Features real-time log streaming, multi-pod search, and dark/light themes. 100% vibe coded with Claude.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "poltertype",
+"name": "poltertype",
+"description": "Detects typing in the wrong keyboard layout, switches it and fixes the word. Tray app for Windows · macOS · Linux (Wayland & X11). Pure Rust, zero telemetry..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "polyfin",
+"name": "polyfin",
+"description": "Self-hosted server that brings your addons and IPTV to any Jellyfin app.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "polymc",
+"name": "polymc",
+"description": "A custom launcher for Minecraft that allows you to easily manage multiple installations of Minecraft at once (Fork of MultiMC).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "pom1",
+"name": "pom1",
+"description": "Apple 1 Emulator + SDK.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "pom2",
+"name": "pom2",
+"description": "Most Apple II emulators give you a screen and a disk drive. POM2 gives you the bus, the beam, the phosphor — and a time machine.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "pommy-recomp",
+"name": "pommy-recomp",
+"description": "A native PC port of Bomberman 64: The Second Attack!, statically recompiled with N64Recomp..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "popamp",
+"name": "popamp",
+"description": "Popamp is a desktop music player in the spirit of Winamp 2: a main window, a 10-band equalizer and a playlist that snap together, and a different look whenever you want one.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "poptracker",
+"name": "poptracker",
+"description": "Universal, scriptable randomizer tracking solution that is open source, runs everywhere and supports auto-tracking.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "potacat",
+"name": "potacat",
+"description": "POTACAT is a Win/Linux/Mac desktop app for ham radio operators that aggregates real-time POTA, SOTA, and DX spots and lets you instantly tune your radio via CAT control with a single click. It also enables full remote operation (audio, PTT, logging) from your phone through a self-hosted browser interface.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "powerliminals-player",
+"name": "powerliminals-player",
+"description": "Powerliminals Player. Plays Powerliminal audios, which are nearly-silent audios containing very high-frequency energies to play in the background. You can stack 10 to 30 audios at varying speeds to play in the background day and night, selecting the balance of energies that you need. By mysteryx93.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "predict-fun-marketmaker",
+"name": "predict-fun-marketmaker",
+"description": "Predict.fun market maker + arbitrage bot with desktop console.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "prey2006",
+"name": "prey2006",
+"description": "Prey 2006 SDK integrated with Doom 3 GPL release.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "prismgb-app",
+"name": "prismgb-app",
+"description": "An open-source companion app for ModRetro Chromatic. Play on any screen, relive your best moments, never lose a secret, and make it look perfect.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "prismlauncher",
+"name": "prismlauncher",
+"description": "Launcher for Minecraft, manage multiple installations.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "prixumlauncher",
+"name": "prixumlauncher",
+"description": "Minecraft launcher with a new design, a theme editor and render scaling.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "project-carminium",
+"name": "project-carminium",
+"description": "Pure music player, supports local/Navidrome. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "protocol_10",
+"name": "protocol_10",
+"description": "A mod decompiler for frosty tool suite.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "proton-drive-sync",
+"name": "proton-drive-sync",
+"description": "Local folders, automatically synced to Proton Drive. (Unofficial Sync Client).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "protondrive-gui",
+"name": "protondrive-gui",
+"description": "Desktop GUI for the official Proton Drive CLI by Linux. Browse, upload, and download your Proton Drive files without the terminal. Built with Python + PySide6.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "protonplus",
+"name": "protonplus",
+"description": "A modern compatibility tools manager.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ps5upload",
+"name": "ps5upload",
+"description": "Send games, apps and homebrew to a jailbroken PS5, and manage the console from your computer, phone or browser.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "pulsar-desktop",
+"name": "pulsar-desktop",
+"description": "Remote desktop and game streaming for Windows, macOS and Linux. A free, open-source alternative to TeamViewer, AnyDesk and Parsec. ⚡.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "purevox",
+"name": "purevox",
+"description": "PureVox – Lightweight AI denoiser, voice extractor, and echo canceller. Input from web, Android, Linux, Windows mics. Output clean audio to PC.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "purffle-grab",
+"name": "purffle-grab",
+"description": "Free open-source YouTube downloader & Spotify playlist downloader for Windows, Mac & Linux. YouTube to MP3/MP4 up to 4K, Spotify playlists to MP3/FLAC with cover art. Built-in audio player, equalizer, format converter. No ads, no signup.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "py-gpt",
+"name": "py-gpt",
+"description": "Desktop AI Assistant powered by GPT-6, GPT-5, Gemini, Claude, Grok, Ollama, DeepSeek, Perplexity, and more - chat, agents, tools, MCP, plugins, RAG, vision, voice, image and video generation, speech synthesis and speech recognition, web search, memory, presets, canvas, assistants, themes, computer use.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "pyrowave-streaming",
+"name": "pyrowave-streaming",
+"description": "PyroWave low-latency codec for Vibepollo + Moonlight (Steam Deck/SteamOS, Android): overview, notes, scripts and downloads.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "qemu",
+"name": "qemu",
+"description": "A generic and open source machine & userspace emulator and virtualizer, to run a virtual machines.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "qingzhu-buddy",
+"name": "qingzhu-buddy",
+"description": "Qingzhu Buddy: WorkBuddy, CodeBuddy multi-account management desktop tool - automatic sign-in, points refresh, growth center, one-click switching of login status (this warehouse is for product introduction and installation package download)..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "qmmp",
+"name": "qmmp",
+"description": "Qt-based multimedia player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "qmplay2",
+"name": "qmplay2",
+"description": "Video and audio player whit support of most formats and codecs.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "qqpet-automation",
+"name": "qqpet-automation",
+"description": "QQ Pet (Retro) for macOS: reverse-engineered, telemetry removed, running on Ruffle Flash, with an automatic maintenance CLI.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "qterminal",
+"name": "qterminal",
+"description": "A lightweight Qt terminal emulator based on QTermWidget.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "quantumlauncher",
+"name": "quantumlauncher",
+"description": "A simple, powerful Minecraft launcher.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "quantumtv",
+"name": "quantumtv",
+"description": "QuantumTV is a cross-platform local film and television aggregation player built on Tauri. The front end uses Next.js and the core logic is implemented in Rust. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "quaver-astra",
+"name": "quaver-astra",
+"description": "A lightweight, cross-platform Quaver Music client with a native-like experience. built by MyGO.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "quaver-music",
+"name": "quaver-music",
+"description": "Yet another 3rd party QQ Music client, based by Electron + Vite, Design for the Linux Desktop.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "quemusic",
+"name": "quemusic",
+"description": "An all-in-one online music player built on the Qt QML framework, featuring a beautiful UI and high performance.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "rabbitremotecontrol",
+"name": "rabbitremotecontrol",
+"description": "A open source remote desktop and remote control. Support VNC, RDP, Terminal, SSH, TELNET, network tools, player etc.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ramus",
+"name": "ramus",
+"description": "A genre-first hierarchical music client for Plex.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ratiomaster-net-2-0",
+"name": "ratiomaster-net-2-0",
+"description": "RatioMaster 2.0 (forked) simulates upload/download stats on almost all private BitTorrent trackers to improve your ratio.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "rawmakase",
+"name": "rawmakase",
+"description": "📸 Free, fast, Lightroom-compatible RAW photo editor.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "readest",
+"name": "readest",
+"description": "Readest is a modern, feature-rich ebook reader designed for avid readers offering seamless cross-platform access, powerful tools, and an intuitive interface to elevate your reading experience.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "readest-unlocked",
+"name": "readest-unlocked",
+"description": "Automatically builds an unlocked (premium client gates removed) Readest from upstream readest/readest via GitHub Actions.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "reckless-drivin-sdl",
+"name": "reckless-drivin-sdl",
+"description": "Native SDL2 port of Reckless Drivin' (2000) — runs on macOS and Linux, no emulator required.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "reco",
+"name": "reco",
+"description": "An audio recorder focused on being concise and simple to use",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "recodex",
+"name": "recodex",
+"description": "Choose a screen, window or area to record; add audio and webcam; then review, edit and export the video right inside RecoDex.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "rednukem",
+"name": "rednukem",
+"description": "A port of serveral BUILD Engine games based on EDuke32.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rekordbox-library-fixer",
+"name": "rekordbox-library-fixer",
+"description": "A collection of tools to fix yout Rekordbox DJ Library.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "remocn-studio",
+"name": "remocn-studio",
+"description": "Agent-native video editor.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "renpy-translator",
+"name": "renpy-translator",
+"description": "A Ren'Py game Chinese translation tool based on Naive UI, which supports AI translation and manual translation, making game Chinese translation easier.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "respeaker-console",
+"name": "respeaker-console",
+"description": "Respeaker console. A desktop control application for reSpeaker XVF3800 devices, built with Tauri v2, React 19, and TypeScript.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "retro-vibecoder",
+"name": "retro-vibecoder",
+"description": "Template-based project generator CLI tool and standalone Desktop version with retro UI. Create C++/Python, Rust, Go, game engine projects from seeds! Eject to vendor-independent code. Built for humans or agents, indie devs or vibecoders.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "retromultitools",
+"name": "retromultitools",
+"description": "A cross-platform desktop utility for managing, inspecting, modifying, patching & launching retro game ROMs.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rewamp-app",
+"name": "rewamp-app",
+"description": "Rewamp, Retro Wave Media Player..",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "rexpo-debugger",
+"name": "rexpo-debugger",
+"description": "A professional debugging tool similar to Flipper and Chrome DevTools for your Expo and React Native applications. Monitor network traffic and console logs in real-time — with zero-config auto-discovery so you never hard-code IPs again.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rf-swift",
+"name": "rf-swift",
+"description": "🚀 A powerful multi-platform RF toolbox that deploys specialized radio, hardware, and other security tools in seconds.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ricercar",
+"name": "ricercar",
+"description": "Bit-perfect music player & UPnP/OpenHome network receiver for Linux — native Slint UI, synced lyrics, gapless, hi-res. Not affiliated with any label or streaming service.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "rigelengine",
+"name": "rigelengine",
+"description": "Modern re-implementation of DOS game Duke Nukem II.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ristretto",
+"name": "ristretto",
+"description": "Image viewer by Xfce  that can be used to view and scroll through images.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ritmo-music-tracker",
+"name": "ritmo-music-tracker",
+"description": "RITMO Music Tracker Next Generation: the Qt6 port of RMT, the Atari XL/XE POKEY music tracker.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "rocket-r",
+"name": "rocket-r",
+"description": "Rocket: Robot on Wheels - Recompiled by ThatGuyMcd.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rocksndiamonds",
+"name": "rocksndiamonds",
+"description": "An open source arcade style game of Boulder Dash, Emerald Mine, and Sokoban.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rokio",
+"name": "rokio",
+"description": "An profile manager app that lets you manage multiple accounts in one place, making it easy to switch between alt accounts without logging in and out. Supporting MacOS/Windows/Linux.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "roku-dev-studio",
+"name": "roku-dev-studio",
+"description": "Cross-platform Electron desktop studio for Roku developers: remote control, device queries, sideload, telnet console, RALE/App Connector, BrightScript Fiddle, JSON Action Scripts, an rds CLI, an MCP server for AI agents, and an internet relay.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "roller",
+"name": "roller",
+"description": "Reverse engineering the 1995 game Whiplash/Fatal Racing.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "romie",
+"name": "romie",
+"description": "ROM manager for retro handheld devices. Organize your game library and sync to MiyooMini+, RG35XX, and other gaming handhelds.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rommix",
+"name": "rommix",
+"description": "A Big Picture–style front end for your own RomM server. Scan, enrich, browse and play your games ROM collection from one beautiful ◆ rommix : A Big Picture–style front end for your own RomM server. Scan, enrich, browse and play your games ROM collection from one beautiful & free self-hosted app. free self-hosted app.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rompemu",
+"name": "rompemu",
+"description": "Natively run your RomM library games! On Windows, Linux, and macOS.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rsdkv3",
+"name": "rsdkv3",
+"description": "A Full Decompilation of Sonic CD (2011) & Retro Engine v3.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "rsdkv4",
+"name": "rsdkv4",
+"description": "A complete decompilation of Sonic 1 & Sonic 2 (2013) & Retro Engine v4.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ruffle",
+"name": "ruffle",
+"description": "A Flash Player emulator written in Rust.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "ruston-mail",
+"name": "ruston-mail",
+"description": "An unofficial, native, cross-platform Proton Mail desktop client written in Rust..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ryujinx",
+"name": "ryujinx",
+"description": "An open-source Nintendo Switch emulator, originally created by gdkchan, written in C#.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "ryujinx-canary",
+"name": "ryujinx-canary",
+"description": "An open-source Nintendo Switch emulator, originally created by gdkchan, written in C# (Canary builds).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "satty",
+"name": "satty",
+"description": "A screenshot annotation tool.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "savagewindrecomp",
+"name": "savagewindrecomp",
+"description": "Work-in-progress static recompilation of The Legend of Zelda: Breath of the Wild (Switch, v1.9.0) for Windows and Linux. Bring your own dump: no game files, keys or dumping tools included.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "savedesktop",
+"name": "savedesktop",
+"description": "Save, restore and sync your entire Linux desktop configuration (themes, icons, fonts, wallpapers, Flatpak apps and data).",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "sayonara-player",
+"name": "sayonara-player",
+"description": "A small, clear and fast audio player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "sc-hammer",
+"name": "sc-hammer",
+"description": "Move, swap and pair your Steam Controller slots (SteamOS, Linux AppImage).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "scarletnx-nightly",
+"name": "scarletnx-nightly",
+"description": "Nightly and pull request builds of ScarletNX. Static ARM64 to x86 recompiler.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "scummvm",
+"name": "scummvm",
+"description": "A 'virtual machine' for several classic graphical point-and-click adventure games",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "sdroxide",
+"name": "sdroxide",
+"description": "A native SDR client for many radios (CAT, TCI, HPSDR, RTLSDR, SoapySDR, SDRPlay and more), written in Rust, with native and web remote UI (WASM), integrated CW/RTTY/PSK Skimmer, many digi modes built in (FT8, RTTY, PSK, SSTV, FreeDV, etc), logbook, Winlink, 3D Space weather, propagation map, satellite mode, and much more!.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "selkies",
+"name": "selkies",
+"description": "Low-Latency Accelerated Web Remote Desktop Streaming Platform for Self-Hosting, Containers, Kubernetes, or Cloud/HPC.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "senthym",
+"name": "senthym",
+"description": "Senthym is a Spotify-style music player for Linux, Windows and macOS. Search and stream songs from YouTube Music, Deezer and SoundCloud with no ads, accounts or API keys. It plays your own files, shows synced lyrics and official music videos up to 1080p, and has crossfade. Built with Rust. Your Music. Your Freedom..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "sentorr",
+"name": "sentorr",
+"description": "A less sketchy way to stream movies and TV.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "serverpackcreator",
+"name": "serverpackcreator",
+"description": "Create a server pack from a Minecraft Forge, NeoForge, Fabric, LegacyFabric or Quilt modpack!.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "shotwell",
+"name": "shotwell",
+"description": "A digital photo organizer designed for the GNOME desktop environment.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "sideband",
+"name": "sideband",
+"description": "LXMF client for Android, Linux and macOS allowing you to communicate with people or LXMF-compatible systems over Reticulum networks using LoRa, Packet Radio, WiFi, I2P, or anything else Reticulum supports.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "simple-prayertime-reminder",
+"name": "simple-prayertime-reminder",
+"description": "Simple Prayertime reminder is a simple muslim prayertime reminder app for desktop. It has prayer times schedule and customizable reminder, export schedule, adhan player, and qibla direction. Previously made with Electron, Now made with Wails3! A Foundation for Scalable Cross-Platform Apps.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "slick",
+"name": "slick",
+"description": "The most powerful and versatile Slack client mod.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "smart-video-processor",
+"name": "smart-video-processor",
+"description": "Automated video processing. Re-Organize, Re-encode, adds metadata and icon when needed.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "smartswitch-explorer",
+"name": "smartswitch-explorer",
+"description": "Cross-platform GUI tool for decrypting and extracting data from Samsung SmartSwitch backups.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "snes-ide",
+"name": "snes-ide",
+"description": "Make games using pvsneslib with ease.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "snes9x",
+"name": "snes9x",
+"description": "Snes9x - Portable Super Nintendo Entertainment System TM emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "snip",
+"name": "snip",
+"description": "The visual communication layer between humans and AI agents. Capture, annotate, render diagrams, and organize with AI — powered by Electron and Ollama. macOS & Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "snowboardkids2recomp",
+"name": "snowboardkids2recomp",
+"description": "Snowboard Kids 2 Recompilation. A modern recompilation of the Nintendo 64 snowboarding game Snowboard Kids 2 for PC.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "soh",
+"name": "soh",
+"description": "Ship of Harkinian - PC port of The Legend of Zelda: Ocarina of Time.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "sonic-3-air",
+"name": "sonic-3-air",
+"description": "Source and data to build Sonic 3 A.I.R. (Angel Island Revisited) and the Oxygen Engine.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "sonic-mania-decompilation",
+"name": "sonic-mania-decompilation",
+"description": "A complete decompilation of Sonic Mania (2017).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "sonora",
+"name": "sonora",
+"description": "A native music streaming client, built with Rust and GPUI.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "spaghettikart",
+"name": "spaghettikart",
+"description": "Mario Kart 64 PC game Port.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "spent",
+"name": "spent",
+"description": "A high-performance, minimalist personal finance tracker for Linux. Local-first, privacy-focused, and built with little to no bloat.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "spin-fv-1-emulator",
+"name": "spin-fv-1-emulator",
+"description": "Spin FV-1 DSP emulator, test your assembly code on PC and run audio files and audio input through it !.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "splayer-next",
+"name": "splayer-next",
+"description": "🎵 Cross-platform desktop music player with rich lyric support and wide audio format compatibility. Cross-platform desktop music player with rich lyric support and wide audio format compatibility.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "spotatui",
+"name": "spotatui",
+"description": "A fast, standalone terminal music player in Rust: native Spotify streaming plus local, Subsonic, radio, Qobuz and Youtube sources.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "spotifast",
+"name": "spotifast",
+"description": "Spotify, native and fast. One lightweight Rust app for your whole library, local playback, and Spotify Connect on Linux, macOS, and Windows.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "srb2",
+"name": "srb2",
+"description": "A 3D Sonic the Hedgehog fangame based on a modified version of Doom Legacy.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "srt-subtitle-translator-validator",
+"name": "srt-subtitle-translator-validator",
+"description": "A cross-platform desktop and web app to translate and validate SRT subtitles using your existing LLM subscriptions (Gemini, ChatGPT, Claude, etc.) via CLIProxyAPI - no API keys needed.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "sstvae",
+"name": "sstvae",
+"description": "Send pictures over HF radio using a neural image codec instead of scanlines or file bytes.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "stagekit",
+"name": "stagekit",
+"description": "StageKit is a lightweight .NET application infrastructure library for JSON settings files, observable settings objects, crash report capture, application runtime metadata, and unhandled exception handling.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "starfox64recomp",
+"name": "starfox64recomp",
+"description": "A native port of Starfox 64, statically recompiled.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "stella",
+"name": "stella",
+"description": "A multi-platform Atari 2600 Emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "stem-studio",
+"name": "stem-studio",
+"description": "Split any married mix into Dialogue, Music & SFX — local AI stem separation for filmmakers. macOS & Linux.uggested Donation of $30 if you you can to help me keep making these tools.https://ko-fi.com/samwasserman.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "storytel-player",
+"name": "storytel-player",
+"description": "Unoffical Storytel Player for Desktop — a cross-platform desktop application for playing Storytel audiobooks, built with TypeScript, React, Fastify, and Electron.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "strahlender-xnu",
+"name": "strahlender-xnu",
+"description": "Static recompilation of the ARM64 code of Pokémon Brilliant Diamond (BDSP) for macOS and iPadOS, with a Vulkan path for Linux (work in progress).",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "streamlink",
+"name": "streamlink",
+"description": "Command-line which pipes video streams from various services.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "streetsofrageproject",
+"name": "streetsofrageproject",
+"description": "Streets of Rage recompilation project.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "strikers",
+"name": "strikers",
+"description": "Super Mario Strikers for PC, Mac, Linux & Nintendo Switch. Ported from decompiled code. Not a recompilation..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "strypt",
+"name": "strypt",
+"description": "Remove metadata from photos, PDFs, Office documents, audio and video. Strips EXIF, GPS location, camera serial numbers, author names and timestamps. A desktop app and command-line tool, written in Rust, that works offline.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "stunts-hd",
+"name": "stunts-hd",
+"description": "Stunts, 4D Sports Driving (DOS, 1990) recompiled for your browser and desktop: HD 3D, widescreen, smooth at any refresh rate, the original's own physics. Bring your own copy.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "sunder",
+"name": "sunder",
+"description": "A desktop YouTube music client that doesn't spy on you.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "supermariowar",
+"name": "supermariowar",
+"description": "A fan-made multiplayer Super Mario Bros. style deathmatch game.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "supermodel",
+"name": "supermodel",
+"description": "Sega Model 3 arcade emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "supertuxkart",
+"name": "supertuxkart",
+"description": "Free kart racing game focused on Fun!",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "supertuxkart-dev",
+"name": "supertuxkart-dev",
+"description": "Free kart racing game focused on Fun! Pre-release.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "switch",
+"name": "switch",
+"description": "Connect any AI agent to your team in Slack, Teams & Discord. Open-source and self-hostable.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "switchboard",
+"name": "switchboard",
+"description": "A desktop app for browsing, searching, and managing CLI coding sessions.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "switchyard",
+"name": "switchyard",
+"description": "Local LLM gateway for coding agents: one OpenAI- and Anthropic-compatible endpoint in front of 25+ model providers, with smart routing, a decision model that picks the best model per request, native tool calling and ~90% fewer input tokens for agents like Claude Code, Codex and OpenCode.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "synthmultiviewer",
+"name": "synthmultiviewer",
+"description": "Cross-platform editor and viewer for VapourSynth and AviSynth.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "tabengine",
+"name": "tabengine",
+"description": "A desktop guitar tab player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "tagger",
+"name": "tagger",
+"description": "Simple audio tagger with support for various audio formats.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "taisei-project",
+"name": "taisei-project",
+"description": "A free and open-source Touhou Project fangame.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "taurilanzi",
+"name": "taurilanzi",
+"description": "A fast, free desktop app for Ulanzi stream docks.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "taxonero",
+"name": "taxonero",
+"description": "Self-hosted AI species identification for your photos: Immich, local folders or photo apps. Never modifies your pictures.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "tayang-studio",
+"name": "tayang-studio",
+"description": "Tayang Studio: a free desktop app that helps creators make motion videos with their own AI agent..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "terminalpolyominos",
+"name": "terminalpolyominos",
+"description": "A lightweight polyomino stacking game for Unix terminals.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "tev",
+"name": "tev",
+"description": "High dynamic range (HDR) image viewer for people who care about colors.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "tflix",
+"name": "tflix",
+"description": "🎥 Streaming website to watch your favorite movies and TV shows—for free!..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "the-melody-of-oblivion-remake",
+"name": "the-melody-of-oblivion-remake",
+"description": "Forgotten melody starter. Faithfully restore the original launcher experience and relive the nostalgia with a new, fast, lightweight interface; while bringing better performance, cross-platform support, and everything you need to easily manage your games. ..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "the-oracles-project",
+"name": "the-oracles-project",
+"description": "The Oracles Project - A faithful, moddable port of Oracle of Ages and Oracle of Seasons for Windows, macOS, Linux and Android: your own ROM runs unmodified in SameBoy or mGBA, with a widescreen Enhanced mode, European languages, item hotkeys, Lua mods and fan games..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "thinkwatch-lite",
+"name": "thinkwatch-lite",
+"description": "Local gateway for Claude Code, Codex and other AI clients on macOS, Windows and Linux: switch upstreams without touching clients, keep API keys from relays, cut off malicious tool calls, trace every request.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "tiiny-studio",
+"name": "tiiny-studio",
+"description": "Local media studio for the Tiiny Pocket: desktop app (Windows, macOS, Linux) or Docker. Images, OCR & documents, chat with tools, voice, music, 3D.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "tikman",
+"name": "tikman",
+"description": "Open-source LAN scanner and manager for Windows, Linux and macOS. Auto-discovery and cross-vendor device classification, a physical topology map showing which switch port each device is on, backups, firmware updates, an SSH terminal, VNC and a built-in web server. Deep MikroTik/RouterOS support and advanced support for other vendors, too.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "tildaz",
+"name": "tildaz",
+"description": "Native Quake-style drop-down terminal for Linux, macOS, and Windows. One hotkey, real Wayland desktop coverage, no Electron.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "timelapse-creator",
+"name": "timelapse-creator",
+"description": "Cross-platform desktop application for creating beautiful timelapses from videos.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "tinywiibackupmanager",
+"name": "tinywiibackupmanager",
+"description": "⭐ A tiny game backup and homebrew app manager for the Wii.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "tmuxy",
+"name": "tmuxy",
+"description": "The missing tmux GUI. Not a terminal emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "toaster",
+"name": "toaster",
+"description": "Edit video by editing text — entirely on your machine.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "torflix",
+"name": "torflix",
+"description": "Torflix: browse what the swarm is watching. Stream torrents on the fly.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "torrserver",
+"name": "torrserver",
+"description": "Torrent stream server, a program that allows users to view torrents online without the need for preliminary file downloading. The core functionality of TorrServer includes caching torrents and subsequent data transfer via the HTTP protocol, allowing the cache size to be adjusted according to the system parameters and the user's internet connection speed.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "trinity-launcher",
+"name": "trinity-launcher",
+"description": "UI for minecraft bedrock linux.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "tron-terminal",
+"name": "tron-terminal",
+"description": "Fast GPU accelerated terminal emulator for Linux and macOS, written in Rust. WGSL shaders, kitty graphics, Sixel, ligatures and 460 themes..",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "tubeglass",
+"name": "tubeglass",
+"description": "A desktop client for YouTube, YouTube Music and podcasts — no account, no API key, no ads.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "tunarrtube",
+"name": "tunarrtube",
+"description": "Self-hosted YouTube companion for building and maintaining Tunarr channels.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "tunelle",
+"name": "tunelle",
+"description": "Open-source lossless audio player.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "turnout",
+"name": "turnout",
+"description": "Import real-world railway tracks from OpenRailwayMap into Nimby Rails blueprints.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "tuxfootball",
+"name": "tuxfootball",
+"description": "Is a great 2D football game for Windows and Linux.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "tuxlink",
+"name": "tuxlink",
+"description": "Native Linux desktop Winlink client for amateur radio emergency communications. Rust + Tauri B2F engine with telnet, AX.25 packet, ARDOP, and VARA. A native alternative to Winlink Express (no WINE) and Pat.",
+"cats": [
+"juegos",
+"multimedia"
+]
+},
+{
+"id": "tuxpuck",
+"name": "tuxpuck",
+"description": "Hockey-like table game.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "typsastra",
+"name": "typsastra",
+"description": "A complex-script-first Typst environment for research and long-form multilingual writing. Built with Tauri, Bun, and CodeMirror 6.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "uefitool",
+"name": "uefitool",
+"description": "UEFI firmware image viewer and editor.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ultra-tracker",
+"name": "ultra-tracker",
+"description": "An Electron athlete time logging app.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "unnamed-sdvx-clone",
+"name": "unnamed-sdvx-clone",
+"description": "Unnamed SDVX clone. An open-source rhythm game inspired by Sound Voltex, featuring keyboard and controller support.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "unstream",
+"name": "unstream",
+"description": "Paste a Spotify / Deezer / Apple Music / YouTube / SoundCloud track, album or playlist URL — or search every catalog at once — and get tagged mp3 files. No accounts, no API keys, nothing paid.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "vacuumtube",
+"name": "vacuumtube",
+"description": "YouTube Leanback on the desktop, with enhancements.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "vapourbox",
+"name": "vapourbox",
+"description": "Cross-platform video processing, restoration and conversion application.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "varia",
+"name": "varia",
+"description": "Aria2-based advanced download manager with support for downloading files, torrents, video and audio + support for Chromium and Firefox extension.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "vcw",
+"name": "vcw",
+"description": "VCW the de facto tool for vinyl capture across platforms: a complete workstation for listeners preserving and cataloging their collections, with reusable services for people building their own workflows and interfaces..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "venera-next",
+"name": "venera-next",
+"description": "VeneraNext is a cross-platform comic reader that supports local comics, WebDAV comic sources, third-party online comic sources, and supports Android, iOS, Windows, Linux, and macOS platforms. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "venerax",
+"name": "venerax",
+"description": "A continually enhanced, cross-platform comic reader based on Venera, with experimental AI translation., A continually enhanced, cross-platform comic reader based on Venera, with experimental AI translation. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "venturi",
+"name": "venturi",
+"description": "Linux-first, performance oriented minimal video editor.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "vertexlauncher",
+"name": "vertexlauncher",
+"description": "A blazingly fast modern minecraft launcher based on egui.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "vid-translate",
+"name": "vid-translate",
+"description": "Tauri desktop app for live JA/ES → EN video translation; Vosk ASR + CTranslate2 (int8-quantized MarianMT), paced-reveal captions, cross-platform CI release pipeline (AppImage/.deb/.msi).",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "vidcord",
+"name": "vidcord",
+"description": "Compress videos to fit Discord's file size limits. Cross-platform desktop app powered by FFmpeg — Windows, macOS, Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "video-trimmer",
+"name": "video-trimmer",
+"description": "Simple video trimming, with option to trim precisely or to trim without loosing video quality.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "virtualjaguar-libretro",
+"name": "virtualjaguar-libretro",
+"description": "Atari Jaguar and Jaguar CD emulator for libretro/RetroArch — the actively maintained continuation of Virtual Jaguar. Embedded BIOS, save states, netplay link cable, RetroAchievements.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "vkomic",
+"name": "vkomic",
+"description": "An application that connects to https://vk.com/board203785966 and lets you download the available comics, manga and bandes dessinées.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "vlc-redesign",
+"name": "vlc-redesign",
+"description": "VLC Media Player Redesign (unofficial): VLC 4 with the interface designed by Juxtopposed (CC BY 4.0), for Windows, Linux, macOS and Android. The real VLC engine and codecs. Not affiliated with VideoLAN.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "voltip",
+"name": "voltip",
+"description": "Push-to-talk voice typing for Windows, macOS, Linux and Android. On-device or cloud speech recognition, AI polish with presets, a dictionary, rules and scenes, long recordings with subtitles; the phone works on its own or pairs end-to-end encrypted as the computer's microphone and keyboard.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "vs-modsupdater-v2",
+"name": "vs-modsupdater-v2",
+"description": "This program automates the management of your mods for the game Vintage Story. It allows you to check for updates, download them (automatically or manually), and generate a list of your installed mods in JSON, PDF, and HTML format.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "wallpaperem",
+"name": "wallpaperem",
+"description": "WallpaperEM - an extremely elegant all-platform desktop wallpaper engine, by no means a simple copy of WE! Full support for scenes/webpages/videos/images: minimal installation package · Dependency decoupling · Ultimate performance · Multiple image quality presets · AI creation · Wallpaper sharing (real-time rendering via mobile link). A supremely elegant cross-platform wallpaper engine — not a WE clone: scene/web/video/image wallpapers, tiny install, decoupled deps, great performance, quality presets, AI authoring, share links with live mobile rendering..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "waves",
+"name": "waves",
+"description": "A native desktop app for accessing music from your own TIDAL account: search-first, art-forward, and built for people who'd rather click than type. macOS, Windows, Linux.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "waywallen",
+"name": "waywallen",
+"description": "A dynamic wallpaper manager for linux desktops.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "we-bluetooth-le-terminal",
+"name": "we-bluetooth-le-terminal",
+"description": "Smart device App for Proteus BLE Radio Modules.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "wealthfolio",
+"name": "wealthfolio",
+"description": "A beautiful, private, local-first personal finance tracker. Investments, net worth, spending, and simulations.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "web-clone",
+"name": "web-clone",
+"description": "It allows the same site to create multiple \"account clones\", and stably manage multiple web page login identities on one computer, avoiding account cross-numbers, mutual status contamination, and frequent switching of browser data directories.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "webcamoid",
+"name": "webcamoid",
+"description": "A multi-platform camera capture app focused on providing all major features required by power users with a very simple and intuitive interface.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "webchat2api",
+"name": "webchat2api",
+"description": "A desktop application for the unified management of web-based AI accounts, offering interfaces compatible with OpenAI and Anthropic. It supports account validity checks, multi-turn conversations, and switching between Chinese and English.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "webwallgl",
+"name": "webwallgl",
+"description": "WebWallGL — Browser-side Wallpaper Engine wallpaper rendering core: scene, web, video wallpapers + scene editor (npm, CDN, MIT) | WebGL2 rendering core that plays Wallpaper Engine wallpapers in the browser: scene, web, video wallpapers + scene editor (npm, CDN, MIT)..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "wfview",
+"name": "wfview",
+"description": "Wfview rig control for Icom, Kenwood and Yaesu radios.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "wfweb",
+"name": "wfweb",
+"description": "Turn any Icom transceiver into a web-accessible station. Headless wfview fork with browser-based control, audio streaming, SSB, FreeDV, AX.25, CW, JS8 and FT8.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "whisper-desktop",
+"name": "whisper-desktop",
+"description": "High-performance desktop studio for speech-to-text, subtitle translation, and video hardsubbing powered by whisper.cpp and FFmpeg. Fast, private, and runs 100% locally on Linux, Windows, and macOS.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "wikilynx",
+"name": "wikilynx",
+"description": "A simple game browser made using Qt C++ for playing wikipedia speed-runs the right way.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "windwaker-hd-editor",
+"name": "windwaker-hd-editor",
+"description": "The Legend of Zelda: The Wind Waker HD save game editor.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "winebar",
+"name": "winebar",
+"description": "A Wine prefix manager.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "wipeout-rewrite",
+"name": "wipeout-rewrite",
+"description": "Re-implementation of the 1995 PSX game wipEout.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "wivrn",
+"name": "wivrn",
+"description": "WiVRn. An open-source wireless VR streaming solution for connecting standalone VR headsets to Linux PCs.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "wizestream",
+"name": "wizestream",
+"description": ".Electron based private streaming client.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "wljs-notebook",
+"name": "wljs-notebook",
+"description": "An open-source, web-native notebook interface for Wolfram Language / Wolfram Engine.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "workbuddy-switch2api",
+"name": "workbuddy-switch2api",
+"description": "WorkBuddy / CodeBuddy account switching tool (Tauri + Rust) with built-in OpenAI support. Compatible with local reverse proxies; features account pool rotation, credit check-in monitoring, and a persistent system tray icon. Fork of changexbc/workbuddy-switch.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "xash3d-fwgs",
+"name": "xash3d-fwgs",
+"description": "A game engine aimed to provide compatibility with Half-Life Engine and extend it.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "xemu",
+"name": "xemu",
+"description": "Original Xbox Emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "xfb",
+"name": "xfb",
+"description": "XFB - Open Source Radio Automation Software by Netpack Online Solutions www.netpack.pt.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "xtplayer",
+"name": "xtplayer",
+"description": "Cross platform Tcode player..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "yakc",
+"name": "yakc",
+"description": "Yet Another Key Caster — a fast, native, cross-platform key & mouse click visualizer for streamers, presenters and developers. Built with Rust + Tauri.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "yamagi-quake-ii",
+"name": "yamagi-quake-ii",
+"description": "An enhanced client for id Software's Quake II.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "yangdownloader",
+"name": "yangdownloader",
+"description": "Yang YouTube Downloader. This downloader allows you to get either the MP4 or VP9 videos, and the AAC or Opus audios, without re-encoding to preserve the best quality. While VP9 is 35% more efficient than MP4 for videos, some videos have 40-60% smaller file sizes in VP9 format! By mysteryx93.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "yaqmc",
+"name": "yaqmc",
+"description": "Unofficial QQ Music Electron desktop client: Rust native playback, word-for-word lyrics, supports Windows and Linux. ..",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ymir",
+"name": "ymir",
+"description": "Sega Saturn emulator.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "youta",
+"name": "youta",
+"description": "Low-resource TUI audio player for YouTube (also Music) through yt-dlp, Bandcamp, Apple Podcasts and RSS, with local subscriptions and persistent listening progress, playing through headless mpv. With chapters on the seekbar - from YouTube timecodes. Also local files, Wikidata integration.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "yptun",
+"name": "yptun",
+"description": "YPtun — fast, versatile VPN client to bypass censorship. Two cores (Xray & sing-box), all major protocols, plus olcRTC support that disguises traffic as a video call.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "yt-forge",
+"name": "yt-forge",
+"description": "A free, universal video downloader and yt-dlp GUI for macOS, Windows, and Linux. Download from YouTube, Instagram, TikTok, Facebook, and 1000+ other sites.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "ytmusic-desktop",
+"name": "ytmusic-desktop",
+"description": "UNOFFICIAL: YouTube Music as a desktop application which you can control with your media keys.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "zcodium",
+"name": "zcodium",
+"description": "ZCodium，Independent audit fork of ZCode (ZCode → ZCodium). All monitoring and telemetry removed; upstream commits reviewed one by one.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "zeedle",
+"name": "zeedle",
+"description": "Music at the speed of a blink, designed for pure simplicity, also an ideal starter project for anyone new to Rust GUI development.",
+"cats": [
+"multimedia"
+]
+},
+{
+"id": "zelda64-recompiled",
+"name": "zelda64-recompiled",
+"description": "A native port of the N64 Legend of Zelda games, statically recompiled.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "zelda64recomp",
+"name": "zelda64recomp",
+"description": "Zelda 64 Recompiled. A modern recompilation of The Legend of Zelda: Ocarina of Time for PC.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "zeldawwhdrecomp",
+"name": "zeldawwhdrecomp",
+"description": "Zelda Wind Waker HD Recomp.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "zod-engine",
+"name": "zod-engine",
+"description": "An open source remake of the 1996 game Z by the Bitmap Brothers.",
+"cats": [
+"juegos"
+]
+},
+{
+"id": "zuuned-linux",
+"name": "zuuned-linux",
+"description": "Bring your Zune back into the rebellion. A native Linux app for music, videos, photos and playlists. Your collection. Your device. Your rules.",
+"cats": [
+"multimedia"
+]
+}
+]

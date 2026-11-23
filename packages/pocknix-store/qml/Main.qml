@@ -14,6 +14,8 @@ AppWindow {
     property bool loaded: false
     property string loadError: ""
     property bool attached: false
+    // Aviso de terceros: una sola vez por sesion, al entrar en AppImages.
+    property bool appimagesWarned: false
     // what the running store job works on: its tiles show busy
     property var acting: []
     property string actingKind: ""
@@ -28,7 +30,8 @@ AppWindow {
     readonly property var sectionIcons: ({
         emulation: "input-gamepad-symbolic", compatibility: "system-run-symbolic",
         network: "network-vpn-symbolic", streaming: "media-playback-start-symbolic",
-        desktop: "monitor-symbolic", tools: "applications-utilities-symbolic"
+        desktop: "monitor-symbolic", tools: "applications-utilities-symbolic",
+        appimages: "application-x-executable-symbolic"
     })
 
     function refresh() {
@@ -84,10 +87,13 @@ AppWindow {
     function act(kind, ids, title) {
         if (actionJob.running)
             return
+        // AppMan instala en la carpeta del usuario: ni pkexec ni trabajos de pacman.
+        const appman = ids.length > 0 && (kind === "install" || kind === "remove")
+            && ids.every(id => { const e = entry(id); return e && e.section === "appimages" })
         acting = ids
         actingKind = kind
         log.title = title
-        actionJob.start([cli, kind].concat(ids), { root: true })
+        actionJob.start([cli, kind].concat(ids), { root: !appman })
         log.open()
     }
 
@@ -451,6 +457,16 @@ AppWindow {
         const page = pagesRepeater.itemAt(currentIndex)
         if (page && page.navFocus)
             page.navFocus(0)
+        const currentSection = app.sections[currentIndex]
+        if (currentSection && currentSection.id === "appimages" && !appimagesWarned) {
+            appimagesWarned = true
+            app.ask({
+                title: qsTr("AppImages de terceros"),
+                text: qsTr("Este catalogo viene de AppMan (AM). Son binarios AppImage de terceros, sin firmar y sin revisar por CalvOS: instala solo lo que conozcas. Cada app se instala en tu carpeta de usuario y puedes quitarla cuando quieras. Tu eres el responsable de lo que instales."),
+                confirmText: qsTr("Entiendo"),
+                notice: true
+            })
+        }
     })
 
     EntrySheet {
