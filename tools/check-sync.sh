@@ -82,6 +82,7 @@ cmp_tree "${HERE}/kernel/dts"                     "${OS}/kernel/sm8750/dts/qcom"
 # `packages/soc-overrides/*` de mas abajo (antes vivia en packages/gamescope/).
 cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix-desktop"
 cmp_tree "${HERE}/packages/pocknix-store"        "${OS}/packages/shared/pocknix-store"
+cmp_tree "${HERE}/packages/calvos-appman"       "${OS}/packages/shared/calvos-appman"
 cmp_tree "${HERE}/packages/pocknix-desktop-kde"   "${OS}/packages/shared/pocknix-desktop-kde"
 cmp_tree "${HERE}/packages/shared/pocknix-power-profiles" "${OS}/packages/shared/pocknix-power-profiles"
 # La capa vendored: si NO se comprueba, puede quedarse atras EN SILENCIO (paso con

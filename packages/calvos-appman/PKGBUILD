@@ -1,0 +1,24 @@
+# calvos-appman - AppMan (AM) 10.7 with its modules, pinned: the store's "AppImages" section
+# installs third-party AppImages through it. Version fixed on purpose (no rolling self-update),
+# same idea as an AUR helper: unsigned third-party binaries, the user decides what to install.
+pkgname=calvos-appman
+pkgver=10.7
+pkgrel=1
+pkgdesc="AppMan (AM) 10.7: gestor de AppImages de terceros con catalogo tipo AUR (version fijada)"
+arch=('any')
+url="https://github.com/ivan-hc/AM"
+license=('GPL-3.0-only')
+depends=('bash' 'curl' 'wget' 'tar' 'gzip' 'zstd' 'unzip' 'file' 'coreutils' 'grep' 'sed'
+         'desktop-file-utils' 'xdg-utils')
+source=("https://github.com/ivan-hc/AM/archive/refs/tags/${pkgver}.tar.gz")
+sha256sums=('16b154d46d7487f5d29d2079cb4b7c392947b18c782e57511682e119fcf25050')
+
+package() {
+  install -dm755 "${pkgdir}/usr/lib/am/modules"
+  install -Dm755 "${srcdir}/AM-${pkgver}/APP-MANAGER" "${pkgdir}/usr/lib/am/APP-MANAGER"
+  install -Dm644 -t "${pkgdir}/usr/lib/am/modules" "${srcdir}/AM-${pkgver}"/modules/*.am
+  # AM busca sus modulos del sistema en /usr/lib/am/modules; el wrapper solo lanza el script.
+  install -dm755 "${pkgdir}/usr/bin"
+  printf '#!/bin/sh\nexec bash /usr/lib/am/APP-MANAGER "$@"\n' > "${pkgdir}/usr/bin/appman"
+  chmod 755 "${pkgdir}/usr/bin/appman"
+}
