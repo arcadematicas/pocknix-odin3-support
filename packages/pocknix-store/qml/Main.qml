@@ -46,6 +46,23 @@ AppWindow {
         return inSection(section).filter(e => e.installed && e.tile)
     }
 
+    function padPage() { return pagesRepeater.itemAt(currentIndex) }
+    function padPressed(key) {
+        const page = padPage()
+        if (!page) return
+        if (key === Qt.Key_PageUp) { currentIndex = Math.max(0, currentIndex - 1); return }
+        if (key === Qt.Key_PageDown) { currentIndex = Math.min(Math.max(0, sections.length - 1), currentIndex + 1); return }
+        if (key === Qt.Key_Escape) { if (sheet.opened) sheet.close(); return }
+        if (key === Qt.Key_Return) {
+            const item = activeFocusItem
+            if (item && item.clicked) item.clicked()
+            return
+        }
+        if (key === Qt.Key_Left || key === Qt.Key_Right || key === Qt.Key_Up || key === Qt.Key_Down) {
+            if (page.padNav) page.padNav(key)
+        }
+    }
+
 
     function act(kind, ids, title) {
         if (actionJob.running)
@@ -255,6 +272,13 @@ AppWindow {
                 tiles[n].forceActiveFocus()
                 return true
             }
+            function padNav(key) {
+                const tiles = navTiles()
+                if (tiles.length === 0) return
+                const focused = tiles.indexOf(app.activeFocusItem)
+                if (focused < 0) { navFocus(0); return }
+                navKey(focused, key)
+            }
             onVisibleChanged: if (visible) Qt.callLater(navFocus, 0)
 
             LoadState {
@@ -425,5 +449,10 @@ AppWindow {
         id: log
         job: actionJob
         detached: true
+    }
+
+    Connections {
+        target: Pad
+        function onPressed(key) { app.padPressed(key) }
     }
 }
