@@ -2,7 +2,7 @@
 # (emulators, compatibility tools, network tools, streaming). QML on pocknix-ui plus one root CLI.
 pkgname=pocknix-store
 pkgver=0.1.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Pocknix Store: install and remove emulators and other optional extras"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"

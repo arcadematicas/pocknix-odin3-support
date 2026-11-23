@@ -213,6 +213,7 @@ AppWindow {
     // One page per section. Until the status is in (or when it lists nothing) a single page
     // holds the message, so the rail stays hidden.
     Repeater {
+        id: pagesRepeater
         model: app.sections.length > 0 ? app.sections : [{ id: "", name: qsTr("Store") }]
 
         TabPage {
@@ -223,6 +224,38 @@ AppWindow {
 
             title: modelData.name
             icon: app.sectionIcons[modelData.id] || "applications-other-symbolic"
+
+            // Navegacion con mando/teclado: las flechas mueven el foco por la rejilla y
+            // Enter/Espacio activan el tile (ya lo trae Tile). No toca el host de la UI.
+            function navTiles() {
+                return grid.children.filter(c => c && c.visible && c.title !== undefined
+                                                 && c.activeFocusOnTab)
+            }
+            function navFocus(idx) {
+                const tiles = navTiles()
+                if (tiles.length === 0)
+                    return false
+                const i = Math.max(0, Math.min(tiles.length - 1, idx))
+                tiles[i].forceActiveFocus()
+                return true
+            }
+            function navKey(idx, key) {
+                const tiles = navTiles()
+                if (tiles.length === 0)
+                    return false
+                const cols = Math.max(1, grid.columns)
+                let n = idx
+                if (key === Qt.Key_Left)        n = idx - 1
+                else if (key === Qt.Key_Right)  n = idx + 1
+                else if (key === Qt.Key_Up)     n = idx - cols
+                else if (key === Qt.Key_Down)   n = idx + cols
+                else return false
+                if (n < 0 || n >= tiles.length)
+                    return false
+                tiles[n].forceActiveFocus()
+                return true
+            }
+            onVisibleChanged: if (visible) Qt.callLater(navFocus, 0)
 
             LoadState {
                 loading: !app.loaded
@@ -305,6 +338,7 @@ AppWindow {
             }
 
             GridLayout {
+                id: grid
                 Layout.fillWidth: true
                 columns: Math.max(1, Math.floor((width + columnSpacing) / (Theme.tileWidth + columnSpacing)))
                 columnSpacing: Theme.spacing
@@ -325,6 +359,10 @@ AppWindow {
                         checked: modelData.installed
                         busy: actionJob.running && (app.acting.includes(modelData.id)
                             || (app.actingKind.endsWith("-all") && section.emulation))
+                        Keys.onPressed: (event) => {
+                            if (section.navKey(index, event.key))
+                                event.accepted = true
+                        }
                         onClicked: {
                             sheet.entry = modelData
                             sheet.open()
@@ -357,6 +395,22 @@ AppWindow {
             }
         }
     }
+
+    // RePag/AvPag cambian de seccion: es lo que mapean LB/RB en el perfil de mando.
+    Shortcut {
+        sequence: "PageUp"
+        onActivated: app.currentIndex = Math.max(0, app.currentIndex - 1)
+    }
+    Shortcut {
+        sequence: "PageDown"
+        onActivated: app.currentIndex = Math.min(Math.max(0, app.sections.length - 1),
+                                                 app.currentIndex + 1)
+    }
+    onCurrentIndexChanged: Qt.callLater(() => {
+        const page = pagesRepeater.itemAt(currentIndex)
+        if (page && page.navFocus)
+            page.navFocus(0)
+    })
 
     EntrySheet {
         id: sheet
