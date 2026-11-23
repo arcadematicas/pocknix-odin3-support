@@ -36,7 +36,8 @@ HW = {
     True: "alsa_output.platform-sound.HiFi__Headphones__sink",
     False: "alsa_output.platform-sound.HiFi__Speaker__sink",
 }
-TICK = 3.0                            # red de seguridad (el camino rapido es por eventos)
+TICK = 3.0
+POLL = 1.0            # sondeo del jack: un `amixer cget` cuesta ~5 ms y elimina la rely on events                            # red de seguridad (el camino rapido es por eventos)
 SETTLE = 0.20
 LAST_JACK = {"plugged": None}   # ultimo estado aplicado (ver watch_events)                      # deja que PulseAudio/PipeWire asiente tras el evento
 
@@ -162,15 +163,16 @@ def watch_events(stop):
 
 def main():
     apply_all()                      # estado inicial
-    stop = threading.Event()
-    t = threading.Thread(target=watch_events, args=(stop,), daemon=True)
-    t.start()
+    # Sondeo propio en vez de `pactl subscribe`: el hijo de pactl podia morir y el servicio
+    # se quedaba solo con el tick (de ahi los 2-10 s). Un `amixer cget` cada segundo cuesta
+    # ~5 ms y no depende de nadie; solo se hace trabajo cuando el estado cambia.
     try:
-        while True:                  # red de seguridad: solo enlaces y amps, nunca el default
-            time.sleep(TICK)
-            apply_all(reason="tick")
+        while True:
+            time.sleep(POLL)
+            if jack_plugged() != LAST_JACK["plugged"]:
+                apply_all(reason="poll")
     except KeyboardInterrupt:
-        stop.set()
+        pass
 
 
 if __name__ == "__main__":
