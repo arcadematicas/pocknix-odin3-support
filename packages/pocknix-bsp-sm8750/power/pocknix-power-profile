@@ -36,6 +36,11 @@ GPU_FULL=1100000000
 PROFILES="bajo medio alto"
 VERIFY_TRIES=30
 VERIFY_HOLD=6
+# Acotado por TIEMPO: el peor caso (30 x (aplicar+6s hold+1s)) son ~210 s y el
+# TimeoutStartSec de la unidad es 60. La unidad es best-effort y se reintenta en
+# el siguiente evento (udev al aparecer el devfreq, hook de resume), asi que se
+# sale 0 con aviso en vez de marcar el servicio como fallido.
+VERIFY_MAX_SEC=45
 
 saved() {
   p="$(cat "${PROFILE_FILE}" 2>/dev/null)"
@@ -210,7 +215,9 @@ case "${1:-}" in
     # asi que no basta con aplicar y leer una vez: el valor tiene que AGUANTAR unos segundos.
     p="$(saved)"
     i=0
-    while [ "${i}" -lt "${VERIFY_TRIES}" ]; do
+    t0="$(date +%s)"
+    while [ "${i}" -lt "${VERIFY_TRIES}" ] &&
+          [ "$(( $(date +%s) - t0 ))" -lt "${VERIFY_MAX_SEC}" ]; do
       if apply_profile "${p}"; then
         held=1
         k=0
@@ -229,8 +236,8 @@ case "${1:-}" in
       sleep 1
     done
     apply_scx "${p}"
-    echo "pocknix-power-profile: '${p}' did not stick after ${VERIFY_TRIES}s" >&2
-    exit 1
+    echo "pocknix-power-profile: '${p}' did not stick within ${VERIFY_MAX_SEC}s; the next udev/resume trigger retries" >&2
+    exit 0
     ;;
   bajo|medio|alto)
     if [ "${1}" != alto ]; then
