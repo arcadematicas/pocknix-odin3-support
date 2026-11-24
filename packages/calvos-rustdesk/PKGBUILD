@@ -7,7 +7,7 @@ pkgdesc="RustDesk (AppImage oficial aarch64): escritorio remoto"
 arch=('aarch64')
 url="https://rustdesk.com"
 license=('AGPL-3.0-only')
-depends=('fuse2' 'gtk3' 'libxcb' 'libxkbcommon' 'pulseaudio' 'libva')
+depends=('fuse2' 'libpulse' 'gtk3' 'libxcb' 'libxkbcommon')
 source=("rustdesk-${pkgver}-aarch64.AppImage::https://github.com/rustdesk/rustdesk/releases/download/${pkgver}/rustdesk-${pkgver}-aarch64.AppImage")
 sha256sums=('924c8dee36cbd7873ba222979ea1e3274c5537c382321504edf1be824e7cde37')
 
