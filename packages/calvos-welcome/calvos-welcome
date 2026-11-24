@@ -1,0 +1,45 @@
+#!/bin/bash
+# calvos-welcome - CLI minima del asistente de primer arranque de CalvOS.
+# El marcador vive en la config del usuario para que --reset lo borre sin root.
+marker="${XDG_CONFIG_HOME:-$HOME/.config}/calvos/welcome.done"
+
+case "${1:-run}" in
+  status)
+    if [ -f "$marker" ]; then
+      echo done
+      exit 0
+    fi
+    echo pending
+    exit 1
+    ;;
+  finish)
+    mkdir -p "$(dirname "$marker")"
+    touch "$marker"
+    echo done
+    exit 0
+    ;;
+  --reset)
+    rm -f "$marker"
+    echo pending
+    exit 0
+    ;;
+  run|"")
+    exec /usr/bin/pocknix-ui /usr/share/calvos-welcome/qml/Main.qml
+    ;;
+  -h|--help)
+    cat <<HELP
+Uso: calvos-welcome [orden]
+
+  run (o sin orden)  Abre el asistente de primer arranque.
+  status             Imprime done (exit 0) o pending (exit 1).
+  finish             Marca el asistente como completado.
+  --reset            Borra el marcador para volver a verlo.
+  -h, --help         Muestra esta ayuda.
+HELP
+    exit 0
+    ;;
+  *)
+    echo "calvos-welcome: orden desconocida: $1 (usa -h)" >&2
+    exit 2
+    ;;
+esac

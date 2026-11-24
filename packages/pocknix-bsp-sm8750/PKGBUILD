@@ -54,7 +54,7 @@ pkgver=0.2.0
 #   (antes iba en la esquina inferior derecha), algo mas pequeno. Mismas 240 frames, 46,4 MB.
 # -14 (17/10): se vuelve a la ESQUINA (como el diseno anterior), calvOS algo mas pequeno (100px)
 #   y con FUNDIDO de entrada (frames 70-120) para que aparezca despues de "ODIN 3". 48,4 MB.
-pkgrel=59
+pkgrel=60
 pkgdesc="CalvOS board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 install=pocknix-bsp-sm8750.install
 arch=('any')
@@ -179,6 +179,13 @@ package() {
   install -Dm755 "${sd}/power/pocknix-pergame-power.py"          "${bin}/pocknix-pergame-power.py"
   # LED de carga (rgb:charging del pm8550): rojo cargando, verde llena.
   install -Dm755 "${sd}/power/odin3-charge-led"                  "${bin}/odin3-charge-led"
+  # Wrapper en /usr/bin para que el host (Job con root) y pkexec lo acepten: el script vive en
+  # /usr/local/bin y el allowlist del host solo permite /usr/bin/pocknix-*.
+  install -dm755 "${pkgdir}/usr/bin"
+  printf '#!/bin/sh\nexec /usr/local/bin/pocknix-power-profile "$@"\n' > "${pkgdir}/usr/bin/pocknix-power-profile"
+  chmod 755 "${pkgdir}/usr/bin/pocknix-power-profile"
+  install -Dm644 "${sd}/power/58-pocknix-power-profile.rules" \
+    "${pkgdir}/usr/share/polkit-1/rules.d/58-pocknix-power-profile.rules"
   install -Dm644 "${sd}/power/odin3-charge-led.service" \
     "${pkgdir}/usr/lib/systemd/system/odin3-charge-led.service"
   install -Dm755 "${sd}/splash/odin3-splash-play.sh"             "${bin}/odin3-splash-play.sh"

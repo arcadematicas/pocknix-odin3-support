@@ -1,0 +1,9 @@
+// Promptless pkexec of pocknix-power-profile for wheel: it only selects the governor/fan policy
+// (bajo|medio|alto|restore|verify|snapshot|reassert), never package or file operations.
+polkit.addRule(function(action, subject) {
+    if (!subject.isInGroup("wheel")) { return; }
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/bin/pocknix-power-profile") {
+        return polkit.Result.YES;
+    }
+});

@@ -1,0 +1,17 @@
+# calvos-welcome - asistente de primer arranque de CalvOS (Fase 1): red, perfil y mando.
+# Todo plain QML sobre pocknix-ui; la CLI solo gestiona el marcador y lanza la UI.
+pkgname=calvos-welcome
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="CalvOS Welcome: asistente de primer arranque (red, energia y mando)"
+arch=('any')
+url="https://github.com/shuuri-labs/pocknix-os"
+license=('GPL-2.0-or-later')
+depends=('pocknix-ui' 'networkmanager')
+
+package() {
+  install -Dm755 "${startdir}/calvos-welcome" "${pkgdir}/usr/bin/calvos-welcome"
+  install -Dm644 -t "${pkgdir}/usr/share/calvos-welcome/qml" "${startdir}"/qml/*.qml
+  install -Dm644 "${startdir}/calvos-welcome.desktop" \
+    "${pkgdir}/usr/share/applications/calvos-welcome.desktop"
+}

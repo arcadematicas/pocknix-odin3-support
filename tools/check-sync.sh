@@ -84,6 +84,7 @@ cmp_tree "${HERE}/packages/pocknix-desktop"       "${OS}/packages/shared/pocknix
 cmp_tree "${HERE}/packages/pocknix-store"        "${OS}/packages/shared/pocknix-store"
 cmp_tree "${HERE}/packages/calvos-appman"       "${OS}/packages/shared/calvos-appman"
 cmp_tree "${HERE}/packages/calvos-rustdesk"      "${OS}/packages/shared/calvos-rustdesk"
+cmp_tree "${HERE}/packages/calvos-welcome"       "${OS}/packages/shared/calvos-welcome"
 cmp_tree "${HERE}/packages/pocknix-desktop-kde"   "${OS}/packages/shared/pocknix-desktop-kde"
 cmp_tree "${HERE}/packages/shared/pocknix-power-profiles" "${OS}/packages/shared/pocknix-power-profiles"
 # La capa vendored: si NO se comprueba, puede quedarse atras EN SILENCIO (paso con

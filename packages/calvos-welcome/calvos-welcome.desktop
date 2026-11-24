@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=CalvOS Welcome
+Comment=Asistente de primer arranque de CalvOS
+Exec=calvos-welcome
+TryExec=calvos-welcome
+Icon=preferences-system
+Terminal=false
+Categories=System;
