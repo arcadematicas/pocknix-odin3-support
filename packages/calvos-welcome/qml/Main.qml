@@ -11,7 +11,10 @@ AppWindow {
 
     readonly property string cli: "/usr/bin/calvos-welcome"
     readonly property string profileCli: "/usr/bin/pocknix-power-profile"
-    readonly property int padIndex: 3
+    readonly property string sshCli: "/usr/bin/pocknix-ssh"
+    readonly property string shareCli: "/usr/bin/pocknix-share"
+    readonly property int servicesIndex: 3
+    readonly property int padIndex: 4
 
     property var networks: []
     property string wifiStatus: ""
@@ -19,6 +22,12 @@ AppWindow {
     property string profile: "medio"
     property string profileMessage: ""
     property var padSeen: []
+    property bool sshOn: false
+    property bool sshBusy: false
+    property bool shareInstalled: false
+    property bool shareOn: false
+    property bool shareBusy: false
+    property string servicesMessage: ""
 
     function finish() {
         if (finishJob.running)
@@ -102,8 +111,61 @@ AppWindow {
         profileJob.start([app.profileCli, value], { root: true })
     }
 
+    function statusValue(text, key) {
+        const prefix = key + "="
+        const lines = String(text || "").split(/\r?\n/)
+        for (let i = 0; i < lines.length; ++i) {
+            if (lines[i].indexOf(prefix) === 0)
+                return lines[i].slice(prefix.length).trim()
+        }
+        return ""
+    }
+
+    function refreshSshStatus() {
+        if (!sshStatusJob.running)
+            sshStatusJob.start([app.sshCli, "status"])
+    }
+
+    function refreshShareStatus() {
+        if (!shareStatusJob.running)
+            shareStatusJob.start([app.shareCli, "status"])
+    }
+
+    function refreshServices() {
+        refreshSshStatus()
+        refreshShareStatus()
+    }
+
+    function toggleSsh() {
+        if (sshJob.running || shareInstallJob.running || shareJob.running)
+            return
+        const next = !app.sshOn
+        sshJob.previous = app.sshOn
+        sshJob.desired = next
+        app.sshOn = next
+        app.sshBusy = true
+        app.servicesMessage = ""
+        sshJob.start([app.sshCli, next ? "on" : "off"], { root: true })
+    }
+
+    function toggleShare() {
+        if (sshJob.running || shareInstallJob.running || shareJob.running)
+            return
+        const next = !app.shareOn
+        shareInstallJob.previous = app.shareOn
+        shareJob.previous = app.shareOn
+        shareJob.desired = next
+        app.shareOn = next
+        app.shareBusy = true
+        app.servicesMessage = ""
+        if (next && !app.shareInstalled)
+            shareInstallJob.start([app.shareCli, "install"], { root: true })
+        else
+            shareJob.start([app.shareCli, next ? "on" : "off"], { root: true })
+    }
+
     function pageAt(index) {
-        return [welcomePage, wifiPage, powerPage, padPage][index]
+        return [welcomePage, wifiPage, powerPage, servicesPage, padPage][index]
     }
     function currentPage() {
         return pageAt(currentIndex)
@@ -181,7 +243,10 @@ AppWindow {
             app.padNav(key)
     }
 
-    Component.onCompleted: Qt.callLater(setInitialFocus)
+    Component.onCompleted: {
+        refreshServices()
+        Qt.callLater(setInitialFocus)
+    }
     onCurrentIndexChanged: Qt.callLater(setInitialFocus)
 
     Connections {
@@ -233,6 +298,92 @@ AppWindow {
                 : qsTr("No se pudo aplicar el perfil: %1").arg(error)
             if (code !== 0)
                 app.notice(qsTr("Perfil no aplicado"), error)
+        }
+    }
+
+    Job {
+        id: sshStatusJob
+        onFinished: code => {
+            if (sshJob.running)
+                return
+            if (code !== 0) {
+                app.servicesMessage = qsTr("No se pudo consultar el estado de SSH: %1").arg(error)
+                return
+            }
+            app.sshOn = app.statusValue(output, "state") === "on"
+            app.servicesMessage = ""
+        }
+    }
+
+    Job {
+        id: shareStatusJob
+        onFinished: code => {
+            if (shareJob.running || shareInstallJob.running)
+                return
+            if (code !== 0) {
+                app.servicesMessage = qsTr("No se pudo consultar el estado de Samba: %1").arg(error)
+                return
+            }
+            app.shareInstalled = app.statusValue(output, "installed") === "yes"
+            app.shareOn = app.statusValue(output, "state") === "on"
+            app.servicesMessage = ""
+        }
+    }
+
+    Job {
+        id: sshJob
+        property bool previous: false
+        property bool desired: false
+        onFinished: code => {
+            app.sshBusy = false
+            if (code === 0) {
+                app.sshOn = desired
+                app.servicesMessage = ""
+                app.toast(qsTr("SSH"), desired ? qsTr("Servicio activado") : qsTr("Servicio desactivado"))
+            } else {
+                app.sshOn = previous
+                app.servicesMessage = qsTr("No se pudo cambiar SSH: %1").arg(error)
+                app.notice(qsTr("No se pudo cambiar SSH"), error)
+            }
+            app.refreshSshStatus()
+        }
+    }
+
+    Job {
+        id: shareInstallJob
+        property bool previous: false
+        onFinished: code => {
+            if (code !== 0) {
+                app.shareBusy = false
+                app.shareOn = previous
+                app.servicesMessage = qsTr("No se pudo instalar Samba: %1").arg(error)
+                app.notice(qsTr("No se pudo instalar Samba"), error)
+                app.refreshShareStatus()
+                return
+            }
+            app.shareInstalled = true
+            shareJob.previous = previous
+            shareJob.desired = true
+            shareJob.start([app.shareCli, "on"], { root: true })
+        }
+    }
+
+    Job {
+        id: shareJob
+        property bool previous: false
+        property bool desired: false
+        onFinished: code => {
+            app.shareBusy = false
+            if (code === 0) {
+                app.shareOn = desired
+                app.servicesMessage = ""
+                app.toast(qsTr("Samba (SMB)"), desired ? qsTr("Servicio activado") : qsTr("Servicio desactivado"))
+            } else {
+                app.shareOn = previous
+                app.servicesMessage = qsTr("No se pudo cambiar Samba: %1").arg(error)
+                app.notice(qsTr("No se pudo cambiar Samba"), error)
+            }
+            app.refreshShareStatus()
         }
     }
 
@@ -422,6 +573,83 @@ AppWindow {
         }
         Button {
             id: nextPowerBtn
+            text: qsTr("Siguiente")
+            activeFocusOnTab: true
+            onClicked: app.currentIndex = app.servicesIndex
+        }
+    }
+
+    TabPage {
+        id: servicesPage
+        title: qsTr("Servicios")
+        icon: "network-server-symbolic"
+
+        function initialFocus() { sshRow.forceActiveFocus() }
+        function navTargets() { return [sshRow, shareRow, nextServicesBtn] }
+        onVisibleChanged: {
+            if (visible)
+                app.refreshServices()
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            text: qsTr("Servicios")
+            font.bold: true
+            font.pointSize: Theme.titleFontSize
+        }
+        QQC2.Label {
+            Layout.fillWidth: true
+            text: qsTr("Activa solo lo que necesites. Puedes cambiarlo después en Ajustes.")
+            color: Theme.textMuted
+            wrapMode: Text.WordWrap
+        }
+        SwitchRow {
+            id: sshRow
+            title: qsTr("SSH")
+            description: qsTr("Terminal remoto (usuario deck)")
+            checked: app.sshOn
+            busy: app.sshBusy
+            activeFocusOnTab: true
+            border.width: activeFocus ? 2 : 1
+            border.color: activeFocus ? Theme.accent : Theme.border
+            signal clicked()
+            onClicked: app.toggleSsh()
+            Keys.onReturnPressed: clicked()
+            Keys.onSpacePressed: clicked()
+            onToggled: clicked()
+        }
+        SwitchRow {
+            id: shareRow
+            title: qsTr("Samba (SMB)")
+            description: qsTr("Comparte archivos en tu red")
+            checked: app.shareOn
+            busy: app.shareBusy
+            activeFocusOnTab: true
+            border.width: activeFocus ? 2 : 1
+            border.color: activeFocus ? Theme.accent : Theme.border
+            signal clicked()
+            onClicked: app.toggleShare()
+            Keys.onReturnPressed: clicked()
+            Keys.onSpacePressed: clicked()
+            onToggled: clicked()
+        }
+        QQC2.Label {
+            Layout.fillWidth: true
+            visible: app.servicesMessage !== ""
+            text: app.servicesMessage
+            color: Theme.negative
+            wrapMode: Text.WordWrap
+        }
+        QQC2.Label {
+            Layout.fillWidth: true
+            text: app.shareInstalled
+                ? qsTr("Samba está instalado.")
+                : qsTr("Samba no está instalado: se instalará al activarlo.")
+            color: Theme.textMuted
+            wrapMode: Text.WordWrap
+        }
+        Button {
+            id: nextServicesBtn
             text: qsTr("Siguiente")
             activeFocusOnTab: true
             onClicked: app.currentIndex = app.padIndex

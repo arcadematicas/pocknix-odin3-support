@@ -295,12 +295,26 @@ AppWindow {
                 return grid.children.filter(c => c && c.visible && c.title !== undefined
                                                  && c.activeFocusOnTab)
             }
+            // TabPage es un Flickable: mover el foco no desplaza la vista. Ajustamos contentY
+            // para que el elemento enfocado quede visible (mando y teclado, sin tocar).
+            function revealInPage(item) {
+                if (!item)
+                    return
+                const y = item.mapToItem(section.contentItem, 0, 0).y
+                const bottom = y + item.height
+                if (y < section.contentY)
+                    section.contentY = Math.max(0, y - Theme.spacing)
+                else if (bottom > section.contentY + section.height)
+                    section.contentY = Math.min(section.contentHeight - section.height,
+                                                bottom - section.height + Theme.spacing)
+            }
             function navFocus(idx) {
                 const tiles = navTiles()
                 if (tiles.length === 0)
                     return false
                 const i = Math.max(0, Math.min(tiles.length - 1, idx))
                 tiles[i].forceActiveFocus()
+                revealInPage(tiles[i])
                 return true
             }
             function navKey(idx, key) {
@@ -317,6 +331,7 @@ AppWindow {
                 if (n < 0 || n >= tiles.length)
                     return false
                 tiles[n].forceActiveFocus()
+                revealInPage(tiles[n])
                 return true
             }
             function padNav(key) {
