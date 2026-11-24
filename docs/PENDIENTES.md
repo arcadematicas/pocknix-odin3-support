@@ -45,6 +45,12 @@ Orden aproximado de prioridad. Dueño: (A) Alfred / (F) Fransis.
 18. El servicio en caliente de hoy (reset en enchufe + reset tardio + setpriv + ganancia) va en
     **`bsp 63`**; `bsp 62` publicado no los lleva.
 
+
+## Red (Odin)
+19. **El Wi-Fi de la Odin se cae solo** tras un rato (visto varias veces el 24/11: `No route to host`
+    hasta reiniciar). Puede ser powersave de la tarjeta o roaming con el AP. Revisar
+    `99-wifi-pm.rules`, `iw dev wlan0 link` antes/despues y el journal de NetworkManager.
+
 ## BSP
 12. (A+F) **Ola BSP 30 → 41**: merge en seco ya analizado; ejecutar con Fransis delante
     (`docs/OLA-BSP-30-a-41.md`). De ahi cuelgan `pocknix-snapshots 10`, `lock-migrate 6`,
