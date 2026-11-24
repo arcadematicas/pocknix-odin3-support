@@ -28,10 +28,12 @@ EQ_SINK = "AYN Odin 3 EQ"
 # OJO: `SPK_L/R PCM Playback Volume` (AW88166) es ATENUACION en este driver: 0 = maximo
 # y AW88166_MUTE_VOL = mute. No se toca (ponerlo alto deja el altavoz casi mudo).
 
-# Compander de los auriculares: DAPM la vuelve a encender al alimentar la ruta (la UCM la
-# apaga antes y no basta). Encendida mete chisporroteo con impedancias reales (65/69 ohm
-# medidos por el driver), asi que se apaga aqui y se vigila.
-COMP_NUMIDS = ("23", "24")
+# PA de auriculares (wcd939x): al reenchufar, WirePlumber no siempre re-ejecuta la secuencia
+# UCM y el switch se queda apagado -> PipeWire cree que suena por los cascos pero el codec no
+# los ha encendido. Se vigila y, si esta fuera, se re-aplica el device de la UCM.
+HPH_NUMID = "25"
+HPH_MODE_NUMID = "14"
+HPH_MODE = "CLS_H_LOHIFI"   # class-H con compander: el estado validado en la Odin
 HW = {
     True: "alsa_output.platform-sound.HiFi__Headphones__sink",
     False: "alsa_output.platform-sound.HiFi__Speaker__sink",
@@ -57,16 +59,25 @@ def eq_present():
     return EQ_SINK in run(["pactl", "list", "short", "sinks"])
 
 
-def ensure_comp_off(plugged):
-    """Con auriculares, la compander debe estar apagada (si no, chisporrotea)."""
+def ensure_headphone_amp(plugged):
+    """Re-aplica la UCM de auriculares si el PA se quedo apagado.
+
+    Coste: un `amixer cget` (~5 ms). Solo actua cuando el switch esta fuera, asi que no
+    interfiere con una ruta que ya funciona. Con la compander encendida (la enciende el
+    propio DAPM con class-H) y la impedancia medida por el driver, este es el estado bueno.
+    """
     if not plugged:
         return False
-    changed = False
-    for numid in COMP_NUMIDS:
-        if "values=on" in run(["amixer", "-c", CARD, "cget", f"numid={numid}"]):
-            run(["amixer", "-c", CARD, "cset", f"numid={numid}", "off"])
-            changed = True
-    return changed
+    if "values=on" in run(["amixer", "-c", CARD, "cget", f"numid={HPH_NUMID}"]):
+        return False
+    # 1) Pedir la secuencia a la UCM (hace el routing completo cuando la re-ejecuta).
+    run(["alsaucm", "-c", f"hw:{CARD}", "set", "_verb", "HiFi", "set", "_enadev", "Headphones"])
+    # 2) Si la UCM no la re-ejecuto (device ya dado de alta), forzar el PA y el modo. Comprobado
+    #    en la Odin: sin esto los switches se quedan fuera y no suena por los cascos.
+    for numid in ("25", "26", "27", "142", "143", "23", "24"):
+        run(["amixer", "-c", CARD, "cset", f"numid={numid}", "on"])
+    run(["amixer", "-c", CARD, "cset", f"numid={HPH_MODE_NUMID}", HPH_MODE])
+    return True
 
 
 def fix_links(plugged):
@@ -118,12 +129,12 @@ def apply_all(reason=""):
     # un bucle de set/revert cada 10 s (se veia como "acciones=default 28ms" sin parar).
     default = fix_default(plugged) if reason != "tick" else False
     amps = False   # no se tocan los amps del altavoz: su volumen es atenuacion (0 = maximo)
-    comp = ensure_comp_off(plugged)
+    codec = ensure_headphone_amp(plugged)
     dt_ms = (time.monotonic() - t0) * 1000.0
     LAST_JACK["plugged"] = plugged
-    if links or default or amps or comp:
+    if links or default or amps or codec:
         acciones = ",".join(
-            n for n, v in (("links", links), ("default", default), ("amps", amps), ("comp", comp)) if v
+            n for n, v in (("links", links), ("default", default), ("amps", amps), ("codec", codec)) if v
         )
         print(
             f"{time.strftime('%H:%M:%S')} jack={'on' if plugged else 'off'} "
@@ -178,11 +189,16 @@ def main():
             time.sleep(POLL)
             if jack_plugged() != LAST_JACK["plugged"]:
                 apply_all(reason="poll")
-            elif LAST_JACK["plugged"] is not None and fix_links(LAST_JACK["plugged"]):
-                # Enlaces rehechos: el sink de destino no estaba cuando se enchufo.
-                print(f"{time.strftime('%H:%M:%S')} enlaces rehechos "
-                      f"jack={'on' if LAST_JACK['plugged'] else 'off'}", flush=True)
-                fix_default(LAST_JACK["plugged"])
+            elif LAST_JACK["plugged"] is not None:
+                if fix_links(LAST_JACK["plugged"]):
+                    # Enlaces rehechos: el sink de destino no estaba cuando se enchufo.
+                    print(f"{time.strftime('%H:%M:%S')} enlaces rehechos "
+                          f"jack={'on' if LAST_JACK['plugged'] else 'off'}", flush=True)
+                    fix_default(LAST_JACK["plugged"])
+                # WirePlumber puede re-aplicar el perfil un segundo despues y dejar el PA de
+                # auriculares otra vez fuera: se vigila en cada tick (un `amixer cget`, ~5 ms).
+                if ensure_headphone_amp(LAST_JACK["plugged"]):
+                    print(f"{time.strftime('%H:%M:%S')} PA de auriculares rehecho", flush=True)
     except KeyboardInterrupt:
         pass
 
