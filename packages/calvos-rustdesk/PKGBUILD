@@ -2,13 +2,14 @@
 # checksum fijados: la tienda lo ofrece en Network sin depender de descargas sin firmar.
 pkgname=calvos-rustdesk
 pkgver=1.5.3
-pkgrel=1
+pkgrel=2
 pkgdesc="RustDesk (AppImage oficial aarch64): escritorio remoto"
 arch=('aarch64')
 url="https://rustdesk.com"
 license=('AGPL-3.0-only')
 depends=('fuse2' 'libpulse' 'gtk3' 'libxcb' 'libxkbcommon')
 source=("rustdesk-${pkgver}-aarch64.AppImage::https://github.com/rustdesk/rustdesk/releases/download/${pkgver}/rustdesk-${pkgver}-aarch64.AppImage")
+options=('!strip')  # el AppImage es un ELF: strip recorta el squashfs anexado
 sha256sums=('924c8dee36cbd7873ba222979ea1e3274c5537c382321504edf1be824e7cde37')
 
 package() {
