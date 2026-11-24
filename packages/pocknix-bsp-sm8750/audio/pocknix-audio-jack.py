@@ -16,6 +16,7 @@
 #   - la salida del filtro enganchada SOLO al nodo disponible,
 #   - los amplificadores del altavoz a un volumen audible si no hay auriculares.
 import os
+import pwd
 import subprocess
 import sys
 import threading
@@ -42,6 +43,10 @@ TICK = 3.0
 POLL = 1.0            # sondeo del jack: un `amixer cget` cuesta ~5 ms y elimina la rely on events                            # red de seguridad (el camino rapido es por eventos)
 SETTLE = 0.20
 LAST_JACK = {"plugged": None}
+# Al enchufar CON audio en curso, el stream del juego se mueve al sink de auriculares DESPUES
+# de nuestro reset, y ese movimiento deja el transporte mal (zumbido). Un segundo reset, ya
+# con el stream asentado, lo deja bien.
+SECOND_RESET = {"at": 0.0}
 
 
 def run(cmd, timeout=8):
@@ -51,12 +56,30 @@ def run(cmd, timeout=8):
         return ""
 
 
+# El servicio corre como root (hace falta para los controles ALSA del codec), pero `pactl` se
+# NIEGA a conectar con el PipeWire del usuario desde root: "Connection refused". Todo lo que
+# hable con PipeWire se lanza como el usuario de la sesion.
+SEAT_USER = os.environ.get("POCKNIX_SEAT_USER", "deck")
+try:
+    _seat = pwd.getpwnam(SEAT_USER)
+    SEAT_UID, SEAT_GID = _seat.pw_uid, _seat.pw_gid
+except KeyError:
+    SEAT_UID, SEAT_GID = 1000, 1000
+
+
+def run_user(cmd, timeout=8):
+    # setpriv y no runuser: runuser abre una sesion PAM por llamada y el journal se llena
+    # de "session opened/closed" cada segundo.
+    return run(["setpriv", f"--reuid={SEAT_UID}", f"--regid={SEAT_GID}", "--init-groups",
+                "env", f"XDG_RUNTIME_DIR=/run/user/{SEAT_UID}", *cmd], timeout)
+
+
 def jack_plugged():
     return "values=on" in run(["amixer", "-c", CARD, "cget", f"numid={JACK_NUMID}"])
 
 
 def eq_present():
-    return EQ_SINK in run(["pactl", "list", "short", "sinks"])
+    return EQ_SINK in run_user(["pactl", "list", "short", "sinks"])
 
 
 def ensure_headphone_amp(plugged):
@@ -77,12 +100,14 @@ def ensure_headphone_amp(plugged):
     for numid in ("25", "26", "27", "142", "143", "23", "24"):
         run(["amixer", "-c", CARD, "cset", f"numid={numid}", "on"])
     run(["amixer", "-c", CARD, "cset", f"numid={HPH_MODE_NUMID}", HPH_MODE])
+    run(["amixer", "-c", CARD, "cset", "numid=31", "18"])
+    run(["amixer", "-c", CARD, "cset", "numid=32", "18"])
     return True
 
 
 def fix_links(plugged):
     target, other = HW[plugged], HW[not plugged]
-    graph = run(["pw-link", "-l"])
+    graph = run_user(["pw-link", "-l"])
     if EQ_STREAM not in graph:
         return False
     changed = False
@@ -95,26 +120,60 @@ def fix_links(plugged):
         if dst in graph:
             continue
         if alt in graph:
-            run(["pw-link", "-d", src, alt])
+            run_user(["pw-link", "-d", src, alt])
         # Solo cuenta si el enlace SE CREA: al enchufar, el sink de auriculares puede
         # tardar un momento en aparecer y `pw-link` falla; antes se daba por hecho y no
         # se reintentaba, dejando el audio en el altavoz con los cascos puestos.
-        r = subprocess.run(["pw-link", src, dst], capture_output=True)
+        r = subprocess.run(["setpriv", f"--reuid={SEAT_UID}", f"--regid={SEAT_GID}", "--init-groups", "env", f"XDG_RUNTIME_DIR=/run/user/{SEAT_UID}", "pw-link", src, dst], capture_output=True)
         if r.returncode != 0:
             continue
         changed = True
     return changed
 
 
+def ensure_gain():
+    """-3 dB de headroom en el PA (WirePlumber restaura su estado del mezclador y lo pisa)."""
+    if "values=18" in run(["amixer", "-c", CARD, "cget", "numid=31"]):
+        return False
+    run(["amixer", "-c", CARD, "cset", "numid=31", "18"])
+    run(["amixer", "-c", CARD, "cset", "numid=32", "18"])
+    return True
+
+
+def hard_reset():
+    """Cierra y reabre el PCM de la tarjeta: es exactamente lo que hace reenchufar.
+
+    Algunos arranques dejan el transporte SoundWire mal y suena con zumbido aunque los
+    controles parezcan buenos; reabrir el PCM lo reinicia (medido: el replug lo cura).
+    """
+    cards = run_user(["pactl", "list", "short", "cards"]).splitlines()
+    if not cards:
+        return False
+    name = cards[0].split("\t")[1] if len(cards[0].split("\t")) > 1 else cards[0].split()[1]
+    listing = run_user(["pactl", "list", "cards"])
+    prof = ""
+    for line in listing.splitlines():
+        if "Active Profile:" in line:
+            prof = line.split(":", 1)[1].strip()
+            break
+    if not prof or prof == "off":
+        return False
+    run_user(["pactl", "set-card-profile", name, "off"])
+    time.sleep(0.3)
+    run_user(["pactl", "set-card-profile", name, prof])
+    time.sleep(0.3)
+    return True
+
+
 def fix_default(plugged):
     wanted = EQ_SINK if eq_present() else HW[plugged]
-    if run(["pactl", "get-default-sink"]).strip() != wanted:
-        run(["pactl", "set-default-sink", wanted])
+    if run_user(["pactl", "get-default-sink"]).strip() != wanted:
+        run_user(["pactl", "set-default-sink", wanted])
         return True
     return False
 
 
-def apply_all(reason=""):
+def apply_all(reason="", hard=False):
     """Deja todo en su sitio y, si ha cambiado algo, deja una linea en el journal con tiempos.
 
     La linea sirve para MEDIR la conmutacion: `pocknix-audio-jack` aparece en `journalctl -u`
@@ -123,6 +182,8 @@ def apply_all(reason=""):
     """
     t0 = time.monotonic()
     plugged = jack_plugged()
+    # Al enchufar, reabrir el PCM como un replug: garantiza el transporte bueno.
+    reset = hard_reset() if (hard and plugged) else False
     links = fix_links(plugged)
     # El sink por defecto SOLO se toca en eventos (jack/streams) y al arrancar. En el tick
     # periodico no: WirePlumber reaplica su "default.configured.audio.sink" y entrabamos en
@@ -130,11 +191,12 @@ def apply_all(reason=""):
     default = fix_default(plugged) if reason != "tick" else False
     amps = False   # no se tocan los amps del altavoz: su volumen es atenuacion (0 = maximo)
     codec = ensure_headphone_amp(plugged)
+    gain = ensure_gain() if plugged else False
     dt_ms = (time.monotonic() - t0) * 1000.0
     LAST_JACK["plugged"] = plugged
-    if links or default or amps or codec:
+    if reset or links or default or amps or codec or gain:
         acciones = ",".join(
-            n for n, v in (("links", links), ("default", default), ("amps", amps), ("codec", codec)) if v
+            n for n, v in (("reset", reset), ("links", links), ("default", default), ("amps", amps), ("codec", codec), ("gain", gain)) if v
         )
         print(
             f"{time.strftime('%H:%M:%S')} jack={'on' if plugged else 'off'} "
@@ -188,7 +250,18 @@ def main():
         while True:
             time.sleep(POLL)
             if jack_plugged() != LAST_JACK["plugged"]:
-                apply_all(reason="poll")
+                now = jack_plugged()
+                apply_all(reason="poll", hard=(now and LAST_JACK["plugged"] is False))
+                SECOND_RESET["at"] = (time.monotonic() + 3.0) if now else 0.0
+            elif SECOND_RESET["at"] and time.monotonic() >= SECOND_RESET["at"]:
+                SECOND_RESET["at"] = 0.0
+                if LAST_JACK["plugged"]:
+                    hard_reset()
+                    ensure_headphone_amp(True)
+                    ensure_gain()
+                    fix_links(True)
+                    fix_default(True)
+                    print(f"{time.strftime('%H:%M:%S')} reset tardio (stream asentado)", flush=True)
             elif LAST_JACK["plugged"] is not None:
                 if fix_links(LAST_JACK["plugged"]):
                     # Enlaces rehechos: el sink de destino no estaba cuando se enchufo.

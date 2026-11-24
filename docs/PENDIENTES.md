@@ -32,9 +32,18 @@ Orden aproximado de prioridad. Dueño: (A) Alfred / (F) Fransis.
 
 
 ## Audio
-16. **Zumbido + distorsion al arrancar un juego** (con auriculares): no reproducible ahora.
-    Evidencias, descartes y plan de captura en `docs/INCIDENCIA-AUDIO-ZUMBIDO-JUEGO.md`.
-    Candidato a automatizar en `pocknix-audio-jack` cuando se identifique el disparador.
+16. **[PRIORITARIO] Separar el UCM en perfiles Headphones / Speaker, como Armada.**
+    Es la solucion de fondo al zumbido y a las conmutaciones de jack: con un perfil combinado,
+    PipeWire cambia la disponibilidad del puerto pero NO re-ejecuta la secuencia, y el transporte
+    SoundWire puede quedar mal (zumbido + distorsion al enchufar con audio en curso).
+    - Diseñar los perfiles en `packages/pocknix-bsp-sm8750/HiFi.conf` (verbs/devices separados).
+    - Probar TODAS las combinaciones: jack con juego, jack en silencio, dock, HDMI, suspend.
+    - Si va bien, el daemon `pocknix-audio-jack` puede quedar solo como red de seguridad.
+    - Ver `docs/INCIDENCIA-AUDIO-ZUMBIDO-JUEGO.md` (evidencias, descartes y plan de captura).
+17. Capturar `hw_params` del PCM en estado MALO vs bueno (con audio sonando) para ver si hay firma
+    objetiva (periodo/buffer) y, si la hay, fijarla en PipeWire.
+18. El servicio en caliente de hoy (reset en enchufe + reset tardio + setpriv + ganancia) va en
+    **`bsp 63`**; `bsp 62` publicado no los lleva.
 
 ## BSP
 12. (A+F) **Ola BSP 30 → 41**: merge en seco ya analizado; ejecutar con Fransis delante
