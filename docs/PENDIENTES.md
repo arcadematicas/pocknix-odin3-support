@@ -94,3 +94,13 @@ Orden aproximado de prioridad. Dueño: (A) Alfred / (F) Fransis.
   Network (optdepend de `pocknix-desktop-full`), chips de filtro (Todo/Juegos/Multimedia) en
   AppImages, y `docs/CALVOS-WELCOME.md` con el alcance del asistente.
 - **Siguiente**: implementar Fase 1 de `calvos-welcome`.
+
+## Plan 25/11 (orden decidido)
+1. **[A] UCM por perfiles** (audio). Es lo que desbloquea el zumbido y las conmutaciones raras.
+   - Paso 0 (5 min, con Fransis): reproducir el fallo y capturar `hw_params` malo/bueno.
+   - Paso 1: partir `HiFi.conf` en perfiles Headphones / Speaker de verdad.
+   - Paso 2: matriz de pruebas (jack con juego, jack en silencio, altavoz, dock, HDMI, suspend).
+   - Paso 3: si va bien, `pocknix-audio-jack` queda como red de seguridad.
+2. **BSP 30 → 41** con las tandas de `docs/UPSTREAM-2026-11-24.md` (empezar por la tanda 1, bumps).
+   Requiere PC encendido y una sesion larga.
+3. Si sobra tiempo: Fase 2 del wizard (autostart + pasos) o buscador/iconos de la tienda.
