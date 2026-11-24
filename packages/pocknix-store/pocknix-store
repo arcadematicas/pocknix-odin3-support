@@ -141,6 +141,19 @@ def entries(local: set[str], sync: set[str]) -> dict[str, dict]:
             if not pick:
                 continue
             pkgs += pick
+        # Una entrada del catalogo puede apuntar a AppMan en vez de a pacman (p.ej. chiaki4deck):
+        # no tiene paquetes, se instala como usuario y su estado es la carpeta de AppMan.
+        appman_id = c.get("appman", "").strip()
+        if appman_id and not pkgs:
+            if c.get("section") not in SECTIONS:
+                continue
+            found[eid] = {"name": c.get("name") or eid, "section": c["section"],
+                          "description": c.get("description", ""), "icon": c.get("icon", ""),
+                          "packages": [], "tile": "", "services": [], "setup": "",
+                          "note": c.get("note", ""), "appman": appman_id,
+                          "cats": [x for x in c.get("cats", "").split() if x in APPMAN_CATS],
+                          "source": "appman"}
+            continue
         if not pkgs or c.get("section") not in SECTIONS:
             continue
         claimed.update(pkgs)
@@ -229,7 +242,8 @@ def status() -> int:
             os.path.isfile(f"{d}/{e['tile']}.conf") for d in TILES) else ""
         rows.append({"id": eid, "name": e["name"], "section": e["section"],
                      "description": e["description"], "icon": icon(e["icon"]), "note": e["note"],
-                     "installed": on, "tile": tile, "reset": on and eid in reset})
+                     "installed": on, "tile": tile, "reset": on and eid in reset,
+                     "cats": e.get("cats", [])})
     used = {r["section"] for r in rows}
     out(json.dumps({"mode": mode(found, local), "job": job_state(),
                     "sections": [{"id": s, "name": n} for s, n in SECTIONS.items() if s in used],

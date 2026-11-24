@@ -67,3 +67,9 @@ Orden aproximado de prioridad. Dueño: (A) Alfred / (F) Fransis.
      comprobar con `smbclient //127.0.0.1/opt -N -c 'cd decomps; mkdir zz-test'` y borrar.
   3. Comprobar que `/mnt/odin` del PC sigue escribiendo como invitado (ya se probo el 23/11).
 - El PC de sobremesa quedo **apagado** al cierre.
+
+## Avance 24/11 (manana)
+- **Hecho (pendiente de probar esta noche)**: `chiaki4deck` en Streaming, **`calvos-rustdesk`** en
+  Network (optdepend de `pocknix-desktop-full`), chips de filtro (Todo/Juegos/Multimedia) en
+  AppImages, y `docs/CALVOS-WELCOME.md` con el alcance del asistente.
+- **Siguiente**: implementar Fase 1 de `calvos-welcome`.

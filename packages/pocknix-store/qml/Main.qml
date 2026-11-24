@@ -16,6 +16,8 @@ AppWindow {
     property bool attached: false
     // Aviso de terceros: una sola vez por sesion, al entrar en AppImages.
     property bool appimagesWarned: false
+    // AppImages: "" = todos, "juegos", "multimedia"
+    property string appimagesFilter: ""
     // what the running store job works on: its tiles show busy
     property var acting: []
     property string actingKind: ""
@@ -42,8 +44,9 @@ AppWindow {
     function entry(id) {
         return store.entries.find(e => e.id === id)
     }
-    function inSection(section) {
-        return store.entries.filter(e => e.section === section)
+    function inSection(section, cat = "") {
+        return store.entries.filter(e => e.section === section
+            && (!cat || (Array.isArray(e.cats) && e.cats.indexOf(cat) >= 0)))
     }
     function installedTiles(section) {
         return inSection(section).filter(e => e.installed && e.tile)
@@ -260,6 +263,7 @@ AppWindow {
             id: section
             required property var modelData
             readonly property bool emulation: modelData.id === "emulation"
+            readonly property bool filtersShown: modelData.id === "appimages"
             readonly property var tiles: app.installedTiles(modelData.id)
 
             title: modelData.name
@@ -267,6 +271,26 @@ AppWindow {
 
             // Navegacion con mando/teclado: las flechas mueven el foco por la rejilla y
             // Enter/Espacio activan el tile (ya lo trae Tile). No toca el host de la UI.
+            function filterButtons() {
+                return filters.children.filter(c => c && c.visible && c.activeFocusOnTab)
+            }
+            function filterFocus(idx) {
+                const items = filterButtons()
+                if (items.length === 0)
+                    return false
+                const i = Math.max(0, Math.min(items.length - 1, idx))
+                items[i].forceActiveFocus()
+                return true
+            }
+            function initialFocus() {
+                if (filtersShown) {
+                    const i = app.appimagesFilter === "juegos" ? 1
+                        : app.appimagesFilter === "multimedia" ? 2 : 0
+                    if (filterFocus(i))
+                        return
+                }
+                navFocus(0)
+            }
             function navTiles() {
                 return grid.children.filter(c => c && c.visible && c.title !== undefined
                                                  && c.activeFocusOnTab)
@@ -296,13 +320,29 @@ AppWindow {
                 return true
             }
             function padNav(key) {
+                const chips = filterButtons()
+                const chip = chips.indexOf(app.activeFocusItem)
+                if (chip >= 0) {
+                    if (key === Qt.Key_Left)  filterFocus(chip - 1)
+                    else if (key === Qt.Key_Right) filterFocus(chip + 1)
+                    else if (key === Qt.Key_Down) navFocus(0)
+                    return
+                }
                 const tiles = navTiles()
-                if (tiles.length === 0) return
+                if (tiles.length === 0) {
+                    if (chips.length > 0 && key === Qt.Key_Up)
+                        filterFocus(chips.length - 1)
+                    return
+                }
                 const focused = tiles.indexOf(app.activeFocusItem)
                 if (focused < 0) { navFocus(0); return }
+                if (key === Qt.Key_Up && focused === 0 && chips.length > 0) {
+                    filterFocus(chips.length - 1)
+                    return
+                }
                 navKey(focused, key)
             }
-            onVisibleChanged: if (visible) Qt.callLater(navFocus, 0)
+            onVisibleChanged: if (visible) Qt.callLater(initialFocus)
 
             LoadState {
                 loading: !app.loaded
@@ -384,6 +424,33 @@ AppWindow {
                 wrapMode: Text.WordWrap
             }
 
+            RowLayout {
+                id: filters
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignLeft
+                visible: section.filtersShown
+                spacing: Theme.spacing
+
+                Button {
+                    text: qsTr("Todo")
+                    activeFocusOnTab: true
+                    kind: app.appimagesFilter === "" ? Button.Primary : Button.Secondary
+                    onClicked: app.appimagesFilter = ""
+                }
+                Button {
+                    text: qsTr("Juegos")
+                    activeFocusOnTab: true
+                    kind: app.appimagesFilter === "juegos" ? Button.Primary : Button.Secondary
+                    onClicked: app.appimagesFilter = "juegos"
+                }
+                Button {
+                    text: qsTr("Multimedia")
+                    activeFocusOnTab: true
+                    kind: app.appimagesFilter === "multimedia" ? Button.Primary : Button.Secondary
+                    onClicked: app.appimagesFilter = "multimedia"
+                }
+            }
+
             GridLayout {
                 id: grid
                 Layout.fillWidth: true
@@ -394,7 +461,7 @@ AppWindow {
                 uniformCellHeights: true
 
                 Repeater {
-                    model: app.inSection(section.modelData.id)
+                    model: app.inSection(section.modelData.id, section.modelData.id === "appimages" ? app.appimagesFilter : "")
 
                     Tile {
                         required property var modelData
@@ -455,7 +522,9 @@ AppWindow {
     }
     onCurrentIndexChanged: Qt.callLater(() => {
         const page = pagesRepeater.itemAt(currentIndex)
-        if (page && page.navFocus)
+        if (page && page.initialFocus)
+            page.initialFocus()
+        else if (page && page.navFocus)
             page.navFocus(0)
         const currentSection = app.sections[currentIndex]
         if (currentSection && currentSection.id === "appimages" && !appimagesWarned) {

@@ -156,6 +156,7 @@ fi
 overlay "packages/pocknix-desktop" "packages/shared/pocknix-desktop"
 overlay "packages/pocknix-store" "packages/shared/pocknix-store"
 overlay "packages/calvos-appman" "packages/shared/calvos-appman"
+overlay "packages/calvos-rustdesk" "packages/shared/calvos-rustdesk"
 overlay "packages/pocknix-desktop-kde" "packages/shared/pocknix-desktop-kde"
 
 # --- pocknix-power-profiles: puente power-profiles-daemon <-> perfiles pocknix ----
