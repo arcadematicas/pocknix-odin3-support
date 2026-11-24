@@ -41,7 +41,7 @@ HW = {
 TICK = 3.0
 POLL = 1.0            # sondeo del jack: un `amixer cget` cuesta ~5 ms y elimina la rely on events                            # red de seguridad (el camino rapido es por eventos)
 SETTLE = 0.20
-LAST_JACK = {"plugged": None}   # ultimo estado aplicado (ver watch_events)                      # deja que PulseAudio/PipeWire asiente tras el evento
+LAST_JACK = {"plugged": None}
 
 
 def run(cmd, timeout=8):

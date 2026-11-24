@@ -30,6 +30,12 @@ Orden aproximado de prioridad. Dueño: (A) Alfred / (F) Fransis.
 10. (A) **Tanda 6 del kernel** (parches pendientes de revisar).
 11. (F) **Icono de CalvOS Store**.
 
+
+## Audio
+16. **Zumbido + distorsion al arrancar un juego** (con auriculares): no reproducible ahora.
+    Evidencias, descartes y plan de captura en `docs/INCIDENCIA-AUDIO-ZUMBIDO-JUEGO.md`.
+    Candidato a automatizar en `pocknix-audio-jack` cuando se identifique el disparador.
+
 ## BSP
 12. (A+F) **Ola BSP 30 → 41**: merge en seco ya analizado; ejecutar con Fransis delante
     (`docs/OLA-BSP-30-a-41.md`). De ahi cuelgan `pocknix-snapshots 10`, `lock-migrate 6`,
