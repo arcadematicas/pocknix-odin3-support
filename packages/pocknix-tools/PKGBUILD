@@ -2,7 +2,7 @@
 # which live here rather than in the image overlay so fixes reach fielded SDs on -Syu (#34).
 pkgname=pocknix-tools
 pkgver=0.1.0
-pkgrel=27
+pkgrel=28
 pkgdesc="CalvOS maintenance app: snapshot rollback, base mode switch, internal install, SSH + file sharing toggles, emulation layer, desktop picker"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -21,6 +21,9 @@ backup=('etc/ssh/sshd_config.d/10-pocknix-no-root-login.conf'
         'etc/samba/smb.conf')
 
 package() {
+  install -Dm755 "${startdir}/pocknix-cores-update" "${pkgdir}/usr/bin/pocknix-cores-update"
+  install -Dm644 "${startdir}/60-pocknix-cores-update.rules" \
+    "${pkgdir}/usr/share/polkit-1/rules.d/60-pocknix-cores-update.rules"
   install -Dm755 "${srcdir}/pocknix-tools" "${pkgdir}/usr/bin/pocknix-tools"
   install -Dm755 "${srcdir}/pocknix-installer-gui" "${pkgdir}/usr/bin/pocknix-installer-gui"
   install -Dm755 "${srcdir}/pocknix-install-internal" "${pkgdir}/usr/bin/pocknix-install-internal"

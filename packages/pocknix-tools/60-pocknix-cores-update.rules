@@ -1,0 +1,9 @@
+// Promptless pkexec of pocknix-cores-update for wheel: it only touches a whitelist of
+// core packages (libretro-cores-pocknix, libretro-hakux), never arbitrary packages.
+polkit.addRule(function(action, subject) {
+    if (!subject.isInGroup("wheel")) { return; }
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/bin/pocknix-cores-update") {
+        return polkit.Result.YES;
+    }
+});

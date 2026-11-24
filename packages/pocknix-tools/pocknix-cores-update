@@ -1,0 +1,19 @@
+#!/bin/bash
+# pocknix-cores-update — actualiza SOLO paquetes de cores del repo de Pocknix.
+# Existe para que el Updater de DeckStation (y CalvOS) puedan actualizar cores sin
+# un dialogo de contrasena en Game Mode: la regla polkit 60-... autoriza este
+# binario para el grupo wheel, y aqui se limita la accion a una lista blanca.
+set -euo pipefail
+
+ALLOWED=(libretro-cores-pocknix libretro-hakux)
+
+[ "$(id -u)" -eq 0 ] || { echo "pocknix-cores-update: must run as root" >&2; exit 1; }
+[ "$#" -gt 0 ] || { echo "pocknix-cores-update: falta el paquete" >&2; exit 2; }
+
+for p in "$@"; do
+    ok=0
+    for a in "${ALLOWED[@]}"; do [ "$p" = "$a" ] && ok=1; done
+    [ "$ok" = 1 ] || { echo "pocknix-cores-update: paquete no permitido: $p" >&2; exit 2; }
+done
+
+exec pacman -Sy --needed --noconfirm "$@"
