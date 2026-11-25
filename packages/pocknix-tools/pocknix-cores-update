@@ -3,6 +3,11 @@
 # Existe para que el Updater de DeckStation (y CalvOS) puedan actualizar cores sin
 # un dialogo de contrasena en Game Mode: la regla polkit 60-... autoriza este
 # binario para el grupo wheel, y aqui se limita la accion a una lista blanca.
+#
+# OJO: NO se puede delegar en `pacman -Sy --needed`: si el repo trae una version MAS
+# VIEJA que la instalada, pacman la marca como "downgrading" y la baja igualmente
+# (paso el 25/11/2026: se instalo hakuX 0.38.0 a mano y el puente lo devolvio a 0.25.2
+# porque aun no estaba publicado). Aqui se compara version a version y solo se sube.
 set -euo pipefail
 
 ALLOWED=(libretro-cores-pocknix libretro-hakux)
@@ -16,4 +21,26 @@ for p in "$@"; do
     [ "$ok" = 1 ] || { echo "pocknix-cores-update: paquete no permitido: $p" >&2; exit 2; }
 done
 
-exec pacman -Sy --needed --noconfirm "$@"
+pacman -Sy --noconfirm >/dev/null
+
+subir=()
+for p in "$@"; do
+    repo="$(pacman -Si "$p" 2>/dev/null | awk -F': ' '/^Version/ {print $2; exit}')"
+    if [ -z "$repo" ]; then
+        echo "pocknix-cores-update: $p no esta en el repositorio; se omite"
+        continue
+    fi
+    inst="$(pacman -Q "$p" 2>/dev/null | awk '{print $2}')"
+    if [ -n "$inst" ] && [ "$(vercmp "$inst" "$repo")" -ge 0 ]; then
+        echo "$p: instalado $inst, repositorio $repo — sin cambios"
+        continue
+    fi
+    subir+=("$p")
+done
+
+if [ "${#subir[@]}" -eq 0 ]; then
+    echo "todo al dia"
+    exit 0
+fi
+
+exec pacman -S --needed --noconfirm "${subir[@]}"

@@ -80,8 +80,13 @@ for f in "$SYS_CORES"/*.so; do
     base="$(basename "$f")"
     dst="${CORES_DIR}/${base}"
     if [ -e "$dst" ]; then
-        skipped=$((skipped + 1))
-        continue
+        # Si ya existe pero es DISTINTO, se actualiza. Antes se saltaba siempre y un core
+        # actualizado por el paquete no llegaba nunca a la carpeta de RetroArch (25/11/2026:
+        # hakuX 0.38.0 en el sistema, 0.23.0 en RetroArch desde el 9/11).
+        if cmp -s "$f" "$dst"; then
+            skipped=$((skipped + 1))
+            continue
+        fi
     fi
     if [ "$DRY" = 1 ]; then
         log "copiar $f -> $dst"
@@ -96,7 +101,10 @@ for f in "$SYS_INFO"/*.info; do
     [ -e "$f" ] || continue
     base="$(basename "$f")"
     dst="${CORES_DIR}/${base}"
-    [ -e "$dst" ] && { skipped=$((skipped + 1)); continue; }
+    if [ -e "$dst" ] && cmp -s "$f" "$dst"; then
+        skipped=$((skipped + 1))
+        continue
+    fi
     if [ "$DRY" = 1 ]; then
         log "copiar $f -> $dst"
     else
