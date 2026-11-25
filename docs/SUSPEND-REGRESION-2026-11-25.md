@@ -128,3 +128,48 @@ suspendía de verdad). Por eso:
 - Si el paquete sigue instalando la unidad, hay que decidir **una** de dos cosas y dejarlo escrito:
   (a) borrarla del BSP (lo coherente con `SUSPEND-ISSUE.md`), o (b) dejarla como red de seguridad con
   `WantedBy=suspend.target` y **sin** el symlink manual del PKGBUILD.
+
+## 7. Kernel 8 "suspend-safe" (construido el 25/11, sin instalar todavía)
+
+**Qué se ha quitado del stack** (renombrados a `*.patch.disabled` en
+`kernel/patches/20-sm8750/`):
+
+| Parche | Qué hacía |
+|---|---|
+| `0620` typec nb7vpq904m | `clientdata` en el probe del redriver |
+| `0621` pmic_glink_altmode | no esperar ack del PAN_EN (hack + debug + triggers sysfs) |
+| `0622` drm/msm/dp | audio en todos los DP externos |
+| `0623` typec | conservar host mode / combo PHY solo-DP |
+| `0624` typec mux wcd939x | mantener USB en DP altmode |
+| `2170` dts | poll de las zonas térmicas de la GPU |
+| `2171` a6xx | `perfmode_bw` en A8x |
+
+Y en el DTS: fuera `mdss_dp0_out` (`link-frequencies` hasta HBR3) y el conector
+`pmic-glink` con `try-power-role="sink"`. El `9999` vuelve a la versión de `7.2.15-1`.
+**Se queda** todo lo anterior (audio class-H `2600`–`2604`, serie armada-sleep, GPU
+`2103`/`2122`–`2125`, y el fix del `wakeup-source` del Volume Up).
+
+**Verificado en el fuente compilado** (no solo en el log del build):
+- `pmic_glink_altmode.c`: sin `manual trigger`/`force_dp`/`(continuing)`; vuelve
+  `wait_for_completion_timeout(&altmode->pan_ack, 5 * HZ)`.
+- `a6xx_gmu.c`: `adreno_is_a6xx` = 0 apariciones.
+- DTS del Odin: sin `mdss_dp0_out` ni `try-power-role`.
+
+**Artefactos**: `linux-pocknix-sm8750 7.2.15-8`, `KERNEL` de 18.257.920 B,
+md5 `0d6d7ac6530cc9c820a51f8070d5922d` (el `7`, en uso, es de 18.259.968 B).
+
+### ⚠️ Trampa encontrada (y cerrada)
+El primer build de este kernel **salió con los parches dentro**: los stacks son *overlays* y
+`rsync` no borra, así que al renombrar a `.patch.disabled` en el centro el `.patch` viejo seguía
+en `pocknix-os` y se aplicaba (129 parches en vez de 122). Se detectó mirando el fuente compilado.
+Ahora `tools/sync-to-os.sh` los borra del árbol (`overlay_disabled`) y `tools/check-sync.sh`
+falla con `STALE` si queda alguno.
+
+### Cómo se instalará y validará
+1. Copiar el `.pkg.tar.xz` a la Odin y `sudo pacman -U` (el hook regenera `/flash/KERNEL`).
+   Antes, guardar el paquete actual en `/flash` para poder volver.
+2. Reiniciar y comprobar en el arranque: `uptime`, `systemctl --failed`, audio class-H, mando.
+3. **Suspensión**: `rtcwake -m no -s 300` + `systemctl suspend`; debe volver con el **mismo
+   `boot_id`** y seguir contando el uptime. Repetir 3 veces (2 min, 10 min, 30 min).
+4. Medir 2 h con `zz-drain-log` → objetivo **0,14 %/h**.
+5. Solo entonces: publicar en R2 y anotar en el CHANGELOG.
