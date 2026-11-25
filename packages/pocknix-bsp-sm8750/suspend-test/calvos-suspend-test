@@ -1,0 +1,457 @@
+#!/usr/bin/env bash
+# calvos-suspend-test: prueba de suspensión y recogida de evidencia para AYN Odin 3 (sm8750).
+# Uso: calvos-suspend-test {status|report|test deep|test s2idle|last|--help}
+set -u
+
+LOGDIR="/var/log/calvos/suspend"
+MARCADOR="$LOGDIR/test-pendiente"
+FILTRO='suspend|resume|PM:|panic|oops|watchdog|gmu|a6xx|timeout|ath12k|glink|typec'
+
+seccion() {
+    printf '\n=== %s ===\n' "$1"
+}
+
+nota() {
+    printf 'NOTA: %s\n' "$1"
+}
+
+error() {
+    printf 'ERROR: %s\n' "$1" >&2
+}
+
+preparar_dir() {
+    if ! mkdir -p "$LOGDIR"; then
+        error "no se pudo crear el directorio $LOGDIR"
+        return 1
+    fi
+    if ! chmod 755 /var/log/calvos "$LOGDIR" 2>/dev/null; then
+        nota 'no se pudieron fijar los permisos 755 de los directorios de informes'
+    fi
+    return 0
+}
+
+hora_archivo() {
+    date +%Y%m%d-%H%M%S
+}
+
+uptime_legible() {
+    local salida
+    if salida=$(uptime -p 2>/dev/null); then
+        printf '%s\n' "$salida"
+    else
+        if ! salida=$(uptime 2>/dev/null); then
+            salida='no disponible'
+        fi
+        printf '%s\n' "$salida"
+    fi
+}
+
+boot_id_actual() {
+    local salida
+    if salida=$(cat /proc/sys/kernel/random/boot_id 2>/dev/null); then
+        printf '%s\n' "$salida"
+    else
+        printf 'desconocido\n'
+    fi
+}
+
+uptime_segundos() {
+    local salida
+    if salida=$(cat /proc/uptime 2>/dev/null); then
+        printf '%s\n' "${salida%% *}"
+    else
+        printf 'desconocido\n'
+    fi
+}
+
+leer_archivo() {
+    local fichero="${1:-}"
+    if [[ -r $fichero ]]; then
+        cat "$fichero"
+    else
+        nota "no se puede leer $fichero"
+    fi
+}
+
+ultimo_informe() {
+    ls -1t "$LOGDIR"/report-*.txt "$LOGDIR"/test-*.txt 2>/dev/null | head -n 1
+}
+
+escribir_datos_base() {
+    printf 'Fecha ISO: %s\n' "$(date --iso-8601=seconds 2>/dev/null)"
+
+    seccion 'Arranque y kernel'
+    printf 'Kernel (uname -r): %s\n' "$(uname -r 2>/dev/null)"
+    printf 'uname -a: %s\n' "$(uname -a 2>/dev/null)"
+    printf 'uptime -s: %s\n' "$(uptime -s 2>/dev/null)"
+    printf 'uptime -p: %s\n' "$(uptime_legible)"
+    printf '/proc/cmdline: '
+    leer_archivo /proc/cmdline
+
+    seccion 'Estados de suspensión'
+    printf '/sys/power/mem_sleep: '
+    leer_archivo /sys/power/mem_sleep
+    printf '/sys/power/state: '
+    leer_archivo /sys/power/state
+    printf '/sys/power/disk: '
+    leer_archivo /sys/power/disk
+
+    seccion 'pstore / ramoops'
+    printf 'Contenido de /sys/fs/pstore/:\n'
+    if [[ -d /sys/fs/pstore ]]; then
+        ls -l /sys/fs/pstore/ 2>&1 || nota 'no se pudo listar /sys/fs/pstore/'
+    else
+        nota '/sys/fs/pstore/ no existe'
+    fi
+    printf 'dmesg filtrado (ramoops|pstore):\n'
+    local salida_dmesg
+    if salida_dmesg=$(dmesg 2>/dev/null); then
+        if ! printf '%s\n' "$salida_dmesg" | grep -iE 'ramoops|pstore'; then
+            nota 'dmesg no contiene líneas de ramoops/pstore'
+        fi
+    else
+        nota 'dmesg no se pudo ejecutar (requiere privilegios o no está disponible)'
+    fi
+
+    seccion 'Arranques registrados (journalctl --list-boots, últimas 8 líneas)'
+    local salida_boots
+    if salida_boots=$(journalctl --list-boots 2>&1); then
+        printf '%s\n' "$salida_boots" | tail -n 8
+    else
+        nota "journalctl --list-boots falló: $salida_boots"
+    fi
+
+    seccion 'Batería'
+    local encontrado=0 fichero
+    for fichero in /sys/class/power_supply/*; do
+        [[ -e $fichero ]] || continue
+        if [[ -r $fichero/capacity ]]; then
+            printf '%s/capacity: ' "$fichero"
+            cat "$fichero/capacity"
+            encontrado=1
+        fi
+        if [[ -r $fichero/status ]]; then
+            printf '%s/status: ' "$fichero"
+            cat "$fichero/status"
+        fi
+    done
+    [[ $encontrado -eq 1 ]] || nota 'no se encontraron datos de batería legibles'
+
+    seccion 'pocknix-fake-suspend'
+    printf 'systemctl is-enabled: %s\n' "$(systemctl is-enabled pocknix-fake-suspend 2>&1)"
+    printf 'systemctl is-active: %s\n' "$(systemctl is-active pocknix-fake-suspend 2>&1)"
+    local enlace hallado=0
+    for enlace in /etc/systemd/system/*.wants/*fake-suspend* /usr/lib/systemd/system/*.wants/*fake-suspend*; do
+        if [[ -e $enlace || -L $enlace ]]; then
+            hallado=1
+            ls -l "$enlace"
+        fi
+    done
+    [[ $hallado -eq 1 ]] || nota 'no hay symlinks con fake-suspend en los directorios *.wants'
+
+    seccion 'Paquetes de kernel en caché'
+    local paquetes
+    if paquetes=$(ls -l /var/cache/pacman/pkg/linux-pocknix-sm8750-* 2>/dev/null); then
+        printf '%s\n' "$paquetes"
+    else
+        nota 'no hay paquetes linux-pocknix-sm8750-* en /var/cache/pacman/pkg'
+    fi
+}
+
+journal_arranque() {
+    local boot="$1" max="$2" titulo="$3"
+    seccion "$titulo"
+    local lista
+    if ! lista=$(journalctl --list-boots 2>&1); then
+        nota "journalctl --list-boots no disponible: $lista"
+        return 0
+    fi
+    if ! printf '%s\n' "$lista" | grep -qE -- "^[[:space:]]*${boot}([[:space:]]|$)"; then
+        if [[ $boot == '-1' ]]; then
+            nota 'no hay arranque anterior en el journal'
+        else
+            nota "no hay datos del arranque $boot en el journal"
+        fi
+        return 0
+    fi
+    local salida
+    salida=$(journalctl -b "$boot" --no-pager 2>/dev/null | grep -iE "$FILTRO" | tail -n "$max")
+    if [[ -n $salida ]]; then
+        printf '%s\n' "$salida"
+    else
+        nota 'no hay líneas coincidentes con el filtro solicitado'
+    fi
+}
+
+cmd_status() {
+    printf 'Kernel: %s\n' "$(uname -r 2>/dev/null)"
+    printf 'Uptime: %s\n' "$(uptime_legible)"
+    printf '/proc/cmdline: '
+    leer_archivo /proc/cmdline
+    printf '/sys/power/mem_sleep: '
+    leer_archivo /sys/power/mem_sleep
+    printf '/sys/power/state: '
+    leer_archivo /sys/power/state
+
+    if [[ -e $MARCADOR ]]; then
+        printf 'Test pendiente: sí (hubo un reinicio durante la prueba anterior)\n'
+        if [[ -r $MARCADOR ]]; then
+            local linea
+            while IFS= read -r linea || [[ -n $linea ]]; do
+                printf '  %s\n' "$linea"
+            done < "$MARCADOR"
+        else
+            nota "el marcador $MARCADOR existe pero no es legible"
+        fi
+    else
+        printf 'Test pendiente: no\n'
+    fi
+
+    local ultimo
+    ultimo=$(ultimo_informe)
+    if [[ -n $ultimo ]]; then
+        printf 'Último informe: %s\n' "$ultimo"
+    else
+        printf 'Último informe: ninguno\n'
+    fi
+
+    if [[ $EUID -ne 0 ]]; then
+        nota 'sin privilegios de root: dmesg y journal pueden estar restringidos; usa sudo para report y test'
+    fi
+    return 0
+}
+
+cmd_report() {
+    if ! preparar_dir; then
+        return 1
+    fi
+    local ruta="$LOGDIR/report-$(hora_archivo).txt"
+    {
+        seccion 'INFORME DE SUSPENSIÓN (AYN Odin 3 / sm8750)'
+        escribir_datos_base
+        journal_arranque -1 120 'Journal del arranque anterior (filtrado, últimas 120 líneas)'
+        journal_arranque 0 80 'Journal del arranque actual (filtrado, últimas 80 líneas)'
+        seccion '/var/log/pocknix/sleep-battery.log (últimas 20 líneas)'
+        if [[ -r /var/log/pocknix/sleep-battery.log ]]; then
+            tail -n 20 /var/log/pocknix/sleep-battery.log
+        else
+            nota '/var/log/pocknix/sleep-battery.log no existe o no es legible'
+        fi
+    } > "$ruta" 2>&1
+    printf 'Informe: %s\n' "$ruta"
+    return 0
+}
+
+cmd_test() {
+    local modo="${1:-}" segundos="${2:-120}"
+    if [[ $EUID -ne 0 ]]; then
+        error 'esta orden necesita root: ejecútala con sudo'
+        return 1
+    fi
+    case "$modo" in
+        deep|s2idle) ;;
+        *)
+            error 'modo no válido: usa "test deep [segundos]" o "test s2idle [segundos]"'
+            return 1
+            ;;
+    esac
+    if ! [[ $segundos =~ ^[1-9][0-9]*$ ]]; then
+        error 'los segundos deben ser un entero positivo'
+        return 1
+    fi
+
+    local mem=/sys/power/mem_sleep
+    local memoria
+    if ! memoria=$(cat "$mem" 2>/dev/null); then
+        error "no se puede leer $mem"
+        return 1
+    fi
+    if ! grep -qw -- "$modo" "$mem"; then
+        error "el modo $modo no aparece en $mem (valor actual: $memoria)"
+        return 1
+    fi
+    if [[ -e $MARCADOR ]]; then
+        error 'hay un test pendiente sin cerrar: probablemente hubo un reinicio durante la prueba anterior'
+        error "marcador: $MARCADOR"
+        return 1
+    fi
+    if ! preparar_dir; then
+        return 1
+    fi
+
+    local boot_inicial fecha_inicial uptime_inicial segundos_iniciales
+    boot_inicial=$(boot_id_actual)
+    fecha_inicial=$(date --iso-8601=seconds 2>/dev/null)
+    uptime_inicial=$(uptime_legible)
+    segundos_iniciales=$(uptime_segundos)
+    local memoria_inicial="$memoria"
+
+    if ! printf 'boot_id=%s\nfecha=%s\nmodo=%s\nsegundos=%s\nuptime=%s\nuptime_segundos=%s\nmem_sleep=%s\n' \
+        "$boot_inicial" "$fecha_inicial" "$modo" "$segundos" "$uptime_inicial" \
+        "$segundos_iniciales" "$memoria_inicial" > "$MARCADOR"; then
+        error "no se pudo escribir el marcador $MARCADOR"
+        return 1
+    fi
+
+    printf 'Modo solicitado: %s\n' "$modo"
+    if ! printf '%s\n' "$modo" > "$mem"; then
+        error "no se pudo escribir $modo en $mem"
+        rm -f "$MARCADOR"
+        return 1
+    fi
+    sync
+
+    local salida_rtcwake
+    if ! salida_rtcwake=$(rtcwake -m no -s "$segundos" 2>&1); then
+        error "rtcwake -m no -s $segundos falló: $salida_rtcwake"
+        nota 'se aborta la prueba: nunca se suspende sin alarma RTC confirmada'
+        rm -f "$MARCADOR"
+        return 1
+    fi
+    printf 'Alarma RTC fijada a %s segundos; suspensión iniciada.\n' "$segundos"
+
+    local suspendido=1 salida_suspend
+    if ! salida_suspend=$(systemctl suspend 2>&1); then
+        suspendido=0
+        nota "systemctl suspend devolvió un error: $salida_suspend"
+    fi
+
+    local boot_final uptime_final segundos_finales memoria_final contenido_marcador
+    boot_final=$(boot_id_actual)
+    uptime_final=$(uptime_legible)
+    segundos_finales=$(uptime_segundos)
+    memoria_final=$(cat "$mem" 2>/dev/null)
+    contenido_marcador=$(cat "$MARCADOR" 2>/dev/null)
+
+    local resultado='PASS' motivo='sin incidencias'
+    local ini fin enteros_ini enteros_fin
+    if [[ $boot_final != "$boot_inicial" ]]; then
+        resultado='FAIL'
+        motivo='el boot_id cambió: hubo un reinicio durante la prueba'
+    elif [[ $suspendido -eq 0 ]]; then
+        resultado='FAIL'
+        motivo='systemctl suspend devolvió un error: no se confirmó la suspensión'
+    else
+        ini="$segundos_iniciales"
+        fin="$segundos_finales"
+        enteros_ini="${ini%%.*}"
+        enteros_fin="${fin%%.*}"
+        if [[ $enteros_ini =~ ^[0-9]+$ && $enteros_fin =~ ^[0-9]+$ ]] && (( enteros_fin < enteros_ini )); then
+            resultado='FAIL'
+            motivo='el uptime no es continuo después de la suspensión'
+        fi
+    fi
+
+    if ! rm -f "$MARCADOR"; then
+        nota "no se pudo borrar el marcador $MARCADOR"
+    fi
+
+    local ruta="$LOGDIR/test-$(hora_archivo).txt"
+    {
+        seccion 'INFORME DE PRUEBA DE SUSPENSIÓN (AYN Odin 3 / sm8750)'
+        printf 'Resultado: %s\n' "$resultado"
+        printf 'Motivo: %s\n' "$motivo"
+        seccion 'Datos de la prueba'
+        printf 'Modo pedido: %s\n' "$modo"
+        printf 'Duración de la alarma RTC: %s segundos\n' "$segundos"
+        printf 'boot_id antes: %s\n' "$boot_inicial"
+        printf 'boot_id después: %s\n' "$boot_final"
+        printf 'uptime antes: %s\n' "$uptime_inicial"
+        printf 'uptime después: %s\n' "$uptime_final"
+        printf 'uptime (segundos) antes: %s\n' "$segundos_iniciales"
+        printf 'uptime (segundos) después: %s\n' "$segundos_finales"
+        printf 'mem_sleep antes: %s\n' "$memoria_inicial"
+        printf 'mem_sleep después: %s\n' "$memoria_final"
+        printf 'rtcwake: %s\n' "$salida_rtcwake"
+        if [[ $suspendido -eq 0 ]]; then
+            printf 'systemctl suspend: %s\n' "$salida_suspend"
+        else
+            printf 'systemctl suspend: orden aceptada\n'
+        fi
+        seccion 'Marcador escrito antes de suspender'
+        printf '%s\n' "$contenido_marcador"
+        escribir_datos_base
+        if [[ $boot_final != "$boot_inicial" ]]; then
+            journal_arranque -1 120 'Journal del arranque anterior (reinicio detectado, filtrado)'
+        fi
+        journal_arranque 0 80 'Journal del arranque actual (filtrado, últimas 80 líneas)'
+    } > "$ruta" 2>&1
+
+    printf 'Informe: %s\n' "$ruta"
+    printf 'RESULTADO: %s\n' "$resultado"
+    return 0
+}
+
+cmd_last() {
+    if [[ -e $MARCADOR ]]; then
+        seccion 'TEST PENDIENTE'
+        if [[ -r $MARCADOR ]]; then
+            cat "$MARCADOR"
+        else
+            nota "el marcador $MARCADOR no es legible"
+        fi
+    else
+        printf 'Test pendiente: no\n'
+    fi
+
+    local ruta
+    ruta=$(ultimo_informe)
+    if [[ -z $ruta ]]; then
+        nota 'no hay informes generados'
+        return 0
+    fi
+    printf '\n=== Último informe: %s ===\n' "$ruta"
+    if [[ -r $ruta ]]; then
+        cat "$ruta"
+    else
+        nota "el informe $ruta no es legible"
+    fi
+    return 0
+}
+
+uso() {
+    cat <<'AYUDA'
+Uso: calvos-suspend-test [orden] [opciones]
+
+Órdenes:
+  status                 Resumen corto del estado de suspensión.
+  report                 Crear un informe de evidencia en /var/log/calvos/suspend/.
+  test deep [segundos]   Probar suspensión deep con alarma RTC (por defecto 120 s).
+  test s2idle [segundos] Probar suspensión s2idle con alarma RTC.
+  last                   Mostrar el último informe y si hay un test pendiente.
+  --help                 Mostrar esta ayuda.
+
+Ejemplos:
+  sudo calvos-suspend-test test deep 120
+  sudo calvos-suspend-test report
+  calvos-suspend-test status
+
+Nota: status y last no requieren root; report y test sí.
+AYUDA
+}
+
+case "${1:-}" in
+    '')
+        uso
+        ;;
+    -h|--help|help)
+        uso
+        ;;
+    status)
+        cmd_status
+        ;;
+    report)
+        cmd_report
+        ;;
+    test)
+        cmd_test "${2:-}" "${3:-120}"
+        ;;
+    last)
+        cmd_last
+        ;;
+    *)
+        error "orden desconocida: ${1:-}"
+        uso >&2
+        exit 2
+        ;;
+esac
