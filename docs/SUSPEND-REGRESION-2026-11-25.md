@@ -207,8 +207,20 @@ Recordemos que la unidad **nunca se ejecutaba**: su `[Install]` decía
 - `.install`: `systemctl enable pocknix-fake-suspend.service` (como el LED de carga), para que
   una instalación limpia lo traiga activo.
 
-Pendiente inmediato: ciclos de **10 y 30 min**, medir consumo con `zz-drain-log` (objetivo
-0,14 %/h) e instalar el paquete 64 quitando el override de `/etc` que puse a mano.
+### Estado final del día (25/11, 19:12)
+
+- **`pocknix-bsp-sm8750 0.2.0-64` instalado** en la Odin; retirado el override de `/etc` que puse
+  a mano y el symlink huérfano que dejó. La unidad se carga **desde `/usr/lib`** y está
+  `enabled` por `suspend.target` (`systemd-analyze verify` limpio).
+- **5 ciclos, 5 PASS** con el kernel 7.2.15-7: 120 s (×2, el último ya por la vía del paquete),
+  600 s, suspensión por inactividad de 6 min 27 s y **10 h 45 min** con cargador. Siempre mismo
+  `boot_id` y uptime continuo.
+- La suspensión por inactividad la pidió Steam (`dbus-send` desde la sesión), así que el flujo
+  real — consola quieta en Game Mode — también pasa por la preparación.
+
+Queda solo la medición de consumo: un ciclo **largo con batería** (3 h o toda la noche) leyendo
+`charge_now` del hook `zz-drain-log` (objetivo 0,14 %/h ≈ 11 mA). Con 120 s o 10 min el contador
+no se mueve lo suficiente para distinguirlo del ruido.
 
 **Consecuencia importante**: si esto se sostiene, **el kernel 8 no hace falta** para arreglar la
 suspensión: se queda el 7 con el lote DP/dock y los ajustes de GPU, y el "suspend-safe" queda
