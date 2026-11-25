@@ -11,7 +11,7 @@
 # Binario prebuilt del release oficial (GPLv3+); el fuente está en el repo upstream
 # (commit _commit). Se empaqueta como el resto de cores vendored (libretro-cores-pocknix).
 pkgname=libretro-hakux
-pkgver=0.25.2
+pkgver=0.38.0
 pkgrel=1
 pkgdesc="hakuX-lr libretro core: original Xbox emulation (aarch64, no BIOS, Vulkan)"
 arch=('aarch64')
@@ -22,18 +22,21 @@ license=('GPL-3.0-or-later')  # + licencias de las dependencias embebidas en /us
 # compilación intente resolverlas: es un paquete de ficheros, no compila nada.
 depends=('glibc' 'gcc-libs' 'zlib' 'vulkan-icd-loader')
 optdepends=('retroarch: frontend libretro')
-_commit=6f9fedc4a1
-_asset="hakux-${pkgver}-aarch64.tar.gz"
+_commit=dbc8b167782a84d20c41be7feb9d0f19e5f9a4a8
+_asset="hakux-lr-${pkgver}-aarch64.tar.gz"
 source=("${_asset}::https://github.com/portare-ch/hakuX-lr/releases/download/linux-v${pkgver}/${_asset}")
-sha256sums=('2dedbe1ec45b00a4f447c0112bcb7e7ddbc010293273ad5f1a961803208478bb')
+sha256sums=('24dd6d3a80c551a79f11cc9b01baa39c11f03b1395222e273beaf5b4657b48f9')
 
 package() {
-  local src="${srcdir}/hakux-${pkgver}"
-  install -Dm755 "${src}/lib/libretro/hakux_libretro.so" \
+  # 0.38.0 renombro los binarios a hakux-lr_* y movio las licencias a licenses/hakux-lr.
+  # Se instalan con los nombres de siempre (hakux_libretro.so/.info) porque ES-DE los
+  # referencia asi en es_systems.xml y RetroArch empareja .so con .info por el nombre.
+  local src="${srcdir}/hakux-lr-${pkgver}"
+  install -Dm755 "${src}/lib/libretro/hakux-lr_libretro.so" \
     "${pkgdir}/usr/lib/libretro/hakux_libretro.so"
-  install -Dm644 "${src}/lib/libretro/hakux_libretro.info" \
+  install -Dm644 "${src}/lib/libretro/hakux-lr_libretro.info" \
     "${pkgdir}/usr/share/libretro/info/hakux_libretro.info"
   install -Dm644 "${src}/BUILD-INFO" "${pkgdir}/usr/share/doc/${pkgname}/BUILD-INFO"
   install -d "${pkgdir}/usr/share/licenses/hakux"
-  cp -a "${src}/share/licenses/hakux/." "${pkgdir}/usr/share/licenses/hakux/"
+  cp -a "${src}/share/licenses/hakux-lr/." "${pkgdir}/usr/share/licenses/hakux/"
 }
