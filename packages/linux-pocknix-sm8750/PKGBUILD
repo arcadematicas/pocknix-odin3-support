@@ -23,7 +23,12 @@ pkgname=linux-pocknix-sm8750
 # el coulomb counter). 26: fuera el iris 0021 (redundante con el 0024, que es superset y ya
 # define iris_dec_low_latency); era el que dejaba .rej en iris_ctrls/iris_hfi_gen2.
 pkgver=7.2.15
-pkgrel=7
+# pkgrel 8 (25/11): "suspend-safe". Fuera 0620-0624 (dock/DP AltMode: typec, pmic-glink, audio DP),
+# 2170/2171 (GPU A830: poll termico y perfmode_bw) y el 9999 vuelve al de 7.2.15-1; tambien se quitan
+# del DTS el conector pmic-glink (try-power-role=sink) y mdss_dp0_out. Nada de ese lote se valido con
+# suspension y desde el la Odin reinicia al despertar (docs/SUSPEND-REGRESION-2026-11-25.md). Se
+# readmiten uno a uno, con prueba de suspension antes de publicar.
+pkgrel=8
 pkgdesc="SM8750 kernel (stock ${pkgver} + ROCKNIX patch stack, SoC board dtbs) — packaged from 'make kernel' output"
 arch=('aarch64')
 url="https://github.com/shuuri-labs/pocknix-os"
