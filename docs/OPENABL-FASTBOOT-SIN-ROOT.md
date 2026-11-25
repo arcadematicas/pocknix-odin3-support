@@ -79,7 +79,17 @@ niega a tocar el slot activo, pide escribir `FLASH` y no reinicia la consola.
 | Quieres volver al bootloader original del todo | El slot con el ABL de serie sigue intacto: actívalo y, si quieres, reescribe el otro con `fastboot flash` |
 
 No hace falta backup previo con `dd` **si no se toca el slot activo**: esa es toda la gracia
-de escribir en el inactivo. Aun así, si vas a quedarte con OpenABL, saca una copia del slot
+de escribir en el inactivo.
+
+### Después: `--status` dirá `mixed` (y es lo correcto)
+
+Con OpenABL ya arrancando, `sudo pocknix-update-abl --status` devolverá `state=mixed` porque los
+dos slots **no** son iguales: `b` es OpenABL y `a` sigue siendo el ABL de serie. `running_openabl`
+sí dirá `1.2`. No es un error y no hay que "arreglarlo".
+
+Ojo si algún día ejecutas `pocknix-update-abl` desde Linux: escribe **los dos** slots (antes
+respalda los dos en `/flash/openabl/`), así que perderías el de serie en `a` salvo por ese backup.
+Si quieres conservarlo, no lo ejecutes: el slot `b` ya está bien. Aun así, si vas a quedarte con OpenABL, saca una copia del slot
 de serie cuando ya haya Linux (para tenerla fuera de la consola).
 
 ## Lo que pasó el 22/11/2026 (caso real)
