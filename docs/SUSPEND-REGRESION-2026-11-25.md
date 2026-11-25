@@ -56,10 +56,13 @@ DTS del Odin 3 (`cq8725s-ayn-odin3.dts`):
 
 ## 4. Sospechosos, por orden
 
-1. **`pmic-glink` / typec (0621 + `try-power-role="sink"`)**. `pmic-glink` es el canal por el que el
-   PMIC/EC entrega los eventos de USB-C **y las notificaciones de suspensión**. `0621` "no espera el
-   ack" del altmode y añade debug; el DTS fuerza el rol *sink* en el conector 0. Que el resume se
-   quede esperando/descoordinado con el PMIC encaja con un cuelgue sin rastro en pstore.
+1. **`pmic-glink` / typec (0621 + `try-power-role="sink"` + PHY combo)**. `pmic-glink` es el canal
+   por el que el PMIC/EC entrega los eventos de USB-C **y las notificaciones de suspensión**. En este
+   lote se activó el DP del Odin de verdad: `link-frequencies` en `mdss_dp0_out` **hasta HBR3
+   (8,1 Gbps)**, audio por DP (`0622`), el rol de datos del altmode (`0623`/`0624`) y el forzado
+   `try-power-role="sink"`. El PHY combo es **compartido USB3/DP**: si su estado de energía al
+   suspender no cuadra, el resume se cuelga sin dejar pstore (cuelgue duro, no oops). Encaja con el
+   síntoma.
 2. **GPU A830 (`2170` + `2171` + cooling-map `9999`)**. Toca votos de GMU/interconnect y DVFS, que es
    justo el camino de `2124`/`2125` (los fixes de resume del kernel 31).
 3. **`deep` en sí sobre 7.2.15-7**. `deep` siempre fue el modo frágil; `s2idle` era el "seguro".
