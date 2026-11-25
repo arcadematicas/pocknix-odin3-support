@@ -106,21 +106,38 @@ else
     # Con el helper del sistema (regla polkit) no hace falta dialogo de contrasena en
     # Game Mode; si no esta, se cae a pacman como antes.
     if [ -x /usr/bin/pocknix-cores-update ]; then
-        # pkexec SIEMPRE para el helper: la regla polkit autoriza a wheel y no necesita
-        # display. El Updater corre sin DISPLAY, asi que elegir pkexec por DISPLAY fallaba.
+        # Tres caminos, en orden. El Updater corre DENTRO del contenedor del Steam Linux
+        # Runtime (reaper): ahi pkexec y sudo NO son setuid y fallan con
+        # "pkexec must be setuid root". systemd-run habla con el systemd del host por
+        # D-Bus y si funciona desde el contenedor (la regla polkit 60 autoriza solo las
+        # unidades llamadas pocknix-cores-update-*).
+        paquetes=("${CORES_PKG}")
+        for _p in ${CORES_EXTRA}; do paquetes+=("${_p}"); done
+        ok=0
         if [ "$(id -u)" = 0 ]; then
-            ELEVAR_CMD=(/usr/bin/pocknix-cores-update "${CORES_PKG}")
+            /usr/bin/pocknix-cores-update "${paquetes[@]}" && ok=1
         else
-            ELEVAR_CMD=(pkexec /usr/bin/pocknix-cores-update "${CORES_PKG}")
+            if [ "$ok" = 0 ] && [ -x /usr/bin/systemd-run ] && [ -S /run/dbus/system_bus_socket ]; then
+                log "actualizando por systemd-run (D-Bus)"
+                timeout 900 /usr/bin/systemd-run --quiet --pipe --wait --collect \
+                    --unit="pocknix-cores-update-$$" \
+                    /usr/bin/pocknix-cores-update "${paquetes[@]}" && ok=1
+            fi
+            if [ "$ok" = 0 ] && [ -u /usr/bin/pkexec ]; then
+                log "actualizando por pkexec"
+                pkexec /usr/bin/pocknix-cores-update "${paquetes[@]}" && ok=1
+            fi
+            if [ "$ok" = 0 ]; then
+                log "actualizando por sudo"
+                sudo -n /usr/bin/pocknix-cores-update "${paquetes[@]}" && ok=1
+            fi
         fi
-        for _p in ${CORES_EXTRA}; do ELEVAR_CMD+=("${_p}"); done
-        set -- "${ELEVAR_CMD[@]}"
-        if "$@"; then
+        if [ "$ok" = 1 ]; then
             log "cores del sistema al dia"
             CORES_EXTRA=""
             CORES_PKG_DONE=1
         else
-            warn "no se pudieron actualizar los cores (¿helper/polkit?)"
+            warn "no se pudieron actualizar los cores (helper/polkit/D-Bus)"
             exit 1
         fi
     elif elevar pacman -Sy --needed --noconfirm "${CORES_PKG}"; then
