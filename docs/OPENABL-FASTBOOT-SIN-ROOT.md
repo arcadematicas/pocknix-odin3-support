@@ -41,6 +41,12 @@ Dónde está el ELF: dentro del paquete `pocknix-bootloader-sm8750`, en
 `/usr/share/pocknix/bootloader/openabl/abl_signed-SM8750.elf`. En el centro también se puede
 sacar del `.pkg.tar.zst` compilado sin tocar la consola.
 
+## Instalador para usuarios
+
+Todo lo de abajo está automatizado en [`../tools/openabl-flash/`](../tools/openabl-flash/README.md):
+`flash-openabl.sh` (Linux) y `flash-openabl.cmd` (Windows, doble clic). Verifica el sha256, se
+niega a tocar el slot activo, pide escribir `FLASH` y no reinicia la consola.
+
 ## Receta
 
 1. **Entrar en el fastboot de verdad** (el del ABL, no `fastbootd`):

@@ -113,6 +113,8 @@ sin tocar contenido).
 - Si la consola viene **con Android de serie y sin root** (no hay `su`), el kit no puede
   escribir los slots desde Android: se usa **fastboot en el slot inactivo** — procedimiento
   completo en [`../OPENABL-FASTBOOT-SIN-ROOT.md`](../OPENABL-FASTBOOT-SIN-ROOT.md).
+  Para eso hay un instalador para el PC: [`tools/openabl-flash/`](../../tools/openabl-flash/README.md)
+  (`flash-openabl.sh` en Linux, `flash-openabl.cmd` en Windows; solo escribe el slot inactivo).
 - En una consola de fábrica el `state=` inicial es `differs`: los dos slots son
   iguales entre sí, pero **no** son el kit. Ese contenido es el ABL original (o
   el de Android) y el instalador lo respalda **antes** de escribir.

@@ -44,6 +44,7 @@ Sin hardware no se puede comprobar nada de esto; el bring-up es a ciegas:
   no vale el kit por `adb`: se usa **fastboot al slot inactivo** (`fastboot flash abl_b` +
   `--set-active=b`), como en la Odin reparada el 22/11. Antes, `fastboot getvar unlocked` debe
   decir `yes`. Receta y trampas: [`OPENABL-FASTBOOT-SIN-ROOT.md`](OPENABL-FASTBOOT-SIN-ROOT.md).
+  Instalador para el PC (Linux/Windows): [`tools/openabl-flash/`](../tools/openabl-flash/README.md).
 - **Brillo**: curva y máximo (`ARMADA_BACKLIGHT_MAX` de Armada es específico de su stack;
   el nuestro es `pocknix-panel-calib` + powerdevil).
 - **HDR**: nits y colorimetría. Nuestro perfil de gamescope es
