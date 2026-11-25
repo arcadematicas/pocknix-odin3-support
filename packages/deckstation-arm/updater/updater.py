@@ -55,6 +55,12 @@ if _HEADLESS:
 # app activa el input method de Wayland; SDL lo activa al crear la ventana).
 os.environ.setdefault("SDL_HINT_IME_EMBEDDED_TEXT_INPUT", "0")
 
+# La app se lanza desde Steam en Game Mode con un entorno SIN PATH (comprobado en la Odin:
+# /proc/<updater>/environ no trae PATH). Cualquier subproceso que llamara a pacman, pkexec,
+# rsync o cp por nombre fallaba solo desde la GUI; por SSH funcionaba porque ahi si hay PATH.
+# Se define uno por defecto para todo lo que lancemos.
+os.environ.setdefault("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+
 DIR = dirname(abspath(__file__))
 sys.path.insert(0, os.path.join(DIR, 'libs'))
 py_ver = f"py{sys.version_info.major}.{sys.version_info.minor}"

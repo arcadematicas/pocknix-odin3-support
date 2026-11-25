@@ -33,6 +33,9 @@
 #                           entorno grafico, si no sudo). Ej: "sudo -n".
 # ======================================================================
 set -u
+# El Updater corre sin PATH cuando se lanza desde la app en Game Mode: sin esto no se
+# encuentran pacman ni pkexec (por SSH funcionaba y enmascaraba el fallo).
+export PATH="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
 
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 DECKSTATION_ROOT="${DECKSTATION_ROOT:-$(cd "$(dirname "$SELF")/.." && pwd)}"
