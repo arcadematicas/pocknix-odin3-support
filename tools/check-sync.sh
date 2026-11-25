@@ -69,6 +69,22 @@ cmp_tree "${HERE}/kernel/patches/10-mainline"      "${OS}/kernel/sm8750/patches/
 cmp_tree "${HERE}/kernel/patches/20-sm8750"        "${OS}/kernel/sm8750/patches/20-sm8750"
 cmp_tree "${HERE}/kernel/patches/25-armada-sleep" "${OS}/kernel/sm8750/patches/25-armada-sleep"
 cmp_tree "${HERE}/kernel/patches/30-version"       "${OS}/kernel/sm8750/patches/30-version"
+
+# Un parche RETIRADO en el centro (.patch.disabled) no debe seguir como .patch en el arbol:
+# los stacks son overlays y rsync no borra, asi que el build lo aplicaria igual. Si pasa, el
+# kernel no es el que crees (25/11/2026: un "suspend-safe" con el lote DP y el de GPU dentro).
+for d in "${HERE}"/kernel/patches/*/; do
+  [ -d "${d}" ] || continue
+  rel="kernel/sm8750/patches/$(basename "${d}")"
+  for f in "${d}"*.patch.disabled; do
+    [ -f "${f}" ] || continue
+    base="$(basename "${f}" .disabled)"
+    if [ -e "${OS}/${rel}/${base}" ]; then
+      echo "  STALE    ${rel}/${base} (retirado en el centro, pero sigue en el arbol)"
+      drift=$((drift + 1))
+    fi
+  done
+done
 # kernel.conf: fichero suelto (el directorio del arbol lleva ademas patches/dts/config)
 if [ ! -f "${HERE}/kernel/sm8750/kernel.conf" ]; then
   echo "  MISSING  kernel/sm8750/kernel.conf (falta en el centro)"

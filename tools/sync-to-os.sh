@@ -57,6 +57,28 @@ overlay_prune() {
   "${RSYNC[@]}" --delete "${src}/" "${dst}/" | sed 's/^/    /'
 }
 
+# Como overlay() pero borrando del ARBOL los parches que en el centro están RETIRADOS
+# (*.patch.disabled). Los stacks son overlays (sus directorios llevan también parches de
+# ROCKNIX), así que no vale un --delete: hay que quitar solo el gemelo del desactivado.
+# Sin esto el build seguía aplicando el parche viejo: el 25/11/2026 se creyó revertido el
+# lote DP/typec/pmic-glink y el de GPU A830, y el kernel seguía llevándolos (lo delató el
+# propio fuente compilado, no el log del build).
+overlay_disabled() {
+  local src="${HERE}/$1" dst="${OS}/$2" f base
+  [ -d "${src}" ] || return 0
+  for f in "${src}"/*.patch.disabled; do
+    [ -f "${f}" ] || continue
+    base="$(basename "${f}" .disabled)"
+    [ -e "${dst}/${base}" ] || continue
+    if [ "${DRY}" = 1 ]; then
+      log "DRY: se borraria ${dst#${OS}/}/${base} (retirado en el centro)"
+    else
+      rm -f "${dst}/${base}"
+      log "retirado del arbol: ${dst#${OS}/}/${base}"
+    fi
+  done
+}
+
 # --- our own device packages (whole directories) -----------------------------
 # OJO: estos mirrors son del DIRECTORIO ENTERO -> las reglas/servicios nuevos del
 # paquete viajan solos, no hay que listarlos uno a uno. Ej.: pocknix-bsp-sm8750
@@ -115,6 +137,12 @@ overlay "kernel/patches/10-mainline" "kernel/sm8750/patches/10-mainline"
 overlay "kernel/patches/20-sm8750"   "kernel/sm8750/patches/20-sm8750"
 overlay "kernel/patches/25-armada-sleep" "kernel/sm8750/patches/25-armada-sleep"
 overlay "kernel/patches/30-version"  "kernel/sm8750/patches/30-version"
+# y quitar del arbol los parches retirados en el centro (*.patch.disabled)
+overlay_disabled "kernel/patches/05-speedup"       "kernel/sm8750/patches/05-speedup"
+overlay_disabled "kernel/patches/10-mainline"      "kernel/sm8750/patches/10-mainline"
+overlay_disabled "kernel/patches/20-sm8750"        "kernel/sm8750/patches/20-sm8750"
+overlay_disabled "kernel/patches/25-armada-sleep"  "kernel/sm8750/patches/25-armada-sleep"
+overlay_disabled "kernel/patches/30-version"       "kernel/sm8750/patches/30-version"
 overlay "kernel/dts"                 "kernel/sm8750/dts/qcom"
 overlay "kernel/sm8750"               "kernel/sm8750"   # kernel.conf (version + sha256 del tarball)
 
