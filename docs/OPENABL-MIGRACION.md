@@ -227,3 +227,15 @@ arranca la entrada por defecto. Volume − solo se usa para abrir el menú a pro
 Queda como mejora opcional poner `timeout 2` en `loader.conf` para ver el menú unos segundos
 (útil para elegir *Pocknix (previous kernel)* tras un kernel malo). Hoy `Image.bak` se escribe pero
 nadie lo selecciona solo.
+
+## 10. Vía fastboot (consola nueva, Android sin root)
+
+Si la consola no tiene Linux (o el Android de serie no trae `su`), el kit no puede hacer `dd`
+a `abl_a`/`abl_b`. Se usa el **fastboot del ABL** y se escribe **solo el slot inactivo**:
+el de serie se queda intacto y la vuelta atrás es `fastboot --set-active=<slot original>`.
+
+Procedimiento completo, con las trampas (USB `-110`, `getvar all` colgado, desbloqueo,
+primer arranque sin modelo), en [`OPENABL-FASTBOOT-SIN-ROOT.md`](OPENABL-FASTBOOT-SIN-ROOT.md).
+
+Fue la vía usada el **22/11/2026** en la Odin reparada: viene de ahí que arranque del slot `b`
+con el ABL de serie todavía en `a`. La Portal (que llega con Android de serie) irá igual.

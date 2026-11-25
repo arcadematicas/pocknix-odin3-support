@@ -40,9 +40,10 @@ Sin hardware no se puede comprobar nada de esto; el bring-up es a ciegas:
   salga en negro. El driver COG ya lleva el `o3p` (parche `2160`) y `frame_len_120/60`
   existe para calibrar (`2161`); ojo: el **ABL** tiene que arrancar con *Device model =
   AYN Odin 3 Portal* o no habrá árbol de dispositivo para ese panel.
-- **Instalación del bootloader**: la Portal llega con su ABL original. `pocknix-update-abl`
-  lo respalda antes de escribir (`state=differs`); ese backup es el de fábrica y hay que
-  copiarlo fuera de la consola.
+- **Instalación del bootloader**: la Portal llega con Android de serie y **sin root**, así que
+  no vale el kit por `adb`: se usa **fastboot al slot inactivo** (`fastboot flash abl_b` +
+  `--set-active=b`), como en la Odin reparada el 22/11. Antes, `fastboot getvar unlocked` debe
+  decir `yes`. Receta y trampas: [`OPENABL-FASTBOOT-SIN-ROOT.md`](OPENABL-FASTBOOT-SIN-ROOT.md).
 - **Brillo**: curva y máximo (`ARMADA_BACKLIGHT_MAX` de Armada es específico de su stack;
   el nuestro es `pocknix-panel-calib` + powerdevil).
 - **HDR**: nits y colorimetría. Nuestro perfil de gamescope es

@@ -110,6 +110,9 @@ sin tocar contenido).
 
 ## Consola nueva o recién reparada
 
+- Si la consola viene **con Android de serie y sin root** (no hay `su`), el kit no puede
+  escribir los slots desde Android: se usa **fastboot en el slot inactivo** — procedimiento
+  completo en [`../OPENABL-FASTBOOT-SIN-ROOT.md`](../OPENABL-FASTBOOT-SIN-ROOT.md).
 - En una consola de fábrica el `state=` inicial es `differs`: los dos slots son
   iguales entre sí, pero **no** son el kit. Ese contenido es el ABL original (o
   el de Android) y el instalador lo respalda **antes** de escribir.
