@@ -1,7 +1,11 @@
 [Unit]
-Description=CalvOS Fake Suspend for SM8750
+Description=CalvOS Fake Suspend for SM8750 (prepara la suspension real)
+# La preparacion (pantalla apagada + governor powersave + sync) tiene que ocurrir ANTES de que
+# systemd entre en suspend: con ella la Odin 3 reanuda de deep; sin ella puede reiniciar al
+# despertar (docs/SUSPEND-REGRESION-2026-11-25.md).
 Before=systemd-suspend.service
 StopWhenUnneeded=yes
+DefaultDependencies=no
 
 [Service]
 Type=oneshot
@@ -10,4 +14,6 @@ ExecStart=/usr/local/bin/pocknix-fake-suspend.sh suspend
 ExecStop=/usr/local/bin/pocknix-fake-suspend.sh resume
 
 [Install]
-WantedBy=systemd-suspend.target
+# OJO: era WantedBy=systemd-suspend.target, que NO existe (la cadena real es
+# suspend.target -> systemd-suspend.service), asi que la unidad nunca se ejecutaba.
+WantedBy=suspend.target

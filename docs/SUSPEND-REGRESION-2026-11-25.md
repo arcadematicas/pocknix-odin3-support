@@ -177,3 +177,39 @@ falla con `STALE` si queda alguno.
    `boot_id`** y seguir contando el uptime. Repetir 3 veces (2 min, 10 min, 30 min).
 4. Medir 2 h con `zz-drain-log` → objetivo **0,14 %/h**.
 5. Solo entonces: publicar en R2 y anotar en el CHANGELOG.
+
+## 8. La pieza que faltaba: la preparación previa a suspender (25/11, tarde)
+
+Probado en la Odin con el kernel **7.2.15-7** (el que fallaba), sin tocar el kernel:
+
+| Ciclo | Condición | Resultado |
+|---|---|---|
+| 07:43 → 18:28 (10 h 45 min) | **con cargador**, preparación activa | **reanudó** (mismo `boot_id`, uptime 11 h 28 min) |
+| 18:34 → 18:36 (120 s) | **con batería**, preparación activa | **PASS** (`calvos-suspend-test`, mismo `boot_id`) |
+
+El journal del ciclo bueno lo deja claro: `Starting CalvOS Fake Suspend` a las 07:43:28 y
+`PM: suspend entry (deep)` a las 07:43:29. Es decir, la preparación (pantalla a `bl_power=4`,
+governor `powersave`, `sync`) **entró en la transacción de suspensión**, y
+`PM: suspend exit` la revirtió al despertar.
+
+Recordemos que la unidad **nunca se ejecutaba**: su `[Install]` decía
+`WantedBy=systemd-suspend.target`, un target **que no existe** (la cadena real es
+`suspend.target → systemd-suspend.service`). La única vía era un symlink manual del PKGBUILD en
+`systemd-suspend.service.wants/`, que en esta instalación no estaba (`is-enabled` decía
+`disabled`). O sea: la Odin 3 llevaba suspendiendo **sin** la preparación que ArmadaOS sí hace.
+
+### Arreglado en el paquete (`pocknix-bsp-sm8750` 63 → 64)
+
+- `fake-suspend/pocknix-fake-suspend.service`: `WantedBy=suspend.target` y
+  `DefaultDependencies=no` (antes, el target inexistente).
+- PKGBUILD: fuera el symlink manual en `systemd-suspend.service.wants/` (dos mecanismos para lo
+  mismo, uno inválido).
+- `.install`: `systemctl enable pocknix-fake-suspend.service` (como el LED de carga), para que
+  una instalación limpia lo traiga activo.
+
+Pendiente inmediato: ciclos de **10 y 30 min**, medir consumo con `zz-drain-log` (objetivo
+0,14 %/h) e instalar el paquete 64 quitando el override de `/etc` que puse a mano.
+
+**Consecuencia importante**: si esto se sostiene, **el kernel 8 no hace falta** para arreglar la
+suspensión: se queda el 7 con el lote DP/dock y los ajustes de GPU, y el "suspend-safe" queda
+guardado como plan B.
