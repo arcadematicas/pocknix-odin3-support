@@ -39,6 +39,9 @@ DECKSTATION_ROOT="${DECKSTATION_ROOT:-$(cd "$(dirname "$SELF")/.." && pwd)}"
 SCRIPTS_DIR="${DECKSTATION_ROOT}/scripts"
 
 CORES_PKG="${DECKSTATION_CORES_PKG:-libretro-cores-pocknix}"
+# Paquetes de cores PROPIOS que no van dentro del pack pero si deben actualizarse con el
+# (hakuX es un core propio, no esta en el buildbot: sin esto el Updater nunca lo tocaba).
+CORES_EXTRA="${DECKSTATION_CORES_EXTRA-libretro-hakux}"
 
 DRY=0
 BRIDGE=1
@@ -94,15 +97,45 @@ fi
 # todo el sistema sobre la base congelada de Pocknix es un landmine (ver
 # AGENTS.md). El repo que sirve el paquete es el de Pocknix.
 if [ "$DRY" = 1 ]; then
-    log "SIMULACION: pacman -Sy --needed --noconfirm ${CORES_PKG}"
+    log "SIMULACION: pacman -Sy --needed --noconfirm ${CORES_PKG} ${CORES_EXTRA}"
 else
     log "Actualizando el pack de cores (paquete ${CORES_PKG})..."
-    if elevar pacman -Sy --needed --noconfirm "${CORES_PKG}"; then
+    # Con el helper del sistema (regla polkit) no hace falta dialogo de contrasena en
+    # Game Mode; si no esta, se cae a pacman como antes.
+    if [ -x /usr/bin/pocknix-cores-update ]; then
+        # pkexec SIEMPRE para el helper: la regla polkit autoriza a wheel y no necesita
+        # display. El Updater corre sin DISPLAY, asi que elegir pkexec por DISPLAY fallaba.
+        if [ "$(id -u)" = 0 ]; then
+            ELEVAR_CMD=(/usr/bin/pocknix-cores-update "${CORES_PKG}")
+        else
+            ELEVAR_CMD=(pkexec /usr/bin/pocknix-cores-update "${CORES_PKG}")
+        fi
+        for _p in ${CORES_EXTRA}; do ELEVAR_CMD+=("${_p}"); done
+        set -- "${ELEVAR_CMD[@]}"
+        if "$@"; then
+            log "cores del sistema al dia"
+            CORES_EXTRA=""
+            CORES_PKG_DONE=1
+        else
+            warn "no se pudieron actualizar los cores (¿helper/polkit?)"
+            exit 1
+        fi
+    elif elevar pacman -Sy --needed --noconfirm "${CORES_PKG}"; then
         log "paquete ${CORES_PKG} al dia"
     else
         warn "no se pudo instalar/actualizar ${CORES_PKG} (¿esta en el repositorio?)"
         exit 1
     fi
+    # Cores propios fuera del pack (hakuX). Si un extra no existe en el repo, se avisa
+    # pero no se aborta: el pack principal ya esta al dia.
+    for _p in ${CORES_EXTRA}; do
+        log "Actualizando core propio: ${_p}..."
+        if elevar pacman -Sy --needed --noconfirm "${_p}"; then
+            log "paquete ${_p} al dia"
+        else
+            warn "no se pudo actualizar ${_p} (¿esta en el repositorio?)"
+        fi
+    done
 fi
 
 # --- 2) Puente: copiar los cores del sistema a la carpeta de RetroArch ---------

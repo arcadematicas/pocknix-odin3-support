@@ -68,6 +68,139 @@ from pygame.locals import *
 
 pygame.init()
 pygame.joystick.init()
+
+
+# ---------------------------------------------------------------------------
+# Puente evdev para el mando.
+# Con Steam Input activo (modo juego), Steam CAPTURA el mando fisico: pygame
+# enumera el dispositivo pero no recibe ni un evento. Steam ademas expone un
+# pad virtual (Microsoft X-Box 360 pad) que SI esta libre. Este puente busca un
+# gamepad libre (no capturado) y traduce sus eventos a eventos pygame, asi el
+# resto del Updater no cambia y RetroArch/ES-DE siguen con su configuracion.
+# Si no hay nada capturado, no hace nada: pygame ya funciona solo.
+# ---------------------------------------------------------------------------
+def _evdev_bridge_start():
+    import fcntl, glob, os, select, struct, threading
+    EV_KEY, EV_ABS = 1, 3
+    BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST = 0x130, 0x131, 0x133, 0x134
+    BTN_DPAD = {0x220: 11, 0x221: 12, 0x222: 13, 0x223: 14}  # up,down,left,right -> 11..14
+    ABS_HAT0X, ABS_HAT0Y = 0x10, 0x11
+    FMT = "llHHi"
+    SZ = struct.calcsize(FMT)
+
+    def ioc(d, t, nr, sz):
+        return (d << 30) | (sz << 16) | (ord(t) << 8) | nr
+
+    EVIOCGRAB = ioc(1, "E", 0x90, 4)
+
+    def log(txt):
+        try:
+            open("/tmp/updater-evdev.log", "a").write(txt + "\n")
+        except OSError:
+            pass
+
+    def is_pad(path):
+        try:
+            fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+        except OSError:
+            return False
+        try:
+            import array
+            def bits(ev, n):
+                a = array.array("B", [0] * ((n + 7) // 8))
+                fcntl.ioctl(fd, ioc(2, "E", 0x20 + ev, len(a)), a)
+                return a
+            def bit(a, c):
+                return c // 8 < len(a) and (a[c // 8] >> (c % 8)) & 1
+            kb = bits(1, 0x300)
+            ab = bits(3, 0x40)
+            return bit(kb, BTN_SOUTH) or bit(kb, 0x220) or bit(ab, ABS_HAT0X)
+        except Exception:
+            return False
+        finally:
+            os.close(fd)
+
+    def is_free(path):
+        try:
+            fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+        except OSError:
+            return False
+        try:
+            fcntl.ioctl(fd, EVIOCGRAB, 1)
+            fcntl.ioctl(fd, EVIOCGRAB, 0)
+            return True
+        except OSError:
+            return False
+        finally:
+            os.close(fd)
+
+    def name_of(path):
+        try:
+            return open("/sys/class/input/%s/device/name" % os.path.basename(path)).read().strip()
+        except OSError:
+            return path
+
+    def pick():
+        best = None
+        for path in sorted(glob.glob("/dev/input/event*")):
+            if not is_pad(path) or not is_free(path):
+                continue
+            n = name_of(path).lower()
+            rank = 0 if "x-box" in n else (1 if "odin" in n else 2)
+            if best is None or rank < best[0]:
+                best = (rank, path)
+        return best[1] if best else None
+
+    def run():
+        fd = None
+        buf = b""
+        while True:
+            if fd is None:
+                path = pick()
+                if not path:
+                    import time; time.sleep(2); continue
+                try:
+                    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+                except OSError:
+                    import time; time.sleep(1); continue
+                log("usando %s (%s)" % (path, name_of(path)))
+            r, _, _ = select.select([fd], [], [], 1.0)
+            if not r:
+                continue
+            try:
+                data = os.read(fd, SZ * 64)
+            except OSError:
+                os.close(fd); fd = None; buf = b""; continue
+            buf += data
+            while len(buf) >= SZ:
+                ev = buf[:SZ]; buf = buf[SZ:]
+                _, _, typ, code, val = struct.unpack(FMT, ev)
+                if typ == EV_KEY and val == 1:
+                    log("KEY %#x" % code)
+                    if code in (BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST):
+                        idx = {BTN_SOUTH: 0, BTN_EAST: 1, BTN_NORTH: 3, BTN_WEST: 2}[code]
+                        pygame.event.post(pygame.event.Event(pygame.JOYBUTTONDOWN, {"joy": 0, "button": idx}))
+                    elif code in BTN_DPAD:
+                        pygame.event.post(pygame.event.Event(pygame.JOYBUTTONDOWN, {"joy": 0, "button": BTN_DPAD[code]}))
+                elif typ == EV_ABS and code in (ABS_HAT0X, ABS_HAT0Y):
+                    log("ABS %#x %d" % (code, val))
+                    hx = val if code == ABS_HAT0X else 0
+                    hy = val if code == ABS_HAT0Y else 0
+                    pygame.event.post(pygame.event.Event(pygame.JOYHATMOTION, {"joy": 0, "hat": 0, "value": (hx, -hy)}))
+
+    # Arrancar SOLO si algun pad esta capturado (Steam/InputPlumber). Antes se miraba
+    # unicamente el primer pad y se salia sin arrancar nunca.
+    pads = [p for p in sorted(glob.glob("/dev/input/event*")) if is_pad(p)]
+    captured = [p for p in pads if not is_free(p)]
+    log("pads=%s capturados=%s" % (pads, captured))
+    if captured:
+        threading.Thread(target=run, daemon=True).start()
+
+
+try:
+    _evdev_bridge_start()
+except Exception as _e:  # nunca debe impedir que el Updater arranque
+    print("evdev: puente no disponible:", _e, flush=True)
 # GUI: pantalla completa (usa la resolucion actual del compositor, ya rotada).
 # Headless (--install-all/--bios-check): ventana virtual con dummy.
 # SCREEN_WIDTH/HEIGHT se usan en todo el dibujado -> definir SIEMPRE.
@@ -793,6 +926,7 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         """Opciones del menu CORES_MENU."""
         return [
             "Actualizar pack de cores (paquete del sistema)",
+            "Actualizar hakuX (core propio)",
             "Cores sueltos (buildbot ARM)",
             "Volver",
         ]
@@ -807,6 +941,8 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         accion = opciones[idx]
         if accion.startswith("Actualizar pack"):
             self._cores_pack_actualizar()
+        elif accion.startswith("Actualizar hakuX"):
+            self._cores_hakux_actualizar()
         elif accion.startswith("Cores sueltos"):
             self.state = "CORES_LOOSE"
             self._cores_loose_cargar()
@@ -835,6 +971,31 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         except Exception as e:
             self._cores_msg = f"Error actualizando el pack: {e}"
         self._cores_listo = False      # los estados cambian al copiar el pack
+        self._cores_busy = False
+
+    def _cores_hakux_actualizar(self):
+        """Actualiza el core propio hakuX (paquete libretro-hakux) + puente, como el pack."""
+        if self._cores_busy:
+            return
+        self._cores_busy = True
+        self._cores_msg = "Actualizando hakuX (pide root)..."
+        threading.Thread(target=self._cores_hakux_worker, daemon=True).start()
+
+    def _cores_hakux_worker(self):
+        script = self._cores_script("deckstation-cores-pack.sh")
+        env = dict(self._cores_env(), DECKSTATION_CORES_PKG="libretro-hakux",
+                   DECKSTATION_CORES_EXTRA="")
+        try:
+            r = subprocess.run([script], env=env, capture_output=True, text=True, timeout=600)
+            lineas = ((r.stdout or "") + (r.stderr or "")).strip().split("\n")
+            ultima = next((l.strip() for l in reversed(lineas) if l.strip()), "")
+            if r.returncode == 0:
+                self._cores_msg = "hakuX al dia. " + (ultima or "")
+            else:
+                self._cores_msg = f"hakuX no se pudo actualizar: {ultima or 'error'}"
+        except Exception as e:
+            self._cores_msg = f"Error actualizando hakuX: {e}"
+        self._cores_listo = False
         self._cores_busy = False
 
     def _cores_loose_cargar(self, force=False):
