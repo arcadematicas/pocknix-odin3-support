@@ -155,8 +155,12 @@ Y en el DTS: fuera `mdss_dp0_out` (`link-frequencies` hasta HBR3) y el conector
 - `a6xx_gmu.c`: `adreno_is_a6xx` = 0 apariciones.
 - DTS del Odin: sin `mdss_dp0_out` ni `try-power-role`.
 
-**Artefactos**: `linux-pocknix-sm8750 7.2.15-8`, `KERNEL` de 18.257.920 B,
-md5 `0d6d7ac6530cc9c820a51f8070d5922d` (el `7`, en uso, es de 18.259.968 B).
+**Artefactos**: `linux-pocknix-sm8750 7.2.15-8`, `KERNEL` (boot image) de 18.257.920 B,
+md5 `0d6d7ac6530cc9c820a51f8070d5922d`; `Image` md5 `dd957ee024cea6fed1e5809fda455fe1`
+(verificado **dentro del paquete**: coincide). Paquete
+`build/localrepo/sm8750/linux-pocknix-sm8750-7.2.15-8-aarch64.pkg.tar.xz`, 77.669.724 B,
+sha256 `3cf4e840a263b73d31aa4d5ee701d0dd1eca013f1c791f234d3663b033556f46`.
+El `7`, en uso, es de 18.259.968 B (md5 `e2dc7ea5ec30272306ae84632886b670`).
 
 ### ⚠️ Trampa encontrada (y cerrada)
 El primer build de este kernel **salió con los parches dentro**: los stacks son *overlays* y
