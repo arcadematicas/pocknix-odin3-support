@@ -1,45 +1,17 @@
-# Pendientes: parches de la AYN Odin 3 Portal que NO aplican todavia
+# Pendientes: (vacío desde el 25/11/2026)
 
-Copiados de ArmadaOS `b031deef99a095104ef234c5a0705850152dffe1`
-(`packages/kernel/patches/1304-...` y `1305-...`) el 11/11/2026.
+Los dos parches de la **AYN Odin 3 Portal** ya están **activos**, un nivel más arriba:
 
-**No estan activos**: este subdirectorio queda fuera del glob `*.patch` que aplica
-`scripts/build-kernel.sh` (solo mira ficheros del directorio, no recursivo), porque
-el build **aborta** con `patch conflict` (ya no avisa y sigue).
+- `2160-drm-panel-vtdr6130-add-odin3portal.patch` — añade el panel `vtdr6130,o3p`
+  al driver `panel-visionox-vtdr6130-cog.c`.
+- `2161-drm-panel-vtdr6130-allow-calibrating-the-odin3portal-frame-length.patch` —
+  expone `frame_len_120` / `frame_len_60` para calibrar el refresco por unidad.
 
-## Por que fallan
+Antes no aplicaban porque el kernel no tenía el driver **COG**: solo el
+`panel-visionox-vtdr6130.c` upstream. Lo trajeron los parches de ROCKNIX
+`2157`/`2158`/`2159` (que viven en el árbol de compilación, no en el centro), y
+desde entonces los dos aplican limpios (dry-run verificado el 25/11/2026).
 
-Los dos parches son contra `drivers/gpu/drm/panel/panel-visionox-vtdr6130-cog.c`,
-el driver "COG" de Armada (el de sus parches sm8250: `panel_info`,
-`vtdr6130_write_seq`, `panel_desc`, `vtdr6130_supply_config`).
-
-Nuestro 7.2.15 **no tiene** ese fichero. Solo trae el driver upstream simple
-`drivers/gpu/drm/panel/panel-visionox-vtdr6130.c` (compatible `visionox,vtdr6130`,
-supplies `vddio`/`vci`/`vdd`, `devm_gpiod_get("reset")`), con otro modelo de datos.
-
-Dry-run en `build/kernel/sm8750/linux-7.2.15`:
-
-```
-$ patch -p1 --dry-run -f < 2160-...patch
-can't find file to patch at input line 11
-No file to patch.  Skipping patch.
-4 out of 4 hunks ignored
-
-$ patch -p1 --dry-run -f < 2161-...patch
-can't find file to patch at input line 13
-No file to patch.  Skipping patch.
-14 out of 14 hunks ignored
-```
-
-## Que falta para activarlos
-
-1. Traer el driver COG (o portar los dos parches al driver simple) y anadir su
-   `CONFIG_DRM_PANEL_VISIONOX_VTDR6130_COG` (hoy ni siquiera esta
-   `CONFIG_DRM_PANEL_VISIONOX_VTDR6130` en `kernel/sm8750/config/linux.aarch64.conf`).
-2. 2161 depende de 2160 (modifica codigo que introduce 2160): deben aplicarse en orden.
-3. Solo entonces moverlos a `kernel/patches/20-sm8750/` con sus nombres 2160/2161.
-
-El DTS `cq8725s-ayn-odin3portal.dts` ya declara `compatible = "vtdr6130,o3p"` y
-`armada,dpu-8bpc-dither`; sin el driver el panel simplemente no hara probe (el DT
-compila y arranca, pero la pantalla no se enciende). Es bring-up a ciegas: no hay
-unidad para probarlo.
+Este directorio NO se aplica solo: `build-kernel.sh` recorre
+`kernel/patches/*/` y dentro de cada uno solo los `*.patch` de primer nivel, así
+que lo que se deje aquí queda inerte a propósito.

@@ -14,7 +14,7 @@ soporte de la Portal (solo la Odin 2 Portal en SM8550).
 | Pieza | Dónde |
 |---|---|
 | DTS `cq8725s-ayn-odin3portal.dts` | `kernel/dts/` (BSD-3-Clause, autores originales) |
-| Panel `vtdr6130,o3p` + calibración de frame length | `kernel/patches/20-sm8750/2160,2161` |
+| Panel `vtdr6130,o3p` + calibración de frame length | `kernel/patches/20-sm8750/2160,2161` (**activos** desde 25/11/2026; el driver COG lo traen los parches de ROCKNIX `2157`–`2159`) |
 | Board `odin3portal.conf` + dispatch por modelo | `packages/pocknix-bsp-sm8750/boards/`, `device.conf` |
 | UCM `AYN/Odin3Portal` (HiFi = el de Odin 3) | BSP → `/usr/share/alsa/ucm2/` |
 | InputPlumber `50-ayn_odin3portal.yaml` | BSP → `/usr/share/inputplumber/devices/` |
@@ -37,7 +37,12 @@ Odin 3 y lo registra en el log — no se queda en negro por eso.
 Sin hardware no se puede comprobar nada de esto; el bring-up es a ciegas:
 
 - **Panel**: init del `vtdr6130,o3p`, orientación (el DTS pide `rotation = 270`) y que no
-  salga en negro.
+  salga en negro. El driver COG ya lleva el `o3p` (parche `2160`) y `frame_len_120/60`
+  existe para calibrar (`2161`); ojo: el **ABL** tiene que arrancar con *Device model =
+  AYN Odin 3 Portal* o no habrá árbol de dispositivo para ese panel.
+- **Instalación del bootloader**: la Portal llega con su ABL original. `pocknix-update-abl`
+  lo respalda antes de escribir (`state=differs`); ese backup es el de fábrica y hay que
+  copiarlo fuera de la consola.
 - **Brillo**: curva y máximo (`ARMADA_BACKLIGHT_MAX` de Armada es específico de su stack;
   el nuestro es `pocknix-panel-calib` + powerdevil).
 - **HDR**: nits y colorimetría. Nuestro perfil de gamescope es
