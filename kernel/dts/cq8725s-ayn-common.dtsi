@@ -1321,8 +1321,17 @@
 	/* Master port 9 carries the WCD939x HIFI_PCM headphone stream
 	 * (384 kHz PCM), so the controller needs its per-port PCM format
 	 * enable set for it. Inert unless the HPH PCM mode kcontrols are
-	 * enabled. */
-	qcom,pcm-ports-mask = <0x200>;
+	 * enabled.
+	 *
+	 * Port 2 is the class-H port: stock Android gives it PCM format and
+	 * a 64-slot interval too (pcm-ports-mask 0x204 on the armada boards).
+	 * And the class-H interval (64) does not divide the 50x16 RX frame,
+	 * so without an SSP the class-H stream starts at a random phase and
+	 * roughly half of the headphone streams come out fuzzy (armada's
+	 * measurement on this same Odin 3). One SSP every 6 frames fixes it,
+	 * the same value armada uses on SM8650. */
+	qcom,pcm-ports-mask = <0x204>;
+	qcom,ssp-period = <6>;
 
 	wcd_rx: codec@0,4 {
 		compatible = "sdw20217010e00";
