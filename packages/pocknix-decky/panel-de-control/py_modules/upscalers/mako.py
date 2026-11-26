@@ -230,7 +230,7 @@ class Mako:
     def status(self):
         with self._lock:
             state = self._state()
-            installed = self._installed(state)
+            installed = self._installed(state, 5 if _arm() else 4)
             dll = self._dll()
             checked = state.get('inspection', {})
             if not isinstance(checked, dict):
@@ -238,7 +238,7 @@ class Mako:
             compatible = bool(checked.get('compatible') and checked.get('signature') == self._signature(dll))
             supported = platform.machine().lower() in ('x86_64', 'amd64', 'aarch64', 'arm64')
             reason = ('mako_arch' if not supported else 'mako_not_installed' if not installed else
-                      'mako_dll_missing' if not dll else None if compatible else 'mako_unchecked')
+                      None if _arm() else 'mako_dll_missing' if not dll else None if compatible else 'mako_unchecked')
             profiles = {}
             for key, value in list(state['profiles'].items())[:256]:
                 if not isinstance(value, dict) or not re.fullmatch(r'[0-9]{1,20}', key):
@@ -253,7 +253,7 @@ class Mako:
                   'version': state['v5'].get('version', VERSION5) if installed5 else None}
             return {'installed': installed, 'ready': reason is None, 'reason': reason, 'v5': v5,
                     'notice_dismissed': state.get('notice_dismissed') is True,
-                    'supported': supported, 'spatial_ready': supported and (installed or installed5), 'dll': bool(dll), 'version': state.get('version', VERSION) if installed else None,
+                    'supported': supported, 'spatial_ready': supported and (installed or installed5), 'dll': bool(dll), 'version': (state['v5'].get('version', VERSION5) if _arm() else state.get('version', VERSION)) if installed else None,
                     'foreign': (self.home / '.local/bin/mako-run').exists() or (self.home / '.local/bin/mako-launch').exists(),
                     'profiles': profiles}
 
@@ -308,11 +308,21 @@ class Mako:
             backup = staging.with_name(staging.name + "-previous")
             try:
                 found = set()
-                with tarfile.open(archive, 'r:xz') as handle:
+                with tarfile.open(archive, 'r:*') as handle:
+                    names = [str(Path(name)) for name in handle.getnames()]
+                    roots = {name.split('/', 1)[0] for name in names}
+                    top = ''
+                    if len(roots) == 1 and names:
+                        root = next(iter(roots))
+                        if root and all(name == root or name.startswith(root + '/') for name in names):
+                            if not any(entry == root or entry.startswith(root + '/') for entry in payload):
+                                top = root + '/'
                     for member in handle:
                         name = str(Path(member.name))
                         if Path(name).is_absolute() or '..' in Path(name).parts or member.issym() or member.islnk():
                             raise MakoError('mako_archive')
+                        if top and name.startswith(top):
+                            name = name[len(top):]
                         if name not in payload:
                             continue
                         if name in found or not member.isfile() or not 0 < member.size <= 64 * 1024 * 1024:
@@ -461,7 +471,7 @@ class Mako:
                     self._event(state, 'remove', appid)
                     self._persist_files(changes, state)
                     return {'env': {}, 'wrappers': [], 'profile': None}
-                if platform.machine().lower() not in ('x86_64', 'amd64'):
+                if platform.machine().lower() not in ('x86_64', 'amd64', 'aarch64', 'arm64'):
                     raise MakoError('mako_arch')
                 if appid not in state['profiles'] and len(state['profiles']) + len(paused) >= 256 and appid not in paused:
                     raise MakoError('mako_profile_limit')

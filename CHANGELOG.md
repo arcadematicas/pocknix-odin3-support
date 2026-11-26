@@ -36,6 +36,34 @@ estado A/B: `misc` casi vacío, `devinfo` es Qualcomm, `uefivarstore` solo ajust
 la regla: el modo "solo slot inactivo" es para estrenar; cuando ya se convive con OpenABL, se
 escriben los dos. El README de `tools/openabl-flash/` lo explica también.
 
+### ✅ Panel de Control: MAKO en aarch64 ya instala y perfila
+
+Tres fallos reales, todos en el parche arm64 (`upscalers/mako.py`):
+
+- **`mako_archive`**: el panel abría el tarball como **xz** y la build ARM es **gzip**, y además
+  viene dentro de una carpeta raíz (`MAKO-Renderer-v5.0.0-linux-arm64/`). Ahora abre con
+  autodetección (`r:*`) y quita el prefijo común solo si es seguro. Validado con el tarball real:
+  los 12 ficheros del payload se encuentran.
+- **`mako_arch` al guardar el perfil**: el parche había arreglado el guard de `install()` pero no
+  el de `set_game()`. Corregido.
+- **`status()` en ARM**: el bloque superior miraba la línea 4 (que en ARM no existe) y decía "no
+  instalado" aunque estuviera la 5. Ahora en ARM informa de la 5.
+
+Además, la copia viva era un híbrido 0.94.2/0.96.0 porque el backup de seguridad se dejó **dentro
+de `homebrew/plugins/`** y Decky carga todas las subcarpetas (la 0.94.2 ganaba). Ya es 0.96.0
+entera. Verificado: MAKO 5.0.0 instalado y la capa **cargada en el proceso del juego**
+(`/proc/<pid>/maps`), con perfil `frame_generation_enabled = true`, multiplicador 2 y modelo
+`mako-fg`.
+
+### ⚠️ Audio: zumbido intermitente en auriculares (abierto)
+
+Aparece al habilitar la etapa de auriculares y desaparece otras veces. Descartado por medición:
+ganancia, compander, modo class-H/AB, ADC/micrófono, MBHC y el EQ (plano). El **mezclador es
+idéntico** en estado bueno y malo, y con `RDAC` desconectado el zumbido se va: nace en la salida
+del DAC. El replug físico lo cura 3 de 4 veces; reiniciar, siempre. El unbind/bind del códec en
+caliente **rompe los nombres de los controles ALSA** (sin audio hasta reiniciar): descartado.
+Detalle y plan en `docs/AUDIO-ZUMBIDO-20261126.md`.
+
 ---
 
 ## 📅 22 de noviembre 2026 — escritorio: Plasma de escritorio por defecto
