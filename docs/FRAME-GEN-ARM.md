@@ -44,6 +44,38 @@ El layer entra **en el proceso del juego**, así que sirve a juegos cuyo **Vulka
 Requisitos en runtime: Vulkan 1.3+ (Turnip), Qt6 Quick/Qml para la configuración (Plasma
 Mobile lo trae). Las capas enlazan su propio libstdc++ oculto: no chocan con el del juego.
 
+
+## Integración en el Panel de Control (Hooandee) — sí, es el sitio natural
+
+El panel ya tiene `py_modules/upscalers/mako.py`: instala MAKO en su propio prefijo
+(`~/.local/share/panel-de-control/mako/5`), guarda perfiles por juego y los aplica con un
+wrapper (`MAKO_LAUNCH_CONFIG` + `bin/mako-launch`). Lo que no sabe es que existe una build
+aarch64: su `Asset` es el tarball x86 y su `PAYLOAD` exige `lib32/libmako-render.so` y
+`VkLayer_MAKO_render.x86.json`, que en ARM no existen.
+
+Cambios necesarios (patch a `panel-de-control/py_modules/upscalers/mako.py`):
+
+1. **Elegir asset por arquitectura**: si `platform.machine()` es `aarch64`/`arm64`, usar
+   `MAKO-Renderer-v5.0.0-linux-arm64.tar.gz` de `Ken5998/mako-arm64` (v0.1.0),
+   sha256 `PENDIENTE_CALCULAR`, 11.218.307 B.
+2. **PAYLOAD aarch64** = el de v5 **sin** `lib32/libmako-render.so` **ni**
+   `share/.../VkLayer_MAKO_render.x86.json` (el tarball ARM trae un único JSON).
+3. **Motor por defecto en ARM: 4 (LSFG)** — es el nativo; el motor 5 (MAKO FG) usa
+   `lib/mako-fg/mako-fg-host`, que es **x86-64** y solo corre por FEX (experimental).
+4. **Detección de "foreign"**: el panel se niega a gestionar si existe
+   `~/.local/bin/mako-launch` (instalación standalone). Si se integra en el panel, **no** se
+   instala el tarball a mano.
+
+Extra: en `pocknix-control/py_modules/pocknix_control/mako.py` (`mako_status()`), aceptar
+también el prefijo del panel como "instalado", para que el toggle por juego de PocknixControl
+aparezca cuando el panel lo haya instalado.
+
+Ojo: `packages/pocknix-decky/mako-aarch64.patch` fuerza hoy a **MAKO's Decky plugin** a
+instalar el renderer x86 en ARM (por eso no funcionaba). Cuando el panel gestione la build
+aarch64, ese parche debe retirarse y dejar un solo instalador.
+
+Mejor aún: proponerlo upstream a Hooandee (es su plugin) con este mismo parche.
+
 ## Pendiente
 
 - Probar de verdad en la Odin (WWHD, 30→60) y medir input lag/pacing.
