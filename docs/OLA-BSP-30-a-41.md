@@ -49,3 +49,56 @@ parches propios que no existen allí.
 ## Por qué no se hace hoy
 `pocknix-steam` de upstream depende de `bsp-common>=36` (núcleo prime) y `tools`/`snapshots` de 37+.
 Todo cuelga del mismo cambio, y es la única pieza del plan que puede dejar la consola sin arrancar.
+
+---
+
+## Estado al 26/11/2026 (verificado contra `origin/main` @ `49870a95`)
+
+`git diff --stat origin/main -- packages/shared/pocknix-bsp-common`: **64 ficheros,
++627 / −1829**.
+
+### Clasificación real del diff (`git diff --name-status origin/main`)
+
+**Solo upstream (D en el diff) — por riesgo:**
+
+| Grupo | Ficheros |
+|---|---|
+| 🔴 Capa de arranque | `pocknix-boot-deploy`, `pocknix-build-bootimg`, `pocknix-cmdline-sync`, `90-linux-pocknix.hook`, `91-pocknix-cmdline.hook` |
+| 🔴 Reescribe pacman | `pocknix-repo-line`, `pocknix-repo-line.service`, `96-pocknix-repo-line.hook` |
+| 🟠 Gate ABL | `pocknix-abl-gate`, `00-pocknix-abl-gate.hook` |
+| 🟠 Rendimiento (sustituido por nuestro scx) | `pocknix-perf`, `pocknix-perfd(.service)`, `pocknix_perf.py`, `org.pocknix.Perf.conf/.service`, `power-profiles.conf`, `rtkit-limits.conf` |
+| 🟡 Audio DSP de altavoz | `pocknix-speaker-dsp(.service)`, `pocknix-speaker-dsp-render` (nosotros usamos el EQ del plugin) |
+| 🟡 Varios | `10-pocknix-journal-size.conf`, `20-pocknix-wifi-backend.conf`, `50-pocknix-second-screen.rules`, `60-pocknix-deck.conf`, `60-pocknix-latency.conf`, `60-pocknix-sdl-xb360.conf` + `pocknix-sdl-xb360.sh`, `lid-powerkey-sleep-{pre,post}`, `pocknix-backlight-grant`, `52-pocknix-fan-mode.rules`, `abl-kit.sh`, `cores.sh`, `zram-generator.conf`, `README.provenance` |
+
+**Solo nuestros (A)**: `pocknix-scx-mode`, `pocknix-scx-diag`, `pocknix-scx.service`
+(renombre de `pocknix-lavd.service`), `60-pocknix-io-scheduler.rules`, `91-pocknix-bls.hook`,
+`display-sleep-post`, `inputplumber-sleep-{pre,post}`.
+
+**Modificados en ambos (M)**: `PKGBUILD`, `pocknix-bsp-common.install`, `pocknix-bls-deploy`,
+`pocknix-fancontrol(.service)`, `pocknix-fan-mode`, `pocknix-game-mode.conf`,
+`pocknix-gamepad-target(.service)`, `pocknix-gpt-abl`, `pocknix-lavd-mode`,
+`pocknix-refresh-abl-kit`, `pocknix-second-screen.service`, `pocknix-update-abl`,
+`20-pocknix-powerkey.conf`, `60-pocknix-controllers.rules`, `90-pocknix-backlight.rules`.
+
+### 🔴 Hallazgo nuevo: `[pocknix-base]` tapa a `[pocknix-shared]`
+
+`pacman -S pocknix-tools` **reinstala la 28** aunque shared tenga la 30: el snapshot
+`pocknix-base` fija esa versión y gana en la resolución. Consecuencia: **todo paquete nuestro
+que también viva en `base` está clavado** hasta recortar snapshot nuevo (o cambiar la prioridad
+de repos en `pacman.conf`). Afecta a `pocknix-bsp-common`, `pocknix-tools`, `pocknix-decky`… no a
+los “suelos” (`deckstation-arm`, `libretro-hakux`). Es parte de la ola, no un caso aparte.
+
+### Orden propuesto (actualizado)
+
+- **Lote 1 (hecho)**: paquetes sueltos publicados (hakux 0.38→0.39 directo, deckstation 29,
+  tools 30) — sirve para validar la publicación sin tocar el arranque.
+- **Lote 2 (inocuo, sin arranque)**: `10-journal-size`, `20-wifi-backend`, `60-latency`,
+  `60-sdl-xb360` (+script), `60-deck.conf`, `50-second-screen.rules` (+servicio),
+  `rtkit-limits`, `zram-generator`, `backlight-grant`. Revisar uno a uno y **no** tocar
+  `cores.sh` (lo pide `pocknix-steam` de upstream: decidir antes).
+- **Lote 3 (decisión)**: capa de arranque. Un solo escritor de BLS/`/flash`. Nuestra
+  `pocknix-bls-deploy` + `91-pocknix-bls.hook` + `update-abl` (OpenABL ya probado) contra la de
+  upstream. `repo-line` **no** se instala.
+- **Lote 4**: snapshot `base` nuevo (o prioridad de repos) para que las versiones de shared
+  lleguen de verdad a los dispositivos.
+- **Lote 5**: probar en hardware (arranque → audio → suspend → dock) y publicar.
