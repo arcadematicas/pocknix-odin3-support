@@ -4,6 +4,28 @@ Plugin upstream: https://github.com/Hooandee/panel-de-control
 
 ## Versión vendida
 
+- **v0.96.0** (release `panel-de-control-v0.96.0`, publicada el 2026-11-25), re-vendorizada el
+  26/11 desde `Panel.de.Control.zip`. Ya trae `hdr=True` en `ayn_odin3` (PR #947 mergeado) y el
+  arreglo del frontend (`DFL.staticClasses.Title` ya no existe), así que los dos parches
+  locales anteriores son **no-op** y se mantienen solo como red por si el plugin se
+  autoactualiza a una versión vieja.
+
+## Parche local: MAKO en aarch64 (`upscalers/mako.py`)
+
+Upstream solo conoce el Renderer **x86_64** y rechaza instalar en ARM (`mako_arch`). El parche
+(`overlay/usr/share/pocknix/patches/panel-de-control-arm64-mako.patch`) añade:
+
+- `ASSET5_ARM` → `MAKO-Renderer-v5.0.0-linux-arm64.tar.gz` de `Ken5998/mako-arm64` (v0.1.0,
+  sha256 `3bace05d…`), la build comunitaria del mismo Renderer.
+- `PAYLOAD5_ARM` → sin `lib32/` ni `VkLayer_MAKO_render.x86.json` (en ARM hay un único JSON) y
+  con `lib/libmako-render-scaling.so`.
+- En ARM: `supported` incluye aarch64, el motor por defecto es el **5** (el 4 no existe para
+  ARM), los perfiles con `engine=4` se leen como 5 y `install()` ignora la línea 4.
+
+El plugin **se autoactualiza**, así que `overlay/usr/local/bin/pocknix-panel-control-patch`
+re-aplica este parche (idempotente, con backup `.orig-arm64`) además de los dos anteriores.
+
+
 - **v0.82.1** (release `panel-de-control-v0.82.1`, publicada el 2026-11-03), actualizada el 4/11
   desde `Panel.de.Control.zip`. Incluye la sección Ambiente (fondos/música/radio), cola de
   reproducción, enlaces por QR, arreglo de caída con Steam beta, cierre de juegos colgados y

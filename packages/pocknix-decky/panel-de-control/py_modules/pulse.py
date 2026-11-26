@@ -25,7 +25,13 @@ _STOP_WAIT_S = 0.5
 _MAX_SCREENS = 4
 _LIFECYCLE_KEPT = 4
 _LIFECYCLE_EVENT_CHARS = 40
-_WATCHED_PROCESSES = ("steamwebhelper", "steam", "gamescope", "gamescope-wl", "python3", "PluginLoader")
+# Steps marked around hardware writes (resume re-apply): the last one names the write a
+# freeze interrupted. Each mark is synced before the write it announces starts.
+_MARKS_KEPT = 16
+_MARK_STEP_CHARS = 40
+_MARK_DETAIL_KEYS = 6
+_MARK_DETAIL_CHARS = 48
+_WATCHED_PROCESSES = ("steamwebhelper", "steam", "gamescope", "gamescope-wl", "python3", "PluginLoader", "Panel de Contro")
 
 
 def _read(path: str) -> str | None:
@@ -86,8 +92,11 @@ def _gpu(root: str) -> dict | None:
         vram = _number(os.path.join(device, "mem_info_vram_used"))
         vram_total = _number(os.path.join(device, "mem_info_vram_total"))
         gtt = _number(os.path.join(device, "mem_info_gtt_used"))
+        level = (_read(os.path.join(device, "power_dpm_force_performance_level")) or "").strip()
         return {
             "busy": busy,
+            # "manual" = a pinned clock window (Panel or Steam), which the kernel restores on resume.
+            "level": level[:16] or None,
             "vram_mb": vram // 1048576 if vram is not None else None,
             "vram_total_mb": vram_total // 1048576 if vram_total is not None else None,
             "gtt_mb": gtt // 1048576 if gtt is not None else None,
@@ -126,6 +135,102 @@ def _processes(root: str) -> dict:
     return usage
 
 
+class ProcessSampler:
+    def __init__(self, root: str = "/", *, clock=time.monotonic, ticks_per_second=None):
+        self.root = root
+        self.clock = clock
+        self.hz = ticks_per_second or os.sysconf("SC_CLK_TCK")
+        self.previous: dict = {}
+        self.previous_at: float | None = None
+
+    def sample(self) -> dict:
+        now = self.clock()
+        elapsed = now - self.previous_at if self.previous_at is not None else None
+        current = {}
+        names = {}
+        rows = []
+        entries = sorted(glob.glob(os.path.join(self.root, "proc/[0-9]*")))
+        for entry in entries[:4096]:
+            text = _read(os.path.join(entry, "stat")) or ""
+            try:
+                end = text.rindex(")")
+                fields = text[end + 2:].split()
+                pid = int(os.path.basename(entry))
+                born, ticks = int(fields[19]), int(fields[11]) + int(fields[12])
+                raw_name = text[text.index("(") + 1:end]
+                name = raw_name if raw_name in (*_WATCHED_PROCESSES, "MainThread", "wineserver") else "other"
+            except (ValueError, IndexError):
+                continue
+            current[pid] = (born, ticks)
+            names[pid] = name
+            previous = self.previous.get(pid)
+            if elapsed is None or elapsed <= 0 or previous is None or previous[0] != born:
+                continue
+            delta = ticks - previous[1]
+            if delta < 0:
+                continue
+            rows.append({"pid": pid, "name": name, "cpu_pct": round(delta / self.hz / elapsed * 100, 1)})
+        self.previous, self.previous_at = current, now
+        top = sorted((row for row in rows if row["cpu_pct"] > 0), key=lambda row: row["cpu_pct"], reverse=True)[:5]
+        for row in top:
+            row["steam_appid"] = None
+            try:
+                with open(os.path.join(self.root, "proc", str(row["pid"]), "environ"), "rb") as handle:
+                    env = handle.read(65536)
+                stat = _read(os.path.join(self.root, "proc", str(row["pid"]), "stat")) or ""
+                try:
+                    born = int(stat[stat.rindex(")") + 2:].split()[19])
+                except (ValueError, IndexError):
+                    continue
+                if born != current[row["pid"]][0]:
+                    continue
+                for field in env.split(b"\0")[:-1]:
+                    key, _, value = field.partition(b"=")
+                    if key == b"SteamAppId" and value.isdigit() and 0 < len(value) <= 20 and int(value) > 0:
+                        row["steam_appid"] = value.decode("ascii")
+                        break
+            except OSError:
+                pass
+        return {
+            "interval_s": round(elapsed, 3) if elapsed is not None and elapsed > 0 else None,
+            "cpu_basis": "one_logical_cpu",
+            "observed": len(current),
+            "truncated": len(entries) > 4096,
+            "top_cpu": top,
+            "known_cpu_pct": {
+                name: round(sum(row["cpu_pct"] for row in rows if row["name"] == name), 1)
+                if len(entries) <= 4096 and any(row["name"] == name for row in rows)
+                and sum(row["name"] == name for row in rows) == sum(value == name for value in names.values()) else None
+                for name in _WATCHED_PROCESSES
+            },
+            "panel_cpu_pct": next((row["cpu_pct"] for row in rows if row["pid"] == os.getpid()), None),
+        }
+
+
+def performance_sample(root: str = "/") -> dict:
+    base = os.path.join(root, "sys/devices/system/cpu/cpufreq")
+    clocks = [_number(os.path.join(path, "scaling_cur_freq")) for path in sorted(glob.glob(os.path.join(base, "policy*")))[:256]]
+    clocks = [value for value in clocks if value is not None]
+    caps = []
+    for chip in sorted(glob.glob(os.path.join(root, "sys/class/hwmon/hwmon*")))[:32]:
+        name = (_read(os.path.join(chip, "name")) or "").strip()[:32]
+        for path in sorted(glob.glob(os.path.join(chip, "power*_cap")))[:4]:
+            value = _number(path)
+            if value is not None:
+                caps.append({"chip": name, "rail": os.path.basename(path), "uw": value})
+            if len(caps) >= 8:
+                break
+        if len(caps) >= 8:
+            break
+    return {
+        # Kernel's online CPU list ("0-3,6"): cores switched off across a suspend show here.
+        "cpus_online": (_read(os.path.join(root, "sys/devices/system/cpu/online")) or "").strip()[:32] or None,
+        "boost": _number(os.path.join(base, "boost")),
+        "cpu_khz": {"min": min(clocks), "max": max(clocks)} if clocks else None,
+        "power_caps_uw": caps,
+    }
+
+
 def system_sample(root: str = "/") -> dict:
     loadavg = (_read(os.path.join(root, "proc/loadavg")) or "").split()
     uptime = (_read(os.path.join(root, "proc/uptime")) or "").split()
@@ -139,6 +244,10 @@ def system_sample(root: str = "/") -> dict:
         "gpu": _gpu(root),
         "screen": _screens(root),
         "proc": _processes(root),
+        "smt_active": {"0": False, "1": True}.get(
+            (_read(os.path.join(root, "sys/devices/system/cpu/smt/active")) or "").strip()
+        ),
+        "performance": performance_sample(root),
     }
 
 
@@ -184,6 +293,7 @@ class Pulse:
         self._lifecycle = lifecycle
         self._on_unclean = on_unclean
         self._sample = sample
+        self._process_sampler = ProcessSampler() if sample is system_sample else None
         self._interval_s = interval_s
         self._samples: collections.deque = collections.deque(maxlen=keep)
         self._clock = clock
@@ -192,6 +302,10 @@ class Pulse:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._write_lock = threading.Lock()
+        self._marks: collections.deque = collections.deque(maxlen=_MARKS_KEPT)
+        self._wake = threading.Event()
+        self._fast_until = 0.0
+        self._fast_interval_s = interval_s
         self.write_failures = 0
 
     @property
@@ -233,6 +347,7 @@ class Pulse:
         if self._thread is not None:
             return
         self._stop.clear()
+        self._wake.clear()
         self._thread = threading.Thread(target=self._run, name="pdc-pulse", daemon=True)
         self._thread.start()
 
@@ -240,15 +355,41 @@ class Pulse:
         """Called from the event loop while Decky unloads: waits briefly, never on a
         slow disk."""
         self._stop.set()
+        self._wake.set()
         thread = self._thread
         self._thread = None
         if thread is not None:
             thread.join(_STOP_WAIT_S)
         self._persist(stopped=True, wait_s=_STOP_WAIT_S)
 
+    def mark(self, step: str, *, sync: bool = True, **detail: Any) -> None:
+        """Records a step. sync=True (worker threads, right before a hardware write)
+        persists before returning; from the event loop pass sync=False and the pulse
+        thread writes it at once, without sampling."""
+        entry: dict[str, Any] = {"t": round(self._clock(), 2), "step": str(step)[:_MARK_STEP_CHARS]}
+        for key, value in list(detail.items())[:_MARK_DETAIL_KEYS]:
+            entry[str(key)[:24]] = value if isinstance(value, (bool, int, float)) or value is None else str(value)[:_MARK_DETAIL_CHARS]
+        self._marks.append(entry)
+        if sync:
+            self._persist(stopped=False)
+        else:
+            self._wake.set()
+
+    def burst(self, seconds: float, interval_s: float = 2.0) -> None:
+        """Samples every interval_s for the next seconds (after a resume, a freeze
+        within seconds is otherwise dated to a 10 s window)."""
+        self._fast_until = max(self._fast_until, self._clock() + seconds)
+        self._fast_interval_s = min(self._interval_s, interval_s)
+        self._wake.set()
+
+    def _next_wait(self) -> float:
+        return self._fast_interval_s if self._clock() < self._fast_until else self._interval_s
+
     def tick(self) -> None:
         try:
             sample = {"t": round(self._clock(), 1), **self._sample()}
+            if self._process_sampler is not None:
+                sample["process_cpu"] = self._process_sampler.sample()
         except Exception as error:  # noqa: BLE001
             sample = {"t": round(self._clock(), 1), "error": type(error).__name__}
         if self._context is not None:
@@ -267,6 +408,7 @@ class Pulse:
             "interval_s": self._interval_s,
             "stopped": stopped,
             "samples": list(self._samples),
+            "marks": list(self._marks),
         }
         if self._recent is not None:
             try:
@@ -298,10 +440,18 @@ class Pulse:
                 self._on_unclean(end)
             except Exception:  # noqa: BLE001
                 self.write_failures += 1
+        sample_due = True
         while True:
-            self.tick()
-            if self._stop.wait(self._interval_s):
+            if sample_due:
+                self.tick()
+            else:
+                self._persist(stopped=False)
+            deadline = time.monotonic() + self._next_wait()
+            woke = self._wake.wait(max(0.0, deadline - time.monotonic()))
+            self._wake.clear()
+            if self._stop.is_set():
                 return
+            sample_due = not woke or time.monotonic() >= deadline
 
 
 def lifecycle_tail(events: list) -> list:
@@ -348,6 +498,7 @@ def summarize_unclean(previous: dict, current_boot: str | None) -> dict:
         "system_rebooted": previous.get("boot") != current_boot if previous.get("boot") and current_boot else None,
         "last": last,
         "lifecycle": lifecycle_tail(previous["lifecycle"]) if isinstance(previous.get("lifecycle"), list) else None,
+        "marks": list(previous["marks"])[-_MARKS_KEPT:] if isinstance(previous.get("marks"), list) else None,
     }
 
 

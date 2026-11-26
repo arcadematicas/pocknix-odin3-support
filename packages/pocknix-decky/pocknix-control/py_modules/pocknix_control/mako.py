@@ -15,12 +15,17 @@ from pathlib import Path
 DECK_HOME = Path("/home/deck")
 MAKO_WRAPPER = DECK_HOME / ".local" / "bin" / "mako-run"
 MAKO_RENDERER_STATE = DECK_HOME / ".local" / "share" / "mako-render" / "active-renderer.json"
+# En aarch64 el Renderer lo instala y gestiona el Panel de Control (Hooandee) en su prefijo,
+# con la build aarch64; ahi el wrapper por juego es su `bin/mako-launch`, no `~/.local/bin/mako-run`.
+PANEL_MAKO_LAUNCH = DECK_HOME / ".local" / "share" / "panel-de-control" / "mako" / "5" / "bin" / "mako-launch"
 
 
 def mako_status():
     """Report whether MAKO's per-game wrapper is available on this device."""
+    panel = PANEL_MAKO_LAUNCH.is_file()
     return {
-        "installed": MAKO_WRAPPER.is_file(),
-        "wrapper": str(MAKO_WRAPPER),
-        "renderer": MAKO_RENDERER_STATE.is_file(),
+        "installed": MAKO_WRAPPER.is_file() or panel,
+        "wrapper": str(PANEL_MAKO_LAUNCH if panel else MAKO_WRAPPER),
+        "renderer": MAKO_RENDERER_STATE.is_file() or panel,
+        "panel": panel,
     }

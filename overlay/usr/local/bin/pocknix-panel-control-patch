@@ -36,6 +36,7 @@ import ast
 import glob
 import os
 import shutil
+import subprocess
 import sys
 import syslog
 import tempfile
@@ -227,13 +228,76 @@ def patch_frontend(plugin_dir: str) -> int:
     return 0
 
 
+ARM64_PATCH = "/usr/share/pocknix/patches/panel-de-control-arm64-mako.patch"
+
+
+def patch_mako_arm64(plugin_dir: str) -> int:
+    """MAKO en aarch64: aplica el parche de la build comunitaria (idempotente).
+
+    El plugin se autoactualiza y cada release vuelve a traer `upscalers/mako.py` de upstream,
+    que solo conoce el Renderer x86_64. El parche anade el asset aarch64 (Ken5998/mako-arm64),
+    su PAYLOAD (sin lib32 ni JSON .x86) y hace que en ARM todo vaya por la linea 5.
+    """
+    path = os.path.join(plugin_dir, "py_modules", "upscalers", "mako.py")
+    if not os.path.isfile(path):
+        log(f"no existe {path!r}: nada que hacer en upscalers/mako.py")
+        return 0
+    try:
+        with open(path, encoding="utf-8") as fh:
+            src = fh.read()
+    except OSError as exc:
+        log(f"ERROR leyendo {path!r}: {exc}")
+        return 1
+    if "ASSET5_ARM" in src:
+        log("ok: mako arm64 ya aplicado en upscalers/mako.py")
+        return 0
+    if not os.path.isfile(ARM64_PATCH):
+        log(f"ERROR: falta el parche {ARM64_PATCH!r}")
+        return 1
+    backup = path + ".orig-arm64"
+    try:
+        shutil.copy2(path, backup)
+    except OSError as exc:
+        log(f"ERROR creando backup {backup!r}: {exc}")
+        return 1
+    r = subprocess.run(["patch", "-p1", "--forward", "-d", plugin_dir, "-i", ARM64_PATCH],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        log(f"ERROR aplicando el parche arm64 (rc={r.returncode}): {(r.stdout + r.stderr).strip()[:300]}")
+        try:
+            shutil.copy2(backup, path)
+        except OSError:
+            pass
+        return 1
+    # Debe seguir siendo Python valido; si no, restauramos.
+    try:
+        with open(path, encoding="utf-8") as fh:
+            ast.parse(fh.read(), filename=path)
+    except (OSError, SyntaxError) as exc:
+        log(f"ERROR: tras el parche el fichero no es Python valido, restauro: {exc}")
+        try:
+            shutil.copy2(backup, path)
+        except OSError:
+            pass
+        return 1
+    pyc_dir = os.path.join(plugin_dir, "py_modules", "upscalers", "__pycache__")
+    for pyc in glob.glob(os.path.join(pyc_dir, "mako*.pyc")):
+        try:
+            os.unlink(pyc)
+        except OSError:
+            pass
+    log(f"APLICADO: mako arm64 en {path!r} (backup: {backup!r})")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     path = argv[1] if len(argv) > 1 else DEFAULT_FILE
     rc = patch_file(path)
     # El plugin vive en <plugin>/py_modules/device_profiles.py
     plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(path)))
     rc2 = patch_frontend(plugin_dir)
-    return rc or rc2
+    rc3 = patch_mako_arm64(plugin_dir)
+    return rc or rc2 or rc3
 
 
 if __name__ == "__main__":

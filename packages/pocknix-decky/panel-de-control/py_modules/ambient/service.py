@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import errno
+import http.client
+import logging
 import json
 import os
 import threading
 import time
+import urllib.parse
 from collections import OrderedDict, deque
 from typing import Any, Callable, Literal, Optional
 
 from json_store import atomic_json_save
 
-from .adapters import radio_browser, remote_sources
+from .adapters import lan_firewall, radio_browser, remote_sources
 from .adapters.game_audio import GameAudio
 from .adapters.generated_cache import GeneratedCache
 from .adapters.installed_games import snapshot as installed_snapshot
@@ -18,13 +21,18 @@ from .adapters.game_media import game_theme, game_trailer
 from .adapters.known_paths import known_folders
 from .adapters.library_scan import media_id as local_media_id, scan_folder
 from .adapters.media_server import MediaServer
+from .adapters.stream_relay import StreamRelay
 from .adapters.optimizer import OptimizeError, optimize, output_name
 from .adapters.remote_sources import download
 from .adapters.share_server import ShareServer
+from .adapters.image_scaler import BUCKETS, ImageScaler, bucket_for, needs_copy, servable
+from .adapters.theme_images import ThemeImageStore, valid_owner
 from .adapters.steam_screenshots import screenshot_folders
 from .core import collections as coll
-from .core.m3u import parse_m3u
-from .core.path_guard import resolve_servable
+from .core.image_header import ImageInfo, probe as probe_image
+from .core.m3u import is_channel_list, parse_m3u
+from .core.media_types import media_kind
+from .core.path_guard import resolve_list, resolve_servable
 from .core.settings import default_settings, normalize_settings
 
 FolderScope = Literal["background", "music", "library"]
@@ -32,10 +40,16 @@ ItemScope = Literal["background", "radio", "music", "library"]
 
 _VISUAL = {"image", "video"}
 _MAX_EVENTS = 20
+# A size that failed to scale is not retried for a while (each try can cost a 20 s encode), but a
+# failure is not forever: the encoder may come back or the disk free up.
+_SCALE_FAILURE_TTL_SEC = 600
+_MAX_SCALE_FAILURES = 256
+_MAX_IMAGE_PROBES = 256
 DISCOVER_TTL_SEC = 600
 PLAYLIST_TTL_SEC = 6 * 3600
 DISCOVER_CACHE_SIZE = 64
-_EVENT_KINDS = {"playback_error", "radio_error", "conflict", "power", "serve_error", "remote_error", "cache", "video_fullscreen", "share"}
+_log = logging.getLogger(__name__)
+_EVENT_KINDS = {"playback_error", "radio_error", "conflict", "power", "serve_error", "remote_error", "cache", "video_fullscreen", "share", "selection", "theme_image", "music", "share_firewall", "floating_missing", "playlist_error", "game_art"}
 
 
 _GAME_MEDIA_TTL_S = 7 * 24 * 3600
@@ -49,6 +63,7 @@ class AmbientService:
     def __init__(self, state_dir: str, cache_dir: str, home: str):
         self._settings_path = os.path.join(state_dir, "settings.json")
         self._game_audio = GameAudio()
+        self._share_rule: Optional[tuple[int, str]] = None
         self._game_media_path = os.path.join(cache_dir, "game-media.json")
         self._game_media: Optional[dict[str, Any]] = None
         self._cache_dir = cache_dir
@@ -61,11 +76,17 @@ class AmbientService:
         assigned = self._explicit_refs(self._settings)
         self._game_sources = {ref: path for ref, path in self._read_cache_index()["sources"].items() if ref in assigned and self._valid_game_source(ref, path)}
         self._index: dict[str, str] = self._retained_generated()
+        self._theme_images = ThemeImageStore(os.path.join(state_dir, "theme-images.json"))
         self._roots: list[str] = []
+        self._list_media: dict[str, str] = {}
         self._events: deque[dict[str, Any]] = deque(maxlen=_MAX_EVENTS)
         self._discover_cache: OrderedDict[str, tuple[float, list[dict[str, Any]]]] = OrderedDict()
         self._playlist_cache: dict[str, tuple[float, list[dict[str, Any]]]] = {}
-        self._server = MediaServer(resolver=self._resolve)
+        self._scaler = ImageScaler(os.path.join(cache_dir, "theme-images"))
+        self._image_state_lock = threading.Lock()
+        self._scale_failures: OrderedDict[tuple[tuple[str, int, int], int], float] = OrderedDict()
+        self._image_probes: OrderedDict[tuple[str, int, int], Optional[ImageInfo]] = OrderedDict()
+        self._server = MediaServer(resolver=self._serve_path, relay=StreamRelay())
         self._server_started = False
         self._server_lock = threading.Lock()
         self._closed = False
@@ -90,7 +111,30 @@ class AmbientService:
             share = self._share
         session = share.start(texts)
         self.record_event("share", "started" if "url" in session else session.get("error", "failed"))
+        if "url" in session:
+            threading.Thread(target=self._open_share_firewall, args=(session["url"], session["expiresIn"]), name="ambient-share-firewall", daemon=True).start()
         return session
+
+    def _open_share_firewall(self, url: str, seconds: int) -> None:
+        parsed = urllib.parse.urlsplit(url)
+        if not (parsed.hostname and parsed.port):
+            return
+        result = lan_firewall.open_port(parsed.port, parsed.hostname, seconds)
+        self.record_event("share_firewall", result)
+        if not result.startswith("opened:"):
+            return
+        rule = (parsed.port, result.split(":", 1)[1])
+        with self._lock:
+            share = self._share
+            current = share is not None and share.active and share.port == parsed.port
+            stale = self._share_rule if current else None
+            if current:
+                self._share_rule = rule
+        # A share that ended (or was replaced) while firewalld was answering closes its rule at once.
+        if not current:
+            lan_firewall.close_port(*rule)
+        elif stale is not None and stale != rule:
+            lan_firewall.close_port(*stale)
 
     def take_shared(self) -> dict[str, Any]:
         share = self._share
@@ -99,9 +143,13 @@ class AmbientService:
         return {"links": share.take(), "active": share.active}
 
     def stop_share(self) -> None:
-        share = self._share
-        if share is not None:
-            share.stop()
+        with self._lock:
+            share = self._share
+            if share is not None:
+                share.stop()
+            rule, self._share_rule = self._share_rule, None
+        if rule is not None:
+            threading.Thread(target=lan_firewall.close_port, args=rule, name="ambient-share-firewall", daemon=True).start()
 
     def cancel_jobs(self) -> None:
         """Stops a running optimization (e.g. a game started); later jobs start fresh."""
@@ -263,37 +311,47 @@ class AmbientService:
         roots: list[str] = []
         truncated = False
 
-        def collect(folders: list[str], kinds: set[str], depth: int = 3) -> list[dict[str, Any]]:
+        lists: dict[str, dict[str, Any]] = {}
+
+        def collect(folders: list[str], kinds: set[str], depth: int = 3, with_lists: bool = False) -> list[dict[str, Any]]:
             nonlocal truncated
             items: dict[str, dict[str, Any]] = {}
             for folder in dict.fromkeys(folders):
-                result = scan_folder(folder, kinds=kinds, max_depth=depth)
+                result = scan_folder(folder, kinds=kinds | {"list"} if with_lists else kinds, max_depth=depth)
                 truncated = truncated or result.truncated
                 if result.missing:
                     continue
                 roots.append(folder)
                 for item in result.items:
                     index[item["id"]] = item["path"]
-                    items[item["id"]] = {k: item[k] for k in ("id", "name", "kind", "size", "mtime")}
+                    entry = {k: item[k] for k in ("id", "name", "kind", "size", "mtime")}
+                    (lists if item["kind"] == "list" else items)[item["id"]] = entry
             return list(items.values())
 
         kinds = _VISUAL | {"audio"}
         library = {
             "known.images": collect(known["images"] + known["videos"], kinds),
-            "known.music": collect(known["music"], kinds),
+            "known.music": collect(known["music"], kinds, with_lists=True),
         }
         shots = screenshot_folders(self._home)
         if shots:
             library["screenshots"] = collect(shots, {"image"}, depth=0)
         for folder in self._library_folders(settings):
-            library[coll.stable_id("folder", folder)] = collect([folder], kinds)
+            library[coll.stable_id("folder", folder)] = collect([folder], kinds, with_lists=True)
         collections = {key: [item for item in items if item["kind"] in _VISUAL] for key, items in library.items()}
         music = {item["id"]: item for items in [library["known.music"], *library.values()] for item in items if item["kind"] == "audio"}
         with self._lock:
             index.update(self._retained_generated())
+            index.update(self._list_media)
             self._index = index
             self._roots = roots + [self._cache_dir]
-        return {"collections": collections, "music": list(music.values()), "library": library, "truncated": truncated}
+        return {
+            "collections": collections,
+            "music": list(music.values()),
+            "library": library,
+            "lists": sorted(lists.values(), key=lambda item: item["name"].lower()),
+            "truncated": truncated,
+        }
 
 
     @staticmethod
@@ -328,11 +386,194 @@ class AmbientService:
             path = self._index.get(media_id)
             roots = list(self._roots) or [self._cache_dir]
             assigned = self._game_sources.get(media_id) if media_id in self._explicit_refs(self._settings) else None
+            chosen = self._theme_images.path_for(media_id) if not path and not assigned else None
         if assigned:
             if os.path.realpath(assigned) != assigned or os.path.islink(assigned):
                 return None
             return resolve_servable(assigned, [os.path.dirname(assigned)])
-        return resolve_servable(path, roots) if path else None
+        if path:
+            return resolve_servable(path, roots)
+        return self._servable_theme_image(chosen) if chosen else None
+
+    @staticmethod
+    def _servable_theme_image(path: str) -> Optional[str]:
+        real = resolve_servable(path, [os.path.dirname(path)])
+        return real if real and media_kind(real) == "image" else None
+
+    def register_theme_image(self, media_id: str, owner: str, max_side: Any = None) -> dict[str, Any]:
+        """Remembers a picture a theme chose in Ambiente's explorer and returns its URL for each screen size.
+        The copy for `max_side` starts in the background, so the theme's next render usually finds it made."""
+        if not media_id.startswith("local:") or not valid_owner(owner):
+            return {"error": "unknown_media"}
+        with self._lock:
+            path = self._index.get(media_id) or self._theme_images.path_for(media_id)
+        source = self._resolve(media_id) if path else None
+        if not path or not source:
+            self.record_event("theme_image", "register:unknown_media")
+            return {"error": "unknown_media"}
+        if media_kind(source) != "image":
+            return {"error": "not_image"}
+        version, info = self._probe(source)
+        if version is None or info is None or not servable(info):
+            self.record_event("theme_image", "register:unsupported_image")
+            return {"error": "unsupported_image"}
+        try:
+            with self._lock:
+                evicted = self._theme_images.remember(media_id, path, owner)
+        except ValueError:
+            return {"error": "unknown_media"}
+        except OSError as error:
+            reason = "no_space" if error.errno in {errno.ENOSPC, errno.EDQUOT} else "write_failed"
+            self.record_event("theme_image", "register:" + reason)
+            return {"error": reason}
+        urls = self._theme_image_urls(media_id, (source, version, info))
+        if not urls:
+            return {"error": "unavailable"}
+        for ref in evicted:
+            self._scaler.forget(ref)
+        self.record_event("theme_image", "picked")
+        self._warm_theme_image(media_id, info, bucket_for(max_side))
+        return {"ref": media_id, "urls": urls}
+
+    def _warm_theme_image(self, ref: str, info: ImageInfo, bucket: int) -> Optional[threading.Thread]:
+        if not needs_copy(info, bucket) or self._closed:
+            return None
+        sized = f"sized:{bucket}:{ref}"
+        # Failures are recorded by _serve_path; the request path stays the fallback.
+        warm = threading.Thread(target=self._serve_path, args=(sized,), name="ambient-theme-image-warm", daemon=True)
+        warm.start()
+        return warm
+
+    def keep_theme_images(self, owner: str, refs: Any) -> list[str]:
+        """`owner` (a theme's catalog id) still shows exactly `refs`: every other picture of that theme is
+        forgotten, and pictures no theme keeps any more lose their copies; originals are never touched.
+        A listed ref the store lost (an earlier keep raced a pick) is adopted again while the library still
+        has it. Unchanged input writes nothing."""
+        if not valid_owner(owner) or not isinstance(refs, list) or len(refs) > 512:
+            return []
+        if not all(isinstance(ref, str) and 0 < len(ref) <= 512 for ref in refs):
+            return []
+        with self._lock:
+            adopt = {
+                ref: self._index[ref]
+                for ref in refs
+                if ref.startswith("local:")
+                and ref in self._index
+                and self._theme_images.path_for(ref) is None
+                and media_kind(self._index[ref]) == "image"
+            }
+            try:
+                dropped = self._theme_images.keep(owner, set(refs), adopt)
+            except OSError as error:
+                self.record_event("theme_image", "keep:" + ("no_space" if error.errno in {errno.ENOSPC, errno.EDQUOT} else "write_failed"))
+                return []
+        for ref in dropped:
+            self._scaler.forget(ref)
+        if dropped:
+            self.record_event("theme_image", f"forgot:{len(dropped)}")
+        return dropped
+
+    def theme_images(self) -> dict[str, dict[str, Any]]:
+        """Per picture, the URL for each screen size and the themes that keep it (none: saved before owners
+        existed); a missing, absurd or corrupt file is left out, not forgotten."""
+        with self._lock:
+            entries = [(ref, self._theme_images.owners(ref)) for ref in self._theme_images.refs()]
+        listed = {}
+        for ref, owners in entries:
+            urls = self._theme_image_urls(ref)
+            if urls:
+                listed[ref] = {"urls": urls, "owners": owners}
+        return listed
+
+    def _theme_image_urls(self, ref: str, probed: Optional[tuple[str, tuple[str, int, int], ImageInfo]] = None) -> dict[str, str]:
+        """The original where it already fits a size, otherwise a `sized:` id the server scales on first request.
+        A size that recently failed to scale points at the next larger one, or the original, never at nothing.
+        Reads only the file header, once per file version; nothing is decoded here."""
+        if probed is None:
+            source = self._resolve(ref)
+            version, info = self._probe(source) if source else (None, None)
+        else:
+            source, version, info = probed
+        if not source or version is None or info is None or not servable(info) or not self._ensure_server():
+            return {}
+        original = self._server.url_for(ref)
+        urls: dict[str, str] = {}
+        fallback = original
+        for bucket in reversed(BUCKETS):
+            if not needs_copy(info, bucket):
+                url = original
+            elif self._scale_failed(version, bucket):
+                url = fallback
+            else:
+                url = self._server.url_for(f"sized:{bucket}:{ref}")
+            if url:
+                urls[str(bucket)] = url
+                fallback = url
+        return {str(bucket): urls[str(bucket)] for bucket in BUCKETS if str(bucket) in urls}
+
+    def _probe(self, source: str) -> tuple[Optional[tuple[str, int, int]], Optional[ImageInfo]]:
+        """The header probe, cached per file version: the theme side lists every picture every 30 s."""
+        try:
+            stat = os.stat(source)
+        except OSError:
+            return None, None
+        version = (source, stat.st_size, stat.st_mtime_ns)
+        with self._image_state_lock:
+            if version in self._image_probes:
+                self._image_probes.move_to_end(version)
+                return version, self._image_probes[version]
+        info = probe_image(source)
+        with self._image_state_lock:
+            self._image_probes[version] = info
+            while len(self._image_probes) > _MAX_IMAGE_PROBES:
+                self._image_probes.popitem(last=False)
+        return version, info
+
+    def _scale_failed(self, version: tuple[str, int, int], bucket: int) -> bool:
+        with self._image_state_lock:
+            failed_at = self._scale_failures.get((version, bucket))
+            if failed_at is None:
+                return False
+            if time.monotonic() - failed_at < _SCALE_FAILURE_TTL_SEC:
+                return True
+            del self._scale_failures[(version, bucket)]
+            return False
+
+    def _record_scale(self, version: tuple[str, int, int], bucket: int, ok: bool) -> None:
+        with self._image_state_lock:
+            if ok:
+                self._scale_failures.pop((version, bucket), None)
+                return
+            self._scale_failures[(version, bucket)] = time.monotonic()
+            self._scale_failures.move_to_end((version, bucket))
+            while len(self._scale_failures) > _MAX_SCALE_FAILURES:
+                self._scale_failures.popitem(last=False)
+
+    def _serve_path(self, media_id: str) -> Optional[str]:
+        """What the media server sends: scaled theme pictures are made here, on the server's client thread.
+        When a copy cannot be made the original goes out instead, so a stale URL still shows the picture."""
+        if not media_id.startswith("sized:"):
+            return self._resolve(media_id)
+        _, bucket_text, ref = media_id.split(":", 2)
+        if not bucket_text.isdigit() or int(bucket_text) not in BUCKETS:
+            return None
+        bucket = int(bucket_text)
+        with self._lock:
+            known = self._theme_images.path_for(ref) is not None
+        source = self._resolve(ref) if known else None
+        version, info = self._probe(source) if source else (None, None)
+        if not source or version is None or info is None or not servable(info):
+            return None
+        if not needs_copy(info, bucket) or self._scale_failed(version, bucket):
+            return source
+        try:
+            scaled = self._scaler.scaled(ref, source, info, bucket)
+        except OptimizeError as error:
+            self._record_scale(version, bucket, ok=False)
+            self.record_event("theme_image", "scale:" + error.reason)
+            return source
+        self._record_scale(version, bucket, ok=True)
+        return scaled
 
     def _ensure_server(self) -> bool:
         with self._server_lock:
@@ -350,6 +591,11 @@ class AmbientService:
         if self._resolve(media_id) is None or not self._ensure_server():
             return None
         return self._server.url_for(media_id)
+
+    def stream_url(self, url: str) -> Optional[str]:
+        if not self._ensure_server():
+            return None
+        return self._server.stream_url(url)
 
     def game_media(self, appid: str, name: str, now: Optional[float] = None, store: bool = True) -> dict[str, Any]:
         """Official trailer and a soundtrack preview for a game; found once, remembered for a week."""
@@ -519,7 +765,7 @@ class AmbientService:
                 atomic_json_save(self._installed_path, current)
             return changed
 
-    def optimize_media(self, media_id: str, height: int, fps: int = 30) -> dict[str, Any]:
+    def optimize_media(self, media_id: str, height: int, fps: int = 30, codec: str = "h264") -> dict[str, Any]:
         source = self._resolve(media_id)
         if source is None:
             return {"error": "unknown_media"}
@@ -530,9 +776,9 @@ class AmbientService:
                 return {"error": "unused_media"}
         height = max(144, min(2160, int(height)))
         cache = os.path.join(self._cache_dir, "optimized")
-        existed = os.path.isfile(os.path.join(cache, output_name(source, height, fps)))
+        existed = os.path.isfile(os.path.join(cache, output_name(source, height, fps, codec)))
         try:
-            result = optimize(source, cache, height, self._cancel, fps)
+            result = optimize(source, cache, height, self._cancel, fps, codec)
         except OptimizeError as exc:
             self.record_event("serve_error", f"optimize:{exc.reason}")
             return {"error": exc.reason}
@@ -586,6 +832,19 @@ class AmbientService:
                 playlists.append({"id": coll.stable_id("list", url), "name": name.strip() or url, "url": url})
             return self._commit(settings)
 
+    def check_audio(self, detail: str) -> bool:
+        """One look per started track at where Steam's sound goes, for reports of silent media."""
+        return self.record_event("music", f"playing {detail}; steam {self._game_audio.steam_output()}")
+
+    def inspect_link(self, url: str) -> dict[str, Any]:
+        """Whether a pasted .m3u/.m3u8 link is a list of channels (saved as a list) or one stream."""
+        try:
+            text = remote_sources.fetch_head(url)
+        except (OSError, ValueError, http.client.HTTPException) as error:
+            self.record_event("radio_error", f"inspect:{type(error).__name__}")
+            return {"kind": "unknown"}
+        return {"kind": "list"} if is_channel_list(text) else {"kind": "stream"}
+
     def remove_playlist(self, playlist_id: str) -> dict[str, Any]:
         with self._lock:
             settings = json.loads(json.dumps(self._settings))
@@ -598,6 +857,8 @@ class AmbientService:
         with self._lock:
             entry = next((p for p in self._settings["radio"].get("playlists", []) if p["id"] == playlist_id), None)
             hit = self._playlist_cache.get(playlist_id)
+        if playlist_id.startswith("local:"):
+            return self._local_playlist(playlist_id)
         if entry is None:
             return {"id": playlist_id, "channels": [], "error": "unknown_playlist"}
         if hit and time.time() - hit[0] < PLAYLIST_TTL_SEC:
@@ -617,6 +878,45 @@ class AmbientService:
         with self._lock:
             self._playlist_cache[playlist_id] = (time.time(), channels)
         return {"id": playlist_id, "channels": channels}
+
+    def _local_playlist(self, playlist_id: str) -> dict[str, Any]:
+        """Channels of an .m3u found in a folder the user chose. Entries are web streams or media files
+        inside that same folder; nothing else in the file is followed, and nothing in it is run."""
+        with self._lock:
+            path = self._index.get(playlist_id)
+            roots = [root for root in self._roots if root != self._cache_dir]
+        found = resolve_list(path, roots) if path else None
+        if found is None:
+            return {"id": playlist_id, "channels": [], "error": "unknown_playlist"}
+        real, root = found
+        try:
+            with open(real, "rb") as handle:
+                data = handle.read(remote_sources.MAX_PLAYLIST_BYTES + 1)
+            if len(data) > remote_sources.MAX_PLAYLIST_BYTES:
+                raise ValueError("playlist_too_large")
+        except (OSError, ValueError) as error:
+            self.record_event("playlist_error", "local:" + type(error).__name__)
+            return {"id": playlist_id, "channels": [], "error": "unreachable"}
+        folder = os.path.dirname(real)
+        channels = parse_m3u(data.decode("utf-8", errors="replace"), local=lambda entry: self._local_entry(entry, folder, root))
+        return {"id": playlist_id, "channels": channels}
+
+    def _local_entry(self, entry: str, folder: str, root: str) -> Optional[dict[str, Any]]:
+        if "\0" in entry:
+            return None
+        if entry.lower().startswith("file://"):
+            entry = urllib.parse.unquote(entry[7:])
+        elif "://" in entry:
+            return None
+        real = resolve_servable(entry if os.path.isabs(entry) else os.path.join(folder, entry), [root])
+        if real is None or media_kind(real) not in ("audio", "video"):
+            return None
+        media = local_media_id(real)
+        with self._lock:
+            self._list_media[media] = real
+            self._index[media] = real
+        url = self.media_url(media)
+        return {"url": url} if url else None
 
     def radio_catalog(self, force_refresh: bool = False) -> dict[str, Any]:
         """Cache complete catalogs for a day; keep the last complete result available offline."""
@@ -672,7 +972,9 @@ class AmbientService:
     def record_event(self, kind: str, detail: str) -> bool:
         if kind not in _EVENT_KINDS:
             return False
-        self._events.append({"kind": kind, "detail": str(detail)[:120], "at": int(time.time())})
+        detail = str(detail)[:240]
+        self._events.append({"kind": kind, "detail": detail, "at": int(time.time())})
+        _log.log(logging.WARNING if kind.endswith("_error") else logging.INFO, "Ambient %s: %s", kind, detail)
         return True
 
     def diagnostics(self) -> dict[str, Any]:
@@ -684,12 +986,40 @@ class AmbientService:
             "indexed": indexed,
             "backgroundEnabled": settings["background"]["enabled"],
             "selectedBackgroundCount": len(settings["background"]["selectedRefs"]),
+            "gameThemes": settings["background"]["gameThemes"],
+            "gameTrailers": settings["background"]["gameTrailers"],
+            "gameAudio": settings["background"]["gameAudio"],
             "musicEnabled": settings["music"]["enabled"],
             "musicSource": settings["music"]["source"],
             "queueLength": len(settings["music"]["queue"]),
             "repeat": settings["music"]["repeat"],
             "shuffle": settings["music"]["shuffle"],
             "shareActive": bool(self._share and self._share.active),
+            "themeImages": len(self._theme_images),
             "claims": settings["claims"],
+            "setup": _settings_summary(settings),
             "events": list(self._events),
         }
+
+
+def _settings_summary(settings: dict[str, Any]) -> dict[str, Any]:
+    """The choices that change what the user sees or hears, without paths, names or links."""
+    background, music, radio = settings["background"], settings["music"], settings["radio"]
+    return {
+        "gameArt": background.get("gameArt"),
+        "pinned": bool(background.get("pinned")),
+        "suggestedCollections": [key for key in background.get("collections", []) if key in {"suggested.library", "suggested.nasa", "suggested.bing"}],
+        "transition": background.get("transition"),
+        "optimizeVideos": background.get("optimizeVideos"),
+        "videoQuality": background.get("videoQuality"),
+        "collections": len(background.get("collections", [])),
+        "perGame": len(background.get("perGame", {})),
+        "overlay": music.get("overlay"),
+        "videoOn": music.get("videoOn"),
+        "volume": music.get("volume"),
+        "inGameMediaLevel": music.get("inGameMediaLevel"),
+        "inGameGameLevel": music.get("inGameGameLevel"),
+        "queueKinds": sorted({entry.get("kind", "audio") + (":live" if entry.get("live") else "") for entry in music.get("queue", [])}),
+        "radioFavorites": len(radio.get("favorites", [])),
+        "playlists": len(radio.get("playlists", [])),
+    }

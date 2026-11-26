@@ -44,6 +44,8 @@ FPS you want without wasting battery.
 
 🌀 **Fans.** Live temperatures and RPM, and curves you draw with your finger. Over time it learns
 how hot each game runs and suggests a curve made for it.
+Fans that report only a percentage show that reading instead of RPM.
+Each profile keeps its custom curve when you switch modes and restores it when you return to Custom.
 
 🎨 **Display.** One-tap color modes (Native, Cinema, Vivid, Comfort) or fine tuning if you like to
 tinker, an OLED look for LCD screens, scheduled night mode and HDR where the panel supports it.
@@ -61,6 +63,9 @@ metrics show up, where and in what colors.
 🚀 **Launch options.** Each game's launch options turned into toggles with a plain explanation.
 FSR4, HDR, scaling and more, but only what your Proton version supports.
 
+🎮 **Upscalers.** Pick an installed game to configure upscaling and frame generation. The list
+also recognizes games installed in other Steam library folders.
+
 🧹 **Cleanup.** See how much space your games' Shader Cache and prefixes take up and get it back in
 a moment.
 
@@ -73,13 +78,23 @@ from Panel. Themes in early access show an Early label and install from their zi
 🎮 **Controllers.** Button remapping that works with Handheld Daemon and InputPlumber. Still
 in beta.
 
+🟪 **Accessories.** If your Steam Machine wears the JSAUX PIXEL faceplate, Panel runs it with
+nothing else to install: clocks, animated art, the cover and stats of the game you're playing,
+your city's weather, a pet that reacts to what you do and a drawing mode to make and animate your
+own art with the controller. Animations play on the display by themselves, so its memory barely
+gets touched. Experimental.
+
 🧩 **Your way.** Reorder and hide tabs, build your own views and pick an accent color. Everything
 works with the controller, and updates show up on their own in the quick access menu.
 
 ## 📺 Ambient
 
 Put your photos, your videos or your games' art behind Home, and let a game's soundtrack play or
-its trailer show when you land on it.
+its trailer show when you land on it, and pick which of the two leads. If the covers are hard to read,
+blur or darken the background, or add a vignette, as much as you like.
+
+If you chose to keep a theme’s background, **Show mine anyway** lets Ambient take it back for
+Panel while keeping your images and settings.
 
 It's also a player for everything: your music, radio from around the world on a map, YouTube,
 Twitch or TV channels from M3U lists. Queue it up, pick repeat or shuffle and take it into your game
@@ -141,6 +156,11 @@ If you have a device I don't, your reports are what help me polish it the most.
 
 Panel learns from how you play to fine-tune its suggestions, but all of it stays on your device. You
 can turn it off or wipe it anytime from Settings.
+
+If you put the weather scene on the JSAUX PIXEL display, Panel asks Open-Meteo for the weather in
+the city you pick. That's the only thing that leaves your device, and only while that scene is on.
+If you press "Use my location" while picking a city, Panel asks ipwho.is for a rough city based on
+your IP, just that once.
 
 > [!WARNING]
 > Panel runs with root permissions and changes power, thermal and firmware settings. It's built to

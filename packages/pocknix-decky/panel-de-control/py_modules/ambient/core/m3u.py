@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import Any
+from typing import Any, Callable, Optional
 
 MAX_CHANNELS = 10000
 _ATTRIBUTE = re.compile(r'([A-Za-z0-9_-]+)="([^"]*)"')
@@ -12,10 +12,14 @@ def _clean(value: str, limit: int) -> str:
     return " ".join(value.split())[:limit]
 
 
-def parse_m3u(text: str) -> list[dict[str, Any]]:
+LocalEntry = Callable[[str], Optional[dict[str, Any]]]
+
+
+def parse_m3u(text: str, local: Optional[LocalEntry] = None) -> list[dict[str, Any]]:
     """Channels of an extended M3U playlist: name, stream URL, logo and group.
 
-    Only http(s) streams are kept; everything else in the file is ignored.
+    Only http(s) streams are kept; any other entry is kept only when `local` (a list read from a chosen
+    folder) turns it into a playable `{"url": ...}`, and everything else in the file is ignored.
     """
     channels: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -39,7 +43,16 @@ def parse_m3u(text: str) -> list[dict[str, Any]]:
             continue
         if line.startswith("#"):
             continue
-        if not line.lower().startswith(("http://", "https://")) or len(line) > 2048 or line in seen:
+        if len(line) > 2048:
+            pending = {}
+            continue
+        if not line.lower().startswith(("http://", "https://")):
+            resolved = local(line) if local else None
+            if not resolved:
+                pending = {}
+                continue
+            line = resolved["url"]
+        if line in seen:
             pending = {}
             continue
         seen.add(line)
@@ -55,3 +68,17 @@ def parse_m3u(text: str) -> list[dict[str, Any]]:
         if len(channels) >= MAX_CHANNELS:
             break
     return channels
+
+
+def is_channel_list(text: str) -> bool:
+    """An IPTV/radio list (several channels, each its own stream), not an HLS playlist or a station's mirrors.
+
+    HLS media and master playlists always carry #EXT-X- tags; channel lists such as TDTChannels'
+    `tv.m3u8` share the extension but never do.
+    """
+    if "#EXT-X-" in text.upper():
+        return False
+    channels = parse_m3u(text)
+    # A station's own .m3u often lists a few mirrors of one stream; a channel list names or groups its entries.
+    named = len({c["name"] for c in channels}) >= 2 and ("group-title=" in text or "tvg-" in text)
+    return len(channels) >= 2 and (named or len(channels) >= 10)

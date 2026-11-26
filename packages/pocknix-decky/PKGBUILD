@@ -41,7 +41,7 @@ pkgver=0.1.0
 #     Why: the new Decky QAM update button is broken on ARM, so on the Odin there was no way to
 #     update Decky by hand. The frontend is NOT patched locally (upstream will fix it). See
 #     docs/DECKY-AUTOUPDATE.md. To revert, `pacman -S pocknix-decky` re-seeds the bundled build.
-pkgrel=74
+pkgrel=75
 pkgdesc="Decky Loader (arm64 nativo) + CalvOS Control + default CSS Loader theme"
 arch=('any')
 url="https://github.com/shuuri-labs/pocknix-os"
@@ -127,12 +127,9 @@ package() {
   rm -f "${dest_mako}/dist"/*.map
   find "${dest_mako}" -name __pycache__ -type d -prune -exec rm -rf {} +
 
-  # LOCAL PATCH (pocknix, TEMPORARY): MAKO ships an x86_64-only Renderer and refuses
-  # to run on native AArch64 hosts (see plugin/docs/ARMADA.md). The Odin 3 runs x86_64
-  # games through FEX, so we force-enable MAKO there until an official AArch64 Renderer
-  # ships. Two edits: declare aarch64 as a supported host (install gate) and drop the
-  # runtime `uname -m` aarch64 guard from the generated wrapper (keeping the Armada
-  # marker so existing wrappers are still recognised as current). REVERT when MAKO
-  # supports aarch64 natively (a fresh re-vendor + dropping this patch does it).
-  patch -p1 -d "${dest_mako}" < "${startdir}/mako-aarch64.patch"
+  # MAKO (plugin de eugeniosegala): ya NO se parchea para fingir soporte aarch64. Aquel parche
+  # hacia que instalara su Renderer x86_64, que en ARM no puede cargar (era el "no funciona").
+  # El frame generation en ARM se gestiona desde el Panel de Control (Hooandee) con la build
+  # aarch64 del Renderer: ver overlay/usr/share/pocknix/patches/panel-de-control-arm64-mako.patch
+  # y pocknix-panel-control-patch (lo re-aplica tras cada autoactualizacion del panel).
 }

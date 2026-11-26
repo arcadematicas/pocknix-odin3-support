@@ -42,6 +42,8 @@ que necesitas sin gastar batería de más.
 
 🌀 **Ventiladores.** Temperaturas y RPM en directo, y curvas que dibujas con el dedo. Con el uso
 aprende cómo se calienta cada juego y te propone una curva pensada para él.
+En ventiladores que solo ofrecen porcentaje, se muestra ese dato en lugar de RPM.
+La curva personalizada de cada perfil se conserva al cambiar de modo y se recupera al volver a Personalizado.
 
 🎨 **Pantalla.** Colores de un toque (Nativo, Cine, Vivo, Cómodo) o ajuste fino si te gusta
 trastear, aspecto OLED para pantallas LCD, modo nocturno con horario y HDR donde el panel lo
@@ -60,6 +62,9 @@ salen, dónde y con qué colores.
 🚀 **Parámetros.** Las opciones de lanzamiento de cada juego convertidas en interruptores con su
 explicación. FSR4, HDR, escalado y compañía, pero solo lo que tu versión de Proton soporta.
 
+🎮 **Escaladores.** Elige un juego instalado para configurar su escalado y la generación de frames.
+La lista también reconoce juegos instalados en otras bibliotecas de Steam.
+
 🧹 **Limpieza.** Descubre cuánto ocupan la Shader Cache y los prefijos de tus juegos y recupera
 espacio en un momento.
 
@@ -73,13 +78,23 @@ desde su zip.
 🎮 **Mandos.** Remapeo de botones que se entiende con Handheld Daemon e InputPlumber. Todavía en
 beta.
 
+🟪 **Accesorios.** Si llevas la carcasa JSAUX PIXEL en la Steam Machine, Panel la controla sin
+instalar nada más: relojes, arte animado, la carátula y los datos del juego al que estás jugando,
+el tiempo de tu ciudad, una mascota que reacciona a lo que haces y un modo dibujo para crear y
+animar lo tuyo con el mando. Las animaciones corren solas en la pantalla, así que su memoria
+apenas se toca. Experimental.
+
 🧩 **A tu manera.** Ordena y oculta pestañas, crea tus propias vistas y elige el color de acento.
 Todo se maneja con el mando, y las actualizaciones llegan solas al menú rápido.
 
 ## 📺 Ambiente
 
 Pon de fondo en Inicio tus fotos, tus vídeos o el arte de tus juegos, y al pasar por un juego deja
-que suene su banda sonora o se vea su tráiler.
+que suene su banda sonora o se vea su tráiler, y elige cuál de los dos manda. Si no se leen bien las
+portadas, difumina u oscurece el fondo, o añade una viñeta, con la intensidad que quieras.
+
+Si has elegido conservar el fondo de un tema, Ambiente te permite recuperarlo para Panel con
+**Mostrar el mío igualmente**, sin perder tus imágenes ni la configuración.
 
 Además es un reproductor para todo: tu música, radios de todo el mundo en un mapa, YouTube, Twitch
 o canales de tele con listas M3U. Lo pones en cola, eliges repetir o aleatorio y te lo llevas a la
@@ -141,6 +156,11 @@ Si tienes un equipo que yo no tengo, tus reportes son lo que más me ayuda a pul
 
 Panel aprende de cómo juegas para afinar sus sugerencias, pero todo se queda en tu equipo. Puedes
 desactivarlo o borrarlo cuando quieras desde Ajustes.
+
+Si pones la escena del tiempo en la pantalla JSAUX PIXEL, Panel consulta en Open-Meteo el tiempo
+de la ciudad que eliges. Es lo único que sale del equipo, y solo mientras esa escena está puesta.
+Si pulsas «Usar mi ubicación» al buscar ciudad, Panel pregunta a ipwho.is una ciudad aproximada
+según tu IP, solo esa vez.
 
 > [!WARNING]
 > Panel funciona con permisos de root y cambia ajustes de potencia, temperatura y firmware. Está

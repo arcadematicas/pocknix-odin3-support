@@ -7,14 +7,14 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Literal, Optional
 
 from .adapters.remote_sources import RemoteError, bing_images, nasa_images
-from .adapters.optimizer import FRAME_RATES
+from .adapters.optimizer import CODECS, FRAME_RATES
 from .service import AmbientService
 
 _SCOPES = ("background", "radio")
 _FOLDER_SCOPES = ("background", "music", "library")
 
-Pool = Literal["quick", "jobs", "network", "lookup"]
-_POOL_WORKERS: dict[str, int] = {"quick": 2, "jobs": 1, "network": 2, "lookup": 2}
+Pool = Literal["quick", "jobs", "network", "lookup", "probe"]
+_POOL_WORKERS: dict[str, int] = {"quick": 2, "jobs": 1, "network": 2, "lookup": 2, "probe": 1}
 
 
 class AmbientRpc:
@@ -94,6 +94,24 @@ class AmbientRpc:
             return None
         return await self._ambient_call(lambda s: s.media_url(media_id))
 
+    async def get_ambient_stream_url(self, url: str) -> Optional[str]:
+        if not isinstance(url, str) or not url.startswith("http://") or len(url) > 2048:
+            return None
+        return await self._ambient_call(lambda s: s.stream_url(url))
+
+    async def register_ambient_theme_image(self, media_id: str, owner: str, max_side: Any = None) -> dict[str, Any]:
+        if not isinstance(media_id, str) or len(media_id) > 512 or not isinstance(owner, str):
+            return {"error": "unknown_media"}
+        return await self._ambient_call(lambda s: s.register_theme_image(media_id, owner, max_side))
+
+    async def keep_ambient_theme_images(self, owner: str, refs: Any) -> list[str]:
+        if not isinstance(owner, str):
+            return []
+        return await self._ambient_call(lambda s: s.keep_theme_images(owner, refs))
+
+    async def get_ambient_theme_images(self) -> dict[str, dict[str, Any]]:
+        return await self._ambient_call(lambda s: s.theme_images())
+
     async def get_ambient_game_media(self, appid: str, name: str, store: bool = True) -> dict[str, Any]:
         if not isinstance(appid, str) or not appid.isdigit() or len(appid) > 10 or not isinstance(name, str):
             return {"trailer": None, "theme": None}
@@ -133,6 +151,16 @@ class AmbientRpc:
         if not isinstance(url, str) or not isinstance(name, str) or not url.lower().startswith(("https://", "http://")):
             return None
         return await self._ambient_call(lambda s: s.add_playlist(url, name), pool="network")
+
+    async def check_ambient_audio(self, detail: str) -> bool:
+        if not isinstance(detail, str):
+            return False
+        return bool(await self._ambient_call(lambda s: s.check_audio(detail[:200]), pool="probe"))
+
+    async def inspect_ambient_link(self, url: str) -> dict[str, Any]:
+        if not isinstance(url, str) or len(url) > 2048 or not url.lower().startswith(("https://", "http://")):
+            return {"kind": "unknown"}
+        return await self._ambient_call(lambda s: s.inspect_link(url), pool="probe") or {"kind": "unknown"}
 
     async def remove_ambient_playlist(self, playlist_id: str) -> Optional[dict[str, Any]]:
         if not isinstance(playlist_id, str):
@@ -175,10 +203,10 @@ class AmbientRpc:
 
         return await self._ambient_call(cache, pool="network")
 
-    async def optimize_ambient_media(self, media_id: str, height: int, fps: int = 30) -> dict[str, Any]:
-        if not isinstance(media_id, str) or not isinstance(height, int) or isinstance(height, bool) or fps not in FRAME_RATES:
+    async def optimize_ambient_media(self, media_id: str, height: int, fps: int = 30, codec: str = "h264") -> dict[str, Any]:
+        if not isinstance(media_id, str) or not isinstance(height, int) or isinstance(height, bool) or fps not in FRAME_RATES or codec not in CODECS:
             return {"error": "invalid_arguments"}
-        return await self._ambient_call(lambda s: s.optimize_media(media_id, height, fps), pool="jobs")
+        return await self._ambient_call(lambda s: s.optimize_media(media_id, height, fps, codec), pool="jobs")
 
     async def search_ambient_radio(self, name: str = "", country: str = "", tag: str = "") -> list[dict[str, Any]]:
         args = [a if isinstance(a, str) else "" for a in (name, country, tag)]
