@@ -61,6 +61,16 @@ os.environ.setdefault("SDL_HINT_IME_EMBEDDED_TEXT_INPUT", "0")
 # Se define uno por defecto para todo lo que lancemos.
 os.environ.setdefault("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
 
+def _corelog(txt):
+    """Registro de las acciones de cores (la GUI solo ensena la ultima linea del script)."""
+    try:
+        import time as _t
+        with open("/tmp/deckstation-cores.log", "a") as _f:
+            _f.write("%s %s\n" % (_t.strftime("%Y-%m-%d %H:%M:%S"), txt))
+    except Exception:
+        pass
+
+
 DIR = dirname(abspath(__file__))
 sys.path.insert(0, os.path.join(DIR, 'libs'))
 py_ver = f"py{sys.version_info.major}.{sys.version_info.minor}"
@@ -933,6 +943,7 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         return [
             "Actualizar pack de cores (paquete del sistema)",
             "Actualizar hakuX (core propio)",
+            "Actualizar hakuX desde GitHub (estable)",
             "Cores sueltos (buildbot ARM)",
             "Volver",
         ]
@@ -940,6 +951,7 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
     def _cores_ejecutar(self, idx):
         """Ejecuta la opcion idx del menu CORES_MENU."""
         if self._cores_busy:
+            _corelog("opcion %d ignorada: _cores_busy sigue en True (mensaje actual: %r)" % (idx, getattr(self, "_cores_msg", "")))
             return
         opciones = self._cores_opciones()
         if idx >= len(opciones):
@@ -947,6 +959,8 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         accion = opciones[idx]
         if accion.startswith("Actualizar pack"):
             self._cores_pack_actualizar()
+        elif accion == "Actualizar hakuX desde GitHub (estable)":
+            self._cores_hakux_github_actualizar()
         elif accion.startswith("Actualizar hakuX"):
             self._cores_hakux_actualizar()
         elif accion.startswith("Cores sueltos"):
@@ -961,6 +975,7 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
             return
         self._cores_busy = True
         self._cores_msg = "Actualizando el pack de cores (pide root)..."
+        _corelog("pack: inicio (PATH=%r)" % os.environ.get("PATH"))
         threading.Thread(target=self._cores_pack_worker, daemon=True).start()
 
     def _cores_pack_worker(self):
@@ -969,12 +984,17 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
             r = subprocess.run([script], env=self._cores_env(),
                                capture_output=True, text=True, timeout=900)
             lineas = ((r.stdout or "") + (r.stderr or "")).strip().split("\n")
+            # El contenedor de Steam inyecta LD_PRELOAD en los hijos y ld.so escupe avisos
+            # que no son errores: no deben ser "la ultima linea" que ve el usuario.
+            lineas = [l for l in lineas if "ld.so" not in l]
             ultima = next((l.strip() for l in reversed(lineas) if l.strip()), "")
+            _corelog("pack: rc=%s out=%r" % (r.returncode, (((r.stdout or "") + (r.stderr or "")).strip())[-2000:]))
             if r.returncode == 0:
                 self._cores_msg = ultima or "Pack de cores al dia."
             else:
                 self._cores_msg = f"El pack no se pudo actualizar: {ultima or 'error'}"
         except Exception as e:
+            _corelog("pack: EXCEPCION %s: %s" % (type(e).__name__, e))
             self._cores_msg = f"Error actualizando el pack: {e}"
         self._cores_listo = False      # los estados cambian al copiar el pack
         self._cores_busy = False
@@ -985,6 +1005,7 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
             return
         self._cores_busy = True
         self._cores_msg = "Actualizando hakuX (pide root)..."
+        _corelog("hakux: inicio (PATH=%r)" % os.environ.get("PATH"))
         threading.Thread(target=self._cores_hakux_worker, daemon=True).start()
 
     def _cores_hakux_worker(self):
@@ -994,13 +1015,48 @@ echo "Resumen: $OK convertidas, $FAIL fallidas (de $TOTAL)"
         try:
             r = subprocess.run([script], env=env, capture_output=True, text=True, timeout=600)
             lineas = ((r.stdout or "") + (r.stderr or "")).strip().split("\n")
+            # El contenedor de Steam inyecta LD_PRELOAD en los hijos y ld.so escupe avisos
+            # que no son errores: no deben ser "la ultima linea" que ve el usuario.
+            lineas = [l for l in lineas if "ld.so" not in l]
             ultima = next((l.strip() for l in reversed(lineas) if l.strip()), "")
             if r.returncode == 0:
                 self._cores_msg = "hakuX al dia. " + (ultima or "")
             else:
                 self._cores_msg = f"hakuX no se pudo actualizar: {ultima or 'error'}"
+            _corelog("hakux: rc=%s out=%r" % (r.returncode, (((r.stdout or "") + (r.stderr or "")).strip())[-2000:]))
         except Exception as e:
+            _corelog("hakux: EXCEPCION %s: %s" % (type(e).__name__, e))
             self._cores_msg = f"Error actualizando hakuX: {e}"
+        self._cores_listo = False
+        self._cores_busy = False
+
+    def _cores_hakux_github_actualizar(self):
+        """Baja la ultima estable de hakuX-lr desde GitHub, sin root, en un hilo."""
+        if self._cores_busy:
+            return
+        self._cores_busy = True
+        self._cores_msg = "Actualizando hakuX desde GitHub..."
+        _corelog("hakux-github: inicio (PATH=%r)" % os.environ.get("PATH"))
+        threading.Thread(target=self._cores_hakux_github_worker, daemon=True).start()
+
+    def _cores_hakux_github_worker(self):
+        script = self._cores_script("deckstation-hakux-update.sh")
+        try:
+            r = subprocess.run([script], env=self._cores_env(),
+                               capture_output=True, text=True, timeout=600)
+            lineas = ((r.stdout or "") + (r.stderr or "")).strip().split("\n")
+            # El contenedor de Steam inyecta LD_PRELOAD en los hijos y ld.so escupe avisos
+            # que no son errores: no deben ser "la ultima linea" que ve el usuario.
+            lineas = [l for l in lineas if "ld.so" not in l]
+            ultima = next((l.strip() for l in reversed(lineas) if l.strip()), "")
+            if r.returncode == 0:
+                self._cores_msg = ultima or "hakuX desde GitHub al dia."
+            else:
+                self._cores_msg = f"No se pudo actualizar hakuX desde GitHub: {ultima or 'error'}"
+            _corelog("hakux-github: rc=%s out=%r" % (r.returncode, (((r.stdout or "") + (r.stderr or "")).strip())[-2000:]))
+        except Exception as e:
+            _corelog("hakux-github: EXCEPCION %s: %s" % (type(e).__name__, e))
+            self._cores_msg = f"Error actualizando hakuX desde GitHub: {e}"
         self._cores_listo = False
         self._cores_busy = False
 

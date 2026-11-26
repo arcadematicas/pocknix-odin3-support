@@ -15,8 +15,8 @@
 # la carpeta portable, para que ES-DE/RetroArch los tengan EN DeckStation sin
 # depender de rutas del sistema. Asi, cualquier core empaquetado queda dentro.
 #
-# No destructivo: solo copia los que falten y nunca pisa un core que
-# ya exista como fichero real en la carpeta portable.
+# No destructivo: copia los que falten, nunca pisa un fichero real de la
+# carpeta portable y respeta los nombres de cores/.loose-overrides.
 #
 # Uso: deckstation-cores.sh [--dry-run]
 # Lo llaman deckstation-setup.sh y deckstation-launcher.sh.
@@ -66,6 +66,14 @@ RA_HOME="$(resolve_retroarch_home)" || {
 }
 CORES_DIR="${RA_HOME}/.config/retroarch/cores"
 
+# Los cores sueltos instalados a mano (p. ej. hakuX desde GitHub) se listan en
+# cores/.loose-overrides, uno por linea. El pack NO debe pisarlos nunca.
+OVERRIDES="${CORES_DIR}/.loose-overrides"
+es_loose() {
+    [ -f "$OVERRIDES" ] || return 1
+    grep -Fxq -- "$1" "$OVERRIDES" 2>/dev/null
+}
+
 if [ ! -d "$SYS_CORES" ] && [ ! -d "$SYS_INFO" ]; then
     log "No hay cores del sistema (${SYS_CORES}); nada que copiar"
     exit 0
@@ -75,9 +83,14 @@ fi
 
 linked=0
 skipped=0
+loose=0
 for f in "$SYS_CORES"/*.so; do
     [ -e "$f" ] || continue
     base="$(basename "$f")"
+    if es_loose "$base"; then
+        loose=$((loose + 1))
+        continue
+    fi
     dst="${CORES_DIR}/${base}"
     if [ -e "$dst" ]; then
         # Si ya existe pero es DISTINTO, se actualiza. Antes se saltaba siempre y un core
@@ -100,6 +113,10 @@ done
 for f in "$SYS_INFO"/*.info; do
     [ -e "$f" ] || continue
     base="$(basename "$f")"
+    if es_loose "$base"; then
+        loose=$((loose + 1))
+        continue
+    fi
     dst="${CORES_DIR}/${base}"
     if [ -e "$dst" ] && cmp -s "$f" "$dst"; then
         skipped=$((skipped + 1))
@@ -114,9 +131,9 @@ for f in "$SYS_INFO"/*.info; do
 done
 
 if [ "$DRY" = 1 ]; then
-    log "SIMULACION: $linked por copiar | $skipped ya presentes"
+    log "SIMULACION: $linked por copiar | $skipped ya presentes | respetados (loose): $loose"
 else
-    log "copiados: $linked | ya presentes: $skipped"
+    log "copiados: $linked | ya presentes: $skipped | respetados (loose): $loose"
 fi
 
 # Si hemos copiado cores nuevos, invalidamos el cache de core_info.

@@ -8,10 +8,32 @@ partes:
 |---|---|---|
 | **Actualizar pack de cores** | Actualiza el paquete del sistema `libretro-cores-pocknix` con `pacman` y copia los cores al RetroArch portable | `scripts/deckstation-cores-pack.sh` |
 | **Cores sueltos (buildbot ARM)** | Lista los cores **aarch64** del buildbot oficial que el pack **no** trae y los descarga a mano | `scripts/deckstation-cores-loose.sh` |
+| **Actualizar hakuX desde GitHub (estable)** | Baja la última estable de `portare-ch/hakuX-lr`, sin root | `scripts/deckstation-hakux-update.sh` |
 
 Como en todo DeckStation, **el motor vive en los scripts**: funcionan desde la
 terminal o Pocknix Tools (sin escritorio) y la GUI del Updater solo los llama. Así
 una avería de pygame no deja al usuario sin cores.
+
+## hakuX desde GitHub
+
+La opción **«Actualizar hakuX desde GitHub (estable)»** consulta los releases de
+`portare-ch/hakuX-lr`, ignora los *nightly* (prerelease) y baja el último tag
+`linux-v*` con asset `aarch64`. Verifica el `.sha256` del release antes de
+extraer `hakux_libretro.so` / `hakux_libretro.info`.
+
+- **Requiere red** (API de GitHub y `github.com`); no necesita root.
+- Instala en la carpeta de cores **portable** de RetroArch de DeckStation:
+  `Apps/RetroArch/**/.AppImage.home/.config/retroarch/cores/`.
+- Guarda la versión en `hakux.version`, hace copia de seguridad del `.so`
+  anterior como `hakux_libretro.so.bak-<version>` y añade `hakux_libretro.so`
+  a `cores/.loose-overrides` para que el puente del pack **no** lo pise.
+- Sin cambios, solo imprime `[hakux] ya esta la ultima (X)`; para forzar:
+  `scripts/deckstation-hakux-update.sh --force` (`--dry-run` simula).
+
+**Volver al hakuX del sistema (paquete):** borrar `hakux_libretro.so` y
+`hakux.version` de esa carpeta de cores, quitar la línea `hakux_libretro.so`
+de `cores/.loose-overrides` y ejecutar de nuevo *«Actualizar hakuX (core
+propio)»* (o el pack de cores).
 
 ## Contexto: dos carpetas de cores
 
@@ -97,6 +119,33 @@ La carpeta destino es la del RetroArch portable resuelta por el propio script
 (misma lógica que `deckstation-cores.sh`):
 `Apps/RetroArch/**/.AppImage.home/.config/retroarch/cores/`.
 
+## Extras propios (release `deckstation-cores`)
+
+`deckstation-cores-fetch.sh` (lo llama el setup) baja los cores que **nadie**
+publica ya compilados para aarch64 desde el release
+`arcadematicas/deckstation-cores` (tag actual: `cores-2026-11`).
+
+| Core | Uso | Sistema ES-DE |
+|---|---|---|
+| `azahar` | Nintendo 3DS | `n3ds` |
+| `bsnes_hd_beta` | SNES HD | `snes`/`sfc`/`snesh` |
+| `anybor` | **OpenBOR** (perfiles de motor seleccionables) | `openbor` |
+
+- El `.info` se toma **primero del release** (es el de la versión exacta del
+  `.so`) y solo si no está se cae a libretro-super. Así un core de terceros no
+  depende de que libretro-super lo tenga al día (el de `anybor` iba por detrás).
+- Si el `.so` ya existe pero falta el `.info`, el script completa el `.info`.
+- Para añadir un sistema nuevo: bloque `<system>` en
+  `configs/es-de/custom_systems/es_systems.xml` + entrada en `CORES_EXTRAS`.
+
+## OpenBOR (AnyBOR)
+
+- Carpeta de ROMs: `ROMs/openbor/` (`.pak`, `.spk`, `.anybor`, `.zip`).
+- Core: `anybor_libretro.so` — **AnyBOR 0.2.33**, licencia **no comercial**
+  (incluye OpenBOR 3400 con sus términos de no venta).
+- Elige el perfil de motor por build tag y claves del contenido; también se
+  puede forzar desde las opciones del core en RetroArch.
+
 ## ⚠️ No usar el «Online Updater» de RetroArch como vía normal
 
 El menú **Online Updater** de RetroArch *Core Updater / Update Installed Cores*
@@ -117,6 +166,7 @@ habitual de actualizar cores.
 
 ```bash
 # scripts: sintaxis
+bash -n scripts/deckstation-hakux-update.sh
 bash -n scripts/deckstation-cores-pack.sh
 bash -n scripts/deckstation-cores-loose.sh
 
