@@ -1,4 +1,28 @@
-# Zumbido en auriculares (Odin 3) — estado 26/11/2026
+# Zumbido en auriculares (Odin 3) — **RESUELTO** 26/11/2026
+
+## ✅ Solución (verificada en la consola)
+
+**Causa**: faltaba `qcom,ssp-period` en el controlador SoundWire `&swr1`. El intervalo del puerto
+class-H (64) no divide el frame RX de 50×16, así que su stream arrancaba **en fase aleatoria** y
+aproximadamente la mitad de los streams de auriculares salían difusos. Es una medición de Armada
+hecha **en esta misma Odin 3**.
+
+**Arreglo** (`kernel/dts/cq8725s-ayn-common.dtsi`, `&swr1`):
+
+```dts
+qcom,pcm-ports-mask = <0x204>;   /* puerto 2 (class-H) también en formato PCM, como Android */
+qcom,ssp-period = <6>;           /* un SSP cada 6 frames */
+```
+
+**Verificación**: kernel `linux-pocknix-sm8750 7.2.15-8` instalado y arrancado; auriculares
+probados **varias veces enchufando/desenchufando, sin zumbido**. Dado por bueno por Fransis.
+
+Nota: los parches armada 0082 (ventana class-H) y 0083 (start-up una vez) **ya estaban** en el
+7.2.15 anterior, así que no eran la causa.
+
+---
+
+# Historial del diagnóstico (26/11/2026)
 
 ## Síntoma
 

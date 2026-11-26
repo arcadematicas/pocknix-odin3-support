@@ -55,14 +55,20 @@ entera. Verificado: MAKO 5.0.0 instalado y la capa **cargada en el proceso del j
 (`/proc/<pid>/maps`), con perfil `frame_generation_enabled = true`, multiplicador 2 y modelo
 `mako-fg`.
 
-### ⚠️ Audio: zumbido intermitente en auriculares (abierto)
+### ✅ Audio: zumbido intermitente en auriculares — RESUELTO
 
-Aparece al habilitar la etapa de auriculares y desaparece otras veces. Descartado por medición:
-ganancia, compander, modo class-H/AB, ADC/micrófono, MBHC y el EQ (plano). El **mezclador es
-idéntico** en estado bueno y malo, y con `RDAC` desconectado el zumbido se va: nace en la salida
-del DAC. El replug físico lo cura 3 de 4 veces; reiniciar, siempre. El unbind/bind del códec en
-caliente **rompe los nombres de los controles ALSA** (sin audio hasta reiniciar): descartado.
-Detalle y plan en `docs/AUDIO-ZUMBIDO-20261126.md`.
+**Causa**: faltaba `qcom,ssp-period` en `&swr1`. El intervalo del puerto class-H (64) no divide el
+frame RX de 50×16, así que su stream arrancaba **en fase aleatoria** y ~la mitad de los streams de
+auriculares salían difusos (medición de Armada en esta misma Odin 3). Arreglo: `qcom,ssp-period =
+<6>` + `qcom,pcm-ports-mask = <0x204>` (puerto 2 en formato PCM, como Android).
+
+Kernel **`linux-pocknix-sm8750 7.2.15-8`** instalado y probado: varias conexiones/desconexiones de
+auriculares **sin zumbido**. Documentado en `docs/AUDIO-ZUMBIDO-20261126.md`.
+
+Se descartaron por medición (antes de dar con la causa): ganancia, compander, class-H/AB, ADC y
+MBHC, y el EQ (plano). El mezclador era idéntico en estado bueno y malo; con `RDAC` desconectado el
+zumbido desaparecía. El unbind/bind del códec en caliente rompe los nombres de los controles ALSA:
+**no usarlo**.
 
 ---
 
