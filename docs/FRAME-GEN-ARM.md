@@ -57,7 +57,7 @@ Cambios necesarios (patch a `panel-de-control/py_modules/upscalers/mako.py`):
 
 1. **Elegir asset por arquitectura**: si `platform.machine()` es `aarch64`/`arm64`, usar
    `MAKO-Renderer-v5.0.0-linux-arm64.tar.gz` de `Ken5998/mako-arm64` (v0.1.0),
-   sha256 `PENDIENTE_CALCULAR`, 11.218.307 B.
+   sha256 `3bace05df3c99508f84f403d7a6585de6e2351411bde6fc844141e1e1c854aad`, 11.218.307 B.
 2. **PAYLOAD aarch64** = el de v5 **sin** `lib32/libmako-render.so` **ni**
    `share/.../VkLayer_MAKO_render.x86.json` (el tarball ARM trae un único JSON).
 3. **Motor por defecto en ARM: 4 (LSFG)** — es el nativo; el motor 5 (MAKO FG) usa
