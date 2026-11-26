@@ -51,6 +51,37 @@ distorsión. Con el códec apagado (sink `SUSPENDED`) **no hay zumbido**.
 - Mientras tanto, remedio para el usuario: **desenchufar y volver a enchufar**; si no se va,
   reiniciar.
 
+## 🎯 Causa probable encontrada (26/11/2026, noche)
+
+**Falta `qcom,ssp-period` en el controlador SoundWire `&swr1`.**
+
+La nota de `PATCHES.md` del PR armada#955 lo dice con estas palabras:
+
+> “*Optional qcom,ssp-period for the master FRAME_CTRL. The WCD939x class-H port
+> (interval 64) does not divide the 50x16 RX frame; **without an SSP its stream starts at a
+> random phase and about half of the Odin 3's headphone streams are fuzzy**.*”
+
+Eso explica todo lo observado: aparece y desaparece, el replug (stream nuevo) cambia la fase, no
+depende de ningún control del mezclador, y el estado bueno/malo es idéntico al leerlo.
+
+Comprobado en nuestro árbol:
+
+- El driver **sí** soporta la propiedad (`drivers/soundwire/qcom.c`, patch `2602` del centro).
+- Nuestro `&swr1` **no la declara**, y además `qcom,pcm-ports-mask = <0x200>` solo cubre el
+  puerto 9. Armada usa `0x204` (puertos 2 y 9: el 2 es el class-H, con formato PCM como en
+  Android) y `qcom,ssp-period = <6>`.
+
+**Cambio aplicado** en `kernel/dts/cq8725s-ayn-common.dtsi` (`&swr1`):
+
+```dts
+qcom,pcm-ports-mask = <0x204>;
+qcom,ssp-period = <6>;
+```
+
+Kernel recompilado y pendiente de instalar/probar. Los parches armada 0082 (ventana class-H) y
+0083 (start-up una vez) **ya estaban** en el 7.2.15 instalado (verificado en la fuente extraída),
+así que no eran la causa.
+
 ## Referencias externas (encontradas el 26/11/2026)
 
 - **armada-os/armada#876** (mergeado 15/11/2026) — dos parches de kernel para el WCD939x:
@@ -74,10 +105,12 @@ distorsión. Con el códec apagado (sink `SUSPENDED`) **no hay zumbido**.
 
 ## Plan revisado
 
-1. **Portar 0082 + 0083** al kernel de CalvOS (son ~30 líneas, aplican casi directos) y probar.
-   Es el candidato más fuerte para el recorte a alto volumen y el zumbido.
-2. Si queda variabilidad, evaluar **0089** (trims) de #955.
-3. Mantener el apaño de replug/reinicio mientras tanto.
+1. ~~Portar 0082 + 0083~~ **Ya están en el 7.2.15 instalado** (verificado en la fuente extraída);
+   no eran la causa.
+2. **`qcom,ssp-period = <6>` + `pcm-ports-mask = <0x204>` en `&swr1`** (hecho, kernel compilado
+   pendiente de instalar). Es la causa que encaja con el síntoma.
+3. Si tras probarlo queda variabilidad, evaluar **0089** (trims) de #955.
+4. Mantener el apaño de replug/reinicio mientras tanto.
 
 ## Nota
 
