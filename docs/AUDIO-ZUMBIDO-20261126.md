@@ -51,6 +51,34 @@ distorsión. Con el códec apagado (sink `SUSPENDED`) **no hay zumbido**.
 - Mientras tanto, remedio para el usuario: **desenchufar y volver a enchufar**; si no se va,
   reiniciar.
 
+## Referencias externas (encontradas el 26/11/2026)
+
+- **armada-os/armada#876** (mergeado 15/11/2026) — dos parches de kernel para el WCD939x:
+  - `0082`: el puerto class-H del códec sigue declarado `SDW_DPN_SIMPLE`, así que **conserva su
+    ventana de reset (hstart 0, hstop 15)** mientras el master manda class-H en 3..6. Se arregla
+    declarándolo `SDW_DPN_FULL`.
+  - `0083`: la secuencia de arranque IQ del class-H se ejecuta **en los dos canales**; el segundo
+    no restaura los valores de reproducción y deja la alimentación en estado de arranque. Síntoma
+    descrito: *"loud passages clip at about three quarters of full volume, or drop out briefly with
+    the compander on"*.
+  - **Nuestro árbol 7.2.12 NO los tiene** (comprobado: `wcd939x-sdw.c` sigue con `SDW_DPN_SIMPLE`
+    y `wcd-clsh-v2.c` llama a `wcd_clsh_v3_force_iq_ctl()` sin condición).
+- **armada-os/armada#955** (abierto) — 0087–0091: versión del códec leída en el probe, rampa de
+  impedancia (estéreo detectado como mono), **trims** ("la mayoría de arranques dejaban el códec
+  sin trim y su compander silenciaba por encima de −30 dBFS"), reloj del controlador SoundWire en
+  resume y re-enumeración en `AUTO_ENUM_FAILED`. Candidato para la variabilidad entre arranques.
+- **ROCKNIX/distribution#3654** (abierto) — detección de headset con los enlaces SoundWire
+  dormidos; el códec cachea los registros de ack y cada resume borra eventos del MBHC.
+- **Nova-Deck/os-build#142** — "metallic ringing on low sounds" en Pocket S2: descartó class-H y
+  nivel RX; menciona `0825` (RX digital limitado a 59) para la saturación.
+
+## Plan revisado
+
+1. **Portar 0082 + 0083** al kernel de CalvOS (son ~30 líneas, aplican casi directos) y probar.
+   Es el candidato más fuerte para el recorte a alto volumen y el zumbido.
+2. Si queda variabilidad, evaluar **0089** (trims) de #955.
+3. Mantener el apaño de replug/reinicio mientras tanto.
+
 ## Nota
 
 El daemon `pocknix-audio-jack` ya hace `hard_reset()` (perfil off→on) y un segundo reset con el
