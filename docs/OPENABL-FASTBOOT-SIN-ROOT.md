@@ -92,6 +92,45 @@ respalda los dos en `/flash/openabl/`), así que perderías el de serie en `a` s
 Si quieres conservarlo, no lo ejecutes: el slot `b` ya está bien. Aun así, si vas a quedarte con OpenABL, saca una copia del slot
 de serie cuando ya haya Linux (para tenerla fuera de la consola).
 
+## ⚠️ Por qué un día vuelve a arrancar Android (26/11/2026)
+
+**Síntoma**: tras días arrancando Linux, la consola empieza a arrancar Android y parece que
+"ha desaparecido OpenABL".
+
+**Lo que NO pasó**: la partición no se borró. `sudo pocknix-update-abl --status` seguía
+viendo `current_b = 0dba7b9` (OpenABL 1.2). Lo que cambió fue el **slot activo**:
+`fastboot getvar current-slot` daba `a` y `slot-successful:b` daba `no`.
+
+**Lo que sí pasó**: XBL arranca el ABL del **slot activo** y, como dice el README de
+OpenABL, *"XBL starts the ABL in the active slot and never falls back to the other slot"*.
+Así que algo cambió el slot activo, no fue un fallback. El candidato natural es el
+`update_engine` de Android preparando un OTA sobre el slot inactivo — justo el caso para el
+que OpenABL publica su addon.d que re-flashea el otro slot tras un OTA.
+
+**Dónde NO vive el estado A/B**: `misc` está prácticamente a cero (solo dos bloques de
+ajustes de OpenABL en `0x8000` y `0x8080`); `devinfo` es el `ANDROID-BOOT!` de Qualcomm; y
+`uefivarstore` solo tiene variables UEFI de OpenABL (`DeviceModel`, `MenuLanguage`,
+`BSPowerCycles`, `RunCycles`…). No hay metadata AOSP de slots en `misc`.
+
+**Solución permanente** — la que recomienda el propio OpenABL (*"both slots on A/B
+devices"*): escribir **los dos** slots.
+
+```bash
+sudo pocknix-update-abl      # respalda los dos en /flash/openabl/, escribe y verifica
+```
+
+Después, `--status` da `state=uptodate` y `current_a = current_b = 0dba7b9`: da igual qué
+slot elija XBL, siempre sale el menú de OpenABL.
+
+**Antes de hacerlo**, saca las copias fuera de la consola (`/flash/openabl/abl_a.img` es el
+de serie y `abl_b.img` el que se reemplaza): si se desinstala pocknix se borra esa partición
+y son la única vuelta atrás al bootloader original.
+
+**Regla práctica**: el modo "solo slot inactivo" (`flash-openabl.sh` del PC,
+`pocknix-update-abl` antes de esto) es correcto para **estrenar** una consola y conservar el
+fallback. Cuando ya se convive con OpenABL, se escriben los dos, porque el fallback no
+protege de esto: el slot activo puede cambiar sin tocar las particiones.
+
 ## Lo que pasó el 22/11/2026 (caso real)
 
 - La Odin reparada estaba en **Android de serie**, con depuración USB, pero **sin `su`** → el

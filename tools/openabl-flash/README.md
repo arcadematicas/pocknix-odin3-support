@@ -77,6 +77,27 @@ Si algo no convence, desde fastboot activa el slot original con
 `fastboot --set-active=<slot original>` (por ejemplo `fastboot --set-active=a`), o entra en el
 menú de OpenABL y elige **Boot other slot**. El ABL de serie sigue intacto en ese slot.
 
+## Que no vuelva a arrancar Android: escribir los DOS slots
+
+Este script escribe **solo el slot inactivo** a propósito: es la forma segura de *estrenar* una
+consola y conservar el ABL de serie como red de seguridad.
+
+El problema es que el *slot activo* puede cambiar sin que nadie toque las particiones (lo más
+probable: el `update_engine` de Android preparando un OTA sobre el slot inactivo). Cuando eso
+pasa, XBL arranca el ABL del slot con el stock y la consola vuelve a Android **aunque OpenABL
+siga escrito en el otro slot**.
+
+Cuando ya se convive con OpenABL, el propio proyecto recomienda escribir **ambos** slots
+(*"both slots on A/B devices"*). Desde la propia consola, con Linux arrancado:
+
+```bash
+sudo pocknix-update-abl        # respalda ambos en /flash/openabl/, escribe y verifica
+```
+
+Copia después `/flash/openabl/abl_a.img` y `abl_b.img` fuera de la consola: son la única vuelta
+atrás al bootloader de serie. Detalle y diagnóstico en
+[`../../docs/OPENABL-FASTBOOT-SIN-ROOT.md`](../../docs/OPENABL-FASTBOOT-SIN-ROOT.md).
+
 ## Solución de problemas
 
 | Síntoma | Qué hacer |

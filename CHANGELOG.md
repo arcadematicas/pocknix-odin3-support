@@ -14,6 +14,30 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 26 de noviembre 2026 — OpenABL volvía a Android: el slot, no la partición
+
+### ✅ Solución: escribir los dos slots
+La consola empezó a arrancar Android y parecía que OpenABL había desaparecido. **No se había
+borrado**: `pocknix-update-abl --status` seguía viendo `abl_b = 0dba7b9` (OpenABL 1.2). Lo que
+cambió fue el **slot activo** (`current-slot: a`, `slot-successful:b: no`).
+
+XBL arranca el ABL del slot activo y **no cae al otro** (README de OpenABL), así que no fue un
+fallback: algo cambió el slot — el candidato natural es el `update_engine` de Android preparando
+un OTA sobre el slot inactivo, que es donde vivía OpenABL.
+
+Arreglo: `sudo pocknix-update-abl` (respalda ambos slots en `/flash/openabl/`, escribe OpenABL en
+`abl_a` y `abl_b` y verifica hash). Queda `state=uptodate`, `current_a = current_b = 0dba7b9`:
+da igual qué slot elija XBL. Copias fuera de la consola en el PC
+(`odin3-abl_a-STOCK-20261126.img` = ABL de serie, `c9730db…`).
+
+### 🧹 Documentación
+`docs/OPENABL-FASTBOOT-SIN-ROOT.md` gana la sección del diagnóstico (dónde vive —y dónde no— el
+estado A/B: `misc` casi vacío, `devinfo` es Qualcomm, `uefivarstore` solo ajustes de OpenABL) y
+la regla: el modo "solo slot inactivo" es para estrenar; cuando ya se convive con OpenABL, se
+escriben los dos. El README de `tools/openabl-flash/` lo explica también.
+
+---
+
 ## 📅 22 de noviembre 2026 — escritorio: Plasma de escritorio por defecto
 
 ### 🐛 El modo escritorio solo mostraba el fondo
