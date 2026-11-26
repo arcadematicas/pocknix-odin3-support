@@ -1,0 +1,118 @@
+#!/bin/bash
+# calvos-work-mode — entra o sale del "modo trabajo" de forma REVERSIBLE.
+#
+# POR QUE EXISTE: el 25/11 se entro en modo trabajo a mano (perfil `bajo` + inhibidor +
+# pantalla apagada) y al salir solo se paro el inhibidor. El perfil se quedo en `bajo` y al
+# dia siguiente Wind Waker iba lento porque el scheduler seguia en `bpfland powersave`
+# (el Panel de Control marcaba "6 equilibrado", pero quien manda en scheduler y topes es el
+# perfil). Esto guarda el perfil de antes y lo devuelve al salir.
+#
+# Uso:  calvos-work-mode on|off|status [--dry-run]
+#       (necesita root)
+set -u
+
+STATE_DIR=/var/lib/pocknix
+PROFILE_FILE="$STATE_DIR/work-profile-saved"
+BRIGHT_FILE="$STATE_DIR/work-brightness"
+INHIBIT_UNIT=calvos-work-inhibit
+BL=/sys/class/backlight/ae94000.dsi.0
+PROFILE_CMD=/usr/local/bin/pocknix-power-profile
+[ -x "$PROFILE_CMD" ] || PROFILE_CMD=/usr/bin/pocknix-power-profile
+
+DRY=0
+[ "${2:-}" = "--dry-run" ] && DRY=1
+run() { if [ "$DRY" = 1 ]; then echo "  [dry] $*"; else "$@"; fi; }
+
+die() { echo "calvos-work-mode: $*" >&2; exit 1; }
+say() { echo "  $*"; }
+
+current_profile() {
+    local p=""
+    [ -r "$STATE_DIR/power-profile" ] && p="$(cat "$STATE_DIR/power-profile")"
+    printf '%s' "$p"
+}
+
+inhibitor_active() {
+    systemctl is-active --quiet "$INHIBIT_UNIT" 2>/dev/null
+}
+
+screen_power() {
+    [ -r "$BL/bl_power" ] && cat "$BL/bl_power" || echo "?"
+}
+
+case "${1:-}" in
+status)
+    echo "modo trabajo: $([ -e "$STATE_DIR/work-profile-saved" ] && echo "armado (perfil guardado: $(cat "$PROFILE_FILE" 2>/dev/null))" || echo "no armado")"
+    echo "inhibidor:    $([ "$(systemctl is-active "$INHIBIT_UNIT" 2>/dev/null)" = active ] && echo activo || echo inactivo)"
+    echo "perfil:       $(current_profile)"
+    echo "pantalla:     bl_power=$(screen_power)"
+    exit 0
+    ;;
+on)
+    [ "$(id -u)" -eq 0 ] || die "necesita root (sudo calvos-work-mode on)"
+    if [ -e "$PROFILE_FILE" ] && inhibitor_active; then
+        say "ya esta en modo trabajo (perfil guardado: $(cat "$PROFILE_FILE"))"
+        exit 0
+    fi
+    # 1) Guardar el perfil actual (solo la primera vez; si ya hay marca, se respeta)
+    if [ ! -e "$PROFILE_FILE" ]; then
+        p="$(current_profile)"; [ -n "$p" ] || p=medio
+        run mkdir -p "$STATE_DIR"
+        run sh -c "printf '%s\n' '$p' > '$PROFILE_FILE'"
+        say "perfil guardado para la vuelta: $p"
+    fi
+    # 2) Brillo actual, para devolverlo al salir
+    if [ ! -e "$BRIGHT_FILE" ] && [ -r "$BL/brightness" ]; then
+        run sh -c "cat '$BL/brightness' > '$BRIGHT_FILE'"
+        say "brillo guardado: $(cat "$BL/brightness" 2>/dev/null)"
+    fi
+    # 3) Perfil bajo (scheduler bpfland powersave + topes bajos)
+    run "$PROFILE_CMD" bajo
+    # 4) Inhibidor: sin suspender ni apagarse mientras se trabaja
+    if ! inhibitor_active; then
+        run systemd-run --unit="$INHIBIT_UNIT" --collect systemd-inhibit \
+            --what=idle:sleep:shutdown --who=calvos-work-mode \
+            --why="modo trabajo CalvOS" --mode=block sleep infinity
+        say "inhibidor activo"
+    fi
+    # 5) Pantalla apagada (el compositor repone el brillo; bl_power manda)
+    [ -w "$BL/bl_power" ] && { run sh -c "echo 1 > '$BL/bl_power'"; run sh -c "echo 0 > '$BL/brightness'"; say "pantalla apagada"; }
+    say "modo trabajo ON"
+    exit 0
+    ;;
+off)
+    [ "$(id -u)" -eq 0 ] || die "necesita root (sudo calvos-work-mode off)"
+    # 1) Inhibidor fuera
+    if inhibitor_active; then
+        run systemctl stop "$INHIBIT_UNIT"
+        say "inhibidor parado"
+    fi
+    # 2) Devolver el perfil guardado (por defecto medio)
+    p="medio"; [ -r "$PROFILE_FILE" ] && p="$(cat "$PROFILE_FILE")"; [ -n "$p" ] || p=medio
+    run "$PROFILE_CMD" "$p"
+    say "perfil restaurado: $p"
+    # 3) Pantalla encendida y brillo de antes
+    [ -w "$BL/bl_power" ] && { run sh -c "echo 0 > '$BL/bl_power'"; say "pantalla encendida"; }
+    if [ -r "$BRIGHT_FILE" ]; then
+        b="$(cat "$BRIGHT_FILE")"
+        case "$b" in ''|*[!0-9]*) b=0 ;; esac
+        [ "$b" -gt 0 ] && run sh -c "echo $b > '$BL/brightness'"
+    fi
+    # 4) Limpiar marcas para la proxima vez
+    run rm -f "$PROFILE_FILE" "$BRIGHT_FILE"
+    say "modo trabajo OFF"
+    exit 0
+    ;;
+*)
+    cat <<'AYUDA'
+Uso: sudo calvos-work-mode on|off|status [--dry-run]
+
+  on     guarda el perfil actual, pone `bajo`, inhibe suspender/apagar y apaga la pantalla.
+  off    para el inhibidor, RESTAURA el perfil guardado (p. ej. `medio`) y enciende la pantalla.
+  status muestra inhibidor, perfil y estado de pantalla.
+
+Sin `on/off` el perfil se queda como estaba: es lo que paso el 25/11 y por eso existe esto.
+AYUDA
+    exit 2
+    ;;
+esac

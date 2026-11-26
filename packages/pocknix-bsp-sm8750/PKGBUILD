@@ -54,7 +54,7 @@ pkgver=0.2.0
 #   (antes iba en la esquina inferior derecha), algo mas pequeno. Mismas 240 frames, 46,4 MB.
 # -14 (17/10): se vuelve a la ESQUINA (como el diseno anterior), calvOS algo mas pequeno (100px)
 #   y con FUNDIDO de entrada (frames 70-120) para que aparezca despues de "ODIN 3". 48,4 MB.
-pkgrel=64
+pkgrel=65
 pkgdesc="CalvOS board support: SM8750 family (AYN Odin 3, KONKR Pocket FIT Elite) — board dispatch, input maps, audio UCM + Odin 3 daemons (OLED care, buttons, power/thermal, MangoHud toggle, splash, Steam UI watchdog, SteamOS session-manager shim)"
 install=pocknix-bsp-sm8750.install
 arch=('any')
@@ -92,10 +92,12 @@ backup=('etc/sudoers.d/90-pocknix-steamos-manager'
         'etc/environment.d/fex-fix.conf')
 source=('device.conf'
         'ayn_mcu.yaml' '01-ayn-controller.yaml'
-        'AYN-Odin3.conf' 'HiFi.conf' 'HiFi-Dock.conf'
+        'AYN-Odin3.conf' 'HiFi.conf' 'HiFi-Headphones.conf' 'HiFi-Dock.conf'
         'AYN-Odin3Portal.conf' '50-ayn_odin3portal.yaml'
-        'kernel-cmdline' 'pocknix-bsp-sm8750.install')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+        'kernel-cmdline' 'pocknix-bsp-sm8750.install'
+        'calvos-work-mode')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP'
+            'SKIP')
 
 build() {
   # Compile the OLED pixel refresher. It is tiny (~17 KB) but it MUST be built here: the
@@ -138,6 +140,7 @@ package() {
   local ucm="${pkgdir}/usr/share/alsa/ucm2"
   install -Dm644 "${srcdir}/AYN-Odin3.conf" "${ucm}/AYN/Odin3/AYN-Odin3.conf"
   install -Dm644 "${srcdir}/HiFi.conf"      "${ucm}/AYN/Odin3/HiFi.conf"
+  install -Dm644 "${srcdir}/HiFi-Headphones.conf" "${ucm}/AYN/Odin3/HiFi-Headphones.conf"
   install -Dm644 "${srcdir}/HiFi-Dock.conf" "${ucm}/AYN/Odin3/HiFi-Dock.conf"
   install -d "${ucm}/conf.d/sm8750"
   ln -sf "../../AYN/Odin3/AYN-Odin3.conf" "${ucm}/conf.d/sm8750/SM8750-AYN.conf"
@@ -149,6 +152,7 @@ package() {
   # se deja tambien por compatibilidad. Sin esta UCM el card cae en el perfil nulo.
   install -Dm644 "${srcdir}/AYN-Odin3Portal.conf" "${ucm}/AYN/Odin3Portal/AYN-Odin3Portal.conf"
   ln -sf "../Odin3/HiFi.conf" "${ucm}/AYN/Odin3Portal/HiFi.conf"
+  ln -sf "../Odin3/HiFi-Headphones.conf" "${ucm}/AYN/Odin3Portal/HiFi-Headphones.conf"
   ln -sf "../../AYN/Odin3Portal/AYN-Odin3Portal.conf" "${ucm}/conf.d/sm8750/SM8750-AYN-Portal.conf"
   ln -sf "../../AYN/Odin3Portal/AYN-Odin3Portal.conf" "${ucm}/conf.d/sm8750/ayn-AYNOdin3Portal-.conf"
 
@@ -214,6 +218,7 @@ package() {
   # el sonido se quedaba en un nodo no disponible (silencio) hasta reiniciar el filtro.
   # Ver docs/AUDIO-AURICULARES-20261022.md.
   install -Dm755 "${sd}/audio/pocknix-audio-jack.py"             "${bin}/pocknix-audio-jack"
+  install -Dm755 "${srcdir}/calvos-work-mode"                     "${bin}/calvos-work-mode"
   install -Dm644 "${sd}/audio/pocknix-audio-jack.service"        "${pkgdir}/usr/lib/systemd/system/pocknix-audio-jack.service"
   # Suelo de quantum de PipeWire (evita los xrun "snd_pcm_avail after recover: Broken pipe").
   install -Dm644 "${sd}/audio/10-pocknix-latency.conf" \

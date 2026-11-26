@@ -35,7 +35,13 @@ EQ_SINK = "AYN Odin 3 EQ"
 HPH_NUMID = "25"
 HPH_MODE_NUMID = "14"
 HPH_MODE = "CLS_H_LOHIFI"   # class-H con compander: el estado validado en la Odin
-HW = {
+# El UCM esta partido en dos VERBOS (perfiles): "HiFi" (altavoz) y "Headphones" (jack).
+# Conmutar de perfil re-ejecuta la EnableSequence, que es lo que evita el zumbido; por eso
+# el daemon ya no hace el ciclo off->perfil, sino que CAMBIA de perfil.
+PROFILE = {True: "Headphones", False: "HiFi"}
+# Fragmento del nombre del sink que crea cada perfil (se resuelve en caliente).
+SINK_MATCH = {True: "Headphones__Headphones", False: "HiFi__Speaker"}
+HW = {   # respaldo por si no se encuentra el sink (nombres antiguos)
     True: "alsa_output.platform-sound.HiFi__Headphones__sink",
     False: "alsa_output.platform-sound.HiFi__Speaker__sink",
 }
@@ -94,7 +100,7 @@ def ensure_headphone_amp(plugged):
     if "values=on" in run(["amixer", "-c", CARD, "cget", f"numid={HPH_NUMID}"]):
         return False
     # 1) Pedir la secuencia a la UCM (hace el routing completo cuando la re-ejecuta).
-    run(["alsaucm", "-c", f"hw:{CARD}", "set", "_verb", "HiFi", "set", "_enadev", "Headphones"])
+    run(["alsaucm", "-c", f"hw:{CARD}", "set", "_verb", "Headphones", "set", "_enadev", "Headphones"])
     # 2) Si la UCM no la re-ejecuto (device ya dado de alta), forzar el PA y el modo. Comprobado
     #    en la Odin: sin esto los switches se quedan fuera y no suena por los cascos.
     for numid in ("25", "26", "27", "142", "143", "23", "24"):
@@ -106,7 +112,7 @@ def ensure_headphone_amp(plugged):
 
 
 def fix_links(plugged):
-    target, other = HW[plugged], HW[not plugged]
+    target, other = sink_for(plugged), sink_for(not plugged)
     graph = run_user(["pw-link", "-l"])
     if EQ_STREAM not in graph:
         return False
@@ -140,6 +146,43 @@ def ensure_gain():
     return True
 
 
+def card_name():
+    cards = run_user(["pactl", "list", "short", "cards"]).splitlines()
+    if not cards:
+        return ""
+    parts = cards[0].split("\t")
+    return parts[1] if len(parts) > 1 else (cards[0].split()[1] if len(cards[0].split()) > 1 else "")
+
+
+def active_profile():
+    for line in run_user(["pactl", "list", "cards"]).splitlines():
+        if "Active Profile:" in line:
+            return line.split(":", 1)[1].strip()
+    return ""
+
+
+def sink_for(plugged):
+    for line in run_user(["pactl", "list", "short", "sinks"]).splitlines():
+        if SINK_MATCH[plugged] in line:
+            parts = line.split("\t")
+            return parts[1] if len(parts) > 1 else line.split()[1]
+    return HW[plugged]
+
+
+def set_profile(plugged):
+    """Conmuta al perfil del estado del jack. Devuelve True si ha cambiado."""
+    wanted = PROFILE[plugged]
+    cur = active_profile()
+    if not cur or cur == wanted:
+        return False
+    name = card_name()
+    if not name:
+        return False
+    run_user(["pactl", "set-card-profile", name, wanted])
+    time.sleep(SETTLE)
+    return active_profile() == wanted
+
+
 def hard_reset():
     """Cierra y reabre el PCM de la tarjeta: es exactamente lo que hace reenchufar.
 
@@ -166,7 +209,7 @@ def hard_reset():
 
 
 def fix_default(plugged):
-    wanted = EQ_SINK if eq_present() else HW[plugged]
+    wanted = EQ_SINK if eq_present() else sink_for(plugged)
     if run_user(["pactl", "get-default-sink"]).strip() != wanted:
         run_user(["pactl", "set-default-sink", wanted])
         return True
@@ -182,8 +225,10 @@ def apply_all(reason="", hard=False):
     """
     t0 = time.monotonic()
     plugged = jack_plugged()
-    # Al enchufar, reabrir el PCM como un replug: garantiza el transporte bueno.
-    reset = hard_reset() if (hard and plugged) else False
+    # Conmutar de PERFIL ya reabre el PCM y re-ejecuta la UCM (es el arreglo de fondo).
+    switched = set_profile(plugged)
+    # Red de seguridad: si el perfil ya era el correcto (p.ej. replug), reabrir el PCM.
+    reset = hard_reset() if (hard and plugged and not switched) else False
     links = fix_links(plugged)
     # El sink por defecto SOLO se toca en eventos (jack/streams) y al arrancar. En el tick
     # periodico no: WirePlumber reaplica su "default.configured.audio.sink" y entrabamos en
@@ -196,7 +241,7 @@ def apply_all(reason="", hard=False):
     LAST_JACK["plugged"] = plugged
     if reset or links or default or amps or codec or gain:
         acciones = ",".join(
-            n for n, v in (("reset", reset), ("links", links), ("default", default), ("amps", amps), ("codec", codec), ("gain", gain)) if v
+            n for n, v in (("perfil", switched), ("reset", reset), ("links", links), ("default", default), ("amps", amps), ("codec", codec), ("gain", gain)) if v
         )
         print(
             f"{time.strftime('%H:%M:%S')} jack={'on' if plugged else 'off'} "
