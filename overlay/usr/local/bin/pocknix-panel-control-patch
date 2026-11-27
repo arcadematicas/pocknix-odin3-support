@@ -239,6 +239,166 @@ ENGINE4_NEW = """                line = options['engine']
                 self._verify_install(state, line)
 """
 
+# Puente entre power-profiles-daemon (selector de Plasma) y el nivel TDP del panel.
+POWER_BRIDGE_PY = r'''"""Puente entre los perfiles de energia de KDE (power-profiles-daemon) y el nivel TDP.
+
+En la Odin ppd arranca con el driver "fake": el selector de Plasma no toca nada. Este
+modulo lee el perfil activo de ppd (busctl, sin dependencias) y lo traduce a un nivel
+del backend arm-frequency-levels llamando a la API del propio plugin
+(set_tdp_watts(level, "global")), de modo que el guardian y el perfil guardado siguen
+en sync.
+
+Instalado por /usr/local/bin/pocknix-panel-control-patch (no viene de upstream).
+Config opcional: /etc/calvos/power-bridge.json  {"levels": {"balanced": 6, ...}}
+"""
+import asyncio
+import json
+import os
+import shutil
+import subprocess
+import threading
+
+DEFAULT_LEVELS = {"power-saver": 3, "balanced": 6, "performance": 10}
+CONFIG_PATHS = ("/etc/calvos/power-bridge.json",)
+POLL_S = 2.0
+BUSCTL = shutil.which("busctl") or "/usr/bin/busctl"
+DEST = "net.hadess.PowerProfiles"
+PATH = "/net/hadess/PowerProfiles"
+IFACE = "net.hadess.PowerProfiles"
+
+
+def _log():
+    try:
+        import decky
+        return decky.logger
+    except Exception:  # noqa: BLE001
+        import logging
+        return logging.getLogger("calvos-power-bridge")
+
+
+def _levels():
+    levels = dict(DEFAULT_LEVELS)
+    for path in CONFIG_PATHS:
+        try:
+            with open(path, encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        raw = data.get("levels") if isinstance(data, dict) else None
+        if not isinstance(raw, dict):
+            continue
+        for key, value in raw.items():
+            if key in DEFAULT_LEVELS and isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= 10:
+                levels[key] = value
+    return levels
+
+
+def _read():
+    try:
+        out = subprocess.run(
+            [BUSCTL, "--system", "get-property", DEST, PATH, IFACE, "ActiveProfile"],
+            capture_output=True, text=True, timeout=5,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if len(out) > 4 and out.startswith('s "') and out.endswith('"'):
+        return out[3:-1]
+    return None
+
+
+def start(plugin):
+    """Arranca el hilo vigia. Llamar desde el bucle asyncio del plugin (en _startup)."""
+    log = _log()
+    levels = _levels()
+    loop = asyncio.get_running_loop()
+
+    def apply(profile):
+        level = levels.get(profile)
+        if level is None:
+            return
+
+        async def run():
+            try:
+                result = await plugin.set_tdp_watts(level, "global")
+                log.info("power bridge: %s -> nivel %s (%s)", profile, level, result)
+            except Exception:  # noqa: BLE001
+                log.exception("power bridge: fallo aplicando %s", profile)
+
+        asyncio.run_coroutine_threadsafe(run(), loop)
+
+    # Al arrancar no pisamos el nivel guardado del panel salvo que el usuario haya
+    # elegido explicitamente un perfil distinto del de por defecto de ppd (balanced).
+    current = _read()
+    if current in ("performance", "power-saver"):
+        apply(current)
+
+    def worker():
+        last = current
+        stop = threading.Event()
+        while not stop.wait(POLL_S):
+            now = _read()
+            if now and now != last:
+                last = now
+                apply(now)
+
+    thread = threading.Thread(target=worker, name="calvos-power-bridge", daemon=True)
+    thread.start()
+    log.info("power bridge: activo (ppd=%s, niveles=%s)", current, levels)
+    return thread
+'''
+
+
+def ensure_power_bridge(plugin_dir: str) -> int:
+    """Instala power_bridge.py y lo engancha en el arranque TDP de main.py (idempotente)."""
+    module = os.path.join(plugin_dir, "py_modules", "power_bridge.py")
+    try:
+        with open(module, encoding="utf-8") as fh:
+            current = fh.read()
+    except OSError:
+        current = None
+    if current != POWER_BRIDGE_PY:
+        try:
+            with open(module, "w", encoding="utf-8") as fh:
+                fh.write(POWER_BRIDGE_PY)
+        except OSError as exc:
+            log(f"ERROR escribiendo {module!r}: {exc}")
+            return 1
+        log(f"APLICADO: puente de energia en {module!r}")
+    main = os.path.join(plugin_dir, "main.py")
+    try:
+        with open(main, encoding="utf-8") as fh:
+            src = fh.read()
+    except OSError:
+        return 0
+    if "power_bridge.start(self)" in src:
+        return 0
+    anchor = ("        await self._recover_tdp_startup_state()\n"
+              "        await self._probe_tdp_backend(force=True)\n")
+    if src.count(anchor) != 1:
+        log("AVISO: no encuentro el arranque TDP para enganchar el puente de energia")
+        return 0
+    hook = (anchor +
+            "        try:\n"
+            "            import power_bridge\n"
+            "            self._power_bridge = power_bridge.start(self)\n"
+            "        except Exception:\n"
+            "            decky.logger.exception(\"power bridge: no se pudo iniciar\")\n")
+    new = src.replace(anchor, hook)
+    try:
+        ast.parse(new, filename=main)
+    except SyntaxError as exc:
+        log(f"ERROR: el puente deja main.py invalido: {exc}")
+        return 1
+    try:
+        shutil.copy2(main, main + ".bak-powerbridge")
+        with open(main, "w", encoding="utf-8") as fh:
+            fh.write(new)
+    except OSError as exc:
+        log(f"ERROR escribiendo main.py: {exc}")
+        return 1
+    log(f"APLICADO: enganche del puente de energia en {main!r}")
+    return 0
+
 
 def ensure_engine4_coercion(plugin_dir: str) -> int:
     """Motor 4 (LSFG) en aarch64: al guardar el perfil tambien debe ir por la linea 5.
@@ -347,7 +507,8 @@ def main(argv: list[str]) -> int:
     plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(path)))
     rc2 = patch_frontend(plugin_dir)
     rc3 = patch_mako_arm64(plugin_dir)
-    return rc or rc2 or rc3
+    rc4 = ensure_power_bridge(plugin_dir)
+    return rc or rc2 or rc3 or rc4
 
 
 if __name__ == "__main__":
