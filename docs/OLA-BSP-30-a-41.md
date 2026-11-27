@@ -102,3 +102,24 @@ los “suelos” (`deckstation-arm`, `libretro-hakux`). Es parte de la ola, no u
 - **Lote 4**: snapshot `base` nuevo (o prioridad de repos) para que las versiones de shared
   lleguen de verdad a los dispositivos.
 - **Lote 5**: probar en hardware (arranque → audio → suspend → dock) y publicar.
+
+---
+
+## Estado al 27/11/2026 (tras el trabajo de la mañana)
+
+- **Lote 1**: cerrado (publicaciones).
+- **Lote 2**: **cerrado**. Comprobado en la consola que ya estaban cubiertos: journal 64M
+  (`/usr/lib/systemd/journald.conf.d/10-pocknix-flash.conf`), wifi iwd, zram 10,7G, sysctls
+  gaming (`60-pocknix-gaming.conf`), límites `nice -20`, `pocknix-second-screen.service`.
+  Añadidos de upstream y publicados en **`pocknix-bsp-common 31`**: `rtkit-limits.conf`
+  (drop-in de rtkit: RR 81/80) y las reglas polkit `52-pocknix-fan-mode.rules` y
+  `50-pocknix-second-screen.rules`.
+- **Lote 3 (capa de arranque)**: **decisión tomada: se queda la nuestra**. No se instala
+  `pocknix-boot-deploy`, `pocknix-build-bootimg`, `pocknix-cmdline-sync`, los hooks 90/91,
+  `repo-line`, `abl-gate`, `pocknix-perf`/`rt-ladder` (sustituidos por scx), `speaker-dsp`
+  (usamos el EQ del panel), `cores.sh` (nuestro `pocknix-steam` no lo pide) ni
+  `lid-powerkey-sleep-*` (tenemos nuestros hooks). Queda **verificar en hardware** que todo
+  sigue bien tras kernel 8 + bsp-common 31 (arranque, audio, suspensión, mando).
+- **Lote 4 (snapshot/prioridad)**: **no bloquea**. `pocknix-tools` está en 30 y `pacman -Sl`
+  sirve shared 30/31/75; el `28` que aparecía en `pacman -Sp` era un artefacto de caché local.
+- **Lote 5**: pruebas de hardware, esta noche.
