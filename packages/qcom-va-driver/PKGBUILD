@@ -1,0 +1,36 @@
+# qcom-va-driver — VA-API sobre el decodificador iris (V4L2) del SM8750.
+#
+# Convierte /dev/video0 (qcom-iris-decoder) y /dev/video1 (qcom-iris-encoder) en un backend
+# VA-API normal: libva lo detecta solo y las apps (Moonlight, mpv, ffmpeg, navegadores) pueden
+# decodificar por hardware. En la Odin expone H.264 (VLD + encode), HEVC Main/Main10, VP9 y AV1.
+#
+# Se compila con cdsp_vpp=disabled a proposito: el bloque CDSP (VPP en el DSP) exige GHC y no
+# aporta nada para decode/encode basico; gpu_copy=egl usa la GPU para la copia de superficies.
+pkgname=qcom-va-driver
+pkgver=1.1.1
+pkgrel=1
+pkgdesc="VA-API driver for the Qualcomm iris V4L2 video decoder/encoder (SM8750)"
+arch=('aarch64')
+url="https://github.com/radxa-pkg/qcom-va-driver"
+license=('MIT')
+depends=('libva' 'libdrm' 'mesa')
+makedepends=('meson' 'ninja' 'gcc')
+_commit=0980a1decf26d34c9aa71cd0a4a0d25703a7a17f
+source=("${url}/archive/${_commit}.tar.gz")
+sha256sums=('ad1123de8e5af73e5534a5275ded6281fab485768fdd83c10c69eba6ef1c344d')
+
+build() {
+  cd "${srcdir}/qcom-va-driver-${_commit}"
+  meson setup build \
+    --prefix=/usr \
+    --buildtype=release \
+    -Dgpu_copy=enabled \
+    -Dcdsp_vpp=disabled
+  ninja -C build
+}
+
+package() {
+  cd "${srcdir}/qcom-va-driver-${_commit}"
+  meson install -C build --destdir "${pkgdir}"
+  # Los symlinks legacy (v4l2_/msm_drv_video.so) los crea meson; no tocamos nada mas.
+}

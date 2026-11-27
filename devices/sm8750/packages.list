@@ -18,3 +18,4 @@ hexagonrpc            # hexagonrpcd: sirve el arbol HexagonFS al ADSP (configs y
 libssc                # cliente del Sensor Core (ssccli: con esto se verifica que hay sensores)
 libqrtr               # libqrtr de linux-msm (no esta en ALARM y pd-mapper la necesita)
 pd-mapper             # lee los .jsn y registra los PDs del DSP: sin el NO hay "sensor_pd"
+qcom-va-driver        # VA-API sobre iris V4L2 (video0/1): decode H.264/HEVC/VP9/AV1 + encode H.264/HEVC por hardware
