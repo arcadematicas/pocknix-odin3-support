@@ -93,6 +93,7 @@ mirror "packages/pocknix-device-sm8750" "devices/sm8750/packages/pocknix-device-
 # linux-firmware. El PKGBUILD + ./paths viven aqui; los blobs los.stagea build-packages.sh desde
 # devices/<dev>/firmware/ y vendor/rocknix-extra-firmware/ (NINGUN binario en git).
 mirror "packages/pocknix-firmware-sm8750" "devices/sm8750/packages/pocknix-firmware-sm8750"
+mirror "packages/calvos-peanuts" "devices/sm8750/packages/calvos-peanuts"
 
 # --- the SoC packages our branch was missing entirely ------------------------
 # Without these two the image could not rebuild its own kernel or bootloader: it silently kept
