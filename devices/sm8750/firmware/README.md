@@ -6,14 +6,15 @@ any more: the blobs it holds are staged by `scripts/build-packages.sh` into the 
 `build-image.sh` installs from the localrepo like any other package. Read that package's
 `PKGBUILD`/`README.md` for the mechanism; this file is about *which* blobs and *why*.
 
-Two source roots feed it, searched in this order by `build-packages.sh`:
+Three source roots feed it, searched in this order by `build-packages.sh`:
 
 | # | root | what it is |
 |---|---|---|
-| 1 | `devices/sm8750/firmware/` (this dir) | **committed** — our two charger blobs, the battery-authentication ADSP pair. Searched first, so it wins over any vendor copy of the same path. |
-| 2 | `vendor/rocknix-extra-firmware/SM8750/` | **gitignored**, `make sync` only — ROCKNIX/extra-firmware pinned to `30c56e2f34af37fe372166b739d6ab277f5155b5`. Everything upstream linux-firmware does not have. |
+| 1 | `devices/sm8750/firmware/` (this dir) | **committed** — the small blobs (`adsp_dtb.mbn`, `soccp.mbn`, `aw883xx_acf.bin`). |
+| 2 | `vendor/calvos-firmware/` | **gitignored**, `tools/fetch-firmware.sh` — the two big ADSP `.mbn` (42 MB), downloaded from our R2 and **verified by sha256**. Pinned set `20261127`. |
+| 3 | `vendor/rocknix-extra-firmware/SM8750/` | **gitignored**, `make sync` only — ROCKNIX/extra-firmware pinned to `30c56e2f34af37fe372166b739d6ab277f5155b5`. Everything upstream linux-firmware does not have. |
 
-`./paths` in the package is the manifest (37 entries) and the union of the two roots.
+`./paths` in the package is the manifest (37 entries) and the union of the roots.
 
 ## `qcom/sm8750/adsp.mbn` + `qcom/sm8750/adsp_dtb.mbn` — the charger pair (committed here)
 
@@ -42,13 +43,29 @@ These are the blobs ArmadaOS installs at the same bare paths (its own DTS also r
 are. Verified on-device: `battery status=Charging`, `qcom-battmgr-usb online=1`, `ucsi 3A`, and
 the charger-firmware ulog stopped reporting "Test mode".
 
-### Why these two stay in git while nothing else does
+### Why the big blobs are downloaded, not committed
 
-No download source of ours produces them (ROCKNIX/extra-firmware's copies are a *different*
-binary: `qcom/sm8750/ayn/odin3/adsp.mbn` is 21891464 B / md5 `f82212a2…`, and its
-`adsp_dtb.mbn` is md5 `6f4c2eca…`), so a clean build has to carry them or the device ships with a
-charger firmware that cannot charge. 22 MB is the price. Everything else keeps coming from the
-pinned `vendor/` tree — the same criterion `pocknix-firmware-sm8550` uses.
+The pair is **42 MB** (`adsp.mbn` 21.907.848 B for the Odin 3 and 21.875.080 B for the Portal) and
+no upstream source produces it: ROCKNIX/extra-firmware's copies are *different* binaries (its
+`qcom/sm8750/ayn/odin3/adsp.mbn` is 21.891.464 B / md5 `f82212a2…`, and its `adsp_dtb.mbn` is md5
+`6f4c2eca…`). So we host our own pinned copy on R2:
+
+- Public base: `https://pub-fd47305874674bf597b27eb7f880e73b.r2.dev/firmware/sm8750/20261127/`
+- Fetched by `tools/fetch-firmware.sh` into `vendor/calvos-firmware/` (sha256 checked; skipped when
+  already present and valid). `tools/sync-to-os.sh` calls it; the build dies with a clear message
+  if the files are missing.
+- Origin: the blobs ArmadaOS installs at the same bare paths (its DTS also reads
+  `qcom/sm8750/adsp.mbn`); that is why they are byte-for-byte what they are.
+- Mirrors: keep a copy off-device (`/flash` backups) and re-upload with a new pinned directory if
+  Armada ever ships a new pair; update the hashes in `tools/fetch-firmware.sh` in the same commit.
+
+| file | size | sha256 |
+|---|---|---|
+| `qcom/sm8750/adsp.mbn` | 21907848 | `d5fabba5720f0ddb851ae875e185bf6b89b128bc7f17b426c2dd63545f6b054a` |
+| `qcom/sm8750/ayn/odin3portal/adsp.mbn` | 21875080 | `67439236b296614ca64212a7a8d6d5bdffdd62cdb54a77877a7f695c8316b8af` |
+
+(the smaller `adsp_dtb.mbn` stays committed: 163 KB, same auth config, and it is the file whose
+tests in BATTERY-ISSUE.md pin the behaviour.)
 
 ### Why `qcom/sm8750/ayn/` is gitignored
 

@@ -255,14 +255,17 @@ build_one() {
   # Staged here because vendor/ lives only on the build host, never inside the chroot.
   # Blob sources, searched in this order (first hit wins, so a committed override always
   # beats the vendor copy of the same path):
-  #   1. devices/<device>/firmware/  — our own committed overrides. Only the sm8750 family
-  #      has one: the AYN Odin 3 battery-auth ADSP pair, whose qcom/sm8750/*.mbn copy in
-  #      ROCKNIX/extra-firmware lacks the battery-authentication config (see that dir's README).
-  #   2. FW_EXTRA_SRC_REL           — ROCKNIX/extra-firmware, where the sm8750 blobs that
+  #   1. devices/<device>/firmware/  — our own committed overrides (small blobs).
+  #   2. vendor/calvos-firmware      — our big blobs (the Odin 3 battery-auth ADSP pair),
+  #      downloaded and hash-verified by tools/fetch-firmware.sh (not in git: 42 MB).
+  #   3. FW_EXTRA_SRC_REL           — ROCKNIX/extra-firmware, where the sm8750 blobs that
   #      upstream linux-firmware does not have at all live (only sm8750's profile sets it).
-  #   3. FW_SRC_REL                 — ROCKNIX's kernel-overlays firmware overlay (sm8550's).
+  #   4. FW_SRC_REL                 — ROCKNIX's kernel-overlays firmware overlay (sm8550's).
   local -a fwroots=()
   if [ -d "${DEVICE_DIR}/firmware" ]; then fwroots+=("${DEVICE_DIR}/firmware"); fi
+  # Our own downloaded blobs (ADSP pair with battery auth; 42 MB, not in git). Fetched by
+  # tools/fetch-firmware.sh into vendor/calvos-firmware, verified by sha256.
+  if [ -d "${VENDOR_DIR}/calvos-firmware" ]; then fwroots+=("${VENDOR_DIR}/calvos-firmware"); fi
   if [ -n "${FW_EXTRA_SRC_REL:-}" ]; then fwroots+=("${VENDOR_DIR}/${FW_EXTRA_SRC_REL}"); fi
   fwroots+=("${VENDOR_DIR}/${FW_SRC_REL}")
   case "${name}" in pocknix-firmware-*)

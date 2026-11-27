@@ -46,6 +46,14 @@ de ventilador y second-screen). Todo coincide entre R2 y lo instalado.
   **09:15** MAKO/panel (`asset` arm64 + ¿el parche aplica?). Avisan por Telegram.
 - **`docs/MAKO-UPDATE.md`**: runbook para versiones nuevas de MAKO o del Panel.
 
+### 🧹 Firmware propio fuera de git (42 MB menos)
+Los dos `adsp.mbn` grandes (Odin 3 y Portal; llevan la config de autenticación de batería) salen de
+git: se publican en R2 (`firmware/sm8750/20261127/` con `SHA256SUMS`), `tools/fetch-firmware.sh` los
+descarga a `vendor/calvos-firmware/` y se **verifican por sha256**, y `build-packages.sh` los busca
+antes que ROCKNIX. `sync-to-os.sh` llama al fetch; el build falla con mensaje claro si faltan. Los
+blobs pequeños (`adsp_dtb`, `soccp`, `aw883xx_acf`) siguen en git. Verificado: descarga + hashes +
+las 41 rutas del paquete con fuente.
+
 ### 🎞️ Decodificación de vídeo por hardware (nuevo paquete `qcom-va-driver`)
 El SM8750 ya exponía `/dev/video0` (`qcom-iris-decoder`) y `/dev/video1` (`qcom-iris-encoder`), pero
 faltaba el puente a VA-API. Se empaqueta `qcom-va-driver` (MIT, radxa, commit `0980a1d`), que instala
