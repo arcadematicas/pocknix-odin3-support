@@ -7,6 +7,7 @@ enlaza al suyo para el detalle interno.
 | Función | Se usa desde | Guía |
 |---|---|---|
 | **DeckStation** (emulación) | CalvOS Tools / Steam | [DECKSTATION.md](DECKSTATION.md) |
+| **Frame generation** (MAKO) | Panel de Control → juego | [FRAME-GEN.md](FRAME-GEN.md) |
 | **WProton** (juegos Windows) | CalvOS Tools / mando | [WPROTON.md](WPROTON.md) |
 | **Decomps Linux** (ports de PC) | Carpeta + Steam | [DECOMP-LINUX.md](DECOMP-LINUX.md) |
 | **Sistema** (energía, HDR, snapshots, captura, diagnóstico) | QAM / terminal | [SISTEMA.md](SISTEMA.md) |

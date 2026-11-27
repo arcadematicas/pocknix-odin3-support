@@ -93,3 +93,12 @@ responde en un emulador, revisa primero el perfil de ese emulador y el
 | Suyu (Switch) no arranca | Claves en `<RetroArch>.home/.config/retroarch/system/suyu/keys/`. |
 | Juego en inglés en Suyu | Opciones del core → `suyu_language` → Spanish. |
 | No aparecen los assets XMB | Re-ejecuta el setup (descarga los assets de RetroArch). |
+## Sistemas nuevos (27/11/2026)
+
+- **PS2**: **Armsx2** (AppImage ARM64). Aparece como **“ARMSX2 (Standalone)”** en el selector de
+  emulador del sistema `ps2`. Necesita BIOS de PS2 (la guía de BIOS ya la deja en su carpeta
+  portable). Sus partidas y config viven en `Apps/Armsx2/ARMSX2.AppImage.home`.
+- **PS3**: **RPCS3** (AppImage ARM64). Necesita firmware de PS3: se instala desde el propio menú
+  de RPCS3 (*File → Install Firmware*) y queda en su `.home` portable.
+
+Los dos se instalan desde el **Updater**, como el resto, y no tocan nada fuera de `/opt/deckstation`.
