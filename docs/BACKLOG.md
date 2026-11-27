@@ -49,6 +49,9 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
       `pip --break-system-packages`; hoy es un paso manual.
 - [ ] **(A)** `pocknix-system-overlay`: publicar el cambio (deps de Peanuts en `packages.list`; la
       env del mando pasó a `calvos-peanuts`).
+- [ ] **(A)** **Reconstruir y publicar `pocknix-decky` y `pocknix-desktop`**: el repo ya quita el
+      botón de Plasma Mobile del plugin y hace que `pocknix-desktop-select` lo rechace (shell roto,
+      27/11/2026). En la Odin ya está parcheado en vivo; falta el paquete para una imagen nueva.
 - [ ] **(A)** Gate de publicación: el `glibc` del repo `base` rompe `make stage`; se publica con
       `POCKNIX_STAGE_NOCHECK=1`. Arreglarlo de raíz.
 - [ ] **(A)** Revisar si `pocknix-firmware-sm8750 0.1.0-5` está publicado tras el último cambio.
