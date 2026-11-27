@@ -82,3 +82,41 @@ Mejor aún: proponerlo upstream a Hooandee (es su plugin) con este mismo parche.
 - Decidir si se empaqueta como `calvos-mako-arm64` (ojo: el binario de MAKO FG es CC BY-NC,
   uso no comercial; las capas GPL-3.0).
 - Añadirlo al vigilante (release nueva de `mako-arm64`).
+
+## Syluxium Motion (motor de LiquidFrames) — validado en Turnip (27/11/2026)
+
+LiquidFrames es una app **cerrada y solo x86_64**, pero su motor **Syluxium Motion** es **MIT,
+C++20 y Vulkan 1.2+** y se compila para aarch64.
+
+**Compilación en la Odin** (nativo, sin parches):
+
+```
+[13/13] Linking CXX static library libsyluxium-motion.a
+```
+
+Los 9 shaders `flow_*` compilan con `glslc`; Turnip expone lo que pide
+(`timeline_semaphore`, `external_memory_fd`, `external_semaphore_fd`, `synchronization2`).
+
+**Prueba funcional** (banco propio con la API `testUpload/testDownload`, 320x180, dos frames con
+un bloque desplazado 24 px, `generated=1`):
+
+```
+format=37 (RGBA8) dispatches=15
+out=57600 px mean=89.1 min=10 max=240  wall=49 ms
+```
+
+El frame generado coloca el bloque a **8 px** (A=0, B=24) y difiere de un cross-fade 50/50 en
+**46 niveles de media**: interpola movimiento, no mezcla. `lastGpuMs()` da 0 (sin perfil de GPU;
+usar `SYLUXIUM_MOTION_GPU_PROFILE=1` para medirlo).
+
+**Qué falta para usarlo en juegos**: el motor no captura ni presenta frames. Hace falta una **capa
+Vulkan** (o app) que:
+1. intercepte `vkQueuePresentKHR` y copie el frame a `ctx.input(k % 2)` (la API tiene
+   `exportable`, `exportInput/exportOutput/exportTimeline/exportConsumed` justo para compartir
+   imágenes y semáforos por fd con el VkDevice del juego, sin copias);
+2. llame a `ctx.submit(k)` (o `submit(k, count, times)` para pacing adaptativo);
+3. presente los `ctx.output(i)` en cadencia.
+
+Atajo posible: partir de la capa del port comunitario de MAKO (`Ken5998/mako-arm64`, GPL) y
+sustituir su motor de FG por Syluxium Motion. Sigue siendo un proyecto (sincronización y pacing),
+no un ajuste.
