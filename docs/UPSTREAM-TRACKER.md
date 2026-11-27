@@ -25,8 +25,12 @@ Estado a **27/11/2026**.
 | 2026-10-15 | MAKO (eugeniosegala) | https://github.com/eugeniosegala/MAKO/issues/60 | Issue | open (7 comentarios) | 2026-11-19 | Autor no trabaja ARM; seguimos con el port comunitario. Cerrar cuando el panel tenga soporte. |
 | 2026-11-22 | SkywardRecomp | https://github.com/Ramasanjaya22/SkywardRecomp/issues/18 | Issue | closed (arreglado en v0.8.3) | 2026-11-27 | Probar v0.8.4 SIN turnipfix en la Odin y confirmar. |
 | 2026-11-23 | SkywardRecomp | https://github.com/Ramasanjaya22/SkywardRecomp/issues/19 | Issue | open (3 comentarios) | 2026-11-27 | Esperando respuesta a nuestro update del 26/11; probar v0.8.4. |
-| 2026-11-27 | Panel de Control (Hooandee) | https://github.com/Hooandee/panel-de-control/pull/1524 | PR | open (0 comentarios) | 2026-11-27 | Esperando review del soporte aarch64 de MAKO. |
+| 2026-11-27 | Panel de Control (Hooandee) | https://github.com/Hooandee/panel-de-control/pull/1524 | PR | open (0 comentarios) | 2026-11-27 | Añadir al PR: coerción motor 4→5 al guardar y puente ppd→nivel TDP; luego comentar. |
 | 2026-09 | ArmadaOS | https://github.com/armada-os/armada/issues/402 | Issue | closed (resuelto) | 2026-09-25 | Nada; guardado como referencia de la carga de batería. |
+
+| 2026-11-27 | RustDesk | (por abrir) | Issue | por abrir | - | Reportar: AppImage aarch64 con GStreamer 1.16/libpipewire 0.2 crashea al capturar (SIGSEGV); el .deb va. |
+| 2026-11-27 | KDE | https://bugs.kde.org/show_bug.cgi?id=466276 | Bug | REOPENED | 2026-11-11 | Comentar nuestro caso (Odin 3, salida rotada, escala 1.5) y el workaround. |
+| 2026-11-27 | Peanuts (igawa6) | https://github.com/igawa6/peanuts-native/pull/130 | PR | open | 2026-11-27 | Comentar: falta xcb-util-cursor en la doc de Linux; idioma por DM_LANG en launcher Linux. |
 
 ## Tiendas de AppImages (revisar 28/11/2026)
 
