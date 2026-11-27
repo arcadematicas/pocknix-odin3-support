@@ -33,6 +33,33 @@ cd peanuts-native
 Sin Docker, el host se puede compilar en la propia consola siguiendo `linux/build.sh` y
 `peanuts/linux/build-appimage.sh` (necesita cmake/ninja/clang, cabeceras Vulkan y SDL3).
 
+## Requisitos en la consola (lo que faltaba y por qué no abría)
+
+El `AppRun` del AppImage es exigente y falla **en silencio** si falta algo:
+
+- **`zenity`** (`extra/zenity`): sin él `GUI=0` y el icono solo imprime el uso. Instalado.
+- **PyQt6** para el `python3` del sistema: el launcher Qt solo se abre si `python3 -c "import PyQt6.QtWidgets"`
+  funciona. El `python-pyqt6` del repo (6.12.1) no carga contra nuestro Qt 6.12.0
+  (`undefined symbol: QMenu::resizeEvent`), así que hay una **venv autocontenida** en
+  `~/Peanuts/venv` (`pip install PyQt6`, trae su propio Qt) y se pasa por `PYTHONPATH`.
+- **`xcb-util-cursor`** y **`qt6-wayland`**: sin el primero, el plugin `xcb` de Qt no carga; con el segundo
+  el launcher va por Wayland.
+- **`spirv-val`** (`extra/spirv-tools`): lo necesita la preparación.
+- **Python 3.12+**: la Odin tiene 3.14.10.
+- Los juegos se leen de **`~/Games`** (también medios extraíbles). El `.xci` puede estar enlazado desde
+  `~/Peanuts/games`.
+
+Todo eso queda encapsulado en **`~/Peanuts/peanutsnative.sh`**, que es lo que lanzan el `.desktop` de
+Plasma y el atajo de Steam:
+
+```sh
+#!/bin/sh
+export PATH=/usr/local/bin:/usr/bin:/bin
+export PYTHONPATH=/home/deck/Peanuts/venv/lib/python3.14/site-packages
+[ -n "$WAYLAND_DISPLAY" ] && export QT_QPA_PLATFORM=wayland
+exec /home/deck/Peanuts/PeanutsNative.AppImage "$@"
+```
+
 ## Cómo se juega
 
 1. Abrir **PeanutsNative** (Plasma o Steam).
