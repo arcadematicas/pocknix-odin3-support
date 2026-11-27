@@ -4,8 +4,9 @@
 # VA-API normal: libva lo detecta solo y las apps (Moonlight, mpv, ffmpeg, navegadores) pueden
 # decodificar por hardware. En la Odin expone H.264 (VLD + encode), HEVC Main/Main10, VP9 y AV1.
 #
-# Se compila con cdsp_vpp=disabled a proposito: el bloque CDSP (VPP en el DSP) exige GHC y no
-# aporta nada para decode/encode basico; gpu_copy=egl usa la GPU para la copia de superficies.
+# Se compila con cdsp_vpp y vulkan_vpp desactivados a proposito: el VPP (procesado de video en
+# el DSP/GPU) exige GHC y cabeceras Vulkan y no aporta nada para decode/encode basico;
+# gpu_copy=egl usa la GPU para copiar superficies.
 pkgname=qcom-va-driver
 pkgver=1.1.1
 pkgrel=1
@@ -25,7 +26,8 @@ build() {
     --prefix=/usr \
     --buildtype=release \
     -Dgpu_copy=enabled \
-    -Dcdsp_vpp=disabled
+    -Dcdsp_vpp=disabled \
+    -Dvulkan_vpp=disabled
   ninja -C build
 }
 
