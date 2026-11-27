@@ -230,6 +230,56 @@ def patch_frontend(plugin_dir: str) -> int:
 
 ARM64_PATCH = "/usr/share/pocknix/patches/panel-de-control-arm64-mako.patch"
 
+ENGINE4_OLD = """                line = options['engine']
+                self._verify_install(state, line)
+"""
+ENGINE4_NEW = """                line = options['engine']
+                if _arm() and line == 4:
+                    line = 5   # en ARM no hay renderer v4: todo va por la linea 5
+                self._verify_install(state, line)
+"""
+
+
+def ensure_engine4_coercion(plugin_dir: str) -> int:
+    """Motor 4 (LSFG) en aarch64: al guardar el perfil tambien debe ir por la linea 5.
+
+    En ARM no existe renderer v4 (Lossless.dll es x86): el arranque ya convierte 4->5, pero
+    `save` validaba la linea 4 y fallaba con `mako_not_installed` al elegir LSFG en el panel.
+    """
+    path = os.path.join(plugin_dir, "py_modules", "upscalers", "mako.py")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            src = fh.read()
+    except OSError:
+        return 0
+    if "line = 5   # en ARM no hay renderer v4" in src:
+        log("ok: coerción MAKO 4->5 al guardar perfil ya presente")
+        return 0
+    if src.count(ENGINE4_OLD) != 1:
+        log("AVISO: no encuentro el guardado del perfil de MAKO para la coerción 4->5")
+        return 0
+    new = src.replace(ENGINE4_OLD, ENGINE4_NEW)
+    try:
+        ast.parse(new, filename=path)
+    except SyntaxError as exc:
+        log(f"ERROR: la coerción 4->5 deja Python invalido: {exc}")
+        return 1
+    try:
+        shutil.copy2(path, path + ".bak-engine4")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(new)
+    except OSError as exc:
+        log(f"ERROR escribiendo la coerción 4->5: {exc}")
+        return 1
+    pyc_dir = os.path.join(plugin_dir, "py_modules", "upscalers", "__pycache__")
+    for pyc in glob.glob(os.path.join(pyc_dir, "mako*.pyc")):
+        try:
+            os.unlink(pyc)
+        except OSError:
+            pass
+    log(f"APLICADO: coerción MAKO 4->5 al guardar perfil en {path!r}")
+    return 0
+
 
 def patch_mako_arm64(plugin_dir: str) -> int:
     """MAKO en aarch64: aplica el parche de la build comunitaria (idempotente).
@@ -250,7 +300,7 @@ def patch_mako_arm64(plugin_dir: str) -> int:
         return 1
     if "ASSET5_ARM" in src:
         log("ok: mako arm64 ya aplicado en upscalers/mako.py")
-        return 0
+        return ensure_engine4_coercion(plugin_dir)
     if not os.path.isfile(ARM64_PATCH):
         log(f"ERROR: falta el parche {ARM64_PATCH!r}")
         return 1
@@ -287,7 +337,7 @@ def patch_mako_arm64(plugin_dir: str) -> int:
         except OSError:
             pass
     log(f"APLICADO: mako arm64 en {path!r} (backup: {backup!r})")
-    return 0
+    return ensure_engine4_coercion(plugin_dir)
 
 
 def main(argv: list[str]) -> int:

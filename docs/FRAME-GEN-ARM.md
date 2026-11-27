@@ -120,3 +120,24 @@ Vulkan** (o app) que:
 Atajo posible: partir de la capa del port comunitario de MAKO (`Ken5998/mako-arm64`, GPL) y
 sustituir su motor de FG por Syluxium Motion. Sigue siendo un proyecto (sincronización y pacing),
 no un ajuste.
+
+## MAKO 4 / LSFG en aarch64: no es posible (y el error `mako_not_installed`)
+
+MAKO 4 hace la generación de fotogramas con **`Lossless.dll` de Lossless Scaling**, que es un
+binario **x86 de Windows**: un proceso aarch64 no puede cargarlo. En ARM solo existe el renderer
+de la **línea 5** (modelo propio `mako-fg`, asset `Ken5998/mako-arm64`).
+
+Por eso el panel, en ARM:
+
+- pone `engine = 5` por defecto (`DEFAULTS`);
+- convierte motor 4 → 5 al **arrancar** (`_engine_of`);
+- instala siempre la línea 5 aunque se pida la 4 (`install`);
+- pero al **guardar el perfil** validaba la línea 4 → `mako_not_installed` al elegir "LSFG" en la UI.
+
+Arreglo (27/11/2026): `save` también convierte 4 → 5 en ARM. Está en
+`overlay/usr/local/bin/pocknix-panel-control-patch` (`ensure_engine4_coercion`), que se ejecuta al
+instalar/actualizar el plugin y es idempotente; deja `mako.py.bak-engine4` al aplicar. Con eso,
+elegir LSFG en la Odin guarda un perfil de MAKO 5 en vez de fallar.
+
+> `mako-cli inspect-dll` y `benchmark` sí pueden analizar la DLL en ARM (compatibilidad estructural
+> del modelo), pero eso no habilita el motor 4: no hay renderer v4 para aarch64.
