@@ -112,7 +112,7 @@ Contexto: el tema se diseñó para 1280×800 (Deck). La Odin es 1920×1080.
   3. Tipografías fijas (`17px`, `11px`) si quedan pequeñas.
   4. El **carousel** (juegos recientes) es la pieza más delicada: la animación orbital `ecl-orbit` y el `view-timeline` están pensados para 8 px/vh; en 1080p native el arco se hace más grande — normal, pero conviene mirarlo.
 - **Herramienta de ajuste preparada**: tema compañero `ZZZ Eclipse Odin 1080p` (carpeta + `theme.json` + `override.css` de plantilla con los knobs comentados). Se copia a `~/homebrew/themes/`, se activa después de Eclipse en CSS Loader, se edita el CSS y el watchdog recarga en caliente. El prefijo `ZZZ` garantiza que se inyecta al final y gana la cascada con `!important`. **No hace nada por defecto** (todo comentado) → riesgo cero si no se toca.
-- **Previsualización previa en el PC (sin tocar la Odin)**: descargado `CSSLoader.Desktop_1.2.1.AppImage` (76 MB, GPL-3.0, el visor oficial de DeckThemes). Con el Steam del PC en Big Picture se puede inyectar el tema y verlo en 1080p antes de tocar nada. (El PC es la mejor "maqueta" porque Steam ya está instalado; ver §7.)
+- **Previsualización previa en el PC (sin tocar la Odin)**: `CSSLoader.Desktop_1.2.1.AppImage` (76 MB, GPL-3.0, el visor oficial de DeckThemes; **no se guarda en el repo**, se descarga). Con el Steam del PC en Big Picture se puede inyectar el tema y verlo en 1080p antes de tocar nada. (El PC es la mejor "maqueta" porque Steam ya está instalado; ver §7.)
 - **Enfoque de despliegue seguro** (cuando la Odin vuelva):
   1. Instalar CSS Loader (zip) → activar → verificar logs.
   2. Copiar `Hooandee Eclipse/` a `~/homebrew/themes/` (por defecto viene **desactivado**, el plugin no lo enciende solo).
@@ -161,7 +161,7 @@ reference/themes/theme-eclipse/
 ├── assets/eclipse-cover.jpg                                ← portada oficial del tema
 ├── extra/
 │   ├── snapshot-mappings/css_translations-stable-20261007.json  ← mappings deckthemes (14 929)
-│   └── preview-desktop/CSSLoader.Desktop_1.2.1.AppImage    ← visor oficial (preview en PC)
+│   └── preview-desktop/                                    ← (visor oficial: descargar, no va en git)
 └── companion/ZZZ Eclipse Odin 1080p/                       ← plantilla de ajuste 1080p
     ├── theme.json
     └── override.css                                        ← knobs comentados (no-op por defecto)

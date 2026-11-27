@@ -21,3 +21,8 @@ node_modules/
 
 # sourcemaps de builds de decky (artefacto)
 packages/pocknix-decky/pocknix-control/dist/*.map
+
+# Limpieza 27/11/2026: binarios de referencia que no deben volver a git
+reference/**/*.AppImage
+reference/backups-kernel/
+packages/**/dist/*.map
