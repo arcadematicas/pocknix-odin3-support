@@ -34,14 +34,15 @@ An **[arcadematicas](https://github.com/arcadematicas)** project, built on
 | 🕹️ **Steam games** | Native **Steam ARM64** client in Game Mode (gamepadui) under **gamescope** (OGC build). UI at the right scale (`--fake-output-mm`). |
 | 🪟 **Windows games** | **ARM64 Proton + FEX**; **WProton** (`1.72`) to launch `.wsquashfs` titles with its runners. |
 | 🐧 **Linux PC ports** | **Decomps** launched from a Steam tile: AppImage/ELF/.sh under **Box64**, **.NET x86_64** runtime and **persistent** AppImage extraction (no `/tmp`). See the [manual](docs/guias/DECOMP-LINUX.md) and [compatibility matrix](docs/CALVOS-DECOMP-COMPAT.md). |
-| 🎮 **Emulation** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 aarch64 emulators (RetroArch + 200 cores, Dolphin, DuckStation, Cemu, Eden, MAME…). First install **without limits**: it resolves assets without the GitHub API. |
+| 🎮 **Emulation** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 aarch64 emulators (RetroArch + 200 cores, Dolphin, DuckStation, Cemu, Eden, MAME…). **New: PS2 with Armsx2 and PS3 with RPCS3** (portable ARM64 AppImages). First install **without limits**: it resolves assets without the GitHub API. |
+| 🎞️ **Frame generation** | **MAKO on aarch64** managed from the **Control Panel**: its own **MAKO FG** engine (×2/×3, adaptive) and **LSFG** using your **Lossless Scaling**, plus MAKO scaling. |
 | 🧩 **Plugins (Decky)** | **CalvOS Control** (TDP, manual HDR, OLED care, snapshots, updates), **CSS Loader** and the **Eclipse 0.3.2** theme (self-updating). |
 | 🖥️ **Desktop** | **KDE Plasma 6 (Wayland + Plasma Mobile)** with KScreen working. |
 | 🖼️ **Display** | **Hardware rotation** of the DPU (no GPU cost) and **HDR off by default** (keeps the QAM/MangoHUD on top; enable it by hand). |
 | 🔋 **Power** | Real **`deep`** suspend (**0.14 %/h** idle; a third of `s2idle`), battery-auth charging and estimated percentage. |
-| 🔊 **Audio & input** | LPASS stack + UCM (`SM8750AYN`) and **InputPlumber** (UART gamepad + paddles). |
+| 🔊 **Audio & input** | LPASS stack + UCM (`SM8750AYN`) with speaker/headphone verbs and automatic jack switching; **headphone buzz fixed** (class-H port SSP). **InputPlumber** (UART gamepad + paddles). |
 | 📦 **Updates** | **Own signed pacman repo on Cloudflare R2**, **no `[aur]`** → `pacman -Syu` brings everything (kernel, Mesa, Steam, Decky…). |
-| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.15`** (acceleration patches, Adreno 830 GPU, `ath12k` WCN7860 Wi-Fi, battery) + an **anti-bootloop** ath12k patch. |
+| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.15-8`** (acceleration patches, Adreno 830 GPU, `ath12k` WCN7860 Wi-Fi, battery) + an **anti-bootloop** ath12k patch. |
 
 ## 📥 Install
 
@@ -89,11 +90,11 @@ sudo pacman -Syu      # or from the QAM / CalvOS Control
   <img src="docs/screenshots/12-menu-inicio-plasma.jpg" width="49%">
 </p>
 
-## 📊 Status (2026-10-12)
+## 📊 Status (2026-11-27)
 
 | Area | Status |
 |---|---|
-| **Boot** | ✅ Kernel **7.2.15** + Odin 3 device tree |
+| **Boot** | ✅ Kernel **7.2.15-8** + Odin 3 device tree · **OpenABL 1.2 on both slots** |
 | **Rotation** | ✅ **Hardware** (DPU scanout) |
 | **Steam** | ✅ gamescope session + Steam gamepadui, UI at the right scale |
 | **HDR** | ⚠️ **OFF by default** (on purpose: with global HDR the QAM/MangoHUD fell behind). Manual toggle in CalvOS Control |

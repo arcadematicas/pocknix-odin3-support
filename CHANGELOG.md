@@ -14,6 +14,45 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 27 de noviembre 2026 — publicaciones, PS2/PS3, MAKO al día y flujo de upstream
+
+### ✅ Publicado y verificado en la consola
+`linux-pocknix-sm8750 7.2.15-8` (el arreglo del zumbido, `qcom,ssp-period` del class-H),
+`pocknix-bsp-sm8750 0.2.0-65`, `pocknix-decky 0.1.0-75`, `pocknix-system-overlay 0.1.0-15`,
+`deckstation-arm 1.0.0-30` y `pocknix-bsp-common 0.1.0-31` (rtkit con RR 81/80 + reglas polkit
+de ventilador y second-screen). Todo coincide entre R2 y lo instalado.
+
+### 🎮 DeckStation: PS2 y PS3
+- **Armsx2** (AppImage Linux arm64) en el catálogo (`updater/git.txt`), sistema `ps2` con comando
+  **“ARMSX2 (Standalone)”** y BIOS en su carpeta portable. Probado con ICO: arranca y crea su
+  config dentro del `.home`.
+- **RPCS3**: el comando de ES-DE apuntaba a un `rpcs3.AppImage` que no existe (el real lleva la
+  versión en el nombre) → ahora `./Apps/RPCS3/lanzar.sh --no-gui`. El firmware ya estaba en su
+  `.home` y arranca Saint Seiya.
+- Traído de `stshunz`: sistema **openbor** y `deckstation-cores-fetch` con **anybor** y los extras
+  `cores-2026-11` (el centro se había quedado atrás).
+
+### 🎞️ MAKO
+- **PR #1524** a Hooandee con el soporte aarch64 del panel (gzip + carpeta raíz, `set_game`,
+  `status()`); verificado sobre su `main` 0.97.0.
+- **LSFG comprobado sin jugar**: la CLI de MAKO inspecciona nuestro `Lossless.dll`
+  (300 recursos, fp16, `compatibility=structural-and-vulkan`) y pasa su test de calidad en el
+  Adreno 830. Benchmark a 1080p: **41,8 fps generados**.
+
+### 🧭 Flujo de trabajo nuevo
+- **`docs/UPSTREAM-TRACKER.md`**: registro de todo lo que abrimos/comentamos fuera (PR/issues) con
+  siguiente acción manual y estado automático.
+- Tres revisiones diarias en el sobremesa: **09:05** releases, **09:10** registro upstream,
+  **09:15** MAKO/panel (`asset` arm64 + ¿el parche aplica?). Avisan por Telegram.
+- **`docs/MAKO-UPDATE.md`**: runbook para versiones nuevas de MAKO o del Panel.
+
+### 🔬 Syluxium Motion (motor de LiquidFrames)
+Compila **nativo en aarch64** y funciona en Turnip (banco propio: frame interpolado, 46 niveles de
+diferencia media frente a un cross-fade). La app de LiquidFrames es cerrada y x86_64; queda
+vigilada como alternativa. Falta la capa de captura/pacing.
+
+---
+
 ## 📅 26 de noviembre 2026 — OpenABL volvía a Android: el slot, no la partición
 
 ### ✅ Solución: escribir los dos slots

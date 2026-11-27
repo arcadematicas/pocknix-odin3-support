@@ -35,15 +35,16 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 | 🕹️ **Juegos de Steam** | Cliente **Steam ARM64** nativo en modo juego (gamepadui) dentro de **gamescope** (base OGC). UI a escala correcta (`--fake-output-mm`). |
 | 🪟 **Juegos de Windows** | **Proton ARM64 + FEX**; **WProton** (`1.72`) para lanzar `.wsquashfs` con sus runners. |
 | 🐧 **Ports Linux de PC** | **Decomps** desde el icono de Steam: AppImage/ELF/.sh con **Box64**, runtime **.NET x86_64** y extracción **persistente** de AppImage (sin `/tmp`). Ver [manual](docs/guias/DECOMP-LINUX.md) y [matriz](docs/CALVOS-DECOMP-COMPAT.md). |
-| 🎮 **Emulación** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 emuladores aarch64 (RetroArch + 200 cores, Dolphin, Duckstation, Cemu, Eden, MAME…). Instalación inicial **sin límites**: resuelve los assets sin la API de GitHub. |
+| 🎮 **Emulación** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 emuladores aarch64 (RetroArch + 200 cores, Dolphin, Duckstation, Cemu, Eden, MAME…). **Nuevo**: **PS2 con Armsx2** y **PS3 con RPCS3** (AppImages ARM64, portables dentro de DeckStation). Instalación inicial **sin límites**: resuelve los assets sin la API de GitHub. |
+| 🎞️ **Frame generation** | **MAKO en aarch64** gestionado desde el **Panel de Control**: motor propio **MAKO FG** (×2/×3, modo adaptativo) y **LSFG** usando tu **Lossless Scaling**, más escalado MAKO. Sin instalar nada fuera del panel. |
 | 🩺 **Informes y captura** | **`calvos-doctor`** (informe redactado, se envía solo si tú quieres) + **`calvos-grabar`** (1080p60 con encoder **H.264 por hardware**) y **`dock-check`** para capturadora. |
 | 🧩 **Plugins (Decky)** | **CalvOS Control** (TDP, HDR a mano, OLED care, snapshots, updates), **CSS Loader** y el tema **Eclipse 0.3.2** (autoactualizable). |
 | 🖥️ **Escritorio** | **KDE Plasma 6 (Wayland + Plasma Mobile)** con KScreen funcionando. |
 | 🖼️ **Pantalla** | **Rotación por hardware** del DPU (sin coste de GPU) y **HDR apagado por defecto** (evita que el QAM/MangoHUD caigan detrás; se enciende a mano). |
 | 🔋 **Energía** | Suspensión **`deep` real** (**0,14 %/h** en reposo; un tercio de lo que gastaba `s2idle`), carga con autenticación de batería y % estimado. |
-| 🔊 **Audio y mandos** | Stack LPASS + UCM (`SM8750AYN`) y **InputPlumber** (gamepad UART + paddles). |
+| 🔊 **Audio y mandos** | Stack LPASS + UCM (`SM8750AYN`) con verbos **altavoz/auriculares** y switch automático del jack; **zumbido de auriculares corregido** (SSP del puerto class-H en el SoundWire). **InputPlumber** (gamepad UART + paddles). |
 | 📦 **Actualizaciones** | **Repo pacman propio en Cloudflare R2**, firmado y **sin `[aur]`** → `pacman -Syu` trae todo (kernel, Mesa, Steam, Decky…). |
-| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.15`** (parches de aceleración, GPU Adreno 830, WiFi `ath12k` WCN7860, batería, audio WCD939x) + parche **anti‑bucle** en ath12k. |
+| 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.15-8`** (parches de aceleración, GPU Adreno 830, WiFi `ath12k` WCN7860, batería, audio WCD939x) + parche **anti‑bucle** en ath12k. |
 
 ## 📥 Instalar
 
@@ -91,20 +92,21 @@ sudo pacman -Syu      # o desde el QAM / CalvOS Control
   <img src="docs/screenshots/12-menu-inicio-plasma.jpg" width="49%">
 </p>
 
-## 📊 Estado actual (28/10/2026)
+## 📊 Estado actual (27/11/2026)
 
 | Área | Estado |
 |---|---|
-| **Arranque** | ✅ Kernel **7.2.12-18** + DTS del Odin 3 · **red de seguridad** (guardia + par en `/flash`) |
+| **Arranque** | ✅ Kernel **7.2.15-8** + DTS del Odin 3 · **OpenABL 1.2 en los dos slots** · red de seguridad (guardia + par en `/flash`) |
 | **Rotación** | ✅ **Por hardware** (DPU en scanout) |
 | **Steam** | ✅ Sesión gamescope + Steam gamepadui, UI a escala correcta. Atajos no‑Steam estables (VDF en mayúsculas) |
 | **HDR** | ⚠️ **OFF por defecto** (a propósito: con HDR global el QAM/MangoHUD caían detrás). Toggle manual en CalvOS Control |
 | **Gráficos** | ✅ **Mesa 26.3.0** + Turnip propia + **Turnip de Valve** (`pocknix-vk-valve`, per‑game) |
 | **Refresco del panel** | ⚠️ 120 Hz por defecto; **60 Hz funciona si es el primer modo** (59,95 Hz medidos) pero aún **no conmuta en caliente** (`docs/REFRESH-60HZ-20261021.md`) |
-| **Emulación** | ✅ **DeckStation**: instalación inicial completa (**31/31**) con la API de GitHub agotada. Mandos de RetroArch por el pad virtual |
+| **Emulación** | ✅ **DeckStation**: instalación inicial completa (**31/31**) · **PS2 (Armsx2)** y **PS3 (RPCS3)** como AppImages ARM64 portables · mandos de RetroArch por el pad virtual |
 | **WProton** | ✅ **1.72** (`arm-2026-10-11a`) — runners por descargar en su menú |
 | **WiFi / BT** | ✅ `ath12k` WCN7860 + **parche anti‑bucle** (`0041b`) |
-| **Audio** | ✅ LPASS + UCM · **auriculares** con volumen real (`2109`), conmutación automática altavoz↔cascos y **micrófono** (`Mic` DMIC2/3 + `Headset` wcd939x en el UCM) |
+| **Audio** | ✅ LPASS + UCM · auriculares con volumen real y conmutación automática · **zumbido intermitente corregido** (`qcom,ssp-period` del class-H, kernel 8) · **micrófono** (DMIC2/3 + `Headset` wcd939x) |
+| **Frame generation** | ✅ **MAKO aarch64** desde el Panel: **MAKO FG** y **LSFG** (con tu Lossless Scaling), ×2/×3 y escalado · **LiquidFrames/Syluxium Motion**: motor MIT compilado en la Odin, capa pendiente |
 | **Mandos / batería** | ✅ InputPlumber (gamepad UART + paddles) · carga autenticada |
 | **Suspensión** | ✅ s2idle real **≈0,26 W** (63–70 mA medidos en batería) |
 | **Informes** | 🚀 **`calvOS-reports`** (repo público) + botón **"Enviar informe"** en CalvOS Control (tipo problema/sugerencia y áreas elegibles) |
