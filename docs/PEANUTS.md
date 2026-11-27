@@ -128,11 +128,16 @@ respondiera ahí, desactivar Steam Input **solo** para el atajo de Peanuts.
 | Lanzador con entorno | `~/Peanuts/peanutsnative.sh` | `PYTHONPATH` (PyQt6), Wayland y el filtro SDL del mando |
 | Entrada de Plasma | `~/.local/share/applications/peanutsnative.desktop` | La reescribe el `--install` de Peanuts: apunta al AppImage, no al wrapper |
 | Atajo de Steam | `shortcuts.vdf` (nombre `PeanutsNative`) | Exe = wrapper; LaunchOptions vacío |
-| Entorno de sesión | `~/.config/environment.d/10-calvos-gamepad.conf` y (imagen) `/etc/environment.d/10-calvos-gamepad.conf` | `SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001` |
+| Entorno de sesión | `~/.config/environment.d/10-calvos-gamepad.conf` y `/etc/environment.d/10-calvos-gamepad.conf` | El de `/etc` lo instala `calvos-peanuts`; `SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001` |
 
-Paquetes que necesita la imagen (ya añadidos a `devices/sm8750/packages.list`): `zenity`
-(selector de reserva y diálogos del AppRun), `spirv-tools` (`spirv-val` para la preparación),
-`xcb-util-cursor` (plugin xcb de Qt) y `qt6-wayland`. Python 3.12+ (la Odin tiene 3.14).
+Paquetes que necesita (dependencias de `calvos-peanuts`, y también en `devices/sm8750/packages.list`
+para que estén en la imagen): `zenity` (selector de reserva y diálogos del AppRun), `spirv-tools`
+(`spirv-val` para la preparación), `xcb-util-cursor` (plugin xcb de Qt) y `qt6-wayland`. Python 3.12+
+(la Odin tiene 3.14).
+
+Paquete: `packages/calvos-peanuts` instala `/usr/local/bin/peanutsnative`, la entrada de menú, el
+icono y `/etc/environment.d/10-calvos-gamepad.conf`. El **AppImage no va dentro** (se construye con
+`tools/peanuts-build.sh`), así que actualizar Peanuts es reconstruir el AppImage, no el paquete.
 
 **PyQt6**: el launcher solo se abre si `python3 -c "import PyQt6.QtWidgets"` funciona. El
 `python-pyqt6` del repo puede no casar con el Qt del sistema; la vía que usamos es PyQt6 de pip

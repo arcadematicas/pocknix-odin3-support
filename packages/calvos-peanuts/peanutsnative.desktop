@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PeanutsNative
+Comment=Switch nativo (Peanuts Native)
+Exec=/usr/local/bin/peanutsnative
+Icon=peanutsnative
+Terminal=false
+Categories=Game;

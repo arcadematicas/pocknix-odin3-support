@@ -1,0 +1,21 @@
+Peanuts Native (Switch nativo aarch64) en CalvOS
+=================================================
+
+Este paquete instala el lanzador y el entorno; el AppImage se construye aparte.
+
+  - Lanzador:      /usr/local/bin/peanutsnative   (menú > PeanutsNative)
+  - Entorno SDL:   /etc/environment.d/10-calvos-gamepad.conf
+  - Dependencias:  zenity, spirv-tools, xcb-util-cursor, qt6-wayland
+
+El AppImage del host Linux (rama del PR #130) se construye con Docker en un PC:
+
+  tools/peanuts-build.sh --deploy deck@<odin>
+
+y queda en ~/Peanuts/PeanutsNative.AppImage (el lanzador lo usa). Los juegos se preparan
+desde la ventana de Peanuts (necesitan las prod.keys del usuario) y viven en ~/Games/PeanutsNative.
+
+Idioma del juego: en ~/.config/peanutsnative/settings.env (todos) o en <titleID>.env (uno),
+añadir DM_LANG=es   (códigos: ja, en-US, en-GB, fr, fr-CA, de, it, es, es-419, nl, pt, pt-BR,
+ru, ko, zh-Hans, zh-Hant, pl, th). Se aplica al siguiente arranque.
+
+Documentación completa: docs/PEANUTS.md del repositorio pocknix-odin3-support.

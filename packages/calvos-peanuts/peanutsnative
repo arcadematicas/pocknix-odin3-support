@@ -1,0 +1,28 @@
+#!/bin/sh
+# Peanuts Native (Switch nativo aarch64) - lanzador de CalvOS.
+# El AppImage se construye aparte (tools/peanuts-build.sh) y vive en ~/Peanuts.
+APP="${PEANUTS_APPIMAGE:-$HOME/Peanuts/PeanutsNative.AppImage}"
+
+if [ ! -x "$APP" ]; then
+    msg="Falta el AppImage de Peanuts en $APP.
+Construyelo con tools/peanuts-build.sh (Docker) y copialo ahi.
+Ver docs/PEANUTS.md."
+    if command -v zenity >/dev/null 2>&1; then
+        zenity --error --title="Peanuts Native" --width=480 --text="$msg" 2>/dev/null
+    else
+        echo "$msg" >&2
+    fi
+    exit 1
+fi
+
+# Qt por Wayland si la sesion es Wayland (si ya viene fijado, se respeta).
+[ -n "${WAYLAND_DISPLAY:-}" ] && export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-wayland}"
+
+# En la Odin inputplumber captura el mando fisico: SDL debe usar su Xbox virtual. La sesion
+# ya lo trae por /etc/environment.d; esto cubre lanzamientos fuera de sesion. Si Steam ya
+# fijo su propia lista (modo juego), se respeta tal cual.
+if [ -z "${SDL_GAMECONTROLLER_IGNORE_DEVICES:-}" ]; then
+    export SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001
+fi
+
+exec "$APP" "$@"
