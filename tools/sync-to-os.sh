@@ -332,5 +332,5 @@ fi
 # sha256. Sin el, el build de imagen falla con un mensaje claro (build-packages.sh).
 if ! "${HERE}/tools/fetch-firmware.sh" "${OS}"; then
   echo "AVISO: no se pudo descargar el firmware propio (¿sin red?). El build de imagen lo necesitara:" >&2
-  echo "       ${HERE}/fetch-firmware.sh ${OS}" >&2
+  echo "       ${HERE}/tools/fetch-firmware.sh ${OS}" >&2
 fi
