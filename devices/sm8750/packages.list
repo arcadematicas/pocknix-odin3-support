@@ -19,3 +19,12 @@ libssc                # cliente del Sensor Core (ssccli: con esto se verifica qu
 libqrtr               # libqrtr de linux-msm (no esta en ALARM y pd-mapper la necesita)
 pd-mapper             # lee los .jsn y registra los PDs del DSP: sin el NO hay "sensor_pd"
 qcom-va-driver        # VA-API sobre iris V4L2 (video0/1): decode H.264/HEVC/VP9/AV1 + encode H.264/HEVC por hardware
+
+# --- Peanuts (Switch nativo aarch64) ------------------------------------------
+# AppImage del PR #130: necesita zenity (selector/diálogos del AppRun), spirv-val
+# (preparación de shaders), xcb-util-cursor y qt6-wayland (launcher Qt). PyQt6 va
+# aparte (pip; ver docs/PEANUTS.md).
+zenity
+spirv-tools
+xcb-util-cursor
+qt6-wayland

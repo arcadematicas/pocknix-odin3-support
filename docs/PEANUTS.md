@@ -117,3 +117,68 @@ PY
 
 En modo juego, Steam añade su propio pad virtual y su lista de ignorados: si Peanuts no
 respondiera ahí, desactivar Steam Input **solo** para el atajo de Peanuts.
+
+## Integración en CalvOS (estado 27/11/2026)
+
+| Pieza | Dónde | Nota |
+|---|---|---|
+| AppImage (host aarch64 del PR #130) | `~/Peanuts/PeanutsNative.AppImage` | Construido por nosotros (no hay release) |
+| Herramientas del packer | `~/.local/share/peanutsnative/packer/` | Se descargan solas en el primer Prepare (~130 MB + .NET) |
+| `.nup` + pack del juego | `~/Games/PeanutsNative/` | Por juego; el pack en `packs/<titleID>/` |
+| Lanzador con entorno | `~/Peanuts/peanutsnative.sh` | `PYTHONPATH` (PyQt6), Wayland y el filtro SDL del mando |
+| Entrada de Plasma | `~/.local/share/applications/peanutsnative.desktop` | La reescribe el `--install` de Peanuts: apunta al AppImage, no al wrapper |
+| Atajo de Steam | `shortcuts.vdf` (nombre `PeanutsNative`) | Exe = wrapper; LaunchOptions vacío |
+| Entorno de sesión | `~/.config/environment.d/10-calvos-gamepad.conf` y (imagen) `/etc/environment.d/10-calvos-gamepad.conf` | `SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001` |
+
+Paquetes que necesita la imagen (ya añadidos a `devices/sm8750/packages.list`): `zenity`
+(selector de reserva y diálogos del AppRun), `spirv-tools` (`spirv-val` para la preparación),
+`xcb-util-cursor` (plugin xcb de Qt) y `qt6-wayland`. Python 3.12+ (la Odin tiene 3.14).
+
+**PyQt6**: el launcher solo se abre si `python3 -c "import PyQt6.QtWidgets"` funciona. El
+`python-pyqt6` del repo puede no casar con el Qt del sistema; la vía que usamos es PyQt6 de pip
+autocontenido:
+
+```bash
+sudo python3 -m pip install --break-system-packages PyQt6
+# o, aislado:  python3 -m venv ~/Peanuts/venv && ~/Peanuts/venv/bin/pip install PyQt6
+```
+
+Si el import falla, el AppRun cae al selector zenity (funciona, pero sin ventana de juegos).
+
+## Compatibilidad de juegos
+
+Peanuts solo puede preparar un dump si la **versión del update** del `.xci`/`.nsp` coincide con una
+build del perfil `dm/games/<titleID>/game.tsv`. Herramienta:
+
+```bash
+tools/peanuts-roms.py /ruta/a/roms/switch     # en la consola (o con el disco por sshfs)
+# GB  VERS  PERFIL  ID  NOMBRE   (VERS=OK → preparable tal cual)
+```
+
+Necesita el AppImage extraído (`--appimage-extract` en `~/Peanuts/appdir`, usa su `nximport_cli`) y
+las `prod.keys`. Con `--any-version` (a mano en `peanuts_build.py`) se puede forzar otra versión,
+pero el perfil está afinado para la suya y fallará o se verá mal.
+
+## Actualizar Peanuts (runbook rápido)
+
+1. **Aviso**: `tools/watch-peanuts.py` (timer 09:00) vigila release, PR #130 y comentarios.
+2. **Construir** (PC con Docker, ~5 min tras la primera vez):
+   ```bash
+   tools/peanuts-build.sh --ref pr-linux-appimage --deploy deck@192.168.4.22
+   ```
+   Guarda el anterior como `PeanutsNative.AppImage.bak`, copia el nuevo y corre `--selftest`.
+3. **Validar**: selftest OK; `--list` (nº de hosts); abrir el launcher (Qt, no zenity); un juego ya
+   preparado; mando; rendimiento.
+4. **Rollback**: restaurar `PeanutsNative.AppImage.bak` (y `.desktop`/wrapper si cambiaron).
+5. **Si el PR se fusiona en `igawa6/peanuts-native`**: `--ref main` y revalidar; actualizar
+   `docs/UPSTREAM-TRACKER.md` y `CHANGELOG.md`.
+6. **No** hace falta re-preparar los juegos al actualizar el AppImage (los packs no cambian salvo que
+   Peanuts lo diga); sí conviene probar uno.
+
+## Límites conocidos
+
+- Solo Linux **aarch64** (Odin 3, handhelds ARM). En x86 no hay host Linux.
+- Cada juego se prepara con las `prod.keys` del usuario y ocupa 5-20 GB (`.nup` + pack + shaders).
+- La preparación tarda 10-40 min (shaders). La primera vez descarga herramientas (~130 MB + .NET).
+- Sin HDR; vídeo Vulkan (Turnip). El motor de FG de MAKO no interviene aquí.
+- Los packs llevan el juego descifrado: no se distribuyen.
