@@ -27,3 +27,10 @@ Estado a **27/11/2026**.
 | 2026-11-23 | SkywardRecomp | https://github.com/Ramasanjaya22/SkywardRecomp/issues/19 | Issue | open (3 comentarios) | 2026-11-27 | Esperando respuesta a nuestro update del 26/11; probar v0.8.4. |
 | 2026-11-27 | Panel de Control (Hooandee) | https://github.com/Hooandee/panel-de-control/pull/1524 | PR | open (0 comentarios) | 2026-11-27 | Esperando review del soporte aarch64 de MAKO. |
 | 2026-09 | ArmadaOS | https://github.com/armada-os/armada/issues/402 | Issue | closed (resuelto) | 2026-09-25 | Nada; guardado como referencia de la carga de batería. |
+
+## Tiendas de AppImages (revisar 28/11/2026)
+
+- **metalmike17/appimage-vault** — https://github.com/metalmike17/appimage-vault: catálogo de
+  AppImages (aarch64/x86). Tarea: ver qué sirve para la Odin (emuladores, herramientas), comparar
+  con nuestra tienda (`calvos-appman` / `pocknix-decky` store) y valorar integrar el catálogo o
+  sacar paquetes sueltos (`calvos-*`).

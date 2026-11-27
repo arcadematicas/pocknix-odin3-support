@@ -187,3 +187,49 @@ pero el perfil está afinado para la suya y fallará o se verá mal.
 - La preparación tarda 10-40 min (shaders). La primera vez descarga herramientas (~130 MB + .NET).
 - Sin HDR; vídeo Vulkan (Turnip). El motor de FG de MAKO no interviene aquí.
 - Los packs llevan el juego descifrado: no se distribuyen.
+
+## Almacenamiento en la SD (Odin con tarjeta de 1 TB)
+
+La SD se monta en `/mnt/sd-legacy` (subvol `@`) y tiene binds en `/opt/decomps`,
+`/opt/deckstation`, `/home/games/linux` (este último es bind de `/opt/decomps`). Los juegos y
+packs de Peanuts viven en:
+
+```
+/mnt/sd-legacy/opt/decomps/peanuts   ==   /home/games/linux/peanuts
+```
+
+**`~/Games` tiene que ser un bind mount de esa carpeta, NO un symlink**: el `games()` del AppRun
+usa `find "$HOME/Games" … -name pack.tsv` y `find` no sigue el symlink, así que los packs
+desaparecen de `--games` (la ventana Qt sí los vería, pero el lanzamiento por pack no). En
+`/etc/fstab`:
+
+```
+/mnt/sd-legacy/opt/decomps/peanuts /home/deck/Games none bind,nofail,x-systemd.requires-mounts-for=/mnt/sd-legacy 0 0
+```
+
+Verificación: `find ~/Games -maxdepth 5 -name pack.tsv` debe encontrar el pack, y
+`peanutsnative --games` listarlo con `… yes`.
+
+## Idioma del juego (DM_LANG)
+
+El runtime lee `DM_LANG` al arrancar (códigos: `ja`, `en-US`, `en-GB`, `fr`, `fr-CA`, `de`,
+`it`, `es`, `es-419`, `nl`, `pt`, `pt-BR`, `ru`, `ko`, `zh-Hans`, `zh-Hant`, `pl`, `th`).
+En Linux no hay pantalla de ajustes (es de la app Android), así que se pone en:
+
+- `~/.config/peanutsnative/settings.env` → todos los juegos;
+- `~/.config/peanutsnative/<titleID>.env` → solo ese juego (manda sobre el anterior).
+
+```
+DM_LANG=es
+```
+
+Se aplica en el siguiente arranque; el log lo confirma con `language: DM_LANG=es is es`. Si el
+juego no tiene ese idioma, usa uno de los suyos.
+
+## En un PC (x86_64)
+
+No hay host Linux x86_64 de Peanuts (el del PR #130 es **aarch64**; los otros clientes son las
+apps Android/iOS). El `.nup` y el pack son datos portables, pero sin `nxhost` x86 no arrancan.
+En el PC, para esos mismos juegos, usa un emulador con el `.xci`/`.nsp` (Citron/Suyu/Eden).
+En otro handheld ARM: copia el AppImage + `~/Games/PeanutsNative` (packs y `.nup`); las
+`prod.keys` solo hacen falta para preparar, no para jugar.
