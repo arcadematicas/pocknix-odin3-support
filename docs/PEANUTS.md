@@ -78,3 +78,42 @@ MK8D, TotK, BotW, Pokémon Diamante Brillante/Escarlata y Super Mario RPG; vario
   reconstruir.
 - Nada de esto va al sistema ni a DeckStation: vive en `~/Peanuts` y sus carpetas de usuario.
 - Vigilancia: `tools/watch-peanuts.py` (release, PR #130 e issue #3250 de `seedds/nxnative`).
+
+## Mando en la Odin 3 (inputplumber) — 27/11/2026
+
+Síntoma: Peanuts detecta el mando (`AYN Odin3 Gamepad` como jugador 1) pero el juego no
+responde a ningún botón.
+
+Causa: en la Odin, **inputplumber** captura el mando físico (`2020:3001`, `event6`) y solo
+entrega eventos por su **Xbox 360 virtual** (`045e:028e`). Peanuts veía los dos, asignaba el
+físico (sin eventos, capturado) como jugador 1 y el virtual como jugador 2; el juego lee al
+jugador 1.
+
+Solución: decirle a SDL que ignore el físico, en el wrapper de Peanuts:
+
+```sh
+export SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001
+```
+
+y, para toda la sesión (cualquier app SDL), en `~/.config/environment.d/10-calvos-gamepad.conf`:
+
+```
+SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001
+```
+
+Comprobación sin abrir el juego (SDL del sistema, el mismo que usa Peanuts):
+
+```bash
+python3 - <<'PY'
+import ctypes
+s = ctypes.CDLL("libSDL3.so.0")
+s.SDL_InitSubSystem(0x2000)
+n = ctypes.c_int(0)
+ids = s.SDL_GetGamepads(ctypes.byref(n))
+print("mandos:", n.value, [s.SDL_GetGamepadNameForID(ids[i]) for i in range(n.value)])
+PY
+# sin filtro: 2 (AYN + Xbox virtual); con el filtro: 1 (Xbox virtual)
+```
+
+En modo juego, Steam añade su propio pad virtual y su lista de ignorados: si Peanuts no
+respondiera ahí, desactivar Steam Input **solo** para el atajo de Peanuts.
