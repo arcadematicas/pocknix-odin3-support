@@ -25,6 +25,7 @@ psx|{HOME:Duckstation}/.local/share/duckstation/bios
 # --- PlayStation 2 (core PCSX2 de RetroArch: busca en system/pcsx2/bios) ---
 ps2|{HOME:RetroArch}/.config/retroarch/system/pcsx2/bios
 ps2|{HOME:Pcsx2}/.config/PCSX2/bios
+ps2|{HOME:Armsx2}/.config/ARMSX2/bios
 
 # --- Dreamcast (Flycast espera dc_boot.bin / dc_flash.bin en system/dc) ---
 dreamcast|{HOME:RetroArch}/.config/retroarch/system/dc
