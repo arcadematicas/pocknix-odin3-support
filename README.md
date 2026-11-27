@@ -37,6 +37,7 @@ Proyecto de **[arcadematicas](https://github.com/arcadematicas)**, construido so
 | 🐧 **Ports Linux de PC** | **Decomps** desde el icono de Steam: AppImage/ELF/.sh con **Box64**, runtime **.NET x86_64** y extracción **persistente** de AppImage (sin `/tmp`). Ver [manual](docs/guias/DECOMP-LINUX.md) y [matriz](docs/CALVOS-DECOMP-COMPAT.md). |
 | 🎮 **Emulación** | **DeckStation** (`/opt/deckstation`): **ES-DE** + ~30 emuladores aarch64 (RetroArch + 200 cores, Dolphin, Duckstation, Cemu, Eden, MAME…). **Nuevo**: **PS2 con Armsx2** y **PS3 con RPCS3** (AppImages ARM64, portables dentro de DeckStation). Instalación inicial **sin límites**: resuelve los assets sin la API de GitHub. |
 | 🎞️ **Frame generation** | **MAKO en aarch64** gestionado desde el **Panel de Control**: motor propio **MAKO FG** (×2/×3, modo adaptativo) y **LSFG** usando tu **Lossless Scaling**, más escalado MAKO. Sin instalar nada fuera del panel. |
+| 🎥 **Vídeo** | **Decodificación por hardware (VA-API)** sobre el decodificador **iris** (`/dev/video0-1`): H.264/HEVC/VP9/AV1 y encode H.264/HEVC. Para **Moonlight**, mpv y navegadores. |
 | 🩺 **Informes y captura** | **`calvos-doctor`** (informe redactado, se envía solo si tú quieres) + **`calvos-grabar`** (1080p60 con encoder **H.264 por hardware**) y **`dock-check`** para capturadora. |
 | 🧩 **Plugins (Decky)** | **CalvOS Control** (TDP, HDR a mano, OLED care, snapshots, updates), **CSS Loader** y el tema **Eclipse 0.3.2** (autoactualizable). |
 | 🖥️ **Escritorio** | **KDE Plasma 6 (Wayland + Plasma Mobile)** con KScreen funcionando. |

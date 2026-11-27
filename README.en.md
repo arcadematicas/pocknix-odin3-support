@@ -40,6 +40,7 @@ An **[arcadematicas](https://github.com/arcadematicas)** project, built on
 | 🖥️ **Desktop** | **KDE Plasma 6 (Wayland + Plasma Mobile)** with KScreen working. |
 | 🖼️ **Display** | **Hardware rotation** of the DPU (no GPU cost) and **HDR off by default** (keeps the QAM/MangoHUD on top; enable it by hand). |
 | 🔋 **Power** | Real **`deep`** suspend (**0.14 %/h** idle; a third of `s2idle`), battery-auth charging and estimated percentage. |
+| 🎥 **Video** | **Hardware decoding (VA-API)** on the **iris** decoder (`/dev/video0-1`): H.264/HEVC/VP9/AV1, H.264/HEVC encode. For **Moonlight**, mpv and browsers. |
 | 🔊 **Audio & input** | LPASS stack + UCM (`SM8750AYN`) with speaker/headphone verbs and automatic jack switching; **headphone buzz fixed** (class-H port SSP). **InputPlumber** (UART gamepad + paddles). |
 | 📦 **Updates** | **Own signed pacman repo on Cloudflare R2**, **no `[aur]`** → `pacman -Syu` brings everything (kernel, Mesa, Steam, Decky…). |
 | 🧱 **Kernel** | **`linux-pocknix-sm8750 7.2.15-8`** (acceleration patches, Adreno 830 GPU, `ath12k` WCN7860 Wi-Fi, battery) + an **anti-bootloop** ath12k patch. |
