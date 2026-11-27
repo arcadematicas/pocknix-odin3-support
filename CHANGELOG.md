@@ -46,6 +46,14 @@ de ventilador y second-screen). Todo coincide entre R2 y lo instalado.
   **09:15** MAKO/panel (`asset` arm64 + ¿el parche aplica?). Avisan por Telegram.
 - **`docs/MAKO-UPDATE.md`**: runbook para versiones nuevas de MAKO o del Panel.
 
+### 🎞️ Decodificación de vídeo por hardware (nuevo paquete `qcom-va-driver`)
+El SM8750 ya exponía `/dev/video0` (`qcom-iris-decoder`) y `/dev/video1` (`qcom-iris-encoder`), pero
+faltaba el puente a VA-API. Se empaqueta `qcom-va-driver` (MIT, radxa, commit `0980a1d`), que instala
+`/usr/lib/dri/qcom_drv_video.so`. Verificado en la Odin: `vainfo` da *Iris V4L2 stateful VA-API
+backend* con **H.264** (decode + encode), **HEVC Main/Main10**, **VP9** y **AV1**; `ffmpeg
+-hwaccel vaapi` decodifica 150 frames de 720p con 0 errores. Sirve para Moonlight, vídeo y captura.
+Detalle y pendientes de probar: `docs/HW-DECODE-VAAPI.md`.
+
 ### 🔬 Syluxium Motion (motor de LiquidFrames)
 Compila **nativo en aarch64** y funciona en Turnip (banco propio: frame interpolado, 46 niveles de
 diferencia media frente a un cross-fade). La app de LiquidFrames es cerrada y x86_64; queda
