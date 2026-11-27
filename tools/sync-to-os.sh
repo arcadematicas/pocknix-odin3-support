@@ -107,6 +107,7 @@ mirror "packages/pocknix-bootloader-sm8750" "packages/soc/pocknix-bootloader-sm8
 mirror "packages/gamescope-session"       "packages/shared/gamescope-session"
 mirror "packages/pocknix-kernel-guard"    "packages/shared/pocknix-kernel-guard"
 mirror "packages/gamescope-session-steam" "packages/shared/gamescope-session-steam"
+mirror "packages/qcom-va-driver"          "packages/shared/qcom-va-driver"
 
 # --- our files that the build copies verbatim into the rootfs ----------------
 overlay "overlay" "overlay"

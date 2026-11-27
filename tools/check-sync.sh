@@ -107,6 +107,7 @@ cmp_tree "${HERE}/packages/shared/pocknix-power-profiles" "${OS}/packages/shared
 # deckstation-arm: al launcher le faltaba el fix de SDL y al setup el de libXss, y
 # check-sync decia OK -> la imagen habria salido con ES-DE en negro desde Game Mode).
 cmp_tree "${HERE}/packages/deckstation-arm"   "${OS}/packages/shared/deckstation-arm"
+cmp_tree "${HERE}/packages/qcom-va-driver"        "${OS}/packages/shared/qcom-va-driver"
 cmp_tree "${HERE}/packages/python-pygame-ce"  "${OS}/packages/shared/python-pygame-ce"
   cmp_tree "${HERE}/packages/suyu-libretro"     "${OS}/packages/shared/suyu-libretro"
   cmp_tree "${HERE}/packages/vboycolor-libretro" "${OS}/packages/shared/vboycolor-libretro"
