@@ -1988,6 +1988,7 @@
         <fullname>Sony PlayStation 2</fullname>
         <path>%ROMPATH%/ps2</path>
         <extension>.arcadedef .bin .BIN .chd .CHD .ciso .CISO .cso .CSO .dump .DUMP .elf .ELF .gz .GZ .m3u .M3U .mdf .MDF .img .IMG .iso .ISO .isz .ISZ .ngr .NRG .zso .ZSO</extension>
+        <command label="ARMSX2 (Standalone)">./Apps/Armsx2/lanzar.sh %ROM%</command>
         <command label="ARMSX2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/armsx2_libretro.so %ROM%</command>
         <command label="LRPS2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx2_libretro.so %ROM%</command>
         <command label="PCSX2">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/pcsx2_libretro.so %ROM%</command>
@@ -2005,7 +2006,7 @@
         <path>%ROMPATH%/ps3</path>
         <extension>.desktop .ps3 .PS3 .ps3dir .PS3DIR .psn .PSN .iso .ISO</extension>
         <command label="RPCS3 PSN (Standalone)">%EMULATOR_RPCS3% --no-gui ./ROMs/ps3/dev_hdd0/game/%INJECT%=%BASENAME%.psn</command>
-        <command label="RPCS3 Directory (Standalone)">./Apps/RPCS3/rpcs3.AppImage --no-gui %ROM%</command>
+        <command label="RPCS3 Directory (Standalone)">./Apps/RPCS3/lanzar.sh --no-gui %ROM%</command>
         <platform>ps3</platform>
         <theme>ps3</theme>
     <command label="RPCS3 Shortcut (Standalone)">%ENABLESHORTCUTS% %EMULATOR_OS-SHELL% %ROM%</command>
@@ -3026,6 +3027,15 @@
         <command label="Fuse (Standalone)">%EMULATOR_FUSE% %ROM%</command>
         <platform>zxspectrum</platform>
         <theme>zxspectrum</theme>
+    </system>
+    <system>
+        <name>openbor</name>
+        <fullname>OpenBOR</fullname>
+        <path>%ROMPATH%/openbor</path>
+        <extension>.pak .PAK .spk .SPK .anybor .ANYBOR .zip .ZIP</extension>
+        <command label="OpenBOR (AnyBOR)">%EMULATOR_RETROARCH% -L %CORE_RETROARCH%/anybor_libretro.so %ROM%</command>
+        <platform>openbor</platform>
+        <theme>arcade</theme>
     </system>
     <system>
         <name>openrom</name>

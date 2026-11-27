@@ -30,7 +30,7 @@ ARKOS_COMMIT="913e84e8371aa252e1c520729fba04bb6a8bc1f1"
 ARKOS_BASE="https://raw.githubusercontent.com/christianhaitian/retroarch-cores/${ARKOS_COMMIT}/aarch64"
 BUILDBOT_BASE="https://buildbot.libretro.com/nightly/linux/aarch64/latest"
 # Release con los cores que no publica nadie (compilados por el proyecto).
-EXTRAS_BASE="${DECKSTATION_EXTRAS_BASE:-https://github.com/arcadematicas/deckstation-cores/releases/download/cores-2026-09}"
+EXTRAS_BASE="${DECKSTATION_EXTRAS_BASE:-https://github.com/arcadematicas/deckstation-cores/releases/download/cores-2026-11}"
 INFO_BASE="https://raw.githubusercontent.com/libretro/libretro-super/master/dist/info"
 
 # Los .info de estos cores vienen de libretro-super (RetroArch los usa para
@@ -127,12 +127,29 @@ CORES_BUILDBOT=(
 CORES_EXTRAS=(
     azahar
     bsnes_hd_beta
+    anybor
 )
+
+bajar_info() {  # bajar_info <nombre> <base_url>
+    # El .info (nombre del core y opciones en RetroArch). Primero el release
+    # propio (es la version exacta del .so); libretro-super como respaldo.
+    # El de libretro-super puede ir por detras (p. ej. anybor sin .anybor).
+    local nombre="$1" base="$2"
+    [ "$INFO_EXTRA" = 1 ] || return 0
+    [ -e "${CORES_DIR}/${nombre}_libretro.info" ] && return 0
+    curl -fsSL --connect-timeout 20 -o "${CORES_DIR}/${nombre}_libretro.info" \
+        "${base}/${nombre}_libretro.info" 2>/dev/null \
+      || curl -fsSL --connect-timeout 20 -o "${CORES_DIR}/${nombre}_libretro.info" \
+        "${INFO_BASE}/${nombre}_libretro.info" 2>/dev/null \
+      || rm -f "${CORES_DIR}/${nombre}_libretro.info"
+}
 
 descargar() {  # descargar <nombre> <base_url> <etiqueta>
     local nombre="$1" base="$2" etiqueta="$3"
     local dst="${CORES_DIR}/${nombre}_libretro.so"
     if [ -e "$dst" ]; then
+        # El core ya esta, pero puede faltar el .info de una instalacion previa.
+        [ "$DRY" = 1 ] || bajar_info "$nombre" "$base"
         echo "skip"
         return 0
     fi
@@ -160,9 +177,7 @@ descargar() {  # descargar <nombre> <base_url> <etiqueta>
         fi
     fi
     if [ "$ok" = 1 ]; then
-        # El .info (nombre del core y opciones en RetroArch)
-        [ "$INFO_EXTRA" = 1 ] && [ ! -e "${CORES_DIR}/${nombre}_libretro.info" ] && \
-            curl -fsSL --connect-timeout 20 -o "${CORES_DIR}/${nombre}_libretro.info" "${INFO_BASE}/${nombre}_libretro.info" 2>/dev/null
+        bajar_info "$nombre" "$base"
         rm -rf "$tmp"
         echo "ok"
         return 0

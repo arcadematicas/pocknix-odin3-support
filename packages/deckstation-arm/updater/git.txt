@@ -86,6 +86,11 @@ https://buildbot.libretro.com/nightly/linux/aarch64/RetroArch.7z
 # https://github.com/pkgforge-dev/PCSX2-AppImage-Enhanced/releases
 # SUPER-ZSNES
 # https://github.com/pkgforge-dev/SUPER-ZSNES-AppImage/releases
+# Armsx2 (PS2, ARM64: el asset bueno es ARMSX2-*-Linux-arm64.AppImage; el APK
+# y los tarballs SDL/libretro tambien llevan "arm64", pero el updater puntua mas
+# el .AppImage y descarta "android")
+Armsx2
+https://github.com/ARMSX2/ARMSX2/releases
 # RPCS3 (builds ARM64 oficiales: rpcs3-v*_linux_aarch64.AppImage)
 RPCS3
 https://github.com/RPCS3/rpcs3-binaries-linux-arm64/releases
