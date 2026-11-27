@@ -28,8 +28,8 @@ SELECT = "/usr/bin/pocknix-desktop-select"
 SWITCH = "/usr/bin/steamos-session-select"
 
 # Solo estos dos existen en la consola; el resto de sesiones wayland no nos vale.
-FLAVOURS = ("plasma", "plasma-mobile")
-DEFAULT = "plasma-mobile"
+FLAVOURS = ("plasma",)  # Plasma Mobile roto en este stack: fuera (27/11/2026)
+DEFAULT = "plasma"
 
 # uid de `deck` (fransis=1000, deck=1001) -> runtime de PipeWire/wayland/D-Bus.
 DECK_RUNTIME = "/run/user/1001"

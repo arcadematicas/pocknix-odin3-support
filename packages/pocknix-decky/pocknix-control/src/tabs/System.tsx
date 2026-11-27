@@ -21,7 +21,6 @@ import type { Config, OledCareStatus } from "../types";
 // Sabores de escritorio instalados en la consola (backend: py_modules/desktop.py).
 const SABORES: Record<string, string> = {
   plasma: "Plasma de escritorio",
-  "plasma-mobile": "Plasma Mobile",
 };
 
 // Areas del informe. "logs" es la pesada: apagada por defecto para que enviar sea rapido.
@@ -117,7 +116,7 @@ export function System({ config, setConfig }: {
 
   // Al cambiar de escritorio Steam se cierra y este plugin muere con el: no hay
   // "listo" que mostrar, solo el aviso de que se esta cerrando.
-  const cambiarAEscritorio = async (name: "plasma" | "plasma-mobile") => {
+  const cambiarAEscritorio = async (name: "plasma") => {
     setCambiando(true);
     setFallo("");
     try {
@@ -244,11 +243,6 @@ export function System({ config, setConfig }: {
         <PanelSectionRow>
           <Button onClick={() => cambiarAEscritorio("plasma")} disabled={cambiando}>
             Cambiar a Plasma (escritorio)
-          </Button>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <Button onClick={() => cambiarAEscritorio("plasma-mobile")} disabled={cambiando}>
-            Cambiar a Plasma Mobile
           </Button>
         </PanelSectionRow>
         <PanelSectionRow>

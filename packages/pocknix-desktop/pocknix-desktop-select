@@ -25,6 +25,10 @@ needs() {
 }
 
 usable() {
+  # Plasma Mobile arranca kwin sin shell usable en este stack (27/11/2026): se queda
+  # fuera de la lista aunque el .desktop exista, para que nadie pueda dejar la consola
+  # sin escritorio. El sabor de escritorio sigue siendo `plasma`.
+  case "$1" in plasma-mobile) return 1 ;; esac
   local f="${SESSIONS}/$1.desktop" try req
   [ -r "${f}" ] || return 1
   [ -n "$(key "${f}" Exec)" ] || return 1

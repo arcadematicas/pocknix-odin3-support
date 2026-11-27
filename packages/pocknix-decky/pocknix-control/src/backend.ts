@@ -40,7 +40,7 @@ export interface SystemStatus { profile: string | null; profiles: { id: string; 
 export const systemStatus = () => call<[], SystemStatus>("system_status");
 
 // Escritorio: sabor de Plasma que se abre al salir del modo juego (plasma |
-// plasma-mobile). El switch cierra Steam, asi que la UI no debe esperar nada mas.
+// el sabor elegido). El switch cierra Steam, asi que la UI no debe esperar nada mas.
 export const desktopFlavour = () => call<[], string>("desktop_flavour");
 export const setDesktopFlavour = (name: string) => call<[string], string>("set_desktop_flavour", name);
 export const switchToDesktop = (name: string) => call<[string], boolean>("switch_to_desktop", name);
