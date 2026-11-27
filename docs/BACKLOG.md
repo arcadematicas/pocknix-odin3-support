@@ -8,6 +8,20 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 
 ---
 
+## 0. Como se trabaja (para no perder nada)
+
+- **Fransis pide en el chat**, en lenguaje normal; no hace falta que consulte nada. Alfred lo
+  apunta aqui (si es trabajo nuestro) o en `docs/UPSTREAM-TRACKER.md` (si es en un repo ajeno),
+  con siguiente accion. Si es una idea sin fecha, va a **Ideas** al final.
+- **Para consultar**: solo hay dos sitios. `docs/BACKLOG.md` = lo que debemos hacer.
+  `docs/UPSTREAM-TRACKER.md` = lo que hemos abierto/comentado fuera y en que estado esta
+  (`Depende de: ellos / nosotros / hecho`).
+- Al **empezar una sesion** se lee el backlog; al **cerrar algo**, se tacha/mueve al historial y
+  se commit. Nada se queda solo en la conversacion.
+
+
+---
+
 ## 1. Odin 3 — pruebas en la consola
 
 - [ ] **(F)** Peanuts: abrir launcher, ver Metroid / Astral Chain / Echoes of Wisdom, preparar uno
@@ -77,3 +91,9 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 - 09:00 `watch-peanuts.py` · 09:05 `watch-releases.py` · 09:10 `upstream-tracker.py` ·
   09:15 `mako-check.sh` → Telegram. Cada aviso se traslada aquí o se cierra.
 - Al empezar una sesión: leer este backlog, elegir 1-2 puntos y actualizarlo al terminar.
+
+## 6. Ideas (sin fecha)
+
+- Tienda de AppImages: revisar `metalmike17/appimage-vault` e integrar lo que sirva.
+- Paquete propio de PyQt6 (`calvos-pyqt6`) para no depender de pip.
+- Puente Plasma -> perfil de energia para el resto de dispositivos ARM (hoy es de la Odin).
