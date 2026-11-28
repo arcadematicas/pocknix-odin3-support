@@ -12,7 +12,7 @@ lo que es acción nuestra; así no se confunde "abierto" con "pendiente de nosot
    avisa por Telegram si cambia algo (estado, comentarios, `updated_at`). No edita este fichero.
 3. **`Depende de`**: `ellos` = esperando su respuesta; `nosotros` = acción nuestra pendiente;
    `hecho` = cerrado/mergeado, se puede archivar.
-4. Estado a **27/11/2026, 23:30**.
+4. Estado a **28/11/2026, 20:30**.
 
 | Fecha | Proyecto | Enlace | Tipo | Estado hoy | Depende de | Siguiente acción |
 |---|---|---|---|---|---|---|
@@ -27,6 +27,8 @@ lo que es acción nuestra; así no se confunde "abierto" con "pendiente de nosot
 | 2026-11-27 | Armada / ROCKNIX | (por comentar) | Issue/comentario | — | nosotros | Compartir el fix del zumbido: `qcom,ssp-period = <6>` + `pcm-ports-mask = <0x204>` en `&swr1` (docs/AUDIO-ZUMBIDO-20261126.md). |
 | 2026-09 | ArmadaOS | https://github.com/armada-os/armada/issues/402 | Issue | **closed** (resuelto) | hecho | Nada; referencia de la carga de batería. |
 | 2026-11-28 | SymphonyRecomp | https://github.com/BlackLabelHQ/SymphonyRecomp/issues/178 | Issue | open · 0 comentarios · 28/11 | ellos | v1.2.0p: franja verde arriba en la Odin (Box64/Turnip); en PC no aparece y el shader viejo crashea. Esperar respuesta; mientras, valorar volver a 0.5.1b. |
+| 2026-11-28 | ReTri (peiikai) | https://github.com/peiikai/ReTri/issues/137 (+ #138, #134) | Issue (referencia) | open · #137 5 comentarios · #138 5 · 28/11 | nosotros | Reportar la build **ARM nightly** en la Odin: glitch de textura (`[tex] type mismatch`) y cuelgue con el audio siguiendo. Adjuntar `ReTri-*.log`/`eowrecomp.log` + specs. Ver `docs/RETRI-ARM-20261128.md`. |
+| 2026-11-28 | Peanuts (igawa6) | https://github.com/igawa6/peanuts-native/issues/7 | Issue (referencia) | **closed** (v0.1.1) | hecho | EoW crasheaba sin las fuentes de consola; importado el firmware 22.1.0 con `nximport_cli fonts` + `DM_FONT_DIR`. Falta comentar en el **PR #130** que el launcher Linux no tiene pantalla de firmware. |
 
 ## Tiendas de AppImages (revisar 28/11/2026)
 

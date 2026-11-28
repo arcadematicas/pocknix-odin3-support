@@ -26,6 +26,13 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 
 - [ ] **(F)** Peanuts: abrir launcher, ver Metroid / Astral Chain / Echoes of Wisdom, preparar uno
       (10-40 min) y jugar. En el log debe verse `language: DM_LANG=es is es`.
+      **EoW ya preparado y arrancando** (28/11) tras importar las fuentes del firmware 22.1.0
+      (`DM_FONT_DIR` en su `.env`; ver `docs/PEANUTS.md`). Queda jugarlo un rato.
+- [ ] **(F)** **ReTri ARM** (Echoes of Wisdom, nativo aarch64): ya instalado y con setup
+      (`/home/games/linux/ReTri`). Probado: picos de 55-59 fps, **artefactos gráficos**
+      (`[tex] type mismatch`) y **congelación con el audio siguiendo**. Ver
+      `docs/RETRI-ARM-20261128.md`. Siguiente: reportar a `peiikai/ReTri` con el log y decidir
+      si se prueba un nightly nuevo.
 - [ ] **(F)** Mando en modo juego con Peanuts (Steam Input ON y OFF). En escritorio ya va con
       `SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001`.
 - [ ] **(F)** RustDesk: escala **100 % + reconectar**; si el cursor cuadra, decidir 100 % o cliente
@@ -84,7 +91,14 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
       (DSP en suspensión) cuando lo probemos.
 - [ ] **Peanuts PR #130** — comentar que el AppImage necesita **`xcb-util-cursor`** además de
       zenity/PyQt6 (la doc no lo dice) y que en Linux el idioma va por `DM_LANG` en
-      `settings.env`/`<titleID>.env`; ofrecer el hallazgo.
+      `settings.env`/`<titleID>.env`; ofrecer el hallazgo. **Añadir**: el launcher Linux no
+      tiene pantalla de firmware y EoW crashea sin las fuentes de consola (issue #7, ya cerrado
+      en Android); nosotros lo resolvemos con `nximport_cli fonts` + `DM_FONT_DIR`
+      (`docs/PEANUTS.md`).
+- [ ] **(A)** **ReTri (peiikai/ReTri)**: reportar el glitch de textura (`[tex] type mismatch`) y
+      el cuelgue con audio en la build **ARM nightly**; adjuntar `ReTri-*.log` + `eowrecomp.log`
+      y specs (Odin 3, Adreno 830, Turnip 26.3.0, kernel 7.2.15). Ver
+      `docs/RETRI-ARM-20261128.md`. Antes, si se puede, backtrace del cuelgue.
 - [ ] **SkywardRecomp #19** — esperando respuesta; probar v0.8.4 y actualizar.
 - [ ] **pocknix PR #81** — esperando review; no tocar.
 - [ ] **metalmike17/appimage-vault** — revisar catálogo, ver qué sirve para la Odin y valorar
@@ -92,6 +106,10 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 
 ## 4. Deuda técnica / seguridad
 
+- [ ] **(A)** Kernel: valorar **`CONFIG_USERFAULTFD=y`** (+ `vm.unprivileged_userfaultfd=1`).
+      Hoy el kernel de CalvOS no lo trae y los recomp/emuladores que lo usan pierden el *page
+      write tracking* (ReTri avisa `[plat] no page write tracking`). Requiere rebuild del kernel
+      por paquete y probar suspensión/arranque. Ver `docs/RETRI-ARM-20261128.md`.
 - [ ] Historia de git (~370 MB) con blobs borrados: reescribir **solo con visto bueno** de Fransis.
 - [ ] Gate de publicación (ver arriba).
 - [ ] Revisar permisos de `~/.config/environment.d` vs `/etc/environment.d` (el paquete ya trae el

@@ -14,6 +14,36 @@ solo entre comillas invertidas cuando hacen falta para buscar el detalle.
 
 ---
 
+## 📅 28 de noviembre 2026 — Echoes of Wisdom: Peanuts arreglado y ReTri ARM probado
+
+### ✅ Peanuts: Echoes of Wisdom ya abre
+El juego se preparaba sin errores pero **crasheaba al arrancar** (`CRASH sig=11 addr=0x38
+pc=main+0x8b37c`) porque faltaban las **fuentes de consola**: el host usaba la fuente de
+relleno (337 KB) y el juego pide un carácter que no tiene (mismo caso que el issue #7 de
+`igawa6/peanuts-native`, cerrado). Se extrajeron las fuentes del **firmware 22.1.0** con
+`nximport_cli fonts` y se apuntó el juego con `DM_FONT_DIR` en su `<titleID>.env`.
+Comprobado: renderizando a los ~34 s, sin crash. Documentado en `docs/PEANUTS.md`
+(*Firmware y fuentes de consola*).
+
+### 🚀 ReTri ARM (Echoes of Wisdom) en la Odin
+Instalada la **build nativa aarch64** (nightly `202611281754`; los releases son solo x86) en
+`/home/games/linux/ReTri` (8,8 GB tras el setup), con `run.sh` para Steam. Setup sin ventana
+con `--prepare --game-files` (~19 min: 1081 s compilando el código del juego). **Corre**, con
+picos de 55-59 fps, pero **artefactos gráficos** (`[tex] type mismatch`) y **congelación con
+el audio siguiendo** (sin errores de GPU en `dmesg`). El kernel no trae `userfaultfd` (solo
+aviso). Pendiente reportarlo a `peiikai/ReTri`. Detalle: `docs/RETRI-ARM-20261128.md`.
+
+### 🧹 Fuera los decomps x86 sin audio
+`ReTri`, `SuperMarioAllStars` y `super wario` (todos x86_64 bajo Box64) funcionaban pero **sin
+audio**; se quitaron de la SD y el sync dejó **18 decomps**. La entrada `ReTri` es ahora la
+ARM nativa.
+
+### 🚀 WProton 2.32
+Copiada a `/opt/wproton/wproton_arm.sh` la versión **2.32** que pasó `stshunz` (el
+`wproton.sh` instalado es 2.15); pendiente de probarla y, si va, sustituir el lanzador.
+
+---
+
 ## 📅 27 de noviembre 2026 — publicaciones, PS2/PS3, MAKO al día y flujo de upstream
 
 ### ✅ Publicado y verificado en la consola
