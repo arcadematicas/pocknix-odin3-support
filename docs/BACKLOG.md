@@ -57,6 +57,9 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
       27/11/2026). En la Odin ya está parcheado en vivo; falta el paquete para una imagen nueva.
 - [ ] **(A)** Gate de publicación: el `glibc` del repo `base` rompe `make stage`; se publica con
       `POCKNIX_STAGE_NOCHECK=1`. Arreglarlo de raíz.
+- [ ] **(A)** Chroot de compilación: los permisos de `sudo`/`/etc/sudoers.d` se han corrompido dos
+      veces (uid 1000) y makepkg no podía instalar dependencias. Arreglado a mano; investigar qué
+      build lo deja así (¿algún `cp -a` como usuario?) y blindarlo.
 - [ ] **(A)** Revisar si `pocknix-firmware-sm8750 0.1.0-5` está publicado tras el último cambio.
 - [ ] **(A)** `docs/`: mover los pendientes antiguos (fechados) a `docs/historico/` cuando se
       cierren; este backlog manda.
