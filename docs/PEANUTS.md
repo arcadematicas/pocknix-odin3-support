@@ -60,6 +60,47 @@ export PYTHONPATH=/home/deck/Peanuts/venv/lib/python3.14/site-packages
 exec /home/deck/Peanuts/PeanutsNative.AppImage "$@"
 ```
 
+## Firmware y fuentes de consola (Echoes of Wisdom) — 28/11/2026
+
+**Síntoma**: EoW se preparó sin errores pero el juego **no abría**. En el log del host:
+
+```
+[dm] shared font (standard.ttf): .../usr/share/peanutsnative/fonts/standard.ttf (337344 bytes)
+[dm] shared font type 1..5: ... (the standard font: nothing of its own was found)
+[dm] CRASH sig=11 addr=0x38 pc=main+0x8b37c lr=main+0x8b37c
+```
+
+Es el **mismo caso que el issue #7 de `igawa6/peanuts-native`** (cerrado): sin las fuentes
+compartidas de la consola, el juego peta al arrancar porque el juego pide un carácter que la
+fuente de relleno (Noto) no tiene. No es un fallo de Turnip ni del pack.
+
+**Arreglo** — extraer las fuentes reales del **firmware** y apuntar el juego a ellas:
+
+```sh
+# 1) fuentes del firmware (necesita las claves de esa versión)
+S=/tmp/peanuts-app/squashfs-root            # AppImage extraído: PeanutsNative.AppImage --appimage-extract
+LD_LIBRARY_PATH=$S/usr/lib \
+  $S/usr/bin/nximport_cli --keys /ruta/Keys-22.1.0/prod.keys \
+  fonts /ruta/Firmware.22.1.0.zip /home/deck/Games/peanuts/firmware/fonts
+#   → standard.ttf (2,0 MB), nintendo_ext.ttf, cjk_sc/cjk_tc/cjk_kr/cjk_sc_ext (17 MB)
+
+# 2) por juego (no global: otros juegos no lo necesitan)
+echo 'DM_FONT_DIR=/home/deck/Games/peanuts/firmware/fonts' \
+  >> ~/.config/peanutsnative/01008CF01BAAC000.env
+```
+
+Con eso el log pasa a `shared font (standard.ttf): …/firmware/fonts/standard.ttf (2000000 bytes)`
+y el juego arranca. Comprobado el 28/11: renderizando a los ~34 s (frames 1648), sin `CRASH`.
+
+Notas:
+- La fuente de relleno del AppImage es de **337 KB**; la de consola, **2 MB**. Si en el log
+  vuelve a salir la de 337 KB, es que `DM_FONT_DIR` no está llegando.
+- El **launcher del PR Linux no tiene pantalla de firmware** (la app Android sí); por eso aquí
+  se hace por `nximport_cli` + `.env`. Si se reconstruye el AppImage, las fuentes y el `.env`
+  siguen en su sitio (no se re-extraen).
+- El `.zip` del firmware (325 MB) y el de claves ya no hacen falta tras extraer las fuentes
+  (se pueden borrar; las fuentes ocupan 17 MB).
+
 ## Cómo se juega
 
 1. Abrir **PeanutsNative** (Plasma o Steam).
@@ -188,6 +229,8 @@ pero el perfil está afinado para la suya y fallará o se verá mal.
 - Solo Linux **aarch64** (Odin 3, handhelds ARM). En x86 no hay host Linux.
 - Cada juego se prepara con las `prod.keys` del usuario y ocupa 5-20 GB (`.nup` + pack + shaders).
 - La preparación tarda 10-40 min (shaders). La primera vez descarga herramientas (~130 MB + .NET).
+- **Juegos que usan las fuentes de consola** (Echoes of Wisdom): sin el firmware importado
+  (véase *Firmware y fuentes de consola*) crashean al arrancar con `CRASH sig=11 addr=0x38`.
 - Sin HDR; vídeo Vulkan (Turnip). El motor de FG de MAKO no interviene aquí.
 - Los packs llevan el juego descifrado: no se distribuyen.
 
