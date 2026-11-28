@@ -42,9 +42,12 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 ## 2. Paquetes / repo
 
 - [x] **(A)** `calvos-peanuts 0.1.0-1`: instalado en la Odin y **publicado** en el repo sm8750 (R2).
-- [ ] **(A)** `calvos-rustdesk`: rehacer desde el **`.deb` oficial 1.5.3** (el AppImage lleva
-      GStreamer 1.16 + libpipewire 0.2 y crashea al capturar en PipeWire 1.x). Incluir `.desktop`
-      y unidad de servicio; mantener el `.deb` como fuente con sha256.
+- [x] **(A)** `calvos-rustdesk` 1.5.3-3: rehecho desde el **`.deb` oficial** (sha256 `fa85e8d3…`),
+      con el servicio systemd del paquete. **Pendiente compilar/publicar e instalar en la Odin**
+      (está suspendida); probar conexión + diálogo del portal.
+- [ ] **(A)** `appimage-vault`: su catálogo (`catalog.json`, 9.863 apps) es **x86_64-only**; sirve
+      como fuente de metadatos/curaduría. Idea: `tools/vault-scan.py` que filtre Games/Media y
+      compruebe assets **aarch64** en GitHub para alimentar nuestra tienda.
 - [ ] **(A)** PyQt6: empaquetar (`calvos-pyqt6` con el wheel vendorizado) o dejar documentado el
       `pip --break-system-packages`; hoy es un paso manual.
 - [ ] **(A)** `pocknix-system-overlay`: publicar el cambio (deps de Peanuts en `packages.list`; la

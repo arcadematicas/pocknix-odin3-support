@@ -1,25 +1,33 @@
-# calvos-rustdesk - RustDesk empaquetado desde su AppImage oficial aarch64, con version y
-# checksum fijados: la tienda lo ofrece en Network sin depender de descargas sin firmar.
+# calvos-rustdesk - RustDesk desde su paquete oficial .deb aarch64.
+#
+# Se usa el .deb y NO el AppImage: el AppImage aarch64 lleva dentro GStreamer 1.16 y
+# libpipewire 0.2 (2019) y, al capturar con el portal ScreenCast/RemoteDesktop de
+# PipeWire 1.x, revienta con SIGSEGV en pw_thread_loop_new. El .deb usa el
+# GStreamer/PipeWire del sistema (depende de gstreamer1.0-pipewire).
 pkgname=calvos-rustdesk
 pkgver=1.5.3
-pkgrel=2
-pkgdesc="RustDesk (AppImage oficial aarch64): escritorio remoto"
+pkgrel=3
+pkgdesc="RustDesk (paquete oficial .deb aarch64): escritorio remoto"
 arch=('aarch64')
 url="https://rustdesk.com"
 license=('AGPL-3.0-only')
-depends=('fuse2' 'libpulse' 'gtk3' 'libxcb' 'libxkbcommon')
-source=("rustdesk-${pkgver}-aarch64.AppImage::https://github.com/rustdesk/rustdesk/releases/download/${pkgver}/rustdesk-${pkgver}-aarch64.AppImage")
-options=('!strip')  # el AppImage es un ELF: strip recorta el squashfs anexado
-sha256sums=('924c8dee36cbd7873ba222979ea1e3274c5537c382321504edf1be824e7cde37')
+depends=('gtk3' 'libxcb' 'libxfixes' 'alsa-lib' 'systemd-libs' 'curl' 'libva'
+         'gst-plugins-base' 'gst-plugin-pipewire' 'xdotool' 'libxkbcommon' 'libpulse')
+source=("rustdesk-${pkgver}-aarch64.deb::https://github.com/rustdesk/rustdesk/releases/download/${pkgver}/rustdesk-${pkgver}-aarch64.deb")
+sha256sums=('fa85e8d3ccd45e2e303c2d1359af5dc51aa93d880e39ba47c9b04bfabd82ae19')
 
 package() {
-  install -Dm755 "${srcdir}/rustdesk-${pkgver}-aarch64.AppImage" \
-    "${pkgdir}/opt/rustdesk/rustdesk.AppImage"
+  cd "${srcdir}"
+  ar x "rustdesk-${pkgver}-aarch64.deb"
+  tar -xf data.tar.* -C "${pkgdir}"
+
+  # El postinst del .deb crea este enlace; en un paquete lo hacemos nosotros.
   install -dm755 "${pkgdir}/usr/bin"
-  printf '#!/bin/sh\nexec /opt/rustdesk/rustdesk.AppImage "$@"\n' > "${pkgdir}/usr/bin/rustdesk"
-  chmod 755 "${pkgdir}/usr/bin/rustdesk"
-  install -Dm644 "${startdir}/rustdesk.desktop" \
-    "${pkgdir}/usr/share/applications/rustdesk.desktop"
-  install -Dm644 "${startdir}/rustdesk.svg" \
-    "${pkgdir}/usr/share/icons/hicolor/scalable/apps/rustdesk.svg"
+  ln -sf /usr/share/rustdesk/rustdesk "${pkgdir}/usr/bin/rustdesk"
+
+  # Servicio systemd del propio .deb (no se habilita solo: la GUI funciona sin él).
+  install -Dm644 "${pkgdir}/usr/share/rustdesk/files/systemd/rustdesk.service" \
+    "${pkgdir}/usr/lib/systemd/system/rustdesk.service"
+  sed -i 's|^ExecStop=pkill|ExecStop=/usr/bin/pkill|' \
+    "${pkgdir}/usr/lib/systemd/system/rustdesk.service"
 }

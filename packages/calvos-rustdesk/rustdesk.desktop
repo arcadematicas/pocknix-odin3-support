@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=RustDesk
-Comment=Escritorio remoto (AppImage oficial aarch64, version fijada)
-Exec=rustdesk %U
-Icon=rustdesk
-Terminal=false
-Categories=Network;RemoteAccess;
