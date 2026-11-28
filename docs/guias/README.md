@@ -8,6 +8,7 @@ enlaza al suyo para el detalle interno.
 |---|---|---|
 | **DeckStation** (emulación) | CalvOS Tools / Steam | [DECKSTATION.md](DECKSTATION.md) |
 | **Frame generation** (MAKO) | Panel de Control → juego | [FRAME-GEN.md](FRAME-GEN.md) |
+| **Peanuts** (juegos de Switch) | Menú / `peanutsnative` | [PEANUTS.md](PEANUTS.md) |
 | **WProton** (juegos Windows) | CalvOS Tools / mando | [WPROTON.md](WPROTON.md) |
 | **Decomps Linux** (ports de PC) | Carpeta + Steam | [DECOMP-LINUX.md](DECOMP-LINUX.md) |
 | **Sistema** (energía, HDR, snapshots, captura, diagnóstico) | QAM / terminal | [SISTEMA.md](SISTEMA.md) |

@@ -49,6 +49,11 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 ## 2. Paquetes / repo
 
 - [x] **(A)** `calvos-peanuts 0.1.0-1`: instalado en la Odin y **publicado** en el repo sm8750 (R2).
+- [x] **(A)** **`calvos-peanuts 0.1.0-3`**: publicado en R2 e instalado en la Odin. Añade
+      **`calvos-peanuts-firmware`** (importa las fuentes de consola desde el firmware del
+      usuario, `nximport_cli fonts`, y deja `DM_FONT_DIR` en `settings.env`) + aviso en
+      post-install + sección en el README del paquete. Probado con `Firmware.22.1.0.zip`:
+      `standard.ttf` 2.033.192 B y arranque sin crash. Guía: `docs/guias/PEANUTS.md`.
 - [x] **(A)** `calvos-rustdesk` 1.5.3-3: rehecho desde el **`.deb` oficial** (sha256 `fa85e8d3…`),
       compilado, publicado en [pocknix-shared] e **instalado en la Odin** (`/usr/bin/rustdesk` →
       `/usr/share/rustdesk/rustdesk`; el AppImage y el /opt manual fuera). Limpiado el duplicado
@@ -95,10 +100,11 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
       tiene pantalla de firmware y EoW crashea sin las fuentes de consola (issue #7, ya cerrado
       en Android); nosotros lo resolvemos con `nximport_cli fonts` + `DM_FONT_DIR`
       (`docs/PEANUTS.md`).
-- [ ] **(A)** **ReTri (peiikai/ReTri)**: reportar el glitch de textura (`[tex] type mismatch`) y
-      el cuelgue con audio en la build **ARM nightly**; adjuntar `ReTri-*.log` + `eowrecomp.log`
-      y specs (Odin 3, Adreno 830, Turnip 26.3.0, kernel 7.2.15). Ver
-      `docs/RETRI-ARM-20261128.md`. Antes, si se puede, backtrace del cuelgue.
+- [x] **(A)** **ReTri (peiikai/ReTri)**: **reportado** el 28/11 →
+      https://github.com/peiikai/ReTri/issues/143 (glitch `[tex] type mismatch` + cuelgue con
+      audio en la build ARM nightly; logs en un gist y specs). **Depende de ellos**: si piden
+      backtrace, reproducir el cuelgue y adjuntar `gdb -p` (`thread apply all bt`).
+      Ver `docs/RETRI-ARM-20261128.md`.
 - [ ] **SkywardRecomp #19** — esperando respuesta; probar v0.8.4 y actualizar.
 - [ ] **pocknix PR #81** — esperando review; no tocar.
 - [ ] **metalmike17/appimage-vault** — revisar catálogo, ver qué sirve para la Odin y valorar

@@ -20,6 +20,11 @@ handhelds ARM (probado en una Odin 2 Pro: *Super Mario Bros. Wonder* y *Metroid 
 - **Acceso en Plasma**: `~/.local/share/applications/peanutsnative.desktop` (`Categories=Game;`).
 - **Acceso en Steam (modo juego)**: atajo no-Steam `PeanutsNative` en `shortcuts.vdf`
   (lanzador; los juegos preparados se añaden con `--steam`).
+- **Paquete `calvos-peanuts 0.1.0-3`** (R2, instalado en la Odin): AppImage + lanzador +
+  **`calvos-peanuts-firmware`** (importa las fuentes de consola del firmware del usuario y
+  deja `DM_FONT_DIR` en `settings.env`). Guía de usuario: `docs/guias/PEANUTS.md`.
+  Ya importadas en la Odin las fuentes del firmware 22.1.0
+  (`~/.local/share/peanutsnative/firmware/fonts`, 17 MB, standard.ttf 2 MB).
 
 ## Cómo se construye (para actualizar)
 
@@ -74,7 +79,19 @@ Es el **mismo caso que el issue #7 de `igawa6/peanuts-native`** (cerrado): sin l
 compartidas de la consola, el juego peta al arrancar porque el juego pide un carácter que la
 fuente de relleno (Noto) no tiene. No es un fallo de Turnip ni del pack.
 
-**Arreglo** — extraer las fuentes reales del **firmware** y apuntar el juego a ellas:
+**Arreglo rápido (recomendado, desde `calvos-peanuts 0.1.0-3`)**:
+
+```sh
+calvos-peanuts-firmware /ruta/Firmware.22.1.0.zip        # o --keys <prod.keys>
+calvos-peanuts-firmware --check                         # debe dar rc=0
+```
+
+Guarda las fuentes en `~/.local/share/peanutsnative/firmware/fonts` y deja
+`DM_FONT_DIR` en `~/.config/peanutsnative/settings.env` (todos los juegos). Guía de
+usuario: `docs/guias/PEANUTS.md`.
+
+**Arreglo manual (referencia)** — extraer las fuentes reales del **firmware** y apuntar
+el juego a ellas:
 
 ```sh
 # 1) fuentes del firmware (necesita las claves de esa versión)

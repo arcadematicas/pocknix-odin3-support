@@ -23,7 +23,15 @@ relleno (337 KB) y el juego pide un carácter que no tiene (mismo caso que el is
 `igawa6/peanuts-native`, cerrado). Se extrajeron las fuentes del **firmware 22.1.0** con
 `nximport_cli fonts` y se apuntó el juego con `DM_FONT_DIR` en su `<titleID>.env`.
 Comprobado: renderizando a los ~34 s, sin crash. Documentado en `docs/PEANUTS.md`
-(*Firmware y fuentes de consola*).
+(*Firmware y fuentes de consola*) y con guía de usuario en `docs/guias/PEANUTS.md`.
+
+### 🚀 `calvos-peanuts 0.1.0-3`: importador de fuentes
+Publicado en R2 e instalado en la Odin. Añade **`calvos-peanuts-firmware`**:
+`calvos-peanuts-firmware <firmware.zip>` extrae las fuentes con el `nximport_cli` del
+propio AppImage, las deja en `~/.local/share/peanutsnative/firmware/fonts` y configura
+`DM_FONT_DIR` en `settings.env` (todos los juegos; se puede sobrescribir por juego en
+`<titleID>.env`). `--check` informa del estado. El paquete avisa al instalar/actualizar y
+el README lo documenta. Probado con el firmware 22.1.0 (standard.ttf 2.033.192 B).
 
 ### 🚀 ReTri ARM (Echoes of Wisdom) en la Odin
 Instalada la **build nativa aarch64** (nightly `202611281754`; los releases son solo x86) en
@@ -31,7 +39,9 @@ Instalada la **build nativa aarch64** (nightly `202611281754`; los releases son 
 con `--prepare --game-files` (~19 min: 1081 s compilando el código del juego). **Corre**, con
 picos de 55-59 fps, pero **artefactos gráficos** (`[tex] type mismatch`) y **congelación con
 el audio siguiendo** (sin errores de GPU en `dmesg`). El kernel no trae `userfaultfd` (solo
-aviso). Pendiente reportarlo a `peiikai/ReTri`. Detalle: `docs/RETRI-ARM-20261128.md`.
+aviso). **Reportado** a `peiikai/ReTri` el 28/11:
+https://github.com/peiikai/ReTri/issues/143 (con los logs en un gist y las specs). Detalle:
+`docs/RETRI-ARM-20261128.md`.
 
 ### 🧹 Fuera los decomps x86 sin audio
 `ReTri`, `SuperMarioAllStars` y `super wario` (todos x86_64 bajo Box64) funcionaban pero **sin
