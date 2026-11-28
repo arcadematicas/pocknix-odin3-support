@@ -63,7 +63,8 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 **Nuestros cambios que sí son candidatos a upstream** (no los parches de dispositivo):
 
 - [x] **PR #1524 (Panel de Control, Hooandee)** — coerción motor **4→5 al guardar** y test de
-      arch no soportada corregidos (`dc51f97`); CI en curso. Falta CI verde y review.
+      arch no soportada corregidos (`dc51f97`); **CI verde** y comentario puesto (28/11). Solo falta
+      el review de Hooandee.
 - [ ] **(A)** **PR aparte**: puente `power-profiles-daemon` → nivel TDP (perfiles de energía de
       Plasma en escritorio). No encaja en el PR de MAKO: toca `main.py` y un módulo nuevo.
 - [ ] **RustDesk (rustdesk/rustdesk)** — abrir issue: *aarch64 AppImage bundles GStreamer 1.16 +
