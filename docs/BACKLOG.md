@@ -62,10 +62,10 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 
 **Nuestros cambios que sí son candidatos a upstream** (no los parches de dispositivo):
 
-- [ ] **PR #1524 (Panel de Control, Hooandee)** — open, 0 comentarios. Actualizarlo con:
-      (a) coerción motor **4→5 al guardar** el perfil (hoy solo al arrancar/instalar);
-      (b) **puente `power-profiles-daemon` → nivel TDP** (perfiles de energía de Plasma en
-      escritorio). Push a `arcadematicas:arm64-mako` + comentario explicando el caso ARM.
+- [x] **PR #1524 (Panel de Control, Hooandee)** — coerción motor **4→5 al guardar** y test de
+      arch no soportada corregidos (`dc51f97`); CI en curso. Falta CI verde y review.
+- [ ] **(A)** **PR aparte**: puente `power-profiles-daemon` → nivel TDP (perfiles de energía de
+      Plasma en escritorio). No encaja en el PR de MAKO: toca `main.py` y un módulo nuevo.
 - [ ] **RustDesk (rustdesk/rustdesk)** — abrir issue: *aarch64 AppImage bundles GStreamer 1.16 +
       libpipewire 0.2 → SIGSEGV (`pw_thread_loop_new`) al capturar con el portal ScreenCast/
       RemoteDesktop en PipeWire 1.x; el `.deb` funciona*. Adjuntar stack y versiones.
