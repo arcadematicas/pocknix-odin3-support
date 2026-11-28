@@ -43,8 +43,9 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
 
 - [x] **(A)** `calvos-peanuts 0.1.0-1`: instalado en la Odin y **publicado** en el repo sm8750 (R2).
 - [x] **(A)** `calvos-rustdesk` 1.5.3-3: rehecho desde el **`.deb` oficial** (sha256 `fa85e8d3…`),
-      con el servicio systemd del paquete. **Pendiente compilar/publicar e instalar en la Odin**
-      (está suspendida); probar conexión + diálogo del portal.
+      compilado, publicado en [pocknix-shared] e **instalado en la Odin** (`/usr/bin/rustdesk` →
+      `/usr/share/rustdesk/rustdesk`; el AppImage y el /opt manual fuera). Limpiado el duplicado
+      del repo del dispositivo. **Pendiente (F)**: probar conexión + diálogo del portal.
 - [ ] **(A)** `appimage-vault`: su catálogo (`catalog.json`, 9.863 apps) es **x86_64-only**; sirve
       como fuente de metadatos/curaduría. Idea: `tools/vault-scan.py` que filtre Games/Media y
       compruebe assets **aarch64** en GitHub para alimentar nuestra tienda.
