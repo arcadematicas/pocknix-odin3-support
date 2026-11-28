@@ -28,6 +28,9 @@ Leyenda: `[ ]` pendiente · `[x]` hecho · **(F)** Fransis delante · **(A)** Al
       (10-40 min) y jugar. En el log debe verse `language: DM_LANG=es is es`.
       **EoW ya preparado y arrancando** (28/11) tras importar las fuentes del firmware 22.1.0
       (`DM_FONT_DIR` en su `.env`; ver `docs/PEANUTS.md`). Queda jugarlo un rato.
+      ⚠️ **Se congela tras el encuentro con Ganon** (imagen parada, sprites/UI corruptos, audio
+      sigue; el juego no crashea): es el issue **#103** de Peanuts (también en Android), **no es
+      nuestro**; reportado el 28/11 con el log exacto. Esperar su respuesta.
 - [ ] **(F)** **ReTri ARM** (Echoes of Wisdom, nativo aarch64): ya instalado y con setup
       (`/home/games/linux/ReTri`). Probado: picos de 55-59 fps, **artefactos gráficos**
       (`[tex] type mismatch`) y **congelación con el audio siguiendo**. Ver

@@ -248,6 +248,11 @@ pero el perfil está afinado para la suya y fallará o se verá mal.
 - La preparación tarda 10-40 min (shaders). La primera vez descarga herramientas (~130 MB + .NET).
 - **Juegos que usan las fuentes de consola** (Echoes of Wisdom): sin el firmware importado
   (véase *Firmware y fuentes de consola*) crashean al arrancar con `CRASH sig=11 addr=0x38`.
+- **Echoes of Wisdom se puede congelar** (la imagen deja de actualizarse, los sprites/UI/textos
+  se ven mal y el **audio sigue**; el juego no crashea). Es el issue **#103** de Peanuts
+  (varios usuarios, también Android), **no es de CalvOS**: nuestro log no muestra errores de
+  Vulkan ni de GPU y el render simplemente se para. Reportado con el log el 28/11
+  (comentario en #103). Mientras lo arreglan, el progreso está a salvo en `cking.sav`.
 - Sin HDR; vídeo Vulkan (Turnip). El motor de FG de MAKO no interviene aquí.
 - Los packs llevan el juego descifrado: no se distribuyen.
 

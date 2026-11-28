@@ -29,6 +29,7 @@ lo que es acción nuestra; así no se confunde "abierto" con "pendiente de nosot
 | 2026-11-28 | SymphonyRecomp | https://github.com/BlackLabelHQ/SymphonyRecomp/issues/178 | Issue | open · 0 comentarios · 28/11 | ellos | v1.2.0p: franja verde arriba en la Odin (Box64/Turnip); en PC no aparece y el shader viejo crashea. Esperar respuesta; mientras, valorar volver a 0.5.1b. |
 | 2026-11-28 | ReTri (peiikai) | https://github.com/peiikai/ReTri/issues/143 | Issue | open · 0 comentarios · 28/11 | ellos | Reportada la build **ARM nightly** en la Odin (glitch `[tex] type mismatch` + cuelgue con audio). Logs en un gist. Si piden backtrace, reproducir y adjuntar `gdb`. Ver `docs/RETRI-ARM-20261128.md`. |
 | 2026-11-28 | Peanuts (igawa6) | https://github.com/igawa6/peanuts-native/issues/7 | Issue (referencia) | **closed** (v0.1.1) | hecho | EoW crasheaba sin las fuentes de consola. Resuelto en CalvOS con `calvos-peanuts-firmware` (paquete `calvos-peanuts 0.1.0-3`) + guía `docs/guias/PEANUTS.md`. Falta comentar en el **PR #130** que el launcher Linux no tiene pantalla de firmware. |
+| 2026-11-28 | Peanuts (igawa6) | https://github.com/igawa6/peanuts-native/issues/103 | Issue | open · freeze con audio · comentario 28/11 | ellos | EoW se congela (imagen parada y sprites/UI corruptos, audio sigue) en la Odin (Linux aarch64, Turnip 26.3). Aportado el log exacto de la sesión; es el mismo síntoma que los usuarios de Android. Si proponen un `DM_VK_*`, probarlo en la consola. |
 
 ## Tiendas de AppImages (revisar 28/11/2026)
 

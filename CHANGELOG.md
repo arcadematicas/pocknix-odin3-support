@@ -25,13 +25,17 @@ relleno (337 KB) y el juego pide un carácter que no tiene (mismo caso que el is
 Comprobado: renderizando a los ~34 s, sin crash. Documentado en `docs/PEANUTS.md`
 (*Firmware y fuentes de consola*) y con guía de usuario en `docs/guias/PEANUTS.md`.
 
-### 🚀 `calvos-peanuts 0.1.0-3`: importador de fuentes
-Publicado en R2 e instalado en la Odin. Añade **`calvos-peanuts-firmware`**:
+### 🚀 `calvos-peanuts 0.1.0-3`: importador de fuentesPublicado en R2 e instalado en la Odin. Añade **`calvos-peanuts-firmware`**:
 `calvos-peanuts-firmware <firmware.zip>` extrae las fuentes con el `nximport_cli` del
 propio AppImage, las deja en `~/.local/share/peanutsnative/firmware/fonts` y configura
 `DM_FONT_DIR` en `settings.env` (todos los juegos; se puede sobrescribir por juego en
 `<titleID>.env`). `--check` informa del estado. El paquete avisa al instalar/actualizar y
 el README lo documenta. Probado con el firmware 22.1.0 (standard.ttf 2.033.192 B).
+
+**Cuelgue tras Ganon**: es el issue **#103** de Peanuts (mismo síntoma en Android: imagen parada,
+sprites/UI corruptos, audio sigue, el juego no crashea). Reportado el 28/11 con el log de la sesión
+exacta; **no es de CalvOS** (sin errores de Vulkan ni de GPU; el render se para). Mientras lo
+arreglan, el progreso queda en `cking.sav`.
 
 ### 🚀 ReTri ARM (Echoes of Wisdom) en la Odin
 Instalada la **build nativa aarch64** (nightly `202611281754`; los releases son solo x86) en
