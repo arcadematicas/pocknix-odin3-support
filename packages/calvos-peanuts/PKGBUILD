@@ -1,21 +1,26 @@
-# calvos-peanuts - Peanuts Native (Switch nativo aarch64): lanzador e integración.
+# calvos-peanuts - Peanuts Native (Switch nativo aarch64): AppImage + integración.
 #
-# El AppImage NO va en el paquete: se construye con tools/peanuts-build.sh (rama del PR #130)
-# y se deja en ~/Peanuts/PeanutsNative.AppImage. Este paquete instala el lanzador de escritorio,
-# el entorno del mando y las dependencias que el AppImage necesita.
+# El AppImage se construye con tools/peanuts-build.sh (rama del PR #130), se sube a R2 y este
+# paquete lo instala desde ahi con sha256. Actualizar Peanuts = reconstruir, subir a R2, cambiar
+# la URL/sha de aqui y subir pkgrel (ver docs/PEANUTS.md).
 pkgname=calvos-peanuts
 pkgver=0.1.0
-pkgrel=1
-pkgdesc="Peanuts Native (Switch nativo aarch64): lanzador y entorno de escritorio"
+pkgrel=2
+pkgdesc="Peanuts Native (Switch nativo aarch64): AppImage, lanzador y entorno de escritorio"
 arch=('aarch64')
 url="https://github.com/igawa6/peanuts-native"
 license=('MIT')
 depends=('zenity' 'spirv-tools' 'xcb-util-cursor' 'qt6-wayland')
-options=()
-source=()
-sha256sums=()
+
+_app="PeanutsNative-7156261-aarch64.AppImage"
+source=("${_app}::https://pub-fd47305874674bf597b27eb7f880e73b.r2.dev/peanuts/71562611/${_app}"
+        "LICENSE")
+sha256sums=('2e9fa522f2e9630453c04127f4f3e2838de8ddb87932e69ced071d010e25c159'
+            '60bd43a36da5c41a946db7091deb10c4cb405a4955169ec1bf89008f0c436f2a')
+options=('!strip')  # el AppImage es un ELF con squashfs anexado: strip lo recortaria
 
 package() {
+  install -Dm755 "${srcdir}/${_app}" "${pkgdir}/opt/peanuts/PeanutsNative.AppImage"
   install -Dm755 "${startdir}/peanutsnative" "${pkgdir}/usr/local/bin/peanutsnative"
   install -Dm644 "${startdir}/peanutsnative.desktop" \
     "${pkgdir}/usr/share/applications/peanutsnative.desktop"
@@ -23,5 +28,6 @@ package() {
     "${pkgdir}/etc/environment.d/10-calvos-gamepad.conf"
   install -Dm644 "${startdir}/peanutsnative.png" \
     "${pkgdir}/usr/share/icons/hicolor/256x256/apps/peanutsnative.png"
+  install -Dm644 "${srcdir}/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
   install -Dm644 "${startdir}/README" "${pkgdir}/usr/share/doc/${pkgname}/README"
 }

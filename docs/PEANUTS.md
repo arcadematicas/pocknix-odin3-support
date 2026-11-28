@@ -122,13 +122,13 @@ respondiera ahí, desactivar Steam Input **solo** para el atajo de Peanuts.
 
 | Pieza | Dónde | Nota |
 |---|---|---|
-| AppImage (host aarch64 del PR #130) | `~/Peanuts/PeanutsNative.AppImage` | Construido por nosotros (no hay release) |
+| AppImage (host aarch64 del PR #130) | `/opt/peanuts/PeanutsNative.AppImage` | **Viene en `calvos-peanuts`**, servido desde R2 (`/peanuts/71562611/`, MIT) |
 | Herramientas del packer | `~/.local/share/peanutsnative/packer/` | Se descargan solas en el primer Prepare (~130 MB + .NET) |
 | `.nup` + pack del juego | `~/Games/PeanutsNative/` | Por juego; el pack en `packs/<titleID>/` |
-| Lanzador con entorno | `~/Peanuts/peanutsnative.sh` | `PYTHONPATH` (PyQt6), Wayland y el filtro SDL del mando |
+| Lanzador con entorno | `/usr/local/bin/peanutsnative` | Del paquete: Wayland y el filtro SDL del mando (PyQt6 va en el sistema) |
 | Entrada de Plasma | `~/.local/share/applications/peanutsnative.desktop` | La reescribe el `--install` de Peanuts: apunta al AppImage, no al wrapper |
 | Atajo de Steam | `shortcuts.vdf` (nombre `PeanutsNative`) | Exe = wrapper; LaunchOptions vacío |
-| Entorno de sesión | `~/.config/environment.d/10-calvos-gamepad.conf` y `/etc/environment.d/10-calvos-gamepad.conf` | El de `/etc` lo instala `calvos-peanuts`; `SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001` |
+| Entorno de sesión | `/etc/environment.d/10-calvos-gamepad.conf` (paquete) | `SDL_GAMECONTROLLER_IGNORE_DEVICES=0x2020/0x3001` |
 
 Paquetes que necesita (dependencias de `calvos-peanuts`, y también en `devices/sm8750/packages.list`
 para que estén en la imagen): `zenity` (selector de reserva y diálogos del AppRun), `spirv-tools`
@@ -169,9 +169,12 @@ pero el perfil está afinado para la suya y fallará o se verá mal.
 1. **Aviso**: `tools/watch-peanuts.py` (timer 09:00) vigila release, PR #130 y comentarios.
 2. **Construir** (PC con Docker, ~5 min tras la primera vez):
    ```bash
-   tools/peanuts-build.sh --ref pr-linux-appimage --deploy deck@192.168.4.22
+   tools/peanuts-build.sh --ref pr-linux-appimage
    ```
-   Guarda el anterior como `PeanutsNative.AppImage.bak`, copia el nuevo y corre `--selftest`.
+   Subir el AppImage a R2 (`rclone copyto ... r2:pocknix/peanuts/<commit>/...` + `SHA256SUMS`),
+   actualizar `source`/`sha256sums` (y subir `pkgrel`) en `packages/calvos-peanuts/PKGBUILD`,
+   y publicar: `make packages PKG=calvos-peanuts`, `make stage PKG=calvos-peanuts`, `make publish`.
+   En la consola: `pacman -Sy && pacman -S calvos-peanuts`.
 3. **Validar**: selftest OK; `--list` (nº de hosts); abrir el launcher (Qt, no zenity); un juego ya
    preparado; mando; rendimiento.
 4. **Rollback**: restaurar `PeanutsNative.AppImage.bak` (y `.desktop`/wrapper si cambiaron).

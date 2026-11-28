@@ -1,12 +1,15 @@
 #!/bin/sh
 # Peanuts Native (Switch nativo aarch64) - lanzador de CalvOS.
-# El AppImage se construye aparte (tools/peanuts-build.sh) y vive en ~/Peanuts.
-APP="${PEANUTS_APPIMAGE:-$HOME/Peanuts/PeanutsNative.AppImage}"
+# El AppImage viene en este paquete (/opt/peanuts); para desarrollo se puede usar
+# PEANUTS_APPIMAGE o ~/Peanuts/PeanutsNative.AppImage.
+APP="${PEANUTS_APPIMAGE:-/opt/peanuts/PeanutsNative.AppImage}"
+if [ ! -x "$APP" ] && [ -z "${PEANUTS_APPIMAGE:-}" ] && [ -x "$HOME/Peanuts/PeanutsNative.AppImage" ]; then
+    APP="$HOME/Peanuts/PeanutsNative.AppImage"
+fi
 
 if [ ! -x "$APP" ]; then
-    msg="Falta el AppImage de Peanuts en $APP.
-Construyelo con tools/peanuts-build.sh (Docker) y copialo ahi.
-Ver docs/PEANUTS.md."
+    msg="No encuentro el AppImage de Peanuts ($APP).
+Reinstala calvos-peanuts (pacman -S calvos-peanuts) o construyelo con tools/peanuts-build.sh."
     if command -v zenity >/dev/null 2>&1; then
         zenity --error --title="Peanuts Native" --width=480 --text="$msg" 2>/dev/null
     else

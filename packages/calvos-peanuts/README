@@ -1,21 +1,20 @@
 Peanuts Native (Switch nativo aarch64) en CalvOS
 =================================================
 
-Este paquete instala el lanzador y el entorno; el AppImage se construye aparte.
+Este paquete instala TODO lo necesario:
 
-  - Lanzador:      /usr/local/bin/peanutsnative   (menú > PeanutsNative)
-  - Entorno SDL:   /etc/environment.d/10-calvos-gamepad.conf
-  - Dependencias:  zenity, spirv-tools, xcb-util-cursor, qt6-wayland
+  - AppImage:   /opt/peanuts/PeanutsNative.AppImage  (build del PR #130, licencia MIT)
+  - Lanzador:   /usr/local/bin/peanutsnative          (menú > PeanutsNative)
+  - Entorno SDL: /etc/environment.d/10-calvos-gamepad.conf
+  - Licencia:   /usr/share/licenses/calvos-peanuts/LICENSE
+  - Dependencias: zenity, spirv-tools, xcb-util-cursor, qt6-wayland
 
-El AppImage del host Linux (rama del PR #130) se construye con Docker en un PC:
+Los juegos se preparan desde la propia ventana de Peanuts (hacen falta las prod.keys del
+usuario) y viven en ~/Games/PeanutsNative (pack + .nup). No se incluyen juegos.
 
-  tools/peanuts-build.sh --deploy deck@<odin>
+Actualizar Peanuts: reconstruir el AppImage con tools/peanuts-build.sh, subirlo a R2,
+actualizar URL/sha256 y subir pkgrel en packages/calvos-peanuts y publicar. Runbook completo
+en docs/PEANUTS.md.
 
-y queda en ~/Peanuts/PeanutsNative.AppImage (el lanzador lo usa). Los juegos se preparan
-desde la ventana de Peanuts (necesitan las prod.keys del usuario) y viven en ~/Games/PeanutsNative.
-
-Idioma del juego: en ~/.config/peanutsnative/settings.env (todos) o en <titleID>.env (uno),
-añadir DM_LANG=es   (códigos: ja, en-US, en-GB, fr, fr-CA, de, it, es, es-419, nl, pt, pt-BR,
-ru, ko, zh-Hans, zh-Hant, pl, th). Se aplica al siguiente arranque.
-
-Documentación completa: docs/PEANUTS.md del repositorio pocknix-odin3-support.
+Idioma del juego: DM_LANG=es en ~/.config/peanutsnative/settings.env (todos) o en
+<titleID>.env (uno solo).
