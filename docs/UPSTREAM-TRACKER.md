@@ -26,6 +26,7 @@ lo que es acción nuestra; así no se confunde "abierto" con "pendiente de nosot
 | 2026-11-27 | KDE | https://bugs.kde.org/show_bug.cgi?id=466276 | Bug | REOPENED · 11/11 | nosotros | Comentar nuestro caso (Odin 3, salida **rotada**, escala 1.5, RustDesk) y el workaround 100 % + reconectar. |
 | 2026-11-27 | Armada / ROCKNIX | (por comentar) | Issue/comentario | — | nosotros | Compartir el fix del zumbido: `qcom,ssp-period = <6>` + `pcm-ports-mask = <0x204>` en `&swr1` (docs/AUDIO-ZUMBIDO-20261126.md). |
 | 2026-09 | ArmadaOS | https://github.com/armada-os/armada/issues/402 | Issue | **closed** (resuelto) | hecho | Nada; referencia de la carga de batería. |
+| 2026-11-28 | SymphonyRecomp | https://github.com/BlackLabelHQ/SymphonyRecomp/issues/178 | Issue | open · 0 comentarios · 28/11 | ellos | v1.2.0p: franja verde arriba en la Odin (Box64/Turnip); en PC no aparece y el shader viejo crashea. Esperar respuesta; mientras, valorar volver a 0.5.1b. |
 
 ## Tiendas de AppImages (revisar 28/11/2026)
 
