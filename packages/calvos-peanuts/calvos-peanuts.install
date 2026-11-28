@@ -1,0 +1,11 @@
+post_install() {
+    echo "Peanuts necesita las fuentes de la consola para algunos juegos (Echoes of Wisdom)."
+    echo "Importalas con: calvos-peanuts-firmware <firmware.zip>"
+    echo "Mas informacion en /usr/share/doc/calvos-peanuts/README"
+}
+
+post_upgrade() {
+    echo "Peanuts necesita las fuentes de la consola para algunos juegos (Echoes of Wisdom)."
+    echo "Importalas con: calvos-peanuts-firmware <firmware.zip>"
+    echo "Mas informacion en /usr/share/doc/calvos-peanuts/README"
+}

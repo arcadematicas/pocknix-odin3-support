@@ -18,3 +18,18 @@ en docs/PEANUTS.md.
 
 Idioma del juego: DM_LANG=es en ~/.config/peanutsnative/settings.env (todos) o en
 <titleID>.env (uno solo).
+
+Fuentes de consola (firmware)
+-----------------------------
+
+Algunos juegos, como Echoes of Wisdom, necesitan las fuentes compartidas de la consola;
+sin ellas crashean al arrancar. Se importan del firmware del usuario con:
+
+  calvos-peanuts-firmware <firmware.zip>
+  calvos-peanuts-firmware --keys <prod.keys> <firmware.zip>
+
+Las fuentes se guardan en ~/.local/share/peanutsnative/firmware/fonts y el script
+escribe DM_FONT_DIR en ~/.config/peanutsnative/settings.env. Usa
+'calvos-peanuts-firmware --check' para ver el estado sin modificar nada. Si no se
+indican --keys, se lee la ruta desde ~/.config/peanutsnative/keys.path o se usa
+~/.switch/prod.keys.

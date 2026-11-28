@@ -1,0 +1,211 @@
+#!/bin/bash
+# Importa las fuentes compartidas de la consola desde un firmware de Switch para Peanuts Native.
+set -euo pipefail
+
+error() {
+    printf 'Error: %s\n' "$*" >&2
+    exit 1
+}
+
+usage() {
+    local code=${1:-0} fd=1
+    [ "$code" -ne 0 ] && fd=2
+    {
+        echo "Uso: calvos-peanuts-firmware <firmware.zip|carpeta>"
+        echo "      calvos-peanuts-firmware --keys <prod.keys> <firmware.zip|carpeta>"
+        echo "      calvos-peanuts-firmware --check"
+        echo
+        echo "Importa las fuentes de la consola (standard.ttf, nintendo_ext.ttf, cjk_*.ttf)"
+        echo "y configura DM_FONT_DIR para Peanuts Native. Algunos juegos, como Echoes of"
+        echo "Wisdom, necesitan estas fuentes para arrancar."
+        echo
+        echo "Opciones:"
+        echo "  --keys <prod.keys>  Usar ese fichero de claves en lugar del configurado."
+        echo "  --check             Mostrar el estado sin modificar nada."
+        echo "  --help              Mostrar este aviso."
+    } >&"$fd"
+    exit "$code"
+}
+
+APP=""
+KEYS_ARG=""
+ORIGEN=""
+MODO="importar"
+
+# Localizar el AppImage: variable de entorno, paquete instalado o copia de desarrollo.
+localizar_appimage() {
+    if [ -n "${PEANUTS_APPIMAGE:-}" ]; then
+        APP="$PEANUTS_APPIMAGE"
+    elif [ -x /opt/peanuts/PeanutsNative.AppImage ]; then
+        APP=/opt/peanuts/PeanutsNative.AppImage
+    elif [ -x "$HOME/Peanuts/PeanutsNative.AppImage" ]; then
+        APP="$HOME/Peanuts/PeanutsNative.AppImage"
+    else
+        error "No encuentro el AppImage de Peanuts Native.
+Instala el paquete con 'pacman -S calvos-peanuts' o construyelo con
+tools/peanuts-build.sh (o define PEANUTS_APPIMAGE con la ruta al AppImage)."
+    fi
+
+    if [ ! -f "$APP" ] || [ ! -x "$APP" ]; then
+        error "El AppImage no es un fichero ejecutable: $APP
+Instala calvos-peanuts o define PEANUTS_APPIMAGE con una ruta valida."
+    fi
+}
+
+# Las claves pueden venir de --keys, de keys.path o de la ubicacion habitual.
+localizar_claves() {
+    local keys_path="$HOME/.config/peanutsnative/keys.path"
+
+    if [ -n "$KEYS_ARG" ]; then
+        CLAVES="$KEYS_ARG"
+    elif [ -f "$keys_path" ]; then
+        CLAVES=$(sed -n '1{s/^[[:space:]]*//;s/[[:space:]]*$//;p}' "$keys_path")
+        [ -n "$CLAVES" ] || error "El fichero $keys_path esta vacio; debe contener la ruta a prod.keys."
+    else
+        CLAVES="$HOME/.switch/prod.keys"
+    fi
+
+    [ -f "$CLAVES" ] || error "No encuentro el fichero de claves: $CLAVES
+Pasa --keys <prod.keys>, escribe la ruta en $keys_path
+o copia tus prod.keys a $HOME/.switch/prod.keys."
+}
+
+# Estado rapido: solo lectura, no crea ni modifica nada.
+comprobar() {
+    local destino=$FONT_DIR ttf="$FONT_DIR/standard.ttf"
+    local settings="$HOME/.config/peanutsnative/settings.env"
+    local juego="$HOME/.config/peanutsnative/01008CF01BAAC000.env"
+    local estado=0 tamanio=""
+
+    if [ -d "$destino" ]; then
+        echo "Destino: $destino (existe)"
+    else
+        echo "Destino: $destino (no existe)"
+        estado=1
+    fi
+
+    if [ -f "$ttf" ]; then
+        tamanio=$(wc -c < "$ttf" | tr -d '[:space:]')
+        echo "standard.ttf: $tamanio bytes"
+        if [ "$tamanio" -le 1000000 ]; then
+            echo "standard.ttf: demasiado pequeno (se esperan mas de 1000000 bytes)"
+            estado=1
+        fi
+    else
+        echo "standard.ttf: no existe ($ttf)"
+        estado=1
+    fi
+
+    if [ -f "$settings" ]; then
+        if grep -n '^DM_FONT_DIR=' "$settings"; then
+            :
+        else
+            echo "DM_FONT_DIR: sin configurar en $settings"
+        fi
+    else
+        echo "DM_FONT_DIR: no existe $settings"
+    fi
+
+    if [ -f "$juego" ]; then
+        echo "Fichero del juego: $juego"
+        if grep -n '^DM_FONT_DIR=' "$juego"; then
+            :
+        else
+            echo "DM_FONT_DIR: sin configurar en el fichero del juego"
+        fi
+    else
+        echo "Fichero del juego: $juego (no existe)"
+    fi
+
+    return "$estado"
+}
+
+# Analisis de argumentos.
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --check)
+            MODO=check
+            shift
+            ;;
+        --help|-h)
+            usage 0
+            ;;
+        --keys)
+            [ "$#" -ge 2 ] || { echo "Error: --keys necesita la ruta a prod.keys." >&2; usage 2; }
+            KEYS_ARG=$2
+            shift 2
+            ;;
+        --keys=*)
+            KEYS_ARG=${1#--keys=}
+            shift
+            ;;
+        --)
+            shift
+            [ "$#" -le 1 ] || { echo "Error: solo se admite un firmware." >&2; usage 2; }
+            if [ "$#" -eq 1 ]; then
+                [ -z "$ORIGEN" ] || { echo "Error: solo se admite un firmware." >&2; usage 2; }
+                ORIGEN=$1
+            fi
+            shift "$#"
+            ;;
+        -*)
+            echo "Error: opcion desconocida: $1" >&2
+            usage 2
+            ;;
+        *)
+            [ -z "$ORIGEN" ] || { echo "Error: solo se admite un firmware." >&2; usage 2; }
+            ORIGEN=$1
+            shift
+            ;;
+    esac
+done
+
+FONT_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/peanutsnative/firmware/fonts"
+
+if [ "$MODO" = check ]; then
+    [ -z "$ORIGEN$KEYS_ARG" ] || { echo "Error: --check no admite otros argumentos." >&2; usage 2; }
+    if comprobar; then
+        exit 0
+    else
+        exit 1
+    fi
+fi
+
+[ -n "$ORIGEN" ] || { echo "Error: falta el firmware (.zip o carpeta)." >&2; usage 2; }
+[ -f "$ORIGEN" ] || [ -d "$ORIGEN" ] || error "No existe el firmware: $ORIGEN"
+
+localizar_appimage
+localizar_claves
+
+# Extraer el AppImage en temporal (sin FUSE ni root); squashfs-root queda dentro.
+tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/calvos-peanuts-firmware.XXXXXX")
+trap 'rm -rf "$tmpdir"' EXIT
+( cd "$tmpdir" && "$APP" --appimage-extract )
+
+cli="$tmpdir/squashfs-root/usr/bin/nximport_cli"
+lib="$tmpdir/squashfs-root/usr/lib"
+[ -x "$cli" ] || error "El AppImage no contiene nximport_cli en usr/bin: $APP"
+
+mkdir -p "$FONT_DIR"
+
+# Si falla nximport_cli (por ejemplo, claves que no coinciden), se muestra y se
+# propagan su mensaje y su codigo de salida sin anadir ruido.
+LD_LIBRARY_PATH="$lib" "$cli" --keys "$CLAVES" fonts "$ORIGEN" "$FONT_DIR"
+
+ttf="$FONT_DIR/standard.ttf"
+[ -f "$ttf" ] || error "No se genero $ttf; las fuentes no se importaron correctamente."
+tamanio=$(wc -c < "$ttf" | tr -d '[:space:]')
+[ "$tamanio" -gt 1000000 ] || error "$ttf tiene $tamanio bytes; se esperaban mas de 1000000."
+echo "Fuentes importadas en $FONT_DIR (standard.ttf: $tamanio bytes)."
+
+# Dejar DM_FONT_DIR en settings.env sin duplicar la entrada.
+settings="$HOME/.config/peanutsnative/settings.env"
+mkdir -p "$(dirname "$settings")"
+linea="DM_FONT_DIR=$FONT_DIR"
+if [ -f "$settings" ] && grep -q '^DM_FONT_DIR=' "$settings"; then
+    escapada=$(printf '%s' "$linea" | sed -e 's/[\\&|]/\\&/g')
+    sed -i "s|^DM_FONT_DIR=.*|$escapada|" "$settings"
+else
+    printf '%s\n' "$linea" >> "$settings"
+fi
+echo "DM_FONT_DIR configurado en $settings"

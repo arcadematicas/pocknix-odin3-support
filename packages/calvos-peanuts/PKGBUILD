@@ -5,11 +5,12 @@
 # la URL/sha de aqui y subir pkgrel (ver docs/PEANUTS.md).
 pkgname=calvos-peanuts
 pkgver=0.1.0
-pkgrel=2
+pkgrel=3
 pkgdesc="Peanuts Native (Switch nativo aarch64): AppImage, lanzador y entorno de escritorio"
 arch=('aarch64')
 url="https://github.com/igawa6/peanuts-native"
 license=('MIT')
+install=calvos-peanuts.install
 depends=('zenity' 'spirv-tools' 'xcb-util-cursor' 'qt6-wayland')
 
 _app="PeanutsNative-7156261-aarch64.AppImage"
@@ -22,6 +23,7 @@ options=('!strip')  # el AppImage es un ELF con squashfs anexado: strip lo recor
 package() {
   install -Dm755 "${srcdir}/${_app}" "${pkgdir}/opt/peanuts/PeanutsNative.AppImage"
   install -Dm755 "${startdir}/peanutsnative" "${pkgdir}/usr/local/bin/peanutsnative"
+  install -Dm755 "${startdir}/calvos-peanuts-firmware" "${pkgdir}/usr/bin/calvos-peanuts-firmware"
   install -Dm644 "${startdir}/peanutsnative.desktop" \
     "${pkgdir}/usr/share/applications/peanutsnative.desktop"
   install -Dm644 "${startdir}/10-calvos-gamepad.conf" \
